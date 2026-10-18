@@ -1,6 +1,7 @@
 // Per-store website checks (multi-store M2, MT9; docs/M2_CONTRACT.md 6, 7).
-// Two throwaway servers from run.sh - the fake Toast store and the fake
-// Clover store - every role, at 1280 and 375 pixels:
+// Throwaway servers from run.sh - the fake Toast store and the fake Clover
+// store (every role), plus the DEMO store (CSV upload, its review login)
+// when DEMO_PORT is set - at 1280 and 375 pixels:
 //   - login page and signed-in pages show the store's name, logo and colour;
 //     the document title is the store's;
 //   - times are the store's zone (Team > Tasks says "store time (<city>)");
@@ -22,6 +23,11 @@ const STORES = [
   { code: "STOREOPS_TEST_TOAST", port: Number(process.env.TOAST_PORT || 8861), city: "Chicago" },
   { code: "STOREOPS_TEST_CLOVER", port: Number(process.env.CLOVER_PORT || 8862), city: "Los Angeles" },
 ];
+// The DEMO store (MT13): run_demo.py's own generated data, signed in as the
+// App Review login with the password run.sh gave it.
+if (process.env.DEMO_PORT) {
+  STORES.push({ code: "DEMO", port: Number(process.env.DEMO_PORT), city: "New York", roles: ["appreview"], password: process.env.DEMO_REVIEW_PASSWORD });
+}
 const ROLES = ["e2e_admin", "e2e_staff", "e2e_hide", "app_store_review"];
 const WIDTHS = [1280, 375];
 const NAMES = new RegExp(["spice[ _]?town", "stre" + "et[ _]kitchen", "ver" + "non", "spice" + "town\\.shop"].join("|"), "i");
@@ -72,9 +78,11 @@ async function runStore(browser, store) {
   for (const k of ["name", "short_name", "timezone", "primary_color", "pos_name", "labels_url"]) {
     check(JSON.stringify(served[k]) === JSON.stringify(brand[k]), `${store.code}: served branding ${k}=${served[k]} != fixture ${brand[k]}`);
   }
-  const users = JSON.parse(readFileSync(join(WORK, store.code, "users.json"), "utf8"));
+  const users = store.password ? await signIn(base, store.roles, store.password) : JSON.parse(readFileSync(join(WORK, store.code, "users.json"), "utf8"));
   const accent = brandCssVars(brand.primary_color, brand.secondary_color)["--accent"].toLowerCase();
-  const isClover = brand.pos_name === "Clover";
+  // Clover and the CSV-only DEMO store: no Insights, no labels site, never "Toast".
+  const notToast = brand.pos_name !== "Toast";
+  const isDemo = Boolean(brand.demo);
   const title = `${brand.name} - StoreOps`;
 
   for (const width of WIDTHS) {
@@ -92,7 +100,7 @@ async function runStore(browser, store) {
       await ctx.close();
     }
 
-    for (const role of ROLES) {
+    for (const role of store.roles || ROLES) {
       const tag = `${store.code} ${role} ${width}`;
       const ctx = await browser.newContext({ viewport: { width, height: 900 } });
       await ctx.addCookies([{ name: users.cookie, value: users.users[role].token, domain: "127.0.0.1", path: "/" }]);
@@ -129,12 +137,13 @@ async function runStore(browser, store) {
       const internal = [...new Set(links.filter((l) => l.href.startsWith("#/")).map((l) => l.href))];
       const menuText = links.map((l) => l.text).join(" | ") + " | " + (await page.innerText("nav.sidebar"));
       const labelLink = links.find((l) => l.text.startsWith("Label Scanner"));
-      if (isClover) {
+      if (notToast) {
         check(!internal.some((h) => h.startsWith("#/insights")), `${tag}: Insights in a Clover menu`);
         check(!labelLink, `${tag}: Label Scanner on a store without labels`);
         check(!/Toast/i.test(menuText), `${tag}: "Toast" in the Clover menu`);
         check(!/Also in/i.test(menuText), `${tag}: "Also in" group without Insights`);
         if (role === "e2e_admin") check(internal.includes("#/inventory-api") && /Inventory from Clover/.test(menuText), `${tag}: Inventory from Clover missing`);
+        if (isDemo) check(!internal.includes("#/inventory-api"), `${tag}: Inventory from POS on a CSV-only store`);
       } else {
         check(labelLink && labelLink.external, `${tag}: Label Scanner missing`);
         if (labelLink) {
@@ -154,7 +163,7 @@ async function runStore(browser, store) {
         await page.goto(`${base}/${hash}`);
         await settle(page);
         const url = page.url();
-        if (isClover) {
+        if (notToast) {
           check(url.includes("#/not-available"), `${tag}: ${hash} -> ${url} (expected not-available)`);
           check(await page.isVisible('[data-testid="not-available"]'), `${tag}: ${hash} shows no Not available page`);
           if (hash === "#/insights/daily" && role === "e2e_admin") {
@@ -206,7 +215,7 @@ async function runStore(browser, store) {
         };
         const name = text.match(NAMES);
         if (name) report(name[0], new RegExp(`[^\\n]{0,40}${name[0]}[^\\n]{0,40}`, "gi"));
-        if (isClover) report("Toast", /[^\n]{0,40}\bToast\b[^\n]{0,40}/g);
+        if (notToast) report("Toast", /[^\n]{0,40}\bToast\b[^\n]{0,40}/g);
         checks++;
         if (width === 375) {
           const sideways = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -218,6 +227,25 @@ async function runStore(browser, store) {
       await ctx.close();
     }
   }
+}
+
+// A real sign-in (POST /api/auth/login) for stores whose logins the harness
+// didn't make; returns the same shape as seed.py's users.json.
+async function signIn(base, roles, password) {
+  const out = { cookie: "", users: {} };
+  for (const role of roles) {
+    const r = await fetch(`${base}/api/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: role, password }),
+    });
+    if (r.status !== 200) throw new Error(`sign-in ${role} at ${base}: ${r.status}`);
+    const [pair] = r.headers.getSetCookie()[0].split(";");
+    const i = pair.indexOf("=");
+    out.cookie = pair.slice(0, i);
+    out.users[role] = { token: pair.slice(i + 1) };
+  }
+  return out;
 }
 
 // Every string value in a JSON body.
