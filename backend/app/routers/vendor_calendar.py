@@ -49,7 +49,7 @@ def post_schedule(body: VendorScheduleCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Pick at least one delivery day.")
     if body.lead_days < 0:
         raise HTTPException(status_code=400, detail="Lead days can't be negative.")
-    # Any spelling ("raja foods", "Sri Sai Imports, Inc" vs "Inc.") counts:
+    # Any spelling ("raja foods", "Sri Ram Imports, Inc" vs "Inc.") counts:
     # a second schedule for the same vendor is never created. Check + insert
     # under Add all's lock, so a double tap or Add all running meanwhile can't
     # slip a second row in (VX12).

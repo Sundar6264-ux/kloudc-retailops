@@ -8,7 +8,7 @@ Two kinds of row (`PlacedOrder.status`):
   export within PDF_REUSE_WINDOW updates it instead of adding another.
 - "placed": someone pressed "Mark placed". That turns the supplier's recent
   "pdf" row (PLACED_CONVERT_WINDOW) into the placed order, so a preview +
-  Mark placed is ONE order, not two (the Sep 28 Shaz International report).
+  Mark placed is ONE order, not two (the Sep 28 report).
   A repeat Mark placed within DUPLICATE_WINDOW (double tap, network retry)
   returns the order already recorded instead of creating a second one.
 """

@@ -908,7 +908,7 @@ class CategoryOverride(Base):
     """An app-side correction of Toast's category for some items (services/
     category_overrides.py). Toast API access is read-only, so a category that
     is wrong in Toast is corrected here until someone fixes it in Toast - e.g.
-    every Shaz International item -> RETAIL / Snacks & Savories / Biscuits,
+    every item of one supplier -> RETAIL / Snacks & Savories / Biscuits,
     Cookies & Rusk. Applied when items are read (never written into
     inventory_snapshots, which keeps Toast's real values).
 

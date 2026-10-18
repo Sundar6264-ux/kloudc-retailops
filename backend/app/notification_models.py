@@ -26,7 +26,7 @@ class PushDelivery(Base):
     # The alert key (services/notifications.py ALERTS) or a team push key
     # ("chat_message", "chat_report", ...).
     key: Mapped[str] = mapped_column(String, index=True)
-    # Only the title (e.g. "Order today: Babco", "Sundar in Kitchen") - never
+    # Only the title (e.g. "Order today: Babco", "Alex in Kitchen") - never
     # the body, which can hold a chat message's text.
     title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     sent_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow, index=True)

@@ -144,8 +144,8 @@ _NON_WORD = re.compile(r"[^a-z0-9]+")
 
 def vendor_key(name: Optional[str]) -> str:
     """One spelling per vendor: lower case, "&" = "and", punctuation dropped,
-    trailing Inc / LLC / Co / Corp / Ltd left out ("Sri Sai Imports, Inc" =
-    "sri sai imports")."""
+    trailing Inc / LLC / Co / Corp / Ltd left out ("Sri Ram Imports, Inc" =
+    "sri ram imports")."""
     text = (name or "").strip().lower().replace("&", " and ")
     words = _NON_WORD.sub(" ", text).split()
     while len(words) > 1 and words[-1] in _SUFFIXES:

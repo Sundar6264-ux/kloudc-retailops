@@ -532,9 +532,9 @@ def mark_read(db: Session, user: User, channel: Channel, last_read_message_id: i
 
 def find_mentions(body: str, users: Iterable[Tuple[int, str]]) -> List[int]:
     """User ids mentioned as "@<username>" in `body`. Matched against the
-    actual usernames (they can have spaces - "@Sai Durga"), case-
-    insensitively, longest name first so "@Sai Durga" isn't read as
-    "@Sai", and only when the name ends at a non-word character or the end
+    actual usernames (they can have spaces - "@Sam Doe"), case-
+    insensitively, longest name first so "@Sam Doe" isn't read as
+    "@Sam", and only when the name ends at a non-word character or the end
     ("thanks @ravi." counts; "@ravikumar" doesn't mention ravi)."""
     text = (body or "").casefold()
     if "@" not in text:

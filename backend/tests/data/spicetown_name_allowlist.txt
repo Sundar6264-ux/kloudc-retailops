@@ -6,3 +6,4 @@
 # they move the values out. At the M2 exit it holds only legacy setting names
 # and the comments that explain them.
 backend/app/config.py:REFUSED_DOMAIN = "spicetown.shop"
+backend/app/store/__main__.py:LEGACY_CATEGORY_SUPPLIER = "Shaz International"

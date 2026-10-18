@@ -1,7 +1,7 @@
 """Per-supplier demand projection across multiple horizons (1wk/2wk/3wk/month, etc.).
 
 `inventory_snapshots.supplier` sometimes lists multiple suppliers for one item,
-semicolon-separated (e.g. "KP Produce;Raja Foods;Sai Florals") - a real quirk in
+semicolon-separated (e.g. "KP Produce;Raja Foods;Bloom Florals") - a real quirk in
 the Toast Retail export, not a bug. Split those out for the supplier list and
 for matching which items belong to a chosen supplier.
 

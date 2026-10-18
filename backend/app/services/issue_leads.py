@@ -193,7 +193,7 @@ def vendor_candidates(doc_name: str, vendors: Iterable[str]) -> List[str]:
 
 def match_user(users: List[User], doc_name: str) -> Optional[User]:
     """A user for a lead named in the document: the same username, else the
-    one user whose first name it is ("Sai" -> "Sai Durga"). Ambiguous = None."""
+    one user whose first name it is ("Sam" -> "Sam Doe"). Ambiguous = None."""
     key = doc_name.strip().lower()
     same = [u for u in users if (u.username or "").strip().lower() == key]
     if len(same) == 1:

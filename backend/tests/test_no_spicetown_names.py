@@ -19,6 +19,7 @@ Explicitly NOT searched (store-pack data and migration history):
 * backend/packs/ - store-pack data files.
 """
 
+import os
 import pathlib
 import re
 from typing import Dict, List, Set, Tuple
@@ -26,7 +27,14 @@ from typing import Dict, List, Set, Tuple
 REPO = pathlib.Path(__file__).resolve().parents[2]
 ALLOWLIST = pathlib.Path(__file__).resolve().parent / "data" / "spicetown_name_allowlist.txt"
 
-PATTERN = re.compile(r"spice ?town|street kitchen|vernon|spicetown\.shop", re.IGNORECASE)
+# The contract's pattern plus the one legacy supplier name the old migrations
+# seed (the fresh-store test's list, contract 3.6).
+PATTERN = re.compile(r"spice ?town|street kitchen|vernon|spicetown\.shop|shaz international", re.IGNORECASE)
+# Private extra words (staff names, contract 1.6) - never committed; checked
+# when the file is on this machine.
+PRIVATE_TOKENS = pathlib.Path(
+    os.environ.get("STOREOPS_PRIVATE_DIR") or "/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m2/private"
+) / "forbidden_tokens.txt"
 
 # Product shell and identity: zero hits, no allowlist.
 IDENTITY_FILES = [
@@ -190,3 +198,25 @@ def _text(path: pathlib.Path) -> str:
         return path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         return ""
+
+
+def test_code_has_none_of_the_private_staff_names():
+    """The legacy store's staff names (private forbidden_tokens.txt) appear
+    nowhere in backend/app or frontend/src - not even in comments or test
+    data. Skips where the private file is absent (CI)."""
+    import pytest
+
+    if not PRIVATE_TOKENS.is_file():
+        pytest.skip("private forbidden_tokens.txt not on this machine")
+    tokens = [t.strip() for t in PRIVATE_TOKENS.read_text(encoding="utf-8").splitlines() if t.strip()]
+    words = re.compile(r"\b(?:" + "|".join(re.escape(t) for t in tokens) + r")\b(?!')", re.IGNORECASE)
+    found = []
+    for p in _files(CODE_DIRS, CODE_FILES):
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            if words.search(line):
+                found.append(f"{_rel(p)}:{n}")  # the line itself is not printed (private)
+    assert not found, "private staff names in code:\n" + "\n".join(found)

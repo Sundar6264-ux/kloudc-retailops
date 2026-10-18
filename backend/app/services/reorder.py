@@ -420,7 +420,7 @@ def latest_inventory_by_item(
     if not apply_category_overrides:
         return by_item
     # App-side category corrections (services/category_overrides.py, e.g. all
-    # Shaz International items -> Biscuits, Cookies & Rusk). Overridden items
+    # of one supplier's items -> Biscuits, Cookies & Rusk). Overridden items
     # come back as read-only wrappers - the ORM rows are never modified, so
     # nothing can be flushed into inventory_snapshots.
     return apply_overrides(db, by_item)
