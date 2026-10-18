@@ -36,6 +36,10 @@ PUBLIC = {
     ("GET", "/api/public/checklists/{token}/images/{media_token}"),
     ("GET", "/c/{path:path}"),
     ("GET", "/c"),
+    # App-link association files (routers/well_known.py, M2 MT10): static
+    # JSON built from settings, no store data.
+    ("GET", "/.well-known/apple-app-site-association"),
+    ("GET", "/.well-known/assetlinks.json"),
 }
 # Any logged-in user, no feature grant (small lookups, own account/devices,
 # team hub basics - see the notes in each router).

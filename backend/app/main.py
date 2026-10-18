@@ -36,6 +36,7 @@ from app.routers import (
     sales,
     transfers,
     vendor_calendar,
+    well_known,
 )
 from app.routers import po_send as po_send_router  # Send PO + vendor contacts (automation item 8)
 from app.routers import inventory_api as inventory_api_router  # Inventory from the Toast API (automation items 1, 6)
@@ -118,6 +119,7 @@ app.include_router(flyers.router)
 # registered before the StaticFiles mount at "/" below.
 app.include_router(checklist_public.public_router)
 app.include_router(checklist_public.page_router)
+app.include_router(well_known.router)  # AASA / assetlinks for /c/ links (M2 MT10)
 app.include_router(checklists.router)
 app.include_router(notifications.router)
 app.include_router(team_router_core.router)
