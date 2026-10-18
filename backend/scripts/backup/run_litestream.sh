@@ -26,7 +26,7 @@ disabled() {
 if grep -q "REPLACE_WITH_" "$CONFIG"; then
   disabled "$CONFIG still has REPLACE_WITH_ placeholders"
 fi
-perms=$(stat -f "%Lp" "$ENV_FILE" 2>/dev/null || stat -c "%a" "$ENV_FILE")
+perms=$(stat -c "%a" "$ENV_FILE" 2>/dev/null || stat -f "%Lp" "$ENV_FILE")  # GNU stat first: on Linux `stat -f` means filesystem status
 if [ "$perms" != "600" ] && [ "$perms" != "400" ]; then
   echo "Refusing to start: $ENV_FILE is readable by others (mode $perms). Run: chmod 600 $ENV_FILE" >&2
   exit 1
