@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  StoreOps DEMO store - LaunchDaemon TEMPLATE (M2 batch MT13, plan 3.1a).
+
+  One process runs the DEMO API server AND its nightly made-up-data reset
+  (backend/scripts/demo/run_demo.py). It never calls a POS (POS_PROVIDER=csv),
+  and every outside channel is forced off, whatever the .env says.
+
+  Replace every __PLACEHOLDER__ before installing (docs/DEMO_STORE.md, "Mac mini"):
+    __STOREOPS_BACKEND__  a StoreOps checkout's backend folder, e.g. /Users/you/storeops-demo/backend
+                          (its own checkout, with its own .env from deploy/demo/demo.env.example)
+    __PYTHON__            that checkout's venv python, e.g. __STOREOPS_BACKEND__/.venv/bin/python
+    __DEMO_DATA__         the DEMO data folder (new/empty the first time), e.g. /Users/you/storeops-demo-data
+    __RUN_AS__            the macOS user that owns those folders
+    __PORT__              a free local port, e.g. 8030 (the tunnel / proxy points the DEMO host here)
+
+  Install (as an admin):
+    sudo cp com.kloudc.storeops.demo.plist /Library/LaunchDaemons/
+    sudo chown root:wheel /Library/LaunchDaemons/com.kloudc.storeops.demo.plist
+    sudo launchctl bootstrap system /Library/LaunchDaemons/com.kloudc.storeops.demo.plist
+  Stop / remove:
+    sudo launchctl bootout system /Library/LaunchDaemons/com.kloudc.storeops.demo.plist
+
+  Plan note (D11): the plan prefers the DEMO store NOT to share a machine with a
+  real store's server. If it does, keep it on its own port, user folder and data
+  folder, and give it Background priority (below).
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.kloudc.storeops.demo</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>scripts/demo/run_demo.py</string>
+        <string>--data-dir</string>
+        <string>__DEMO_DATA__</string>
+        <string>--host</string>
+        <string>127.0.0.1</string>
+        <string>--port</string>
+        <string>__PORT__</string>
+        <string>--reset-at</string>
+        <string>03:30</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__STOREOPS_BACKEND__</string>
+
+    <key>UserName</key>
+    <string>__RUN_AS__</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <!-- run_demo.py exits non-zero if the server dies; launchd starts it again. -->
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <!-- Below a real store's server when they share a machine. -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>Nice</key>
+    <integer>10</integer>
+
+    <key>StandardOutPath</key>
+    <string>__DEMO_DATA__/logs/demo.log</string>
+    <key>StandardErrorPath</key>
+    <string>__DEMO_DATA__/logs/demo.error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+        <key>STORE_TIMEZONE</key>
+        <string>America/New_York</string>
+    </dict>
+</dict>
+</plist>
