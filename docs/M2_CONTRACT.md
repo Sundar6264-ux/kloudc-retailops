@@ -2097,3 +2097,44 @@ skipped without it; GitHub's Ubuntu runners have Node.
    domain).
 8. After the Apple Team ID and Play fingerprint exist, set `APPLE_TEAM_ID` /
    `ANDROID_CERT_SHA256` and rebuild.
+
+### As built - MT10 verifier fixes (directory)
+
+Branch `m2/mt10-directory` now has `main` merged in (MT7a, MT7/MT8, MT9 and
+the MT11/MT12 docs). Conflicts in `app/main.py`, the public route list, the
+name allowlist and this file were resolved by keeping both sides. Fixes, each
+with a test that failed first:
+- **Name test after the merge:** the directory had its own `spicetown.shop`
+  literal; it now imports `app.config.REFUSED_DOMAIN` (the one literal).
+  Two tests set environment variables after `Settings` was cached; they now
+  patch `Settings` (MT7 added the `DIRECTORY_*` / owner-id fields).
+- **Worker/service parity:** the code is trimmed of ASCII whitespace only
+  in both (Python `strip()` and JS `trim()` disagree on `\x1c`-`\x1f`,
+  U+0085 and U+FEFF). An encoded `/` (`%2F`) in a lookup or `/s/` path is
+  `404 not_found` in both. A trailing slash is `404 not_found` in the
+  service too, not a `307` built from the Host header (FastAPI's
+  `redirect_slashes` is off).
+- **Rate-limit key:** with `DIRECTORY_CLIENT_IP_HEADER=X-Forwarded-For` the
+  service keyed on the first entry, which the client writes; it uses the last
+  entry (the one the proxy appended).
+- **Association files claim only `/s/*`:** `/c/*` was claimed, but the app
+  has no `/c/` route (MT11 As built), so with Associated Domains on, public
+  checklist links would have opened in the app instead of the browser
+  (section 4.4 updated).
+- **`--refresh-branding`** validates the stores file before fetching, so an
+  `http://` or legacy-domain `api_base_url` is never contacted.
+- New test: the example stores file matches MT7's fake-store branding
+  fixtures (`tests/fixtures/stores/*.branding.json`).
+
+Note for the owner: the app calls the directory on every cold start and on
+resume when the saved record is over 1 hour old. Staff on one store Wi-Fi
+share an IP, so a large store can approach 10/minute (the Cloudflare
+binding) at shift start. A refused refresh is harmless (the saved record is
+kept), but a new device entering the store code in that minute sees "Too many
+tries". Raise the limits, or exempt the store's IP in the WAF rule, if that
+happens.
+
+Tests after the verifier fixes: `tests/test_directory.py` 57 passed; Worker
+`node --test` 7 passed; full backend suite 2622 passed, 19 skipped on both
+Python 3.9 and 3.12 (run before the trailing-slash test was added; that file
+was re-run on both afterwards).
