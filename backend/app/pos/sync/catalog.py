@@ -40,10 +40,10 @@ from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import dialect_insert
 from app.models import InventorySnapshot, JobRun, ToastMenuItem
 from app.pos import registry
 from app.pos.barcodes import _codes, merged_barcode
@@ -279,10 +279,12 @@ def store_api_snapshot(db: Session, rows: Dict[str, dict], snapshot_date: dt.dat
 
 
 def _insert(db: Session, batch: List[dict]) -> int:
-    stmt = sqlite_insert(InventorySnapshot).values(batch).on_conflict_do_nothing(
+    stmt = dialect_insert(InventorySnapshot, db).values(batch).on_conflict_do_nothing(
         index_elements=[InventorySnapshot.snapshot_date, InventorySnapshot.item_id]
     )
-    return db.execute(stmt).rowcount or 0
+    # preserve_rowcount: SQLAlchemy only keeps an INSERT's rowcount on request
+    # (PostgreSQL would answer -1 without it).
+    return db.execute(stmt, execution_options={"preserve_rowcount": True}).rowcount or 0
 
 
 # ---------------------------------------------------------------------------
@@ -532,7 +534,7 @@ def save_catalog_cache(
         for item in items
     ]
     for i in range(0, len(rows), 500):
-        db.execute(sqlite_insert(ToastMenuItem).values(rows[i : i + 500]))
+        db.execute(dialect_insert(ToastMenuItem, db).values(rows[i : i + 500]))
     db.commit()
     _inv()._menu_cache_state.clear()
     return len(rows)

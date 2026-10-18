@@ -21,19 +21,36 @@ class UTCDateTime(TypeDecorator):
     This type re-attaches UTC on the way out (and normalizes to naive-UTC on
     the way in) so every consumer - the API, CSV export, everywhere - gets an
     unambiguous, correctly-marked timestamp.
+
+    PostgreSQL (platform contract 1.3): the column is `timestamptz`, and a
+    naive value would be read in the connection's TimeZone - wrong unless it
+    is UTC. So on PostgreSQL the value is bound *aware* (UTC; a naive value is
+    taken as UTC, as everywhere in this app), and an aware value read back in
+    any session zone is converted to UTC. The stored instant never depends on
+    the connection's TimeZone setting.
     """
 
     impl = DateTime(timezone=True)
     cache_ok = True
 
     def process_bind_param(self, value, dialect):
-        if value is not None and value.tzinfo is not None:
+        if value is None or not isinstance(value, dt.datetime):
+            return value
+        if dialect.name == "postgresql":
+            if value.tzinfo is None:
+                return value.replace(tzinfo=dt.timezone.utc)
+            return value.astimezone(dt.timezone.utc)
+        if value.tzinfo is not None:
             value = value.astimezone(dt.timezone.utc).replace(tzinfo=None)
         return value
 
     def process_result_value(self, value, dialect):
-        if value is not None and value.tzinfo is None:
-            value = value.replace(tzinfo=dt.timezone.utc)
+        if value is None or not isinstance(value, dt.datetime):
+            return value
+        if value.tzinfo is None:
+            return value.replace(tzinfo=dt.timezone.utc)
+        if value.utcoffset() != dt.timedelta(0) or value.tzinfo is not dt.timezone.utc:
+            value = value.astimezone(dt.timezone.utc)
         return value
 
 settings = get_settings()

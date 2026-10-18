@@ -11,7 +11,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
-    text,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -110,7 +110,7 @@ class Order(Base):
         String, nullable=True, default=_copy_of("parent_selection_guid")
     )
     is_modifier: Mapped[bool] = mapped_column(
-        Boolean, default=_is_modifier_default, server_default=text("0")
+        Boolean, default=_is_modifier_default, server_default=false()
     )
     # Normalized sales channel (in_store / pickup / online / ...). NULL for
     # Toast until dining-option names are resolved (needs the Toast config API).

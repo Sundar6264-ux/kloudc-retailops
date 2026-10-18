@@ -23,6 +23,7 @@ from typing import Optional
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.dbcompat import fsum, group_order
 from app.demo import hide_demo_clause
 from app.models import InventorySnapshot, InvoiceSubmission, PurchaseLogEntry
 from app.services.forecast import forecast_daily_demand
@@ -33,12 +34,13 @@ from app.timeutil import to_restaurant_date
 
 def _purchased_in_range(db: Session, start_date: dt.date, end_date: dt.date) -> dict[str, float]:
     stmt = (
-        select(PurchaseLogEntry.item_id, func.sum(PurchaseLogEntry.quantity_received))
+        select(PurchaseLogEntry.item_id, fsum(PurchaseLogEntry.quantity_received))
         .where(
             PurchaseLogEntry.received_date >= start_date,
             PurchaseLogEntry.received_date <= end_date,
         )
         .group_by(PurchaseLogEntry.item_id)
+        .order_by(*group_order(PurchaseLogEntry.item_id))
     )
     return {item_id: float(qty) for item_id, qty in db.execute(stmt)}
 

@@ -46,11 +46,15 @@ BLANK_SECRETS = {
 }
 
 
-def harness_env(db_path: str, scratch_dir: str) -> Dict[str, str]:
+def harness_env(db_path: str, scratch_dir: str, db_url: str = "") -> Dict[str, str]:
+    """`db_url`: record against this database instead of the SQLite file -
+    the PostgreSQL copy of it (parity_record.py --pg-url). The PostgreSQL
+    driver connects through libpq (C), which the Python socket guard below
+    does not see; the URL is checked to be on this machine instead."""
     env = dict(BLANK_SECRETS)
     env.update(
         {
-            "DATABASE_URL": f"sqlite:///{db_path}",
+            "DATABASE_URL": db_url or f"sqlite:///{db_path}",
             "SCHEDULER_ENABLED": "false",
             "NOTIFICATIONS_ENABLED": "false",
             "TEAM_JOBS_ENABLED": "false",

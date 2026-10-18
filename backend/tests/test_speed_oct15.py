@@ -156,15 +156,26 @@ def test_a_write_from_another_process_changes_the_fingerprint(db):
     calls = []
     compute = lambda: calls.append(1) or len(calls)  # noqa: E731
     report_cache.cached(db, ("t",), compute)
-    con = sqlite3.connect(engine.url.database)  # not through this app's engine
-    try:
-        con.execute(
-            "INSERT INTO placed_orders (supplier, item_count, items_json, placed_at, status) "
-            "VALUES ('Raja Foods', 0, '[]', '2026-10-14 12:00:00', 'placed')"
-        )
-        con.commit()
-    finally:
-        con.close()
+    sql = (
+        "INSERT INTO placed_orders (supplier, item_count, items_json, placed_at, status) "
+        "VALUES ('Raja Foods', 0, '[]', '2026-10-14 12:00:00', 'placed')"
+    )
+    if engine.dialect.name == "sqlite":
+        con = sqlite3.connect(engine.url.database)  # not through this app's engine
+        try:
+            con.execute(sql)
+            con.commit()
+        finally:
+            con.close()
+    else:
+        from sqlalchemy import create_engine, pool
+
+        other = create_engine(engine.url, poolclass=pool.NullPool)  # another engine: no app hooks
+        try:
+            with other.begin() as conn:
+                conn.exec_driver_sql(sql)
+        finally:
+            other.dispose()
     report_cache.cached(db, ("t",), compute)
     assert len(calls) == 2
 
@@ -483,6 +494,7 @@ def test_background_refresh_off_in_dev_and_tests(db):
 # --- #14 pragmas, #6 migration ---------------------------------------------------------------------
 
 
+@pytest.mark.skipif(engine.dialect.name != "sqlite", reason="SQLite pragmas (the PostgreSQL engine has none)")
 def test_sqlite_pragmas_on_every_connection(db):
     con = db.connection()
     assert con.exec_driver_sql("PRAGMA cache_size").scalar() == -16384

@@ -21,10 +21,11 @@ import logging
 import threading
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
-from sqlalchemy import delete, event, func, or_, select, text
+from sqlalchemy import delete, event, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import is_postgres, sequence_last_value
 from app.demo import demo_usernames
 from app.models import User
 from app.team.models import Team, TeamChange, TeamMember
@@ -241,14 +242,21 @@ def _after_rollback(session: Session) -> None:
 
 
 def current_cursor(db: Session) -> int:
-    """The highest seq ever handed out - from sqlite_sequence, so it stays
-    right even after every row has been pruned."""
-    try:
-        seq = db.execute(
-            text("SELECT seq FROM sqlite_sequence WHERE name = 'team_changes'")
-        ).scalar()
-    except Exception:  # noqa: BLE001 - not SQLite
-        seq = None
+    """The highest seq ever handed out, right even after every row has been
+    pruned.
+
+    SQLite: from sqlite_sequence (writers are serialised, so every seq it
+    holds is committed). PostgreSQL: the newest committed row's seq; the
+    sequence's last value only when no row is left - a sequence also counts
+    seqs of transactions still in flight (or rolled back), and handing such a
+    seq out as a cursor would make a client skip a change that commits later
+    with a lower seq."""
+    if is_postgres(db):
+        seq = db.execute(select(func.max(TeamChange.seq))).scalar()
+        if seq is None:
+            seq = sequence_last_value(db, "team_changes", "seq")
+        return int(seq or 0)
+    seq = sequence_last_value(db, "team_changes", "seq")
     if seq is None:
         seq = db.execute(select(func.max(TeamChange.seq))).scalar()
     return int(seq or 0)

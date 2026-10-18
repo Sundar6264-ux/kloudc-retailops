@@ -36,6 +36,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import group_order
 from app.models import InventorySnapshot
 from app.services import category_overrides
 from app.services.demand_forecast import DEAD, SLOW, build_models
@@ -352,6 +353,7 @@ def _first_upload_dates(db: Session, item_ids: list) -> dict:
             select(InventorySnapshot.item_id, func.min(InventorySnapshot.snapshot_date))
             .where(InventorySnapshot.item_id.in_(item_ids[i : i + 500]))
             .group_by(InventorySnapshot.item_id)
+            .order_by(*group_order(InventorySnapshot.item_id))
         ).all()
         out.update({item_id: day for item_id, day in rows})
     return out
@@ -478,6 +480,7 @@ def _first_seen_dates(db: Session, since: dt.date, item_ids) -> dict:
             select(InventorySnapshot.item_id, func.min(InventorySnapshot.snapshot_date))
             .where(InventorySnapshot.item_id.in_(candidates[i : i + 500]))
             .group_by(InventorySnapshot.item_id)
+            .order_by(*group_order(InventorySnapshot.item_id))
         ).all()
         out.update({item_id: day for item_id, day in rows if day >= since and day != history_start})
     return out

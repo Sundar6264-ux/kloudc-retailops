@@ -27,6 +27,7 @@ from typing import Optional
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
+from app.dbcompat import group_order
 from app.models import IssueResolution, IssueResolutionEvent, Order
 from app.services.barcode_report import get_invalid_barcodes, get_missing_barcodes
 from app.services.duplicate_products import get_duplicate_products
@@ -312,6 +313,7 @@ def _last_sold_by_item(db: Session) -> dict:
         select(Order.item_guid, func.max(Order.business_date))
         .where(Order.item_guid.is_not(None), Order.top_level(), Order.voided.is_(False))
         .group_by(Order.item_guid)
+        .order_by(*group_order(Order.item_guid))
     ).all()
     return {item_guid: day for item_guid, day in rows}
 
@@ -862,7 +864,7 @@ def reopen_issues(
 def get_closed_report(db: Session, start: dt.date, end: dt.date) -> dict:
     """Closed issues grouped by the (store-local) day they were closed, newest
     day first, with per-type and per-reason counts."""
-    rows = db.query(IssueResolution).order_by(IssueResolution.closed_at.desc()).all()
+    rows = db.query(IssueResolution).order_by(IssueResolution.closed_at.desc(), IssueResolution.id.desc()).all()
     days: dict = {}
     by_reason_total: dict = defaultdict(int)
     for r in rows:

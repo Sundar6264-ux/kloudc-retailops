@@ -248,7 +248,7 @@ def placed_order_suppliers(db: Session) -> list:
     stmt = (
         select(PlacedOrder.supplier, func.max(PlacedOrder.placed_at).label("last"))
         .group_by(PlacedOrder.supplier)
-        .order_by(func.max(PlacedOrder.placed_at).desc())
+        .order_by(func.max(PlacedOrder.placed_at).desc(), PlacedOrder.supplier)
     )
     return [r.supplier for r in db.execute(stmt)]
 

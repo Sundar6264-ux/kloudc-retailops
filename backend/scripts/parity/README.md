@@ -96,6 +96,34 @@ fingerprinted and recorded. New tables / columns / JSON keys are listed as
 **additions** (allowed in M1); `--strict` counts them as differences. A new
 or changed push alert or scheduled job is always a difference.
 
+## On PostgreSQL (platform track A)
+
+`--pg-url` records the same copy on PostgreSQL: the scratch copy (after
+`--migrate`) is copied into an EMPTY database on this machine with
+`scripts/pg/copy_sqlite_to_pg.py` (checksums must match: 0 differences),
+and the app boots against PostgreSQL. "Now", user and vendors are still
+picked from the SQLite copy, so a SQLite and a PostgreSQL recording of the
+same file compare one to one. `fingerprint_after.json` is then the
+PostgreSQL database's fingerprint in SQLite's terms
+(`parity_fingerprint.pg_fingerprint`); `meta.json` lists the columns whose
+SQLite values are stored in an older text form (same instant, e.g. a
+timestamp without microseconds) under `postgres_copy`.
+
+    PG=/opt/homebrew/opt/postgresql@16/bin
+    $PG/createdb -h 127.0.0.1 -p 5433 -U storeops -T template0 -l C -E UTF8 so_a_parity
+    nice -n 15 $PY scripts/parity/parity_record.py --db $M/prodcopy.db --migrate --out $M/rec-sqlite --force
+    nice -n 15 $PY scripts/parity/parity_record.py --db $M/prodcopy.db --migrate --out $M/rec-pg --force \
+        --pg-url postgresql+psycopg://storeops@127.0.0.1:5433/so_a_parity
+    $PY scripts/parity/parity_diff.py $M/rec-sqlite $M/rec-pg
+    $PG/dropdb -h 127.0.0.1 -p 5433 -U storeops so_a_parity
+
+Result on the Oct 18 production copy (0059, migrated to 0062): 110 endpoints,
+all 200, **12 differences, all explained** (docs/PLATFORM_CONTRACT.md,
+"As built - A"): 2 forecast floats in the last digit (PostgreSQL's exact
+decimal sum vs SQLite's binary one), 4+4 fingerprint columns stamped by
+`--migrate` itself (two SQLite recordings differ in the same 8), 2
+fingerprint_after columns holding second-precision timestamp text in SQLite.
+
 ## Re-recording the baseline
 
 Only on a fresh production copy, and only from code that is known-good

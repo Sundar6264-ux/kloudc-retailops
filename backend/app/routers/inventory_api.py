@@ -63,7 +63,7 @@ def menu_recheck(db: Session = Depends(get_db)):
     last = db.execute(
         select(JobRun.started_at)
         .where(JobRun.job_name == svc.JOB_MENU_RECHECK)
-        .order_by(JobRun.started_at.desc())
+        .order_by(JobRun.started_at.desc(), JobRun.id.desc())
         .limit(1)
     ).scalar()
     if last is not None:

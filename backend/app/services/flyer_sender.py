@@ -37,7 +37,7 @@ import time
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
@@ -144,7 +144,7 @@ def _sweep() -> None:
         recovered = recover_stuck_sends(db, owned=owned)
         if recovered:
             logger.warning("Flyer sends: %d stuck send(s) marked failed (%s)", recovered, INTERRUPTED)
-    except OperationalError:
+    except (OperationalError, ProgrammingError):
         # The tables aren't there yet (database not migrated) - nothing to do.
         db.rollback()
     except Exception:  # noqa: BLE001

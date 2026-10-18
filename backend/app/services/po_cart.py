@@ -163,7 +163,7 @@ def add_items(db: Session, supplier: str, items: list[dict], added_by_user_id: O
 
 
 def list_cart(db: Session) -> list[CartItem]:
-    stmt = select(CartItem).order_by(CartItem.supplier, CartItem.added_at)
+    stmt = select(CartItem).order_by(CartItem.supplier, CartItem.added_at, CartItem.id)
     return list(db.execute(stmt).scalars())
 
 

@@ -57,6 +57,7 @@ from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import fsum, group_order
 from app.models import JobRun, Order
 from app.pos import registry
 from app.pos.base import DayTotalsUnavailable
@@ -113,8 +114,8 @@ def stored_day_totals(db: Session, start: dt.date, end: dt.date) -> dict:
     stmt = (
         select(
             Order.business_date,
-            func.coalesce(func.sum(Order.net_price), 0.0),
-            func.coalesce(func.sum(Order.quantity), 0.0),
+            func.coalesce(fsum(Order.net_price), 0.0),
+            func.coalesce(fsum(Order.quantity), 0.0),
             func.count(func.distinct(Order.toast_order_guid)),
             func.count(Order.id),
             func.sum(case((Order.paid_at.is_(None), 1), else_=0)),
@@ -126,6 +127,7 @@ def stored_day_totals(db: Session, start: dt.date, end: dt.date) -> dict:
             Order.top_level(),
         )
         .group_by(Order.business_date)
+        .order_by(*group_order(Order.business_date))
     )
     out = {}
     for d, net, qty, orders, lines, unpaid in db.execute(stmt):
@@ -153,6 +155,7 @@ def _last_successful_sync(db: Session, start: dt.date, end: dt.date) -> dict:
             JobRun.business_date <= end,
         )
         .group_by(JobRun.business_date)
+        .order_by(*group_order(JobRun.business_date))
     )
     out = {}
     for d, at in db.execute(stmt):

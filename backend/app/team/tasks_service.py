@@ -40,7 +40,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import BackgroundTasks, HTTPException, UploadFile
-from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy import Integer, and_, cast, delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -265,7 +265,7 @@ class _ListContext:
         self.media: Dict[int, TeamMedia] = {}
         if ids:
             rows = db.execute(
-                select(TaskItem.task_id, func.count(TaskItem.id), func.sum(TaskItem.done))
+                select(TaskItem.task_id, func.count(TaskItem.id), func.sum(cast(TaskItem.done, Integer)))
                 .where(TaskItem.task_id.in_(ids))
                 .group_by(TaskItem.task_id)
             ).all()
@@ -1621,7 +1621,7 @@ def list_templates(db: Session, user: User) -> List[dict]:
     if not is_assigner(user):
         raise HTTPException(status_code=403, detail="Only people who can assign tasks can see schedules")
     rows = db.execute(
-        select(TaskTemplate).order_by(TaskTemplate.active.desc(), TaskTemplate.title)
+        select(TaskTemplate).order_by(TaskTemplate.active.desc(), TaskTemplate.title, TaskTemplate.id)
     ).scalars().all()
     names = _Names(db)
     return [template_out(db, t, names) for t in rows]

@@ -31,9 +31,10 @@ import datetime as dt
 import logging
 from typing import Dict, Iterable, Optional
 
-from sqlalchemy import text
+from sqlalchemy import Date, bindparam, text
 from sqlalchemy.orm import Session
 
+from app.db import UTCDateTime
 from app.timeutil import utcnow
 
 logger = logging.getLogger(__name__)
@@ -80,9 +81,11 @@ def neutral_line_values(line: Dict, source: str = TOAST) -> Dict:
     }
 
 
-def _db_time(value: dt.datetime) -> str:
-    # How UTCDateTime stores a timestamp in SQLite: naive UTC text.
-    return value.astimezone(dt.timezone.utc).replace(tzinfo=None).strftime("%Y-%m-%d %H:%M:%S.%f")
+# The raw SQL below binds timestamps and dates through the same column types
+# the ORM uses, so a row written here looks exactly like one the ORM writes:
+# naive-UTC text on SQLite, timestamptz / date on PostgreSQL.
+_NOW = bindparam("now", type_=UTCDateTime())
+_DAY = bindparam("d", type_=Date())
 
 
 def heal_orders(db: Session) -> int:
@@ -95,15 +98,15 @@ def heal_orders(db: Session) -> int:
 def record_items(db: Session, item_ids: Iterable[Optional[str]], source: str = TOAST) -> int:
     """Adds `source` item ids to pos_item_map, each mapped to itself (our
     item ids are the Toast GUIDs). Ids already there are left alone."""
-    now = _db_time(utcnow())
+    now = utcnow()
     rows = [{"s": source, "e": i, "now": now} for i in sorted({i for i in item_ids if i})]
     if not rows:
         return 0
     db.execute(
         text(
-            "INSERT OR IGNORE INTO pos_item_map (source, external_id, item_id, created_at) "
-            "VALUES (:s, :e, :e, :now)"
-        ),
+            "INSERT INTO pos_item_map (source, external_id, item_id, created_at) "
+            "VALUES (:s, :e, :e, :now) ON CONFLICT (source, external_id) DO NOTHING"
+        ).bindparams(_NOW),
         rows,
     )
     return len(rows)
@@ -113,18 +116,21 @@ def record_items(db: Session, item_ids: Iterable[Optional[str]], source: str = T
 # Swept in one statement after each sales sync, so the inventory upload and
 # the menu pull need no change of their own.
 _RECORD_CATALOG_ITEMS_SQL = """
-INSERT OR IGNORE INTO pos_item_map (source, external_id, item_id, created_at)
-SELECT :s, item_id, item_id, :now FROM (
+INSERT INTO pos_item_map (source, external_id, item_id, created_at)
+SELECT :s, ids.item_id, ids.item_id, :now FROM (
     SELECT item_id FROM inventory_snapshots
     WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM inventory_snapshots)
     UNION
     SELECT item_id FROM toast_menu_items
-) WHERE item_id IS NOT NULL AND item_id != ''
+) AS ids WHERE ids.item_id IS NOT NULL AND ids.item_id != ''
+ON CONFLICT (source, external_id) DO NOTHING
 """
 
 
 def record_catalog_items(db: Session, source: str = TOAST) -> int:
-    return db.execute(text(_RECORD_CATALOG_ITEMS_SQL), {"s": source, "now": _db_time(utcnow())}).rowcount or 0
+    return (
+        db.execute(text(_RECORD_CATALOG_ITEMS_SQL).bindparams(_NOW), {"s": source, "now": utcnow()}).rowcount or 0
+    )
 
 
 def get_cursor(db: Session, source: str, stream: str) -> Optional[str]:
@@ -140,8 +146,8 @@ def set_cursor(db: Session, source: str, stream: str, cursor: Optional[str]) -> 
         text(
             "INSERT INTO sync_cursors (source, stream, cursor, updated_at) VALUES (:s, :t, :c, :now) "
             "ON CONFLICT (source, stream) DO UPDATE SET cursor = excluded.cursor, updated_at = excluded.updated_at"
-        ),
-        {"s": source, "t": stream, "c": cursor, "now": _db_time(utcnow())},
+        ).bindparams(_NOW),
+        {"s": source, "t": stream, "c": cursor, "now": utcnow()},
     )
 
 
@@ -160,8 +166,10 @@ def after_sales_sync(db: Session, business_date: dt.date, source: str = TOAST) -
     try:
         heal_orders(db)
         item_ids = db.execute(
-            text("SELECT DISTINCT item_guid FROM orders WHERE business_date = :d AND item_guid IS NOT NULL"),
-            {"d": business_date.isoformat()},
+            text(
+                "SELECT DISTINCT item_guid FROM orders WHERE business_date = :d AND item_guid IS NOT NULL"
+            ).bindparams(_DAY),
+            {"d": business_date},
         ).scalars()
         record_items(db, list(item_ids), source)
         record_catalog_items(db, source)

@@ -1,6 +1,9 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 SQLAlchemy==2.0.35
+# PostgreSQL driver (production database, platform contract P2). The binary
+# wheel bundles libpq.
+psycopg[binary]==3.3.6
 alembic==1.13.2
 APScheduler==3.10.4
 httpx==0.27.2

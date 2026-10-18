@@ -30,3 +30,6 @@ backend/packs/private/
 **/*.pack.json
 **/legacy_cases.json
 **/forbidden_tokens.txt
+
+# Dev master key ring (platform contract 8.4) and other local secrets.
+backend/.secrets/

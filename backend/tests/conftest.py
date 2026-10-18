@@ -1,24 +1,44 @@
-"""Backend test harness: a throwaway SQLite database per test, real app
-routes via FastAPI's TestClient, and logged-in clients for an admin and two
-staff users.
+"""Backend test harness: a throwaway database per run (PostgreSQL by
+default, platform contract 18.1; or SQLite), emptied before every test, real
+app routes via FastAPI's TestClient, and logged-in clients for an admin and
+two staff users.
 
 The environment is set before anything from `app` is imported - settings
 are read once (lru_cache) and the engine is created at import time. The
 TestClient is never used as a context manager, so the app's lifespan (the
 schedulers) never starts.
 
-Run: cd website/backend && .venv/bin/pip install -r requirements-dev.txt
-     && .venv/bin/python -m pytest -q
+Run (PostgreSQL, the real suite; tests/pg_harness.py):
+     cd backend && STOREOPS_TEST_PG_URL=postgresql+psycopg://storeops@127.0.0.1:5433/postgres \
+         STOREOPS_TEST_DB_PREFIX=so_<track> .venv/bin/python -m pytest -q
+Quick SQLite run (a fresh SQLite file per test, as before):
+     STOREOPS_TEST_DB=sqlite .venv/bin/python -m pytest -q
 """
 
+import atexit
 import os
 import pathlib
 import tempfile
 
+from tests import pg_harness
+
 _TMP = pathlib.Path(tempfile.mkdtemp(prefix="spicetown-tests-"))
+TEST_DB_KIND = (os.environ.get("STOREOPS_TEST_DB") or "postgres").strip().lower()
+if TEST_DB_KIND in ("pg", "postgresql"):
+    TEST_DB_KIND = "postgres"
+if TEST_DB_KIND not in ("postgres", "sqlite"):
+    raise SystemExit(f"STOREOPS_TEST_DB={TEST_DB_KIND!r}: use 'postgres' (default) or 'sqlite'")
+IS_PG = TEST_DB_KIND == "postgres"
+if IS_PG:
+    _TEST_DB = pg_harness.run_db_name()
+    _TEST_DB_URL = pg_harness.create_run_database()
+    atexit.register(pg_harness.drop_run_database, _TEST_DB)
+else:
+    _TEST_DB = str(_TMP / "test.db")
+    _TEST_DB_URL = f"sqlite:///{_TEST_DB}"
 os.environ.update(
     {
-        "DATABASE_URL": f"sqlite:///{_TMP / 'test.db'}",
+        "DATABASE_URL": _TEST_DB_URL,
         "SCHEDULER_ENABLED": "false",
         "NOTIFICATIONS_ENABLED": "false",
         "TEAM_JOBS_ENABLED": "false",
@@ -64,8 +84,6 @@ SEED_TEAMS = [
 ]
 
 
-_TEST_DB = str(_TMP / "test.db")
-
 
 def _refuse_a_real_database() -> None:
     """Stops the run before anything is dropped unless the app is wired to
@@ -94,13 +112,48 @@ def _refuse_a_real_database() -> None:
         )
 
 
+_pg_schema_signature = None
+
+
+def _pg_build_schema() -> None:
+    """The store schema (the PostgreSQL baseline + the migration chain, like
+    a new store's database) and the reset helper: once per run, and again
+    after a test dropped or recreated a table (an "older database" test)."""
+    global _pg_schema_signature
+    from app.migrate import upgrade_store_db
+
+    if _pg_schema_signature is not None:
+        pg_harness.drop_schema(engine)
+    upgrade_store_db(_TEST_DB_URL)
+    pg_harness.install_reset_function(engine)
+    _pg_schema_signature = pg_harness.schema_signature(engine)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _pg_run_database():
+    yield
+    if IS_PG:
+        engine.dispose()
+        pg_harness.drop_run_database(_TEST_DB)
+
+
 @pytest.fixture(autouse=True)
 def _fresh_db():
     from app.services.checklist_schemas import clear_cache as clear_checklist_cache
 
     _refuse_a_real_database()
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    if IS_PG:
+        if _pg_schema_signature is None or pg_harness.schema_signature(engine) != _pg_schema_signature:
+            _pg_build_schema()
+        pg_harness.reset(engine)
+        # SQLite recreates the tables for every test, which ends the report
+        # cache (its metadata after_create hook); truncating does not.
+        from app.services import report_cache
+
+        report_cache.invalidate("test database reset")
+    else:
+        Base.metadata.drop_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
     # Checklist definitions are cached per process (checklist_schemas).
     clear_checklist_cache()
     db = SessionLocal()

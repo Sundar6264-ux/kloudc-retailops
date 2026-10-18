@@ -845,13 +845,16 @@ prompts for owner password), `list-stores`, `migrate-all`, `rotate-keys`,
 def upgrade_store_db(url: str, revision: str = "head") -> str      # returns the revision now applied
 def current_store_revision(url: str) -> Optional[str]
 def store_head_revision() -> str
+def downgrade_store_db(url: str, revision: str) -> str             # (A, as built) never below 0062 on PG
+class BaselineError(RuntimeError)                                  # (A, as built)
 ```
 
 - Schema parity test (A): SQLite chain at head vs PG baseline+chain at head ->
   same tables, columns, nullability, type family, PK, unique constraints,
-  indexes, FKs, normalised server defaults; and
-  `alembic.autogenerate.compare_metadata` against `Base.metadata` is empty on
-  PG.
+  indexes, CHECK constraints, normalised server defaults. **As built: no FK
+  constraints on PostgreSQL** (SQLite never enforced them; "As built - A");
+  `compare_metadata` against `Base.metadata` on PG finds exactly what it finds
+  on the SQLite chain (5 pre-existing index/unique drifts, FKs ignored).
 
 ### 11.2 Platform database (owner C)
 
@@ -1174,7 +1177,10 @@ C provides the platform implementations of `RegistrySource` and
 ```python
 def dialect_insert(table, bind_or_session) -> Insert      # sqlite or postgresql insert with on_conflict_* support
 def is_postgres(bind_or_session) -> bool
+def is_sqlite(bind_or_session) -> bool                    # (A, as built)
 def sequence_last_value(db: Session, table: str, column: str = "id") -> Optional[int]
+class fsum(FunctionElement)                               # (A, as built) float SUM that adds up like SQLite's
+def group_order(*keys) -> list                            # (A, as built) ORDER BY = SQLite's GROUP BY output order
 ```
 
 ---
@@ -1421,3 +1427,172 @@ Owner actions (placeholders, never faked):
    needs it) and `PLATFORM_REQUIRE_TOTP` (recommended for production).
 
 ---
+
+## As built - A (PostgreSQL port)
+
+Branch `plat/postgres-port` (worktree `wt-pg`), on top of `ab5cf34`. Not pushed
+(merge order: B's interface commit, then A).
+
+### What changed (app code)
+
+- **`app/dbcompat.py`** (new): `dialect_insert`, `is_postgres`, `is_sqlite`,
+  `sequence_last_value` (section 16), plus two helpers the parity run needed:
+  `fsum(col)` (float SUM: PostgreSQL sums as numeric and casts back, so
+  `2285.87` stays `2285.87` instead of `2285.8700000000013`; SQLite keeps
+  `sum()`, which is compensated from 3.43) and `group_order(*keys)` (ORDER BY
+  that reproduces SQLite's GROUP BY output order: keys ascending, NULL group
+  first).
+- **`UTCDateTime`** (`app/db.py`, class only): on PostgreSQL binds aware UTC
+  (naive = UTC, as everywhere) and converts any aware value read back to UTC.
+  The stored instant never depends on the session TimeZone; B's
+  `-c timezone=UTC` connect option is still wanted (raw SQL date functions),
+  but nothing in the app needs it today. Tested with Asia/Kolkata and
+  America/Los_Angeles sessions; CI runs the suite with `PGTZ=America/New_York`.
+- **SQLite-only SQL removed** at every site in 1.1: the 4 upserts + 2 plain
+  inserts use `dialect_insert`; `neutral_ids` uses `ON CONFLICT DO NOTHING`
+  and binds through `UTCDateTime`/`Date`; `report_cache.data_version` uses
+  `coalesce` + text casts; `similar_products` `total()` -> `coalesce(sum)`;
+  `team/changes.current_cursor` uses `sequence_last_value` (on PostgreSQL the
+  committed `max(seq)` first, the sequence only when every row is pruned - a
+  sequence also counts in-flight seqs and a long-poll must not skip one);
+  `orders.is_modifier` default `sa.false()`. Dead `sqlite_insert` imports
+  removed (the two shim tests no longer expect that name).
+- Found by the PostgreSQL suite: `sum()` of booleans (tasks progress,
+  invoice-close fingerprint) casts to integer; the three "table missing"
+  fallbacks that caught only `OperationalError` also catch `ProgrammingError`
+  (PostgreSQL's UndefinedTable) and roll back; the catalog snapshot INSERT
+  asks for `preserve_rowcount` (PostgreSQL otherwise reports -1).
+- Found by the parity run (section "Parity" below): ORDER BY ties broken by
+  `id` in the primary key's direction and `nulls_first()/nulls_last()` where
+  the sort column is nullable (20 sites); `group_order` on the 25 GROUP BY
+  queries whose rows are iterated in order; `fsum` on the 10 float sums.
+- 1.4 audit: all 14 `except IntegrityError` sites roll back (or sit in a
+  savepoint) before the next statement; the 3 `begin_nested` sites are fine;
+  the broad `except` in `changes.py` is gone. `group_by` looseness: none on
+  PostgreSQL (the full suite runs every one).
+
+### Migrations (11.1)
+
+- `backend/alembic/pg_baseline/0062.sql` + `0062_seed.json`, generated from
+  the SQLite chain by `scripts/pg/make_baseline.py` (`--check` in CI). 62
+  tables with the chain's own column order, NOT NULL, normalised defaults
+  (booleans `true/false`, numbers bare), PKs, unique and CHECK constraints
+  and indexes (same names). Single-column integer PKs are
+  `GENERATED BY DEFAULT AS IDENTITY`; timestamps `timestamptz`; floats
+  `double precision`.
+- **Interface change: no FOREIGN KEY constraints on PostgreSQL.** SQLite never
+  enforced them (no `PRAGMA foreign_keys=ON` anywhere) and the app relies on
+  that: deleting a user keeps done tasks / history rows that name them
+  (`test_deleting_a_user_cleans_up_what_would_keep_acting_for_them` fails
+  with enforced FKs), and production data holds such references. The models
+  keep their `ForeignKey()`s (joins, documentation). Enforcing them later
+  needs ON DELETE rules per key and a data clean-up - a separate decision.
+  New migrations should not add FK constraints (template note).
+- Seed: exactly the rows the SQLite chain leaves in a fresh database at 0062
+  (4 teams, 19 category overrides, 3 checklist definitions + 4 versions,
+  2 WhatsApp groups), the migrations' own "now" filled at baseline time. So a
+  fresh PostgreSQL store == a fresh SQLite store, and C's `init_store()`
+  removes the legacy rows exactly as on SQLite. (Contract text said "not the
+  ones store-init deletes"; seeding all keeps the two paths identical.)
+- `alembic/env.py`: URL from `config.attributes["db_url"]`, `-x db_url=`,
+  `-x store=CODE` (through `app.tenancy` once B lands; a clear error before),
+  else `DATABASE_URL`. PostgreSQL: per-database advisory xact lock, empty
+  database -> baseline + seed + stamp 0062 in the same transaction, a
+  database with tables but no revision is refused, any step through a
+  revision <= 0062 (upgrade or downgrade) raises `BaselineError`. Offline
+  `--sql` mode is refused for PostgreSQL. `%` in URLs is escaped for
+  configparser.
+- `app/migrate.py`: `upgrade_store_db`, `current_store_revision`,
+  `store_head_revision`, `downgrade_store_db`, `BaselineError`; runs in
+  process without touching logging (C's provisioning and `migrate-all` call
+  `upgrade_store_db(url)` on a database created with
+  `TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C'`).
+- `script.py.mako`: the both-dialects rule for 0063+.
+
+### Test harness (18.1)
+
+- Default = PostgreSQL. `STOREOPS_TEST_PG_URL` (default
+  `postgresql+psycopg://storeops@127.0.0.1:5433/postgres`),
+  `STOREOPS_TEST_DB_PREFIX` (default `so_a`); `STOREOPS_TEST_DB=sqlite` for
+  the old per-test SQLite file. No server reachable -> the run stops with a
+  hint (it never silently falls back).
+- One database per run `<prefix>_test_<pid>` (C collation), schema built by
+  `upgrade_store_db` (so every run exercises the baseline), dropped at the
+  end; leftovers of killed runs (dead pid, same prefix) are dropped at the
+  next start. Between tests `so_test_reset()` truncates only non-empty tables
+  and restarts used sequences (~ms); a test that drops/recreates a table
+  (5 "older database" tests) changes the schema signature and the next test
+  gets the schema rebuilt. The report cache is ended after each reset (on
+  SQLite the metadata `after_create` hook did that).
+- Numbers (Mac mini, via m1heavy): **PostgreSQL 2702 passed, 21 skipped
+  (~3.3 min)**; **SQLite 2693 passed, 30 skipped (~4 min)**. The extra
+  PostgreSQL skips on SQLite are the PostgreSQL-only tests in
+  `test_pg_port.py`; the 21 are the private-pack / tool-dependent skips that
+  existed before.
+- For B (multi mode default): the harness only needs `engine` to point at
+  the run database; `pg_harness.app_url(name)` gives URLs for extra test
+  stores (create with the same `CREATE DATABASE` line, prefix-checked).
+
+### Copy tool, backups, demo (11.4)
+
+- `scripts/pg/copy_sqlite_to_pg.py --sqlite PATH --pg-url URL`: source opened
+  read-only in one read transaction, must be at >= 0062; target empty
+  (migrated here) or at the same revision holding only the baseline seed
+  rows (replaced); COPY in FK order, one transaction; strict conversion
+  (`sqlite_pg.py`: a value that does not fit stops the copy naming table,
+  column and row); identity sequences set to max(id); row counts + per-column
+  checksums compared (ordered by PK, bytewise). `verify_copy.py` alone.
+  Demo store (14 days): 6,707 rows, 0 differences, 0.3 s; Spice Town prod
+  copy: 0 differences, ~60 s.
+- `scripts/backup/pg_backup.py backup|drill` (stdlib only; pg client >= the
+  server's major version; passwords via ~/.pgpass/PGPASSWORD, refused in the
+  URL). The Docker image has no pg_dump 16 (bookworm ships 15): run backups
+  from the host or a `postgres:16` sidecar.
+- `scripts/demo/generate_demo_data.py --pg-url URL`: the DEMO store into an
+  empty PostgreSQL database (copy tool, 0 differences or the run fails).
+
+### Parity (Spice Town pack, read-only prod copy)
+
+Fresh `.backup` of the production database (read-only handle, 0059), both
+recordings from this branch with `--migrate` (to 0062): SQLite
+(`parity_record.py`) vs PostgreSQL (`parity_record.py --pg-url`, a
+throwaway `so_a_parity` database). 110 endpoints, all 200 on both, no
+network attempts, alerts and scheduler jobs identical.
+
+First run: 8,576 differences in 5 endpoints - all row order (ties, GROUP BY
+order) and float sums. After the fixes above: **12 differences, each
+justified**:
+
+| Where | n | Why |
+|---|---|---|
+| `ordering.forecast.30` `items[18]` total / avg | 2 | `194.89000000000001` (SQLite: compensated sum of the binary floats) vs `194.89` (PostgreSQL: exact decimal sum). Last-digit noise; every rounded figure the UI shows is equal. |
+| `fingerprint.json` item_vendors.created_at/updated_at, pos_item_map.created_at, sync_cursors.updated_at | 4 | Stamped "now" by migrations 0060/0061 during `--migrate`: two SQLite recordings differ in the same 4. |
+| `fingerprint_after.json` the same 4 | 4 | Same. |
+| `fingerprint_after.json` category_overrides.updated_at, checklist_definitions.updated_at | 2 | SQLite holds second-precision text (`2026-10-01 01:30:37`, written by migration raw SQL); PostgreSQL holds the same instant, which reads back with microseconds. Listed in the recording's `meta.json` (`non_canonical_sqlite_columns`). |
+
+Copies (prod copy, scratch, `so_a_parity`) deleted after the run.
+
+### Rules for new code (all tracks)
+
+ORDER BY must be total (end with the id, in the primary sort's direction)
+and say where NULLs go if the column is nullable; GROUP BY rows used in
+order get `group_order(...)`; float SUMs use `fsum`; never `sum()` a
+boolean; raw SQL binds timestamps/dates through the column types and uses
+`true/false`; "table missing" fallbacks catch `(OperationalError,
+ProgrammingError)` and roll back; an INSERT whose rowcount matters passes
+`preserve_rowcount`; upserts via `dialect_insert`.
+
+### Deferred / known limits
+
+- Queries without any ORDER BY that return lists rely on scan order; on
+  PostgreSQL an UPDATE moves a row physically. Not exhaustively audited
+  (the parity run and the suite show no case); fix at the site when seen.
+- FK enforcement (above). Exact binary float parity (would need summing
+  in Python with `math.fsum`; not worth the speed).
+- CI's PostgreSQL job and image are untested until the branch is pushed.
+
+### Owner actions
+
+None new: production PostgreSQL 16 (20, item 1). Schedule
+`pg_backup.py backup` nightly and `drill` monthly per store on a host with
+the PostgreSQL 16 client.

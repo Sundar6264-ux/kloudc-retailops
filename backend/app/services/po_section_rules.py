@@ -32,7 +32,7 @@ import uuid
 from typing import Iterable, List, Optional
 
 from sqlalchemy import select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.models import CartItem, PoSectionRule
@@ -250,7 +250,7 @@ def load_section_rules(db: Session) -> SectionRules:
         return cached
     try:
         rows = db.execute(select(PoSectionRule).where(PoSectionRule.active.is_(True))).scalars().all()
-    except OperationalError:
+    except (OperationalError, ProgrammingError):  # SQLite / PostgreSQL "no such table"
         # Code deployed before `alembic upgrade`: automatic sections only.
         logger.warning("po_section_rules table missing - run alembic upgrade; automatic PO sections only")
         db.rollback()
@@ -281,7 +281,7 @@ def line_sections_for(db: Session, supplier: str) -> dict:
                 CartItem.supplier == supplier, CartItem.item_id.is_(None), CartItem.section.isnot(None)
             )
         ).scalars().all()
-    except OperationalError:
+    except (OperationalError, ProgrammingError):  # SQLite / PostgreSQL "no such table"
         db.rollback()
         return {}
     return {(r.name or "").strip().lower(): r.section for r in rows if (r.name or "").strip()}
@@ -922,7 +922,7 @@ def changes(db: Session, limit: int = 20) -> List[dict]:
     deactivated = db.execute(
         select(PoSectionRule)
         .where(PoSectionRule.updated_batch.isnot(None))
-        .order_by(PoSectionRule.updated_at.desc(), PoSectionRule.id.desc())
+        .order_by(PoSectionRule.updated_at.desc().nulls_last(), PoSectionRule.id.desc())
         .limit(_CHANGES_WINDOW)
     ).scalars().all()
     rows = list({r.id: r for r in list(newest) + list(deactivated)}.values())
@@ -1050,7 +1050,7 @@ def set_cart_line_section(db: Session, cart_item_id: int, section: Optional[str]
 def cart_preview(db: Session, supplier: Optional[str] = None) -> dict:
     """The cart's vendors, and `supplier`'s cart grouped exactly as its PO
     PDF prints it (sections alphabetical, Other last)."""
-    rows = db.execute(select(CartItem).order_by(CartItem.supplier, CartItem.added_at)).scalars().all()
+    rows = db.execute(select(CartItem).order_by(CartItem.supplier, CartItem.added_at, CartItem.id)).scalars().all()
     suppliers: dict = {}
     for row in rows:
         suppliers[row.supplier] = suppliers.get(row.supplier, 0) + 1

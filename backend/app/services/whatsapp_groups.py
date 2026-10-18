@@ -158,7 +158,7 @@ def used_by(db: Session) -> Dict[str, List[str]]:
     out: Dict[str, List[str]] = {}
     rows = db.execute(
         select(ChecklistDefinition.title, ChecklistDefinition.settings_json).order_by(
-            ChecklistDefinition.sort_order, ChecklistDefinition.title
+            ChecklistDefinition.sort_order, ChecklistDefinition.title, ChecklistDefinition.id
         )
     ).all()
     for title, settings_json in rows:

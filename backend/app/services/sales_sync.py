@@ -27,7 +27,6 @@ from typing import Callable, Optional  # noqa: F401
 
 import httpx  # noqa: F401
 from sqlalchemy import delete, select  # noqa: F401
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert  # noqa: F401
 from sqlalchemy.orm import Session  # noqa: F401
 
 from app.models import JobRun, Order  # noqa: F401

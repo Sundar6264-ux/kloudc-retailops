@@ -12,9 +12,9 @@ import io
 
 import pandas as pd
 from sqlalchemy import delete
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
+from app.dbcompat import dialect_insert
 from app.models import InventorySnapshot
 from app.services.item_vendors import refresh_after_csv_upload
 
@@ -109,7 +109,7 @@ def parse_and_store(
         values["snapshot_date"] = snapshot_date
         values["source_filename"] = filename
 
-        stmt = sqlite_insert(InventorySnapshot).values(**values)
+        stmt = dialect_insert(InventorySnapshot, db).values(**values)
         update_cols = {k: getattr(stmt.excluded, k) for k in values if k not in ("snapshot_date", "item_id")}
         stmt = stmt.on_conflict_do_update(
             index_elements=[InventorySnapshot.snapshot_date, InventorySnapshot.item_id],

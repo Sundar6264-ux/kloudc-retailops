@@ -34,7 +34,7 @@ import time
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy import func, select
+from sqlalchemy import Integer, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.demo import hide_demo_clause
@@ -224,8 +224,8 @@ def _fingerprint(db: Session) -> tuple:
                 func.max(InvoiceSubmission.id),
                 func.count(InvoiceSubmission.toast_closed_at),
                 func.count(InvoiceSubmission.deleted_at),
-                func.sum(InvoiceSubmission.whatsapp_sent),
-                func.sum(InvoiceSubmission.toast_email_sent),
+                func.sum(cast(InvoiceSubmission.whatsapp_sent, Integer)),
+                func.sum(cast(InvoiceSubmission.toast_email_sent, Integer)),
             )
         ).one(),
         db.execute(select(func.max(InventorySnapshot.id), func.max(InventorySnapshot.snapshot_date))).one(),

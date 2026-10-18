@@ -17,6 +17,15 @@ What it does (README.md next to this file has the full story):
    summary lines per recipient, and the scheduled job list.
 5. Deletes the scratch copy (--keep-scratch to keep it).
 
+PostgreSQL (platform track A): `--pg-url <empty database on this machine>`
+copies the (migrated) scratch copy into that database with
+scripts/pg/copy_sqlite_to_pg.py (0 checksum differences required), then
+boots the app against PostgreSQL instead; the "now", user and vendors are
+still chosen from the SQLite copy, so a SQLite and a PostgreSQL recording of
+the same file compare one to one. fingerprint_after.json is then the
+PostgreSQL database's fingerprint in SQLite's terms (parity_fingerprint.
+pg_fingerprint). The database is left for the caller to drop.
+
 Compare two recordings with parity_diff.py.
 """
 
@@ -47,7 +56,7 @@ FORMAT_VERSION = 2
 
 sys.path.insert(0, str(HERE))
 
-from parity_fingerprint import alembic_head, fingerprint  # noqa: E402
+from parity_fingerprint import alembic_head, fingerprint, pg_alembic_head, pg_fingerprint  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -167,11 +176,15 @@ def record(args: argparse.Namespace) -> int:
         fp_seconds = round(time.time() - t0, 1)
         _write_json(out / "fingerprint.json", fp)
 
+        pg_meta = None
+        if args.pg_url:
+            pg_meta = _copy_to_postgres(str(work_db), args.pg_url, fp)
+
         sys.path.insert(0, str(HERE))
         from parity_sandbox import harness_env
 
         env = dict(os.environ)
-        env.update(harness_env(str(work_db), str(scratch)))
+        env.update(harness_env(str(work_db), str(scratch), db_url=args.pg_url or ""))
         cmd = [
             sys.executable,
             str(HERE / "parity_record.py"),
@@ -187,6 +200,8 @@ def record(args: argparse.Namespace) -> int:
             "--vendors-json",
             json.dumps(vendors),
         ]
+        if args.pg_url:
+            cmd += ["--pg-url", args.pg_url]
         if args.only:
             cmd += ["--only", args.only]
         print(f"Booting the app against the copy (now = {now.isoformat()}, user = {user})", flush=True)
@@ -199,7 +214,7 @@ def record(args: argparse.Namespace) -> int:
         # Again after the calls: read endpoints must not write. On the Oct 15
         # copy the only change is the harness's own login (user_sessions, one
         # row); its token is random, so that one column is left out.
-        fp_after = fingerprint(str(work_db))
+        fp_after = pg_fingerprint(args.pg_url) if args.pg_url else fingerprint(str(work_db))
         fp_after["tables"].get("user_sessions", {}).get("columns", {}).pop("token", None)
         _write_json(out / "fingerprint_after.json", fp_after)
 
@@ -207,7 +222,9 @@ def record(args: argparse.Namespace) -> int:
         meta.update(
             {
                 "source_db": src,
-                "alembic_head": alembic_head(str(work_db)),
+                "alembic_head": pg_alembic_head(args.pg_url) if args.pg_url else alembic_head(str(work_db)),
+                "database": "postgresql" if args.pg_url else "sqlite",
+                "postgres_copy": pg_meta,
                 "fingerprint_seconds": fp_seconds,
                 "total_seconds": round(time.time() - started, 1),
                 "git": git_state(),
@@ -221,6 +238,44 @@ def record(args: argparse.Namespace) -> int:
             print(f"Scratch kept: {scratch}")
         else:
             shutil.rmtree(scratch, ignore_errors=True)
+
+
+def _copy_to_postgres(work_db: str, pg_url: str, fp_sqlite: Dict) -> Dict:
+    """The scratch copy -> the (empty) PostgreSQL database; returns what
+    goes in meta.json. Refuses a database that is not on this machine."""
+    from sqlalchemy.engine import make_url
+
+    host = make_url(pg_url).host or "127.0.0.1"
+    if host not in ("127.0.0.1", "::1", "localhost"):
+        raise SystemExit(f"--pg-url must be a database on this machine (got host {host!r})")
+    sys.path.insert(0, str(BACKEND / "scripts" / "pg"))
+    import copy_sqlite_to_pg
+
+    print(f"Copying the scratch copy into PostgreSQL ({make_url(pg_url).database})", flush=True)
+    t0 = time.time()
+    problems = copy_sqlite_to_pg.copy(work_db, pg_url, log=lambda *a: None)
+    if problems:
+        raise SystemExit("PostgreSQL copy differs from the SQLite copy:\n  " + "\n  ".join(problems))
+    seconds = round(time.time() - t0, 1)
+    # Columns whose stored SQLite values are not in the form the app writes
+    # today (e.g. a timestamp without microseconds from an old raw insert):
+    # same instant / value, different text, so their SQLite-style checksum
+    # can't match. Listed so a fingerprint_after difference there is known.
+    fp_pg = pg_fingerprint(pg_url)
+    representation = []
+    for table, info in fp_sqlite["tables"].items():
+        other = fp_pg["tables"].get(table)
+        if other is None:
+            representation.append(f"{table}: missing")
+            continue
+        if other["rows"] != info["rows"]:
+            representation.append(f"{table}: rows {info['rows']} vs {other['rows']}")
+        for col, digest in info["columns"].items():
+            if other["columns"].get(col) != digest:
+                representation.append(f"{table}.{col}")
+    print(f"  copied and verified in {seconds} s; {len(representation)} column(s) stored in an older text form",
+          flush=True)
+    return {"copy_seconds": seconds, "copy_differences": 0, "non_canonical_sqlite_columns": representation}
 
 
 def _migrate(work_db: str, scratch: str) -> None:
@@ -272,7 +327,8 @@ def _write_json(path: pathlib.Path, value, sort_keys: bool = True) -> None:
 def child(args: argparse.Namespace) -> int:
     import parity_sandbox
 
-    if os.environ.get("PYTHONHASHSEED") != "0" or os.environ.get("DATABASE_URL") != f"sqlite:///{args.db}":
+    expected = args.pg_url or f"sqlite:///{args.db}"
+    if os.environ.get("PYTHONHASHSEED") != "0" or os.environ.get("DATABASE_URL") != expected:
         raise SystemExit("The child must be started by parity_record.py (harness environment missing).")
 
     # Before anything from app is imported: no import-time call can get out.
@@ -287,8 +343,7 @@ def child(args: argparse.Namespace) -> int:
     from app.main import app
 
     settings = get_settings()
-    expected = f"sqlite:///{args.db}"
-    if str(engine.url) != expected or settings.whapi_api_token or settings.toast_client_id:
+    if engine.url.render_as_string(hide_password=False) != expected or settings.whapi_api_token or settings.toast_client_id:
         raise SystemExit(f"Refusing to record: engine is {engine.url}, expected {expected}")
 
     import parity_clock
@@ -481,6 +536,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--force", action="store_true", help="Replace --out if it exists")
     p.add_argument("--keep-scratch", action="store_true", help="Keep the scratch copy afterwards")
     p.add_argument("--scratch-root", help="Where the scratch copy goes (default: system temp)")
+    p.add_argument(
+        "--pg-url",
+        help="Record against PostgreSQL: an EMPTY database on this machine that the scratch copy is copied into",
+    )
     p.add_argument("--child", action="store_true", help=argparse.SUPPRESS)
     p.add_argument("--vendors-json", help=argparse.SUPPRESS)
     args = p.parse_args(argv)

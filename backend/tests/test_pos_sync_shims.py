@@ -31,12 +31,14 @@ BACKEND = Path(__file__).resolve().parents[1]
 DAY = dt.date(2026, 10, 14)
 
 # Every global each module had at aa7688e (before MT3), dunders left out.
+# Except `sqlite_insert`: the PostgreSQL port (platform track A) replaced the SQLite-only
+# upserts with app.dbcompat.dialect_insert and dropped the import.
 OLD_NAMES = {
     "app.services.sales_sync": [
         "Callable", "JOB_NAME", "JobRun", "Optional", "Order", "Session", "_extract_line_items", "_flatten_selection",
         "_parse_toast_timestamp", "_prune_missing", "_upsert_line_items", "delete", "dt",
         "fetch_orders_for_business_date", "fetch_orders_with_retry", "httpx", "latest_job_run", "logger", "logging",
-        "select", "sqlite_insert", "sync_sales_for_date", "time",
+        "select", "sync_sales_for_date", "time",
     ],
     "app.services.open_orders": [
         "FIRST_REAL_SALES_DATE", "JOB_NAME", "JobRun", "LIVE_MAX_AGE_SECONDS", "OpenOrderCache", "Optional", "Session",
