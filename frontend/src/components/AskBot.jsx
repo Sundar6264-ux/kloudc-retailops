@@ -4,7 +4,7 @@ import InfoBlock from "./InfoBlock.jsx";
 
 const EXAMPLE_QUESTIONS = [
   "How much cilantro do we have on hand?",
-  "What needs reordering from Raja Foods?",
+  "What needs reordering this week?",
   "Any items with missing barcodes?",
   "Which vendor should I switch to for a cheaper price?",
 ];

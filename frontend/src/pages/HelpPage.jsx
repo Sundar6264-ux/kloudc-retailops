@@ -1437,7 +1437,7 @@ export default function HelpPage({ tab = "help" }) {
           <p style={{ marginBottom: 0 }}>
             Every change records who made it and when (History), and the latest change can be undone. Only
             the PO section changes: the item's category is not edited here. Earlier category corrections
-            (such as every Shaz International item as Biscuits, Cookies &amp; Rusk) still apply everywhere but
+            (such as every item from one vendor moved to one category) still apply everywhere but
             are no longer editable from any page.
           </p>
         </div>
@@ -1463,8 +1463,8 @@ export default function HelpPage({ tab = "help" }) {
           <p>
             Photo questions use your phone camera or photo library. Answers that count as a problem are
             marked ⚠️; picking one marks the submission <strong>Issues</strong> and lists it in the
-            summary. On the FSA closing, "Is there anything unusual?" is required: type "None" if nothing
-            was.
+            summary. When a checklist asks "Is there anything unusual?" as a required question, type "None"
+            if nothing was.
           </p>
           <p>
             History shows every answer, drawn with the version of the checklist that was filled in, so an
@@ -1472,7 +1472,8 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <p>
             At 9:30 PM one "Closing checklist not done" alert lists whichever closing checklists are still
-            missing tonight. On Overview, the Kitchen closing tile covers the kitchen closing checklists.
+            missing tonight. On Overview, the Store closing tile shows the latest closing checklist; closing
+            checklists that go to the kitchen WhatsApp group share a Kitchen closing tile.
           </p>
           <h4>Checklist builder (admins)</h4>
           <p>
@@ -1567,7 +1568,7 @@ export default function HelpPage({ tab = "help" }) {
             <li>
               <strong>On a schedule</strong>: it creates tasks by itself (daily, weekdays, weekly or monthly). Use{" "}
               <strong>Someone else on some days?</strong> to give particular weekdays to a different person or team (e.g.
-              Saturdays to Harshitha); other days go to the template's own assignee.
+              Saturdays to one person); other days go to the template's own assignee.
             </li>
             <li>
               <strong>Only when I create it</strong>: saved without a schedule. Any template has{" "}

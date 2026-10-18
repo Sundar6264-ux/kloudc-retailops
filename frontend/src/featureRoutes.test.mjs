@@ -39,7 +39,7 @@ function ctxFor(user, store = TOAST_STORE) {
   return { user, hasFeature, canSeeSales: !!user && (user.is_admin || !user.hide_sales), store };
 }
 
-const ADMIN = { username: "sundar", is_admin: true, allowed_features: [] };
+const ADMIN = { username: "owner", is_admin: true, allowed_features: [] };
 // Prod staff (users 9/10/12): hide_sales, no Insights.
 const STAFF = {
   username: "staff",

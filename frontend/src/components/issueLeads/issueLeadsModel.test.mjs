@@ -20,8 +20,8 @@ import {
   vendorsOf,
 } from "./issueLeadsModel.js";
 
-const A = { user_id: 1, name: "Amandeep", via: "section", via_name: "Beverages" };
-const S = { user_id: 2, name: "Sai Durga", via: "vendor", via_name: "Chetak" };
+const A = { user_id: 1, name: "Alex", via: "section", via_name: "Beverages" };
+const S = { user_id: 2, name: "Sam Lee", via: "vendor", via_name: "Chetak" };
 const rows = [
   { issue_key: "a", name: "Coke", po_section: "Beverages", supplier: "Best Foods", lead: A, lead_task: { task_id: 9 } },
   { issue_key: "b", name: "Rice", po_section: "Rice", product: { supplier: "Chetak;Raja Foods" }, lead: S, lead_task: null },
@@ -40,8 +40,8 @@ test("section options: alphabetical, Other then No section last", () => {
 
 test("vendor and lead options", () => {
   assert.deepEqual(vendorOptions(rows).map((v) => v.name), ["Best Foods", "Chetak", "Raja Foods"]);
-  const { leads, none } = leadOptions(rows, [{ user_id: 3, name: "Harshitha" }]);
-  assert.deepEqual(leads.map((l) => [l.name, l.count]), [["Amandeep", 1], ["Harshitha", 0], ["Sai Durga", 1]]);
+  const { leads, none } = leadOptions(rows, [{ user_id: 3, name: "Jordan" }]);
+  assert.deepEqual(leads.map((l) => [l.name, l.count]), [["Alex", 1], ["Jordan", 0], ["Sam Lee", 1]]);
   assert.equal(none, 2);
 });
 
@@ -76,8 +76,8 @@ test("lead from the task link", () => {
 });
 
 test("lead line and tile counts", () => {
-  assert.equal(leadLine(A), "Lead: Amandeep");
-  assert.equal(leadLine(S), "Lead: Sai Durga (vendor Chetak)");
+  assert.equal(leadLine(A), "Lead: Alex");
+  assert.equal(leadLine(S), "Lead: Sam Lee (vendor Chetak)");
   assert.equal(leadLine(null), "No lead");
   const item = { open_count: 9, open_by_lead: { 1: 4 }, open_no_lead: 5 };
   assert.equal(leadCount(item, "1"), 4);

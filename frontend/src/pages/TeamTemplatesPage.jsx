@@ -148,7 +148,7 @@ function Preview({ rrule, ahead }) {
   );
 }
 
-// W5: who does it on particular weekdays ("Sat: Harshitha, Sun: Kitchen");
+// W5: who does it on particular weekdays ("Sat: Alex, Sun: Kitchen");
 // a day left on "Same as above" uses the template's own assignee.
 function DayAssignees({ value, onChange, teams, people }) {
   return (

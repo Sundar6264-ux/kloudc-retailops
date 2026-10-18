@@ -20,8 +20,8 @@ test("label: the server's source_label, else the default wording", () => {
 });
 
 test("detail names who, the delivery and the note", () => {
-  const d = outsideDetail(order({ source: "outside", placed_by_name: "Sundar", for_delivery_date: "2026-10-15", note: "  Rep took it Tue  " }));
-  assert.equal(d.text, 'Marked "Order already placed" by Sundar for the Thu Oct 15 delivery - the order went in outside the app, so no items were recorded here.');
+  const d = outsideDetail(order({ source: "outside", placed_by_name: "Morgan", for_delivery_date: "2026-10-15", note: "  Rep took it Tue  " }));
+  assert.equal(d.text, 'Marked "Order already placed" by Morgan for the Thu Oct 15 delivery - the order went in outside the app, so no items were recorded here.');
   assert.equal(d.note, "Rep took it Tue");
   const plain = outsideDetail(order({ source: "outside" }));
   assert.match(plain.text, /^Marked "Order already placed" - the order went in outside the app/);

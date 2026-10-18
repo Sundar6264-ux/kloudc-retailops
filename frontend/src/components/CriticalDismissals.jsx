@@ -397,7 +397,7 @@ export function HideFromTodayDrawer({ vendor, criticalCount, initialKind, initia
   );
 }
 
-// After an action: "Raja Foods hidden from Today: Until Mon Oct 12 [Undo]".
+// After an action: "Acme Foods hidden from Today: Until Mon Oct 12 [Undo]".
 export function UndoBar({ message, warning, onUndo, onClose }) {
   const [undoing, setUndoing] = useState(false);
   useEffect(() => {

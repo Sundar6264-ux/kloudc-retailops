@@ -1063,7 +1063,7 @@ function ForecastDetails({ item, projection, horizon }) {
   );
 }
 
-// "Raja Foods (RF-123), RBest" - vendor names with their item code when known.
+// "Acme Foods (AF-123), Best Supply" - vendor names with their item code when known.
 function vendorList(vendors) {
   return vendors.map((v) => (v.supplier_item_id ? `${v.name} (${v.supplier_item_id})` : v.name)).join(", ");
 }

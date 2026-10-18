@@ -31,7 +31,7 @@ const task = (over = {}) => ({
   priority: "normal",
   requires: "none",
   status: "open",
-  assignee: { type: "user", id: 9, name: "Harshitha" },
+  assignee: { type: "user", id: 9, name: "Jordan" },
   assignee_user_id: 9,
   assignee_team_id: null,
   due_at: "2026-10-14T19:00:00+00:00",

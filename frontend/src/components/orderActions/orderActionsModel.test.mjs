@@ -48,7 +48,7 @@ test("chip labels", () => {
 test("handled text", () => {
   assert.equal(handledText({ kind: "other", note: "Rep visits Fri", by_name: "boss" }), "Other: Rep visits Fri (boss)");
   assert.equal(handledText({ kind: "placed_outside", label: "Order already placed", by_name: "boss" }), "Order already placed by boss");
-  assert.equal(handledText({ kind: "placed", by_name: "sai" }), "Order placed in the app by sai");
+  assert.equal(handledText({ kind: "placed", by_name: "sam" }), "Order placed in the app by sam");
   assert.equal(handledText({ kind: "skip", label: "Skipped this week" }), "Skipped this week");
   assert.equal(handledText(null), "");
 });
