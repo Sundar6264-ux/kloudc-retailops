@@ -1,4 +1,4 @@
-package com.spicetown.app;
+package com.kloudc.storeops;
 
 import com.getcapacitor.BridgeActivity;
 

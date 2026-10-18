@@ -22,13 +22,13 @@ export function tokenFromPath(pathname) {
   return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?-(?:[0-9]{4}|[A-Za-z0-9]{22})$/.test(last) && last.length <= 70 ? last : null;
 }
 
-// Spice Town name + logo on top of every public checklist page (owner's ask:
+// Product name + logo on top of every public checklist page (owner's ask:
 // part-time staff open these links without the app, so show whose page it is).
 function BrandHeader() {
   return (
     <header className="clp-brand">
       <img src="/logo-header.png" alt="" width="36" height="36" />
-      <span>Spice Town</span>
+      <span>StoreOps</span>
     </header>
   );
 }

@@ -116,9 +116,9 @@ export default function Sidebar() {
         <div className="sidebar-brand">
           {/* Logo + name go to the dashboard (Overview; App sends anyone
               without it to their first page). */}
-          <NavLink to="/" end className="sidebar-brand-link" onClick={closeMobileNav} aria-label="Spice Town - go to the dashboard">
+          <NavLink to="/" end className="sidebar-brand-link" onClick={closeMobileNav} aria-label="StoreOps - go to the dashboard">
             <img src="/logo-header.png" alt="" />
-            <span>Spice Town</span>
+            <span>StoreOps</span>
           </NavLink>
           <button className="sidebar-collapse-btn" aria-label="Collapse menu" onClick={toggleCollapsed}>
             «

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Spice Town</string>
-    <string name="title_activity_main">Spice Town</string>
-    <string name="package_name">com.spicetown.app</string>
-    <string name="custom_url_scheme">com.spicetown.app</string>
+    <string name="app_name">StoreOps</string>
+    <string name="title_activity_main">StoreOps</string>
+    <string name="package_name">com.kloudc.storeops</string>
+    <string name="custom_url_scheme">com.kloudc.storeops</string>
 </resources>

@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI):
 # demo_write_guard: the App Review demo login is read-only except for an
 # explicit allowlist (app/demo_guard.py). Set here, on the app, so every
 # route included below - and any added later - runs it.
-app = FastAPI(title="Spicetown Backend", lifespan=lifespan, dependencies=[Depends(demo_write_guard)])
+app = FastAPI(title="StoreOps", lifespan=lifespan, dependencies=[Depends(demo_write_guard)])
 
 settings = get_settings()
 app.add_middleware(

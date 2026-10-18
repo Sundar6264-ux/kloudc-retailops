@@ -48,8 +48,8 @@ export default function LoginPage() {
         style={{ width: "320px", display: "flex", flexDirection: "column", gap: "0.9rem" }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.4rem" }}>
-          <img src="/logo-header.png" alt="Spice Town" style={{ width: 36, height: 36, borderRadius: 8 }} />
-          <strong style={{ fontSize: "1.1rem" }}>Spice Town</strong>
+          <img src="/logo-header.png" alt="StoreOps" style={{ width: 36, height: 36, borderRadius: 8 }} />
+          <strong style={{ fontSize: "1.1rem" }}>StoreOps</strong>
         </div>
 
         <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.85rem" }}>
