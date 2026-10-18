@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { storeTodayStr } from "../format.js";
+import { inStoreZone, storeTodayStr } from "../format.js";
 import { getOpenOrders, getAllTimeOpenOrders, rescanAllTimeOpenOrders, getOrderEmployees, downloadOpenOrders } from "../api";
 import InfoBlock from "./InfoBlock.jsx";
 import { Term, TermInfo } from "../glossary.jsx";
@@ -23,12 +23,12 @@ function formatElapsed(minutes) {
 
 function formatWhen(iso, allTime) {
   if (!iso) return "-";
-  return new Date(iso).toLocaleString("en-US", {
+  return new Date(iso).toLocaleString("en-US", inStoreZone({
     month: allTime ? "short" : undefined,
     day: allTime ? "numeric" : undefined,
     hour: "numeric",
     minute: "2-digit",
-  });
+  }));
 }
 
 // A "paid" order still being open is expected for an online/pickup order
@@ -260,12 +260,12 @@ export default function OpenOrders() {
                 <div className="muted">Cache last refreshed</div>
                 <div style={{ fontSize: "0.95rem" }}>
                   {data.last_refreshed_at
-                    ? new Date(data.last_refreshed_at).toLocaleString("en-US", {
+                    ? new Date(data.last_refreshed_at).toLocaleString("en-US", inStoreZone({
                         month: "short",
                         day: "numeric",
                         hour: "numeric",
                         minute: "2-digit",
-                      })
+                      }))
                     : "never yet - waiting on the first background scan"}
                 </div>
               </div>

@@ -14,7 +14,7 @@ import { CAME_BACK_TERMS, FLAG_TERMS, ISSUE_TERMS, Term, TermInfo, useGlossary }
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
 import { groupByCategory } from "../groupByCategory.js";
-import { formatRestaurantTime, inStoreZone, storeDateOffsetStr, storeDateStr, storeTodayStr } from "../format.js";
+import { formatRestaurantTime, inStoreZone, storeDateOffsetStr, storeTodayStr } from "../format.js";
 import { ItemWeeklySales } from "./weeklySales/WeeklySalesTable.jsx";
 import { LiveStockNote, MenuCheckNote } from "./DataSourceNote.jsx";
 import { useLocation } from "react-router-dom";
@@ -1038,10 +1038,11 @@ function IssueTable({ type, reasons, onChanged, lead, onLeadChange, savedLeads }
   );
 }
 
+// The store date `n` days before the store's today (plain-date arithmetic:
+// stepping a device-local Date back 24h can skip a store day across a DST
+// change when the device is in another zone).
 function isoDaysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return storeDateStr(d);
+  return storeDateOffsetStr(-n);
 }
 
 const RANGES = [

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { getJobStatus } from "../api";
-import { formatRestaurantTime } from "../format";
+import { formatRestaurantTime, inStoreZone, storeDateStr } from "../format";
 import { TermInfo } from "../glossary.jsx";
 import { currentPosName } from "../store/gating.js";
 
@@ -83,8 +83,11 @@ export default function JobStatusWidget({ refreshSignal, inline = false }) {
     // full detail on hover.
     const short = (iso) => {
       const d = new Date(iso);
-      const sameDay = d.toDateString() === new Date().toDateString();
-      return d.toLocaleString(undefined, sameDay ? { hour: "numeric", minute: "2-digit" } : { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      const sameDay = storeDateStr(d) === storeDateStr(new Date());
+      return d.toLocaleString(
+        undefined,
+        inStoreZone(sameDay ? { hour: "numeric", minute: "2-digit" } : { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+      );
     };
     return (
       <div className="sync-line">

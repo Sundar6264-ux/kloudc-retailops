@@ -16,6 +16,7 @@ import {
 import InfoBlock from "./InfoBlock.jsx";
 import { Term } from "../glossary.jsx";
 import { useAuth } from "../AuthContext.jsx";
+import { storeTodayStr } from "../format.js";
 import ScheduleSuggestions from "./suggestions/ScheduleSuggestions.jsx";
 import { UndoBar } from "./CriticalDismissals.jsx";
 import {
@@ -33,8 +34,11 @@ import {
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+// A grid day (a local-midnight Date standing for a calendar day) as
+// "YYYY-MM-DD". Not toISOString(): that is the UTC date, a day early for
+// every grid day on a device east of UTC.
 function toDateStr(d) {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 // Monday-first grid covering every full week that touches this month, so
@@ -335,9 +339,11 @@ export default function VendorCalendar() {
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState(null);
 
-  const today = useMemo(() => new Date(), []);
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
+  // Today is the store's date (its own time zone), not the viewing device's
+  // or UTC's - which is already tomorrow on a US evening.
+  const todayStr = useMemo(() => storeTodayStr(), []);
+  const [year, setYear] = useState(Number(todayStr.slice(0, 4)));
+  const [month, setMonth] = useState(Number(todayStr.slice(5, 7)) - 1);
 
   const [events, setEvents] = useState([]);
   const [loadingCalendar, setLoadingCalendar] = useState(true);
@@ -489,7 +495,6 @@ export default function VendorCalendar() {
   }
 
   const monthLabel = new Date(year, month, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  const todayStr = toDateStr(today);
 
   return (
     <>

@@ -20,7 +20,7 @@ import { storeDay, todayStoreDay } from "./taskUtils";
 import useDialogA11y from "./useDialogA11y";
 import usePageActive, { isPageVisible, onPageShown } from "./usePageActive";
 import { refreshTeamBadges } from "./useTeamBadges";
-import { lazyStoreFormat } from "../../format.js";
+import { lazyStoreFormat, storeDateOffsetStr } from "../../format.js";
 
 // One chat conversation (team channel or DM): messages oldest-first grouped
 // by day, "Load earlier", a 5 s poll for new ones while it's open, and a
@@ -47,9 +47,7 @@ function dayLabel(iso) {
   const day = storeDay(new Date(iso));
   const today = todayStoreDay();
   if (day === today) return "Today";
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  if (day === storeDay(y)) return "Yesterday";
+  if (day === storeDateOffsetStr(-1)) return "Yesterday";
   return dayFmt.format(new Date(iso));
 }
 
@@ -67,7 +65,7 @@ function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// "@name" highlighter. Names can contain spaces ("@Sai Durga"), so it
+// "@name" highlighter. Names can contain spaces ("@Mary Ann"), so it
 // matches the channel's actual member names - longest first, any case,
 // followed by a non-word character or the end - the same rule the server
 // uses to decide who was mentioned. Without members it falls back to a
@@ -513,7 +511,7 @@ export default function ChatConversation({
     const value = e.target.value;
     setDraft(value);
     const caret = e.target.selectionStart ?? value.length;
-    // Names can have spaces ("@Sai Du"), so keep the picker open while the
+    // Names can have spaces ("@Mary A"), so keep the picker open while the
     // text after "@" still starts some member's name.
     const match = /(^|\s)@([^@\n]{0,40})$/.exec(value.slice(0, caret));
     const query = match ? match[2].toLowerCase() : null;
