@@ -2,9 +2,12 @@ import { useEffect, useState, useCallback } from "react";
 import { getJobStatus } from "../api";
 import { formatRestaurantTime } from "../format";
 import { TermInfo } from "../glossary.jsx";
+import { currentPosName } from "../store/gating.js";
 
 const JOB_LABELS = {
-  toast_sales_sync: "Last Sales sync (Toast)",
+  get toast_sales_sync() {
+    return `Last Sales sync (${currentPosName()})`;
+  },
   inventory_upload: "Last Inventory upload",
   open_orders_scan: "Open checks scan",
 };

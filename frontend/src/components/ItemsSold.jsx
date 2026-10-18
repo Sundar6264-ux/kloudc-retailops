@@ -6,6 +6,7 @@ import { TermInfo } from "../glossary.jsx";
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
 import { useAuth } from "../AuthContext.jsx";
+import { usePosName, useStoreAllows } from "../store/StoreContext.jsx";
 
 const RANGE_PRESETS = [
   { value: "today", label: "Today" },
@@ -17,6 +18,13 @@ const RANGE_PRESETS = [
 // Same shape as the Supplier Projection lookback picker: fixed presets plus
 // a "Custom" option that reveals a date-range pair instead of a preset.
 const RANGE_OPTIONS = [...RANGE_PRESETS, { value: "custom", label: "Custom" }];
+
+// A POS without live today's sales (store/gating.js items_sold_today): no
+// "Today" (it would only show the nightly sync's empty day); opens on Yesterday.
+const RANGE_OPTIONS_NO_LIVE = [
+  { value: "yesterday", label: "Yesterday" },
+  ...RANGE_OPTIONS.filter((o) => o.value !== "today"),
+];
 
 function todayStr() {
   return storeTodayStr();
@@ -45,9 +53,12 @@ export default function ItemsSold() {
 }
 
 function ItemsSoldReport() {
-  const [rangePreset, setRangePreset] = useState("today");
-  const [startDate, setStartDate] = useState(todayStr());
-  const [endDate, setEndDate] = useState(todayStr());
+  const liveToday = useStoreAllows("items_sold_today");
+  const pos = usePosName();
+  const rangeOptions = liveToday ? RANGE_OPTIONS : RANGE_OPTIONS_NO_LIVE;
+  const [rangePreset, setRangePreset] = useState(liveToday ? "today" : "yesterday");
+  const [startDate, setStartDate] = useState(liveToday ? todayStr() : daysAgoStr(1));
+  const [endDate, setEndDate] = useState(liveToday ? todayStr() : daysAgoStr(1));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -97,6 +108,9 @@ function ItemsSoldReport() {
     if (value === "today") {
       setStartDate(todayStr());
       setEndDate(todayStr());
+    } else if (value === "yesterday") {
+      setStartDate(daysAgoStr(1));
+      setEndDate(daysAgoStr(1));
     } else if (value !== "custom") {
       setStartDate(daysAgoStr(Number(value)));
       setEndDate(todayStr());
@@ -116,17 +130,17 @@ function ItemsSoldReport() {
       <InfoBlock brief="Revenue actually paid in this range - see exactly how it's computed below.">
         <p style={{ marginTop: 0 }}>
           <strong>This counts what was actually paid for on each date in this range</strong> - not
-          whichever date Toast internally files the order under. If a guest pays today for a
+          whichever date {pos} internally files the order under. If a guest pays today for a
           pickup scheduled tomorrow, that sale counts as <strong>today's</strong>, since that's
-          when the money actually came in, even though Toast files the whole order under tomorrow.
+          when the money actually came in, even though {pos} files the whole order under tomorrow.
           An order that hasn't been paid yet doesn't count anywhere until it actually is.
         </p>
         <p>
           <strong>Revenue is the sum of each sold item's own price</strong> (after any per-item
           discount, before tax) for every item whose payment resolves to a date in this range.
-          Add-ons (a spice level, extra cheese) are already part of their item's price in Toast, so
+          Add-ons (a spice level, extra cheese) are already part of their item's price in {pos}, so
           they are not listed or counted again on their own <TermInfo k="sales_addons" label="Add-ons" />.
-          This is a deliberate choice, not Toast's own dashboard figure - Toast's daily total
+          This is a deliberate choice, not {pos}'s own dashboard figure - {pos}'s daily total
           instead groups by the day it filed the order under and uses each check's official total
           (which nets out a check-level discount that isn't reflected in the sum of individual
           item prices). The two numbers can differ by a small amount for that reason - that's
@@ -134,19 +148,19 @@ function ItemsSoldReport() {
         </p>
         <p style={{ marginBottom: 0 }}>
           {data?.source === "live" &&
-            "Today hasn't been through the nightly sync yet, so this was pulled live from Toast (Refresh pulls again)."}
+            `Today hasn't been through the nightly sync yet, so this was pulled live from ${pos} (Refresh pulls again).`}
           {data?.source === "mixed" &&
-            "Today's figures were pulled live from Toast; every earlier date in this range is from the already-synced sales data."}
+            `Today's figures were pulled live from ${pos}; every earlier date in this range is from the already-synced sales data.`}
           {(!data || data.source === "stored") && "From the already-synced sales data."}{" "}
-          {data?.source && data.source !== "stored" && <TermInfo k="sales_live_today" label="Today (live from Toast)" />}
-          {" "}Once Toast Analytics is set up, synced days are also compared with Toast a few times a day
-          and re-synced when Toast changed them afterwards (a late void, discount or payment).
+          {data?.source && data.source !== "stored" && <TermInfo k="sales_live_today" label={`Today (live from ${pos})`} />}
+          {" "}Once {pos} Analytics is set up, synced days are also compared with {pos} a few times a day
+          and re-synced when {pos} changed them afterwards (a late void, discount or payment).
         </p>
       </InfoBlock>
 
       <div className="card-header">
         <div className="range-pills">
-          {RANGE_OPTIONS.map((p) => (
+          {rangeOptions.map((p) => (
             <button
               key={p.value}
               type="button"

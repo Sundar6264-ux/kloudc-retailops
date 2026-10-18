@@ -417,7 +417,7 @@ export default function FlyerUploadCard({ meta, isAdmin, onManageGroups, onSaved
               </p>
             ) : (
               <p className="fly-hint" id="fly-category-hint">
-                Files it in that folder of Spice Town Flyers on the Mac mini.
+                Files it in that type's folder in the store's flyers folder on the server.
               </p>
             )}
           </div>
@@ -448,6 +448,7 @@ export default function FlyerUploadCard({ meta, isAdmin, onManageGroups, onSaved
         </div>
       </div>
 
+      {meta.whatsapp_enabled !== false && (
       <GroupChecklist
         idPrefix="fly-new"
         groups={meta.groups}
@@ -461,17 +462,20 @@ export default function FlyerUploadCard({ meta, isAdmin, onManageGroups, onSaved
         isAdmin={isAdmin}
         onManageGroups={onManageGroups}
       />
+      )}
 
       <div className="fly-upload-actions">
-        {!meta.whatsapp_connected && (
+        {meta.whatsapp_enabled !== false && !meta.whatsapp_connected && (
           <p className="fly-hint fly-actions-note">WhatsApp isn't connected on the server, so flyers can only be saved for now.</p>
         )}
         <button type="button" className="btn-secondary" onClick={save} disabled={busy}>
           {saving || "Save to library"}
         </button>
-        <button type="button" onClick={startSend} disabled={busy || !canSend}>
-          Send…
-        </button>
+        {meta.whatsapp_enabled !== false && (
+          <button type="button" onClick={startSend} disabled={busy || !canSend}>
+            Send…
+          </button>
+        )}
       </div>
 
       {saveError && (

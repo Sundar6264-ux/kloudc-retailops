@@ -6,6 +6,7 @@ import SortableTh from "../../components/SortableTh.jsx";
 import { useTableControls } from "../../useTableControls.js";
 import { Choice, InsightBody, InsightsPage, useInsight } from "../../components/insights/InsightsCommon.jsx";
 import { fmtCount, fmtMoney, fmtShare, isNum } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const DAYS = [
   { value: 7, label: "7 days" },
@@ -34,10 +35,10 @@ export default function AddonsPage() {
         brief: "Attach rate is how often an add-on was chosen per unit of the item it belongs to.",
         body: (
           <p style={{ margin: 0 }}>
-            From Toast's item report grouped by modifier: every choice made on an order (spice level, extra cheese, a
+            From {currentPosName()}'s item report grouped by modifier: every choice made on an order (spice level, extra cheese, a
             side). Free choices still count as units - they show what people want. Net sales are only the extra
             charged for paid add-ons; that money is already inside the item's own sales elsewhere in the dashboard, so
-            don't add the two together. Attach rate is only shown when Toast tells us which item the add-on was on.
+            don't add the two together. Attach rate is only shown when {currentPosName()} tells us which item the add-on was on.
           </p>
         ),
       }}

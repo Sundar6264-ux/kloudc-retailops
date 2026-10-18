@@ -14,6 +14,7 @@ import {
   hourRangeLabel,
   isNum,
 } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const WEEKS = [
   { value: 4, label: "4 weeks" },
@@ -81,7 +82,7 @@ export default function HeatmapPage() {
         body: (
           <p style={{ margin: 0 }}>
             Each square is one hour on one weekday: the average across the chosen weeks of that hour's net
-            sales (or orders), from Toast's hourly Analytics for each business day. Hours the store was closed
+            sales (or orders), from {currentPosName()}'s hourly Analytics for each business day. Hours the store was closed
             in every week are left off the grid. Use it to plan staff, prep and deliveries around the real rush.
           </p>
         ),

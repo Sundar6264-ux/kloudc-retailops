@@ -1,5 +1,6 @@
 // Pure helpers for the Flyers page (docs/MARKETING_FLYERS_CONTRACT.md).
 // Tested by flyerModel.test.mjs: node --test src/components/flyers/flyerModel.test.mjs
+import { lazyStoreFormat } from "../../format.js";
 
 export const TITLE_MAX = 120;
 export const CAPTION_MAX = 1000;
@@ -7,16 +8,17 @@ export const POLL_MS = 3000;
 
 // Used until /api/flyers/meta answers, and for any field it leaves out.
 export const DEFAULT_META = {
+  // The store's own categories come from its store pack (meta.categories);
+  // these two are the product fallback.
   categories: [
     { key: "groceries", label: "Groceries" },
-    { key: "street_kitchen", label: "Street Kitchen" },
-    { key: "flowers", label: "Flowers" },
-    { key: "halal_meat", label: "Halal Meat" },
-    { key: "spice_town", label: "Spice Town (Generic)" },
     { key: "others", label: "Others" },
   ],
   groups: [],
   whatsapp_connected: true,
+  // False when the store has no WhatsApp (store feature `whatsapp`, set by
+  // FlyersPage): the page is a library only, no send controls.
+  whatsapp_enabled: true,
   max_image_mb: 25,
   max_pdf_mb: 20,
   accept: ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"],
@@ -81,12 +83,11 @@ export function plural(n, word, many) {
   return n === 1 ? word : many || `${word}s`;
 }
 
-// Store-local (America/New_York) short times, like format.js does for full ones.
-const STORE_TZ = "America/New_York";
-const dayFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, month: "short", day: "numeric" });
-const dayYearFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, month: "short", day: "numeric", year: "numeric" });
-const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, hour: "numeric", minute: "2-digit" });
-const yearFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, year: "numeric" });
+// Store-local short times (the store's own zone), like format.js does for full ones.
+const dayFmt = lazyStoreFormat("en-US", { month: "short", day: "numeric" });
+const dayYearFmt = lazyStoreFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const timeFmt = lazyStoreFormat("en-US", { hour: "numeric", minute: "2-digit" });
+const yearFmt = lazyStoreFormat("en-US", { year: "numeric" });
 
 function validDate(iso) {
   if (!iso) return null;

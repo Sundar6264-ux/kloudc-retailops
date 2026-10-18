@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { codeMatchLabel, matchCode, rowCodeMatch, splitCodes } from "./productMatch.js";
+import { setCurrentPosName } from "./store/gating.js";
 
 const CASES = JSON.parse(readFileSync(new URL("./productMatchCases.json", import.meta.url), "utf8"));
 
@@ -39,6 +40,11 @@ test("rowCodeMatch reads the usual fields, nested getters and arrays", () => {
 test("codeMatchLabel", () => {
   assert.equal(codeMatchLabel(["supplier_item_id", "2659M", true]), "SKU 2659M");
   assert.equal(codeMatchLabel(["barcode", "0186", false]), "Barcode 0186");
+  setCurrentPosName("Toast");
   assert.equal(codeMatchLabel(["item_id", "2d3d60fa-b1ec", true]), "Toast ID 2d3d60fa…");
+  // The POS item id is labelled with the store's own POS (multi-store M2).
+  setCurrentPosName("Clover");
+  assert.equal(codeMatchLabel(["item_id", "2d3d60fa-b1ec", true]), "Clover ID 2d3d60fa…");
+  setCurrentPosName(null);
   assert.equal(codeMatchLabel(null), null);
 });

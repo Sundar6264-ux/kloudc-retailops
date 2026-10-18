@@ -29,6 +29,7 @@ import {
   vendorOptions,
 } from "./cartAddModel.js";
 import { codeMatchLabel } from "../../productMatch.js";
+import { currentPosName } from "../../store/gating.js";
 
 // One vendor's projection is kept for 5 minutes (like the app's add sheet),
 // so adding several lists in a row doesn't recompute it each time.
@@ -762,7 +763,7 @@ export default function AddItemsForm({ cartSuppliers = [], onRefresh, onAdded, o
         <ul>
           <li>Pick the vendor once - everything you tick goes into its cart.</li>
           <li>
-            <strong>This vendor's products</strong> searches what Toast lists under that vendor;{" "}
+            <strong>This vendor's products</strong> searches what {currentPosName()} lists under that vendor;{" "}
             <strong>All products</strong> searches everything, and whatever you tick still goes into the vendor you
             picked (the same as the app).
           </li>
@@ -842,7 +843,7 @@ export default function AddItemsForm({ cartSuppliers = [], onRefresh, onAdded, o
                     ref={searchRef}
                     type="text"
                     value={query}
-                    placeholder="Search name, SKU, barcode or Toast ID"
+                    placeholder={`Search name, SKU, barcode or ${currentPosName()} ID`}
                     aria-label={searchLabel}
                     aria-describedby={hintId}
                     aria-controls={listVisible ? resultsId : undefined}

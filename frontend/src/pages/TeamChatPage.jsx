@@ -17,17 +17,18 @@ import ChatConversation from "../components/team/ChatConversation.jsx";
 import { ChatSearch } from "../components/team/ChatExtras.jsx";
 import { messagePreview } from "../components/team/teamAdvancedModel";
 import TaskCreateForm from "../components/team/TaskCreateForm.jsx";
-import { STORE_TZ, storeDay, todayStoreDay } from "../components/team/taskUtils";
+import { storeDay, todayStoreDay } from "../components/team/taskUtils";
 import useDialogA11y from "../components/team/useDialogA11y";
 import { isPageVisible, onPageShown } from "../components/team/usePageActive";
+import { lazyStoreFormat } from "../format.js";
 
 // Team hub Chat on the website (docs/TEAM_HUB_DESIGN.md §4.4): team
 // channels (one per team, automatic) and direct messages. Two panes on a
 // desktop, one pane with a Back button on a phone. The list refreshes from
 // the change feed; the open conversation polls for new messages itself.
 
-const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, hour: "numeric", minute: "2-digit" });
-const dateFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, month: "short", day: "numeric" });
+const timeFmt = lazyStoreFormat("en-US", { hour: "numeric", minute: "2-digit" });
+const dateFmt = lazyStoreFormat("en-US", { month: "short", day: "numeric" });
 
 function lastWhen(iso) {
   if (!iso) return "";

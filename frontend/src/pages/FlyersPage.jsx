@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getFlyerMeta } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import WhatsAppGroupsPanel from "../components/checklists/WhatsAppGroupsPanel.jsx";
@@ -8,15 +8,19 @@ import FlyerLibrary from "../components/flyers/FlyerLibrary.jsx";
 import FlyerUploadCard from "../components/flyers/FlyerUploadCard.jsx";
 import { withMetaDefaults } from "../components/flyers/flyerModel.js";
 import useFlyerLibrary from "../components/flyers/useFlyerLibrary.js";
+import { useStoreAllows } from "../store/StoreContext.jsx";
 
 // Marketing flyers (docs/MARKETING_FLYERS_CONTRACT.md, section 6): upload a
 // flyer, pick the marketing WhatsApp groups, send; plus the library of every
-// flyer (stored on the Mac mini in ~/Spice Town Flyers/<Type>/). Needs the
+// flyer (stored on the server in FLYERS_DIR/<Type>/). Needs the
 // `marketing_flyers` feature; admins always have it.
 export default function FlyersPage() {
   const { user } = useAuth();
   const isAdmin = Boolean(user?.is_admin);
-  const [meta, setMeta] = useState(null);
+  const [rawMeta, setMeta] = useState(null);
+  // A store without WhatsApp keeps the library but loses every send control.
+  const whatsapp = useStoreAllows("whatsapp");
+  const meta = useMemo(() => (rawMeta ? { ...rawMeta, whatsapp_enabled: whatsapp } : null), [rawMeta, whatsapp]);
   const [metaError, setMetaError] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [managingGroups, setManagingGroups] = useState(false);
@@ -47,7 +51,7 @@ export default function FlyersPage() {
       <h1>Flyers</h1>
       <p className="muted">
         Upload a marketing flyer, pick the WhatsApp groups and send it. Every flyer stays in the library below, filed by
-        type in the Spice Town Flyers folder on the Mac mini.
+        type in the store's flyers folder on the server.
       </p>
     </div>
   );
@@ -119,7 +123,7 @@ export default function FlyersPage() {
           }}
           onDeleted={(flyer) => {
             setOpenId(null);
-            setNotice(`Deleted "${flyer.title}". The file is in the _Deleted folder on the Mac mini.`);
+            setNotice(`Deleted "${flyer.title}". The file is in the _Deleted folder on the server.`);
             lib.reload();
           }}
           onManageGroups={manageGroups}

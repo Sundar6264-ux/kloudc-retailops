@@ -10,6 +10,7 @@ import {
 import { ReadinessCard, SwitchCard, SwitchHistory } from "../components/inventoryApi/InventoryApiSwitch.jsx";
 import { formatRestaurantTime } from "../format.js";
 import { TermInfo } from "../glossary.jsx";
+import { currentPosName } from "../store/gating.js";
 
 // Admin page for the inventory-from-Toast work (backend
 // services/inventory_api.py): the "Use Toast for inventory" switch and its
@@ -38,7 +39,7 @@ function SettingsCard({ status, onRecheck, rechecking, recheckMsg }) {
         <tbody>
           <tr>
             <td className="invapi-key">
-              API snapshots + live stock <TermInfo k="inventory_api_snapshot" label="Nightly Toast snapshot" />
+              API snapshots + live stock <TermInfo k="inventory_api_snapshot" label={`Nightly ${currentPosName()} snapshot`} />
             </td>
             <td>
               <span className={`pill ${s.inventory_api_snapshots ? "pill-success" : "pill-neutral"}`}>
@@ -47,7 +48,7 @@ function SettingsCard({ status, onRecheck, rechecking, recheckMsg }) {
               <span className="muted">
                 Set with the switch above.{" "}
                 {s.inventory_api_snapshots
-                  ? `Each night at ${s.snapshot_time} the snapshot is built from Toast (never over a CSV for that day).`
+                  ? `Each night at ${s.snapshot_time} the snapshot is built from ${currentPosName()} (never over a CSV for that day).`
                   : `Off: each night at ${s.snapshot_time} the API set is only built and compared with that day's CSV - nothing is stored.`}
               </span>
             </td>
@@ -55,7 +56,7 @@ function SettingsCard({ status, onRecheck, rechecking, recheckMsg }) {
           <tr>
             <td className="invapi-key">Latest snapshot</td>
             <td>
-              {fmt(status.latest_snapshot_date)} ({status.latest_snapshot_source === "api" ? "from Toast" : "CSV upload"})
+              {fmt(status.latest_snapshot_date)} ({status.latest_snapshot_source === "api" ? `from ${currentPosName()}` : "CSV upload"})
             </td>
           </tr>
           <tr>
@@ -83,7 +84,7 @@ function SettingsCard({ status, onRecheck, rechecking, recheckMsg }) {
               {s.menu_barcode_recheck_minutes > 0 ? `Every ${s.menu_barcode_recheck_minutes} min` : "Off"}
               {!s.scheduler_enabled && <span className="muted"> (scheduler off on this server)</span>}
               <div className="muted">
-                Toast's menu last changed {when(status.menu_check.menu_last_updated)}; pulled{" "}
+                {currentPosName()}'s menu last changed {when(status.menu_check.menu_last_updated)}; pulled{" "}
                 {when(status.menu_check.fetched_at)} ({status.menu_check.items} items). Missing and invalid barcodes
                 in Fix Issues use it when it is newer than the latest upload.
               </div>
@@ -99,7 +100,7 @@ function SettingsCard({ status, onRecheck, rechecking, recheckMsg }) {
             </td>
             <td>
               {status.live_stock?.live ? `Live, as of ${when(status.live_stock.as_of)}` : "Snapshot counts"}
-              <div className="muted">With the switch on, these read Toast's current count (cached 5 minutes):</div>
+              <div className="muted">With the switch on, these read {currentPosName()}'s current count (cached 5 minutes):</div>
               <ul className="invapi-list">
                 {status.live_stock_screens.map((s2) => (
                   <li key={s2}>{s2}</li>
@@ -138,7 +139,7 @@ function storedText(stored) {
   if (stored.skipped === "csv_exists") return "a CSV for that day was already in, so nothing was stored (CSV wins)";
   if (stored.skipped === "switch_off") return "switch off, nothing stored";
   if (stored.skipped === "implausible") {
-    return `Toast's answer looked cut short (${stored.reason || "too few items"}), so nothing was stored and the previous snapshot stays in use`;
+    return `${currentPosName()}'s answer looked cut short (${stored.reason || "too few items"}), so nothing was stored and the previous snapshot stays in use`;
   }
   if (stored.skipped) return `nothing stored (${stored.skipped})`;
   return `${stored.written ?? 0} items stored`;
@@ -158,7 +159,7 @@ function qtyLine(comparison) {
       {q.unexplained_examples?.length > 0 &&
         ` For example: ${q.unexplained_examples
           .slice(0, 5)
-          .map((e) => `${e.name} (Toast ${e.api_out_of_stock ? "out of stock" : fmt(e.api)}, CSV ${fmt(e.csv)})`)
+          .map((e) => `${e.name} (${currentPosName()} ${e.api_out_of_stock ? "out of stock" : fmt(e.api)}, CSV ${fmt(e.csv)})`)
           .join(", ")}.`}
     </p>
   );
@@ -170,7 +171,7 @@ function ExamplesTable({ field }) {
       <thead>
         <tr>
           <th>Item</th>
-          <th className="num">Toast API</th>
+          <th className="num">{currentPosName()} API</th>
           <th className="num">CSV</th>
         </tr>
       </thead>
@@ -192,8 +193,8 @@ function ComparisonTable({ comparison, meta }) {
   return (
     <>
       <p className="muted">
-        CSV of {comparison.csv_date}: {comparison.items_in_both} items in both, {comparison.only_in_api} only in Toast's
-        API, {comparison.only_in_csv} only in the CSV. {comparison.out_of_stock_with_negative_csv} items Toast shows as out
+        CSV of {comparison.csv_date}: {comparison.items_in_both} items in both, {comparison.only_in_api} only in {currentPosName()}'s
+        API, {comparison.only_in_csv} only in the CSV. {comparison.out_of_stock_with_negative_csv} items {currentPosName()} shows as out
         of stock are negative in the CSV - they keep the CSV count on Negative inventory. Carried from the CSV (no API
         source): {comparison.carried_from_csv.join(", ")}.
         {meta?.sales_through && ` Sales are counted through ${meta.sales_through}.`}
@@ -246,7 +247,7 @@ function ComparisonTable({ comparison, meta }) {
       </div>
       {comparison.only_in_api_examples?.length > 0 && (
         <p className="muted">
-          Only in Toast's API (e.g. new since the CSV):{" "}
+          Only in {currentPosName()}'s API (e.g. new since the CSV):{" "}
           {comparison.only_in_api_examples.map((e) => e.name).join(", ")}
         </p>
       )}
@@ -313,7 +314,7 @@ export default function InventoryApiPage() {
     setRecheckMsg(null);
     try {
       const res = await runInventoryApiMenuRecheck();
-      setRecheckMsg(res.detail?.changed ? `Menu changed - ${res.detail.items} items re-read.` : "No change in Toast's menu.");
+      setRecheckMsg(res.detail?.changed ? `Menu changed - ${res.detail.items} items re-read.` : `No change in ${currentPosName()}'s menu.`);
       await loadStatus();
     } catch (err) {
       setRecheckMsg(err.message);
@@ -325,9 +326,9 @@ export default function InventoryApiPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Inventory from Toast</h1>
+        <h1>Inventory from {currentPosName()}</h1>
         <p className="muted">
-          The inventory snapshot built from Toast's API, side by side with the CSV upload, and the switch that puts it
+          The inventory snapshot built from {currentPosName()}'s API, side by side with the CSV upload, and the switch that puts it
           to use.
         </p>
       </div>
@@ -352,7 +353,7 @@ export default function InventoryApiPage() {
         {nightly && (
           <>
             <p className="muted">
-              Run {when(nightly.run_at)}. The nightly run is just after Toast's 4 AM close, so on-hand counts should
+              Run {when(nightly.run_at)}. The nightly run is just after {currentPosName()}'s 4 AM close, so on-hand counts should
               match that night's CSV unless something sold after the file was exported.
             </p>
             <ComparisonTable comparison={nightly.comparison} meta={nightly.meta} />
@@ -370,8 +371,8 @@ export default function InventoryApiPage() {
           </div>
         </div>
         <p className="muted">
-          Builds the snapshot from Toast right now (two Toast calls, nothing is stored) and compares it with the latest
-          CSV. On-hand counts move with every sale since the CSV was exported. Toast's own 7/30/90-day figures in the
+          Builds the snapshot from {currentPosName()} right now (two {currentPosName()} calls, nothing is stored) and compares it with the latest
+          CSV. On-hand counts move with every sale since the CSV was exported. {currentPosName()}'s own 7/30/90-day figures in the
           CSV run about two days behind; ours count through yesterday.
         </p>
         {compareError && <p className="error">{compareError}</p>}

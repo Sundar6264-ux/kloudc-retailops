@@ -61,7 +61,7 @@ test("group picks: at least one, at most max_groups_per_send", () => {
 
 test("meta defaults fill what the server leaves out", () => {
   const m = withMetaDefaults({ groups: [{ key: "g", label: "G" }] });
-  assert.equal(m.categories.length, 6);
+  assert.equal(m.categories.length, 2);
   assert.equal(m.max_groups_per_send, 25);
   assert.equal(m.groups.length, 1);
 });

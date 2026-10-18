@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "store_code": "STOREOPS_TEST_TOAST",
+  "name": "Test Toast Market",
+  "short_name": "Toast Test",
+  "product": {
+    "name": "StoreOps",
+    "company": "KloudC LLC"
+  },
+  "logo_url": "https://storeops-test-toast.storeops.invalid/branding/logo.png",
+  "icon_url": "https://storeops-test-toast.storeops.invalid/branding/icon.png",
+  "primary_color": "#1D4ED8",
+  "secondary_color": "#93C5FD",
+  "timezone": "America/Chicago",
+  "currency": "USD",
+  "locale": "en-US",
+  "address": "100 Example Ave, Springfield, IL 62701",
+  "phone": "(555) 010-0100",
+  "pos_name": "Toast",
+  "capabilities": [
+    "orders_by_business_date",
+    "open_orders",
+    "live_today_sales",
+    "catalog",
+    "catalog_change_stamp",
+    "stock_levels",
+    "receiving_records",
+    "employees",
+    "day_totals",
+    "analytics_reports",
+    "card_fingerprints",
+    "csv_catalog_import",
+    "modifier_price_in_parent"
+  ],
+  "store_features": [
+    "ap_inbox",
+    "labels",
+    "whatsapp",
+    "ai"
+  ],
+  "labels_url": "https://labels-storeops-test-toast.storeops.invalid",
+  "public_host": "https://storeops-test-toast.storeops.invalid",
+  "legal": {
+    "company": "KloudC LLC",
+    "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
+    "terms_url": null,
+    "support_url": "https://kloudc.com/kloudc-support/"
+  },
+  "min_build": {
+    "ios": 0,
+    "android": 0
+  },
+  "store_url": {
+    "ios": null,
+    "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
+  },
+  "demo": false
+}

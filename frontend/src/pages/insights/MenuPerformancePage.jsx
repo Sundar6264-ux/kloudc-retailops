@@ -24,6 +24,7 @@ import {
   menuViewTabs,
   shortDate,
 } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const DAYS = [
   { value: 7, label: "7 days" },
@@ -36,7 +37,7 @@ const TAB_TEXT = {
   bottom: "Lowest net sales among items that did sell.",
   rising: "Biggest rise in units against the period before (items that sold at least 3 then).",
   falling: "Biggest drop in units against the period before (items that sold at least 3 then).",
-  not_sold: "Street Kitchen items on the menu with no sales in this period, longest unsold first.",
+  not_sold: "Kitchen items on the menu with no sales in this period, longest unsold first.",
 };
 
 const TAB_TERMS = {
@@ -115,14 +116,13 @@ export default function MenuPerformancePage({ view = "trends" }) {
         body: (
           <>
             <p style={{ marginTop: 0 }}>
-              Units and net sales come from Toast's item report for each business day (add-ons are counted inside
-              their item, discounts are taken off). <strong>Street Kitchen</strong> is the prepared-food menu
-              {data?.kitchen_rule ? ` (${data.kitchen_rule})` : ""}; <strong>Grocery</strong> is the retail, produce,
-              halal meat, fish market and flower menus.
+              Units and net sales come from {currentPosName()}'s item report for each business day (add-ons are counted inside
+              their item, discounts are taken off). <strong>Kitchen</strong> is the prepared-food menu
+              {data?.kitchen_rule ? ` (${data.kitchen_rule})` : ""}; <strong>Grocery</strong> is the store's other menus.
             </p>
             {view === "trends" ? (
               <p style={{ marginBottom: 0 }}>
-                <strong>Not sold</strong> lists Street Kitchen items that are still on the menu in Toast but didn't
+                <strong>Not sold</strong> lists kitchen items that are still on the menu in {currentPosName()} but didn't
                 sell once in the period - candidates to promote, fix or take off the menu. The best and worst sellers
                 are on <Link to={`${MENU_VIEWS.sellers.path}?tab=top`}>Best &amp; worst sellers</Link>.
               </p>
@@ -180,9 +180,9 @@ export default function MenuPerformancePage({ view = "trends" }) {
                 {group !== "all" && (
                   <>
                     {" "}
-                    {group === "kitchen" ? "Street Kitchen" : "Grocery"} items only
+                    {group === "kitchen" ? "Kitchen" : "Grocery"} items only
                     {group === "kitchen" ? (
-                      <TermInfo k="insights_menu_kitchen" label="Street Kitchen" />
+                      <TermInfo k="insights_menu_kitchen" label="Kitchen" />
                     ) : (
                       <TermInfo k="insights_menu_grocery" label="Grocery" />
                     )}
@@ -192,7 +192,7 @@ export default function MenuPerformancePage({ view = "trends" }) {
               {data?.menu_map === false && group !== "all" && (
                 <p className="ins-stale ins-inline-stale" role="status">
                   <span className="ins-stale-icon" aria-hidden="true">!</span>
-                  <span>Toast's menu hasn't been read yet, so kitchen and grocery items can't be told apart. Check back in a few minutes.</span>
+                  <span>{currentPosName()}'s menu hasn't been read yet, so kitchen and grocery items can't be told apart. Check back in a few minutes.</span>
                 </p>
               )}
               {list.length > 8 && (

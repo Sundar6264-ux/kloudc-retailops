@@ -49,7 +49,7 @@ function NewChecklistDialog({ onClose, onCreated }) {
               autoFocus
               value={title}
               maxLength={120}
-              placeholder="e.g. Street Kitchen - Opening Checklist"
+              placeholder="e.g. Kitchen - Opening Checklist"
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>

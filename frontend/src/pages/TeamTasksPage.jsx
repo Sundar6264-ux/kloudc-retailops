@@ -20,6 +20,7 @@ import {
 } from "../components/team/taskEditModel";
 import { TermInfo } from "../glossary.jsx";
 import "../components/team/teamTasks.css";
+import { storeZoneCity } from "../format.js";
 
 // Team hub Tasks (docs/TEAM_HUB_DESIGN.md §4.2): what's assigned to me or my
 // teams, grouped Overdue / Can't do / Today / Upcoming, plus what's been
@@ -43,7 +44,7 @@ const LAYOUTS = [
   { key: "board", label: "Board" },
   { key: "stats", label: "Stats", adminOnly: true },
 ];
-const LAYOUT_KEY = "spicetown_tasks_layout";
+const LAYOUT_KEY = "storeops_tasks_layout";
 
 function savedLayout() {
   try {
@@ -375,7 +376,7 @@ export default function TeamTasksPage() {
       <div className="page-header">
         <h1>Tasks</h1>
         <p className="muted">
-          Work assigned to you or your teams. Times are store time (New York). Team tasks are done once anyone on the team finishes
+          Work assigned to you or your teams. Times are store time ({storeZoneCity()}). Team tasks are done once anyone on the team finishes
           them.
         </p>
       </div>

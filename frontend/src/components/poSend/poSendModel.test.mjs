@@ -109,7 +109,7 @@ test("sentNotice says where it went and whether it was recorded", () => {
 });
 
 test("small helpers", () => {
-  assert.equal(gmailSearch("<abc@spicetown.test>"), "rfc822msgid:abc@spicetown.test");
+  assert.equal(gmailSearch("<abc@store.test>"), "rfc822msgid:abc@store.test");
   assert.equal(gmailSearch(null), "");
   assert.equal(statusLabel("uncertain"), "Not confirmed");
   assert.equal(statusLabel("weird"), "weird");

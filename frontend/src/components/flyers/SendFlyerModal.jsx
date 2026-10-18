@@ -197,7 +197,7 @@ export default function SendFlyerModal({ title, categoryLabel, caption, kindLabe
               {pollError && <p className="fly-hint">Couldn't check the status just now - trying again.</p>}
               {pending && (
                 <p className="fly-hint">
-                  You can close this. Sending carries on, and the Spice Town phone app tells you when it's done.
+                  You can close this. Sending carries on, and the phone app tells you when it's done.
                 </p>
               )}
             </>

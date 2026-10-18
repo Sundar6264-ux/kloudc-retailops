@@ -13,6 +13,7 @@ import {
   streakSummary,
   thresholdsText,
 } from "./inventoryApiModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 // The "Use Toast for inventory" switch, the nightly readiness streak and the
 // switch's history (backend: services/inventory_api_switch.py,
@@ -29,7 +30,7 @@ function TurnOnDialog({ status, readiness, saving, error, onConfirm, onClose }) 
     <div className="fly-modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && !saving && onClose()}>
       <div className="fly-modal" role="dialog" aria-modal="true" aria-labelledby="invapi-on-title" {...dialog}>
         <div className="fly-modal-head">
-          <h3 id="invapi-on-title">Turn on Inventory from Toast?</h3>
+          <h3 id="invapi-on-title">Turn on Inventory from {currentPosName()}?</h3>
           <button type="button" className="fly-icon-btn" aria-label="Close" onClick={onClose} disabled={saving}>
             ×
           </button>
@@ -38,11 +39,11 @@ function TurnOnDialog({ status, readiness, saving, error, onConfirm, onClose }) 
           <p style={{ marginTop: 0 }}>It takes effect right away - no restart. What changes:</p>
           <ul className="invapi-list">
             <li>
-              Each night at {time} the inventory snapshot is built from Toast's stock and menu and saved, on any day
+              Each night at {time} the inventory snapshot is built from {currentPosName()}'s stock and menu and saved, on any day
               without a CSV upload. A CSV uploaded for a day still replaces it.
             </li>
             <li>
-              These read Toast's current count (at most 5 minutes old) instead of the last snapshot:
+              These read {currentPosName()}'s current count (at most 5 minutes old) instead of the last snapshot:
               <ul className="invapi-list">
                 {screens.map((s) => (
                   <li key={s}>{s}</li>
@@ -103,7 +104,7 @@ export function SwitchCard({ sw, status, readiness, when, onChange }) {
       setConfirming(false);
       setMessage(
         on
-          ? "Turned on. Live counts show on the next page load; tonight's run saves the snapshot from Toast."
+          ? `Turned on. Live counts show on the next page load; tonight's run saves the snapshot from ${currentPosName()}.`
           : "Turned off. Pages use the snapshot counts again, and the nightly run only compares.",
       );
     } catch (err) {
@@ -118,7 +119,7 @@ export function SwitchCard({ sw, status, readiness, when, onChange }) {
     <section className="card invapi-switch-card">
       <div className="invapi-switch-row">
         <div>
-          <h3 style={{ margin: 0 }}>Use Toast for inventory</h3>
+          <h3 style={{ margin: 0 }}>Use {currentPosName()} for inventory</h3>
           <div className="invapi-switch-state">
             <span className={`pill ${on ? "pill-success" : "pill-neutral"}`}>{on ? "On" : "Off"}</span>{" "}
             <span className="muted">{sw ? sourceText(sw, when) : "Loading…"}</span>

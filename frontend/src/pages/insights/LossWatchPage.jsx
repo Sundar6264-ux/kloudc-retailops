@@ -7,6 +7,7 @@ import { useTableControls } from "../../useTableControls.js";
 import { Choice, InsightBody, InsightsPage, useInsight } from "../../components/insights/InsightsCommon.jsx";
 import { AckButton, ackId, isAcked, useAcks } from "../../components/insights/FlagAck.jsx";
 import { fmtCount, fmtMoney, hasRows, isNum, shortDate } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const DAYS = [
   { value: 7, label: "7 days" },
@@ -87,7 +88,7 @@ export default function LossWatchPage() {
               comp for a regular or a refund for a spoiled item is normal.
             </p>
             <p style={{ marginBottom: 0 }}>
-              Comp is an estimate: Toast reports discounts and voids, and a check discounted to $0 is counted as a comp.
+              Comp is an estimate: {currentPosName()} reports discounts and voids, and a check discounted to $0 is counted as a comp.
               No guest card details are shown here.
             </p>
           </>

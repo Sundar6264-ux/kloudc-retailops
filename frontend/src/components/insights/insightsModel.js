@@ -1,5 +1,7 @@
 // Pure helpers for the Insights pages (docs/INSIGHTS_CONTRACT.md). No React,
 // no DOM - tested with `node --test src/components/insights/insightsModel.test.mjs`.
+import { storeDateStr, storeDateTimeFormat } from "../../format.js";
+import { currentPosName } from "../../store/gating.js";
 
 export const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 export const DAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -342,7 +344,7 @@ export function menuPerformanceRedirect(search = "") {
 
 export const MENU_GROUPS = [
   { key: "all", label: "Everything" },
-  { key: "kitchen", label: "Street Kitchen" },
+  { key: "kitchen", label: "Kitchen" },
   { key: "grocery", label: "Grocery" },
 ];
 
@@ -404,8 +406,6 @@ export function peakHours(byHour, n = 2) {
 
 // ---------- odd checks ----------
 
-const TIME_FMT = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
-const DAY_FMT = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" });
 
 // A timestamp as store time: "2:06 PM", with the date in front when it
 // isn't `onDate` ("YYYY-MM-DD") - e.g. a tab paid the next morning.
@@ -413,8 +413,8 @@ export function storeTime(isoTs, onDate, { withDate = false } = {}) {
   if (!isoTs) return "";
   const d = new Date(isoTs);
   if (Number.isNaN(d.getTime())) return "";
-  const time = TIME_FMT.format(d);
-  const day = DAY_FMT.format(d);
+  const time = storeDateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(d);
+  const day = storeDateStr(d);
   return withDate || (onDate && day !== onDate) ? `${shortDate(day)}, ${time}` : time;
 }
 
@@ -440,15 +440,15 @@ export function staleText(data) {
   if (!data || !data.stale) return null;
   if (typeof data.note === "string" && data.note.trim()) return data.note.trim();
   if (data.configured === false) {
-    return "Toast Analytics isn't set up on this server yet, so only numbers saved earlier can be shown.";
+    return `${currentPosName()} Analytics isn't set up on this server yet, so only numbers saved earlier can be shown.`;
   }
   const cov = data.coverage;
   const partial =
     cov && isNum(cov.dates_expected) && isNum(cov.dates_cached) && cov.dates_cached < cov.dates_expected;
   const saved = partial ? `${fmtCount(cov.dates_cached)} of ${plural(cov.dates_expected, "day")}` : "";
-  if (data.filling) return `Some days are still being read from Toast.${partial ? ` ${saved} saved so far.` : ""} Check back in a few minutes.`;
+  if (data.filling) return `Some days are still being read from ${currentPosName()}.${partial ? ` ${saved} saved so far.` : ""} Check back in a few minutes.`;
   if (partial) return `${saved} are saved; the rest are added automatically.`;
-  return "Toast Analytics didn't answer just now, so this is the last copy we saved. It may be missing the newest numbers.";
+  return `${currentPosName()} Analytics didn't answer just now, so this is the last copy we saved. It may be missing the newest numbers.`;
 }
 
 // What an error means for the person looking at the page.

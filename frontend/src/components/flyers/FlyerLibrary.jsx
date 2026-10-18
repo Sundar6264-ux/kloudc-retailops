@@ -115,8 +115,8 @@ export default function FlyerLibrary({ lib, categories, onOpen }) {
             </>
           ) : (
             <p>
-              No flyers yet. Upload one above - it's kept here and in the Spice Town Flyers folder on the Mac mini, filed
-              by type.
+              No flyers yet. Upload one above - it's kept here and in the store's flyers folder on the server, filed by
+              type.
             </p>
           )}
         </div>
