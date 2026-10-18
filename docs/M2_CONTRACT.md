@@ -2608,3 +2608,80 @@ Both MT13 branches now carry a merge of `main` (server `2c43df8`, app
 - **`test_demo_data` determinism:** the test now ignores
   `uploads/.store_identity`. MT8's store init writes a random instance id
   into that file on every build.
+
+## As built - M2 final regression and handoff
+
+Run on 2026-10-18 on the merged code. All work in `/Users/sundar/storeops`;
+Spice Town's folders were only read (one read-only production copy for
+parity and the migration check, deleted afterwards with its recordings).
+
+**Merges (server `main`):** `6975c85` merges `m2/mt10-directory` (MT10 +
+verifier fixes) and `b6518b3` merges `m2/mt13-demo` (MT13 + verifier fixes).
+The only conflicts were in this file; every As built section is kept.
+**App `main`:** `e5fd24f` merges `m2/mt13-legal` (no conflicts left after
+the MT13 verifier's merge of `main`).
+
+**Found and fixed by the simulator run (app):**
+- `e90b209` **Sign-in failed on a fresh install.** After the store code,
+  every request to the store server failed with "Unable to reach the store
+  server": `apiClientProvider` captured `connectivityProvider`'s notifier
+  with `ref.read`; the notifier is rebuilt with the store scope a frame after
+  the store is chosen, so the client called a disposed notifier ("Tried to
+  use ConnectivityNotifier after dispose") on every response, which Dio
+  reported as a network error. Widget tests use fake clients and never saw
+  it. The client now looks the notifier up at each report and a replaced
+  notifier ignores reports. `test/core/network/api_client_connectivity_test.dart`
+  (2 tests) fails on the old code.
+
+**Other commits:**
+- App `70b8758`: the Dart package is renamed `spicetown_app` ->
+  `storeops_app` (the single rename commit of section 8); the identity tests
+  no longer exempt the old name. `7c3f20b`: staff names out of five `lib/`
+  doc comments; the origin store's phone number and customer group out of
+  test data; the checklist fixture generator reads the StoreOps website.
+  `7189697`: `integration_test/m2_live_stores_test.dart`, the live two-store
+  simulator run (skipped unless `E2E_LIVE=1`).
+- Server `47dbda3`: the DEMO store joins `frontend/e2e/store/run.sh`
+  (`WITH_DEMO=0` leaves it out). `c47fbaa`: Suite A/B use the `storeops_*`
+  storage keys and read store names from the server. `c7dd2ae`, `63b9128`:
+  the origin store's Google Form links and database names out of comments
+  and script usage lines.
+
+**Results:**
+
+| Check | Result |
+|---|---|
+| Backend full suite, Python 3.9 / 3.12 (merged `main`) | 2687 passed, 20 skipped each |
+| Alembic | single head `0062`; fresh DB up -> down to base -> up; production copy 0059 -> 0062 -> 0059 -> 0062, integrity ok |
+| Parity (Spice Town pack vs `56e095c`, fresh production copy) | 114 files; 110 endpoints all 200; no number, row, alert or job differences. 10 differences, all in `glossary.json` help text (MT9's store-neutral wording); additions: `/me` `store_code` + `store_features`, table `store_identity` |
+| Website `node --test` / `vite build` | 231/231 / OK |
+| Directory Worker `node --test` | 7/7 |
+| Playwright `frontend/e2e/store/run.sh` (Toast, Clover, DEMO; 1280 + 375) | 766 checks, 0 failures |
+| App `flutter analyze` / full `flutter test --concurrency=2` | clean / 5490 passed, 6 skipped, 0 failed |
+| Simulator, iPhone 17 and iPad Pro 11 (iOS 26.5), real local servers | store code -> branded sign-in -> gated Home/Store -> Switch store -> other store's branding, no stale data: all steps pass on both |
+
+Simulator notes: Xcode's simulator device support is off on this Mac
+(CoreSimulator older than Xcode; fixing it needs an admin "first launch"
+install), so the run builds the test as a debug simulator app and drives it
+with `simctl`. ML Kit has no arm64 simulator slice, so the simulator build is
+made from a throwaway copy with a stub `google_mlkit_text_recognition`
+(never committed). The local store directory is a stand-in serving
+`http://127.0.0.1` addresses (the real one refuses http). On the iPhone the
+test's own checks all pass; flutter_test then reports a SemanticsHandle the
+simulator's accessibility left open (not app code).
+
+**Expected, not bugs:** the Clover fake store shows Open Checks (the
+contract's Clover list has `open_orders`; the server answers 409 "isn't
+connected" until M3). The fake Toast store answers 503 for today's Items
+Sold and 500 for `/api/orders/employees` because its POS is unreachable
+(M1-era error mapping). 44 "Toast" strings on the Clover store's
+notification settings page come from the server (MT7 follow-up).
+
+**Name audit (tracked files):** server - `backend/app/config.py`
+(`REFUSED_DOMAIN`), `checklist_builtin.py` (migration 0039 data), 5
+migrations, the legacy-pack extractor and the parity README (both about the
+origin store by design), 3 docs (this contract, the M1 contract and handoff),
+6 e2e safety guards that refuse the production path, 29 test files. App -
+`lib/core/tenant/api_host_policy.dart` (refused domain) and 49 test files
+(legacy checklist fixtures, OCR fixtures). No staff names in either `lib/`
+or `backend/app` except `checklist_builtin.py`'s migration data.
