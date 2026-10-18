@@ -1,0 +1,143 @@
+# Allowed legacy store names in code (backend/app, frontend/src), one per line:
+#   <path>:<exact substring of the line>
+# Read by tests/test_no_spicetown_names.py (M2 contract 9.2). Entries that no
+# longer match anything fail the test, so this list only shrinks: MT7
+# (settings), MT8 (store pack) and MT9 (website) remove their files' lines as
+# they move the values out. At the M2 exit it holds only legacy setting names
+# and the comments that explain them.
+backend/app/config.py:# `sundar`, so the default is /Users/sundar/Spice Town Flyers. Blank =
+backend/app/config.py:# as before. Set to ".spicetown.shop" in production so the SAME cookie
+backend/app/config.py:# as database_url's "./spicetown.db".
+backend/app/config.py:# is sent to every subdomain (labels.spicetown.shop included) - this is
+backend/app/config.py:# what lets spicetown-labels gate itself on "already logged into the
+backend/app/config.py:database_url: str = "sqlite:///./spicetown.db"
+backend/app/config.py:flyers_dir: str = str(pathlib.Path.home() / "Spice Town Flyers")
+backend/app/config.py:play_store_url: str = "https://play.google.com/store/apps/details?id=com.spicetown.app"
+backend/app/config.py:public_base_url: str = "https://spicetown-server.tailcc1217.ts.net"
+backend/app/config.py:toast_invoice_email: str = "spicetown@invoices.toasttab.com"
+backend/app/data/similar_products/rules.json:"STREET KITCHEN", "CATERING MENU", "EVENT MENU"
+backend/app/glossary.py:"How many of each Street Kitchen item to expect on a day (tomo
+backend/app/glossary.py:"Street Kitchen items only.",
+backend/app/glossary.py:"Street Kitchen menu items (both Street Kitch
+backend/app/glossary.py:"Street Kitchen menu items that didn't sell at all in the period.",
+backend/app/glossary.py:"Street Kitchen, Catering, Event Menu and Container rows are never listed.",
+backend/app/glossary.py:The store's own house items (SpiceTown) aren't listed.",
+backend/app/glossary.py:["street kitchen"],
+backend/app/glossary.py:e kept on the Mac mini in the Spice Town Flyers folder, one folder per
+backend/app/item_vendor_models.py:0061 migration backfilled it. Nothing reads it for a Spice Town page in M1 -
+backend/app/item_vendor_models.py:For Spice Town the table is a mirror of each item's newest CSV row (the CSV
+backend/app/models.py:"""A completed Daily Closing Checklist (Spice Town or Street Kitchen) -
+backend/app/models.py:# no webhook (see the spicetown skill's gotcha #15), so that event is
+backend/app/models.py:inventory_snapshots.item_id). For Spice Town they are Toast's item GUIDs,
+backend/app/pos/__init__.py:M1 is a pure move: Spice Town's behaviour stays exactly the same. The old
+backend/app/pos/capabilities.py:# What Spice Town (Toast) uses today. Left out on purpose:
+backend/app/pos/gating.py:Returns the removed job ids; none for Spice Town. A stand-in scheduler
+backend/app/pos/gating.py:`caps`. Always passes for Spice Town (Toast)."""
+backend/app/pos/gating.py:capability set are process-wide, like Settings. Spice Town is a Toast store:
+backend/app/pos/gating.py:every gate here passes for Spice Town and nothing changes for it.
+backend/app/pos/neutral_ids.py:POS `source` (the connector's `source`; "toast" for Spice Town). Never
+backend/app/pos/registry.py:Spice Town needs no change) and returns that POS's connector. Step 1 runs one
+backend/app/pos/sync/sales.py:`pos_item_map`, `sync_cursors`): "toast" for Spice Town."""
+backend/app/routers/auth.py:# website and app can hide POS-only pages. For Spice Town (Toast, every
+backend/app/routers/checklist_public.py:width="36" height="36"><span>Spice Town</span></div><h1>%s</h1><p>%s<
+backend/app/routers/inventory.py:# flow, which still talks to spicetown-labels independently and is untouched
+backend/app/routers/reports.py:has been removed. Update the Spice Town app to the latest version."
+backend/app/routers/sales.py:filename = f"spicetown-sales-{start.isoformat()}_to_{end.isoformat()}.{format}"
+backend/app/scheduler.py:# what it needs (app/pos/gating.py). Removes nothing for Spice Town.
+backend/app/services/ask_bot.py:SYSTEM_PROMPT_TEMPLATE = """You are the Ask Inventory Bot for Spice Town, a real South Asian
+backend/app/services/ask_bot.py:grocery + halal meat + prepared-food store in Vernon, CT. You answer questions about the
+backend/app/services/checklist_schemas.py:"""A checklist's short name ("Spice Town", "Street Kitchen FSA"): its own
+backend/app/services/checklist_submission.py:(Spice Town -> "store", both Street Kitchen checklists -> "kitchen")."""
+backend/app/services/delivery_suggestions.py:KITCHEN_GROUPS = {"STREET KITCHEN", "CATERING MENU", "EVENT MENU"}
+backend/app/services/delivery_suggestions.py:previous weight, kitchen-made groups (Street Kitchen, Catering, Event),
+backend/app/services/fix_issues.py:EXCLUDED_CATEGORY_GROUPS = {"STREET KITCHEN", "CATERING MENU", "EVENT MENU"}
+backend/app/services/flyers.py:("spice_town", "Spice Town (Generic)", "Spice Town"),
+backend/app/services/flyers.py:("street_kitchen", "Street Kitchen", "Street Kitchen"),
+backend/app/services/flyers.py:Groceries/  Street Kitchen/  Flowers/  Halal Meat/  Spice Town/  Others/
+backend/app/services/flyers.py:Spice Town Flyers/
+backend/app/services/flyers.py:path = pathlib.Path(raw).expanduser() if raw else pathlib.Path.home() / "Spice Town Flyers"
+backend/app/services/flyers.py:~/Spice Town Flyers), one sub-folder per category:
+backend/app/services/insights.py:# bumping a Street Kitchen order a while later updates the check;
+backend/app/services/insights_data.py:"""Street Kitchen = any group of a menu named "STREET KITCHEN..." (the
+backend/app/services/insights_data.py:"kitchen_rule": "Street Kitchen menus, without their bottled/canned drinks groups",
+backend/app/services/insights_data.py:# Menu map (Menus API): menu / group per item, Street Kitchen items, modifiers
+backend/app/services/insights_data.py:KITCHEN_MENU_PREFIX = "street kitchen"
+backend/app/services/insights_data.py:are Street Kitchen, from the Menus API (`/menus/v2/menus`).
+backend/app/services/invoice_submission.py:Purchasing API access and no webhook (see the spicetown skill's gotcha
+backend/app/services/invoice_submission.py:TRANSFER_DEFAULT_VENDOR = "Spice Town"
+backend/app/services/issue_leads.py:"Tobacco Products, Halal Meat, Seafoods and Street Kitchen."
+backend/app/services/issue_leads.py:"title": "SpiceTown Operations - Quick-Reference",
+backend/app/services/issue_leads.py:# The owner's document (SpiceTown Operations - Quick-Reference.pdf, page 1),
+backend/app/services/issue_leads.py:owner's "SpiceTown Operations - Quick-Reference" document.
+backend/app/services/po_export.py:Paragraph("Spice Town", brand_name_style),
+backend/app/services/po_export.py:_BUSINESS_ADDRESS = "378 Kelly Road, Vernon, CT 06066"
+backend/app/services/po_export.py:f"Spice Town &middot; {_BUSINESS_ADDRESS} &middot; {_BUSINESS_PHONE}",
+backend/app/services/po_sections.py:if group in ("CATERING MENU", "STREET KITCHEN"):
+backend/app/services/po_send.py:STORE_ADDRESS = "378 Kelly Road, Vernon, CT 06066"
+backend/app/services/po_send.py:STORE_NAME = "Spice Town"
+backend/app/services/po_send.py:domain = sender.rsplit("@", 1)[-1] or "spicetown.shop"
+backend/app/services/push.py:_APP_NAME = "spicetown-notifications"
+backend/app/services/schedule_suggestions.py:# The store itself (Toast lists "SpiceTown" / "SpiceTown - Street Kitchen" as
+backend/app/services/schedule_suggestions.py:HOUSE_VENDOR_PREFIXES = ("spicetown",)
+backend/app/services/similar_products.py:# digit, a space ("Singh & Singh", "SpiceTown - Street Kitchen").
+backend/app/services/stock_issues.py:# Street Kitchen / Catering exclusions for FORECAST_CACHE_SECONDS.
+backend/app/services/toast_pdf.py:writer.add_metadata({"/Producer": "Spice Town (Tesseract OCR for Toast)"})
+backend/app/services/whatsapp_groups.py:BUILTIN_GROUPS = (("store", "Spice Town staff group"), ("kitchen", "Street Kitchen staff group"))
+backend/app/team/auto_tasks.py:""""Spice Town - Daily Closing Checklist" -> "Spice Town" (same idea as
+backend/app/team/auto_tasks.py:""""Submit the Spice Town closing checklist"; a short name that already
+backend/app/team/auto_tasks.py:("Street Kitchen FSA", so it can't read the same as the chef's)."""
+backend/app/team/auto_tasks.py:code treats the creator as a user id) and created_by_name "Spice Town".
+backend/app/team/bootstrap.py:# can do (app/pos/gating.py). Spice Town: "Toast" and its full set.
+backend/app/team/bootstrap.py:user_name="Spice Town",
+backend/app/team/rules.py:nnouncements and chat) is for Spice Town staff to work together. By us
+backend/app/team/tasks_service.py:# but still a name, so "Done by Spice Town" reads right.
+backend/app/team/tasks_service.py:SYSTEM_NAME = "Spice Town"
+frontend/src/api.js:await downloadFile(`/api/sales/export?${params.toString()}`, `spicetown-sales.${format}`);
+frontend/src/components/FixIssues.jsx:the latest inventory upload. Street Kitchen and Catering Menu items are l
+frontend/src/components/InvoiceSubmission.jsx:// the backend fills in "Spice Town" when it's left blank).
+frontend/src/components/InvoiceSubmission.jsx:placeholder={isTransfer ? "Leave blank for Spice Town" : "Start typing a vendor name…"}
+frontend/src/components/Sidebar.jsx:const COLLAPSE_STORAGE_KEY = "spicetown_sidebar_collapsed";
+frontend/src/components/cartAdd/cartVendorPanels.js:export const OPEN_VENDORS_KEY = "spicetown_cart_open_vendors";
+frontend/src/components/checklists/ChecklistAdminList.jsx:placeholder="e.g. Street Kitchen - Opening Checklist"
+frontend/src/components/checklists/ChecklistEditor.jsx:{ key: "kitchen", label: "Street Kitchen staff group" },
+frontend/src/components/checklists/ChecklistEditor.jsx:{ key: "store", label: "Spice Town staff group" },
+frontend/src/components/checklists/PublicLinkPanel.jsx:// "https://ops.spicetown.shop/c/kitchen-4821" -> "ops.
+frontend/src/components/flyers/FlyerDrawer.jsx:_Deleted folder in Spice Town Flyers on the Mac mini.
+frontend/src/components/flyers/FlyerLibrary.jsx:e - it's kept here and in the Spice Town Flyers folder on the Mac mini
+frontend/src/components/flyers/FlyerUploadCard.jsx:Files it in that folder of Spice Town Flyers on the Mac mini.
+frontend/src/components/flyers/SendFlyerModal.jsx:You can close this. Sending carries on, and the Spice Town phone app tells you when it's done.
+frontend/src/components/flyers/flyerModel.js:{ key: "spice_town", label: "Spice Town (Generic)" },
+frontend/src/components/flyers/flyerModel.js:{ key: "street_kitchen", label: "Street Kitchen" },
+frontend/src/components/insights/insightsModel.js:{ key: "kitchen", label: "Street Kitchen" },
+frontend/src/components/poSend/SendPoDialog.jsx:From {preview.from_address ? `Spice Town <${preview.from_address}>` : "the store's Gmail"} ·{" "}
+frontend/src/components/poSend/SendPoDialog.jsx:placeholder={cc.length ? "Add another email" : "Add an email to copy, e.g. owner@spicetown.shop"}
+frontend/src/components/poSend/VendorContacts.jsx:placeholder="owner@spicetown.shop, accounts@vendor.com"
+frontend/src/components/poSend/poSendModel.test.mjs:assert.equal(gmailSearch("<abc@spicetown.test>"), "rfc822msgid:abc@spicetown.test");
+frontend/src/featureRoutes.js:export const LABELS_APP_URL = "https://labels.spicetown.shop/";
+frontend/src/index.css:gotcha in this app - see the spicetown skill's gotcha #18) since the
+frontend/src/mobileAuth.js:const TOKEN_KEY = "spicetown_mobile_token";
+frontend/src/pages/FlyersPage.jsx:// flyer (stored on the Mac mini in ~/Spice Town Flyers/<Type>/). Needs the
+frontend/src/pages/FlyersPage.jsx:type in the Spice Town Flyers folder on the Mac mini.
+frontend/src/pages/HelpPage.jsx:: sending carries on, and the Spice Town
+frontend/src/pages/HelpPage.jsx:<strong>Street Kitchen - Chef Closing</strong> and <strong>Street Kitchen - Food Service
+frontend/src/pages/HelpPage.jsx:Groceries, Street Kitchen, Flowers, Halal Meat, Spice Town (Generic) or Others.
+frontend/src/pages/HelpPage.jsx:How many of each Street Kitchen item to expect on a chosen day (tomorrow by default, up to 14 days
+frontend/src/pages/HelpPage.jsx:It opens with the real Spice Town letterhead - logo, address, and phone number - then
+frontend/src/pages/HelpPage.jsx:Street Kitchen / Catering items and Container rows are never listed.
+frontend/src/pages/HelpPage.jsx:The checklists staff fill in every night: <strong>Spice Town - Daily Closing</strong>,{" "}
+frontend/src/pages/HelpPage.jsx:missing tonight. On Overview, the Kitchen closing tile covers both Street Kitchen checklists.
+frontend/src/pages/HelpPage.jsx:optional (left blank it shows as Spice Town). A transfer goes to WhatsApp only, never to
+frontend/src/pages/HelpPage.jsx:period (Not sold). Filter to Street Kitchen (both kitchen menus, without
+frontend/src/pages/HelpPage.jsx:slow and dead items). Street Kitchen and Catering Menu items are left out, since they're
+frontend/src/pages/HelpPage.jsx:sold at least 3 then), and Street Kitchen items still on the menu that didn't sell at all in the
+frontend/src/pages/HelpPage.jsx:the Mac mini, in the <strong>Spice Town Flyers</strong> folder in the
+frontend/src/pages/HelpPage.jsx:the same Street Kitchen / Grocery filter as Menu trends.
+frontend/src/pages/NotificationSettingsPage.jsx:lerts reach your phone in the Spice Town app. Changes save straight aw
+frontend/src/pages/TeamTasksPage.jsx:const LAYOUT_KEY = "spicetown_tasks_layout";
+frontend/src/pages/insights/MenuPerformancePage.jsx:<TermInfo k="insights_menu_kitchen" label="Street Kitchen" />
+frontend/src/pages/insights/MenuPerformancePage.jsx:<strong>Not sold</strong> lists Street Kitchen items that are still on the menu in Toast but didn't
+frontend/src/pages/insights/MenuPerformancePage.jsx:not_sold: "Street Kitchen items on the menu with no sales in this period, longest unsold first.",
+frontend/src/pages/insights/MenuPerformancePage.jsx:their item, discounts are taken off). <strong>Street Kitchen</strong> is the prepared-food menu
+frontend/src/pages/insights/MenuPerformancePage.jsx:{group === "kitchen" ? "Street Kitchen" : "Grocery"} items only
+frontend/src/pages/insights/PrepForecastPage.jsx:For each Street Kitchen item we take its sales on the
+frontend/src/pages/insights/PrepForecastPage.jsx:brief="How many of each Street Kitchen item to expect on a day, to plan prep."
