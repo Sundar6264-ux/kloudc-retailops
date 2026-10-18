@@ -1,0 +1,32 @@
+# TEMPLATE - Litestream continuous backup of the store database to Cloudflare R2.
+#
+# DISABLED until the owner has created the R2 bucket and an R2 API token
+# (scripts/backup/README.md, "Off-site: Litestream to Cloudflare R2").
+#
+# Copy to ~/.config/spicetown/litestream.yml and replace the two REPLACE_WITH_
+# values. NO credentials go in this file: run_litestream.sh loads them from
+# ~/.config/spicetown/litestream.env (chmod 600), as the environment
+# variables LITESTREAM_ACCESS_KEY_ID and LITESTREAM_SECRET_ACCESS_KEY, which
+# Litestream reads by itself.
+#
+# Written for Litestream 0.3.x (brew install litestream). Check the keys
+# against https://litestream.io/reference/config/ at install time.
+
+dbs:
+  - path: /Users/sundar/spicetown-backend/backend/spicetown.db
+    replicas:
+      - name: r2
+        type: s3
+        # Cloudflare dashboard > R2 > Overview: "Account ID".
+        endpoint: https://REPLACE_WITH_ACCOUNT_ID.r2.cloudflarestorage.com
+        region: auto
+        bucket: REPLACE_WITH_BUCKET_NAME
+        # One folder per store (multi-store plan, section 3.1).
+        path: stores/spicetown/db
+        force-path-style: true
+        # Changes reach R2 within ~10 seconds.
+        sync-interval: 10s
+        # A full snapshot daily; WAL history kept 30 days = any point in time
+        # in the last 30 days can be restored.
+        snapshot-interval: 24h
+        retention: 720h

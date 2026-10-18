@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.spicetown.cloudflared</string>
+
+    <!-- Cloudflare Tunnel: exposes the dashboard (127.0.0.1:8000) at
+         https://ops.spicetown.shop with no router port-forwarding and no
+         static public IP needed - Cloudflare's edge terminates TLS and
+         proxies the request to this tunnel over an outbound-only
+         connection. Replaces the earlier Tailscale Funnel exposure for the
+         dashboard (see MOBILE_APP_CONTEXT.md). Config/routing/ingress rules
+         live in ~/.cloudflared/config.yml, not here. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/cloudflared</string>
+        <string>tunnel</string>
+        <string>run</string>
+        <string>spicetown-ops</string>
+    </array>
+
+    <!-- LaunchDaemon (system domain), not a LaunchAgent: runs regardless of
+         whether anyone is logged into the GUI, matching every other daemon
+         on this always-on server Mac. Runs as `sundar` (not root) so it
+         reads the tunnel credentials/config from ~/.cloudflared the same
+         way the interactive `cloudflared` commands that created them did. -->
+    <key>UserName</key>
+    <string>sundar</string>
+
+    <!-- Start at boot, and restart automatically if it ever crashes. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/sundar/spicetown-backend/backend/logs/cloudflared.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/sundar/spicetown-backend/backend/logs/cloudflared.error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:/opt/homebrew/sbin</string>
+    </dict>
+</dict>
+</plist>

@@ -1,0 +1,15 @@
+.venv/
+.venv312/
+__pycache__/
+*.pyc
+.env
+*.db
+*.db-wal
+*.db-shm
+logs/
+uploads/
+# Firebase service-account key (FIREBASE_CREDENTIALS_FILE) - a secret.
+firebase-service-account*.json
+.pytest_cache/
+# Insights returning-customer HMAC key (INSIGHTS_HMAC_KEY_FILE) - a secret.
+insights_hmac.key

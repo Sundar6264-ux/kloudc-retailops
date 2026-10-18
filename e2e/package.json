@@ -1,0 +1,13 @@
+{
+  "name": "spicetown-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Read-only browser smoke test for the Spice Town dashboard.",
+  "scripts": {
+    "smoke": "node smoke.mjs",
+    "install-browser": "playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.63.0"
+  }
+}

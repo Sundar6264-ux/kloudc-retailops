@@ -1,0 +1,31 @@
+{
+  "_comment": "Shared cases for the product code search rule (docs/BATCH_OCT14_CONTRACT.md W2). Run by backend/tests/test_w2_product_code_search.py, src/productMatch.test.mjs and copied into the app's test/core/product_match_test.dart - keep all three in step.",
+  "item": {
+    "item_id": "2d3d60fa-b1ec-42c5-ae77-75f664bae2a5",
+    "supplier_item_ids": "DHANA 60 BUNCH (LOCAL);;2659M",
+    "barcodes": "018625167909;793573604293"
+  },
+  "cases": [
+    { "q": "", "expect": null },
+    { "q": "   ", "expect": null },
+    { "q": "2d3d60fa-b1ec-42c5-ae77-75f664bae2a5", "expect": ["item_id", "2d3d60fa-b1ec-42c5-ae77-75f664bae2a5", true] },
+    { "q": "2D3D60FA-B1EC-42C5-AE77-75F664BAE2A5", "expect": ["item_id", "2d3d60fa-b1ec-42c5-ae77-75f664bae2a5", true] },
+    { "q": "2d3d60", "expect": ["item_id", "2d3d60fa-b1ec-42c5-ae77-75f664bae2a5", false] },
+    { "q": "75f664bae2a5", "expect": ["item_id", "2d3d60fa-b1ec-42c5-ae77-75f664bae2a5", false] },
+    { "q": "2d3d6", "expect": null },
+    { "q": "bae2a", "expect": null },
+    { "q": "facade", "expect": null },
+    { "q": "2659m", "expect": ["supplier_item_id", "2659M", true] },
+    { "q": "2659", "expect": ["supplier_item_id", "2659M", false] },
+    { "q": "dhana60bunch(local)", "expect": ["supplier_item_id", "DHANA 60 BUNCH (LOCAL)", true] },
+    { "q": "dhana 60", "expect": ["supplier_item_id", "DHANA 60 BUNCH (LOCAL)", false] },
+    { "q": "26", "expect": null },
+    { "q": "018625167909", "expect": ["barcode", "018625167909", true] },
+    { "q": "18625167909", "expect": ["barcode", "018625167909", true] },
+    { "q": "0018625167909", "expect": ["barcode", "018625167909", true] },
+    { "q": "8625", "expect": ["barcode", "018625167909", false] },
+    { "q": "604293", "expect": ["barcode", "793573604293", false] },
+    { "q": "862", "expect": null },
+    { "q": "masala", "expect": null }
+  ]
+}

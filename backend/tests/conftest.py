@@ -1,0 +1,248 @@
+"""Backend test harness: a throwaway SQLite database per test, real app
+routes via FastAPI's TestClient, and logged-in clients for an admin and two
+staff users.
+
+The environment is set before anything from `app` is imported - settings
+are read once (lru_cache) and the engine is created at import time. The
+TestClient is never used as a context manager, so the app's lifespan (the
+schedulers) never starts.
+
+Run: cd website/backend && .venv/bin/pip install -r requirements-dev.txt
+     && .venv/bin/python -m pytest -q
+"""
+
+import os
+import pathlib
+import tempfile
+
+_TMP = pathlib.Path(tempfile.mkdtemp(prefix="spicetown-tests-"))
+os.environ.update(
+    {
+        "DATABASE_URL": f"sqlite:///{_TMP / 'test.db'}",
+        "SCHEDULER_ENABLED": "false",
+        "NOTIFICATIONS_ENABLED": "false",
+        "TEAM_JOBS_ENABLED": "false",
+        "FIREBASE_CREDENTIALS_FILE": "",
+        "TEAM_UPLOADS_DIR": str(_TMP / "uploads" / "team"),
+        "INVOICE_UPLOADS_DIR": str(_TMP / "uploads" / "invoices"),
+        # Never the real ~/Spice Town Flyers.
+        "FLYERS_DIR": str(_TMP / "flyers"),
+        "WHAPI_API_TOKEN": "",
+        "GMAIL_APP_PASSWORD": "",
+        "ANTHROPIC_API_KEY": "",
+        # Toast Analytics never configured in tests (tests set fake values
+        # on the settings object and mock every HTTP call).
+        "TOAST_ANALYTICS_CLIENT_ID": "",
+        "TOAST_ANALYTICS_CLIENT_SECRET": "",
+        # Nor the standard Toast API: the dev .env (and prod's) hold real
+        # credentials, so a test path that forgot a mock would otherwise call
+        # the live store's Toast. Tests that need "configured" set fake values.
+        "TOAST_CLIENT_ID": "",
+        "TOAST_CLIENT_SECRET": "",
+    }
+)
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.auth import create_session  # noqa: E402
+from app.db import Base, SessionLocal, engine  # noqa: E402
+from app.main import app  # noqa: E402
+from app.models import User  # noqa: E402
+from app.team.models import Team, TeamMember  # noqa: E402
+from app.timeutil import utcnow  # noqa: E402
+
+# The default teams the 0026 migration seeds.
+SEED_TEAMS = [
+    ("Everyone", "#5B8DEF", True),
+    ("Grocery", "#3ED598", False),
+    ("Kitchen", "#F5A524", False),
+    ("Managers", "#A78BFA", False),
+]
+
+
+_TEST_DB = str(_TMP / "test.db")
+
+
+def _refuse_a_real_database() -> None:
+    """Stops the run before anything is dropped unless the app is wired to
+    this run's throwaway database and settings. If something imports `app`
+    before this file sets the environment (e.g. a `pytest -p` plugin that
+    patches app code), the engine and the cached settings come from .env:
+    the dev database here - which _fresh_db's drop_all wiped on Oct 4 - and
+    the live database (and real WhatsApp token) in the prod checkout."""
+    from app.config import get_settings
+
+    settings = get_settings()
+    problems = []
+    if engine.url.database != _TEST_DB:
+        problems.append(f"the database is {engine.url.database!r}")
+    if settings.whapi_api_token:
+        problems.append("a WhatsApp token is set")
+    if pathlib.Path(settings.flyers_dir) != _TMP / "flyers":
+        problems.append(f"the flyers folder is {settings.flyers_dir!r}")
+    if problems:
+        pytest.exit(
+            "Refusing to run tests: "
+            + "; ".join(problems)
+            + ". Something imported `app` before tests/conftest.py set the test environment "
+            "(a -p plugin?). Patch app code from inside a test or a conftest fixture instead.",
+            returncode=3,
+        )
+
+
+@pytest.fixture(autouse=True)
+def _fresh_db():
+    from app.services.checklist_schemas import clear_cache as clear_checklist_cache
+
+    _refuse_a_real_database()
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    # Checklist definitions are cached per process (checklist_schemas).
+    clear_checklist_cache()
+    db = SessionLocal()
+    try:
+        for name, color, everyone in SEED_TEAMS:
+            db.add(Team(name=name, color=color, is_everyone=everyone, created_at=utcnow()))
+        db.commit()
+    finally:
+        db.close()
+    yield
+
+
+@pytest.fixture
+def db():
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def make_user(db, username, is_admin=False, features=None, can_assign=False):
+    import json
+
+    user = User(
+        username=username,
+        password_hash="x",  # never logged in with; tests use sessions directly
+        is_admin=is_admin,
+        allowed_features=json.dumps(features or []),
+        can_assign=can_assign,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def client_for(db, user):
+    token, _ = create_session(db, user.id)
+    client = TestClient(app)
+    client.headers.update({"Authorization": f"Bearer {token}"})
+    client.user = user
+    client.token = token
+    return client
+
+
+@pytest.fixture
+def admin(db):
+    return make_user(db, "boss", is_admin=True)
+
+
+@pytest.fixture
+def staff(db):
+    return make_user(db, "ravi", features=["team_tasks", "team_chat"])
+
+
+@pytest.fixture
+def staff2(db):
+    return make_user(db, "sam", features=["team_tasks"])
+
+
+@pytest.fixture
+def admin_client(db, admin):
+    return client_for(db, admin)
+
+
+@pytest.fixture
+def staff_client(db, staff):
+    return client_for(db, staff)
+
+
+@pytest.fixture
+def staff2_client(db, staff2):
+    return client_for(db, staff2)
+
+
+@pytest.fixture
+def anon_client():
+    return TestClient(app)
+
+
+@pytest.fixture
+def team(db):
+    """The Kitchen team, with no members yet."""
+    return db.query(Team).filter(Team.name == "Kitchen").one()
+
+
+def add_member(db, team, user):
+    db.add(TeamMember(team_id=team.id, user_id=user.id, created_at=utcnow()))
+    db.commit()
+
+
+# --- No test reaches the outside world (multi-store M1, MT3) ----------------
+# Blank credentials alone are not enough: a test path that forgot a mock
+# still sends a request (MT3's connector methods work now, so calling one
+# unpatched would ask Toast - it happened once, with empty credentials, and
+# Toast answered 401). Every outbound connection and DNS lookup is refused for
+# the whole run; loopback and Unix sockets stay allowed.
+import socket  # noqa: E402
+
+_LOOPBACK = {"127.0.0.1", "::1", "localhost"}
+_real_connect = socket.socket.connect
+_real_connect_ex = socket.socket.connect_ex
+_real_getaddrinfo = socket.getaddrinfo
+
+
+def _local(sock, address) -> bool:
+    if getattr(socket, "AF_UNIX", None) is not None and sock.family == socket.AF_UNIX:
+        return True
+    return isinstance(address, tuple) and bool(address) and str(address[0]) in _LOOPBACK
+
+
+def _no_network_connect(self, address):
+    if not _local(self, address):
+        raise OSError(f"tests must not reach the network (connection to {address!r}); mock the call")
+    return _real_connect(self, address)
+
+
+def _no_network_connect_ex(self, address):
+    if not _local(self, address):
+        raise OSError(f"tests must not reach the network (connection to {address!r}); mock the call")
+    return _real_connect_ex(self, address)
+
+
+def _no_network_getaddrinfo(host, *args, **kwargs):
+    if host is not None and str(host) not in _LOOPBACK:
+        raise socket.gaierror(f"tests must not reach the network (DNS lookup of {host!r}); mock the call")
+    return _real_getaddrinfo(host, *args, **kwargs)
+
+
+def _install_network_guard():
+    socket.socket.connect = _no_network_connect
+    socket.socket.connect_ex = _no_network_connect_ex
+    socket.getaddrinfo = _no_network_getaddrinfo
+
+
+# Already while test modules are collected (imported), not only once the
+# first test's fixtures run.
+_install_network_guard()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _no_outside_network():
+    _install_network_guard()
+    yield
+    socket.socket.connect = _real_connect
+    socket.socket.connect_ex = _real_connect_ex
+    socket.getaddrinfo = _real_getaddrinfo

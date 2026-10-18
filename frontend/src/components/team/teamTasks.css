@@ -1,0 +1,183 @@
+/* Team Tasks, Oct 15: filters, "My team today", bulk bar, lead progress,
+   the drawer's main action and its Edit form. Colors come from index.css's
+   tokens only, so light and dark both work. Every custom <button> hover has
+   :not(:disabled) (skill gotcha #18). */
+
+.task-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.6rem 0 0.2rem;
+}
+
+.task-filters select,
+.task-search {
+  max-width: 100%;
+}
+
+.task-search {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+/* My team today */
+.task-today {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.6rem 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--subtle-bg);
+  font-size: 0.85rem;
+}
+
+.task-today-totals {
+  margin-right: 0.3rem;
+}
+
+.task-today-chip {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: baseline;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: normal;
+  line-height: 1.4;
+}
+
+button.task-today-chip {
+  cursor: pointer;
+}
+
+button.task-today-chip:hover:not(:disabled) {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.task-today-chip-overdue {
+  border-color: var(--failed-text);
+}
+
+.task-today-chip-active,
+button.task-today-chip-active:hover:not(:disabled) {
+  background: var(--info-bg);
+  border-color: var(--info-text);
+  color: var(--info-text);
+}
+
+/* Bulk select (admins) */
+.task-select-cell {
+  width: 2rem;
+  text-align: center;
+}
+
+.task-table tr.task-row-selected td {
+  background: var(--info-bg);
+}
+
+.task-bulk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--info-text);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
+  font-size: 0.88rem;
+}
+
+/* Lead tasks: "N left of M" */
+.task-progress {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+.task-progress-bar {
+  flex: 1;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.task-progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--success-text);
+}
+
+/* Drawer: actions wrap (the main action is index.css's .button-link) */
+.task-drawer-actions {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.task-cant-do-reason {
+  margin: 0;
+}
+
+/* Drawer: Edit / Reassign */
+.task-edit-form input[type="text"],
+.task-edit-form textarea,
+.task-edit-form select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.task-edit-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.task-steps-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.task-steps-edit legend {
+  font-size: 0.85rem;
+  padding: 0 0.25rem;
+}
+
+.task-steps-edit > .link-button {
+  align-self: flex-start;
+}
+
+.task-step-edit-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.task-step-edit-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .task-edit-row {
+    grid-template-columns: 1fr;
+  }
+}

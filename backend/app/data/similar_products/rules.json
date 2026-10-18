@@ -1,0 +1,117 @@
+{
+  "version": 2,
+  "about": "Rules for app/services/similar_products.py. Learned from the Sep 2026 catalog (latest inventory upload, ~4,900 sellable items) and evaluated on the hand-labelled set in backend/tests/data/similar_products_labels.json. Edit, then re-run backend/tests/test_ops_similar_products.py.",
+  "excluded_category_groups": [
+    "STREET KITCHEN", "CATERING MENU", "EVENT MENU"
+  ],
+  "vendor_prefixes": [
+    "pc"
+  ],
+  "stopwords": [
+    "a", "an", "and", "the", "of", "with", "w", "for", "in", "on", "to", "by", "n", "x", "b", "pack", "pk",
+    "pkt", "packet", "each", "ea", "per", "new", "nos", "no", "b4g1", "b1g1", "bogo", "buy", "get", "free",
+    "offer", "sale", "non", "gmo", "nongmo", "ngmo", "brand", "item", "items", "value", "family", "fp", "mega",
+    "bag", "box", "jar", "pouch", "bottle", "can", "tin", "case", "pc", "pcs", "piece", "pieces", "ct", "count",
+    "size", "reg", "net", "wt", "approx", "only", "also", "set", "unit", "units", "lb", "lbs", "oz", "g", "gm",
+    "gms", "gr", "kg", "ml", "ltr", "lt", "l", "fl", "floz", "inch", "in", "s", "vs", "gx", "mlx", "sheets",
+    "single", "tetra", "pet", "bucket", "bulk", "blk", "carton", "pouch", "refill", "bottle", "jar"
+  ],
+  "weak_words": [
+    "premium", "special", "best", "pure", "original", "classic", "natural", "authentic", "homestyle", "home",
+    "style", "traditional", "select", "gold", "golden", "quality", "extra", "super", "deluxe", "desi", "indian",
+    "real", "tasty", "healthy", "fancy", "royal", "regular", "jumbo", "large", "big", "small", "mini", "medium",
+    "thick", "thin", "fine", "coarse", "long", "grain", "aged", "old", "fresh", "ready", "made", "brand",
+    "organic", "unpolished", "polished", "cleaned", "clean", "sortex", "premium quality", "economy", "combo",
+    "pre", "shahi", "bombay", "sindhi", "hyderabadi", "punjabi", "madras", "kerala", "malabar", "memoni",
+    "karachi", "lahori", "delhi", "mysore", "chettinad", "kolhapuri", "andhra", "goan", "bengali", "gujarati",
+    "rajasthani", "south", "north", "lucknowi", "amritsari", "peshawari", "dakshin", "udupi", "alphonso",
+    "kesar", "banganapalli", "bangenapalli", "langra", "dussheri", "dasheri", "himayat", "chaunsa", "chausa",
+    "sindhri", "rasalu", "rassallu", "totapuri", "hapus", "ratnagiri", "ball", "square", "cube", "block",
+    "round", "hex", "shape"
+  ],
+  "type_tokens": [
+    "powder", "whole", "split", "paste", "oil", "milk", "cream", "chutney", "pickle", "sauce", "flour", "atta",
+    "maida", "besan", "riceflour", "candy", "biscuit", "rusk", "chips", "icecream", "kulfi", "juice", "drink",
+    "soda", "coconutwater", "tea", "coffee", "noodles", "soap", "shampoo", "hairoil", "toothpaste", "rice",
+    "dal", "grated", "desiccated", "slices", "leaf", "halwa", "laddu", "barfi", "katli", "peda", "jalebi",
+    "rasgulla", "rasmalai", "gulabjamun", "soanpapdi", "mysorepak", "kheer", "chikki", "bhujia", "sev",
+    "mixture", "chivda", "murukku", "khakhra", "papad", "fryums", "roti", "naan", "paratha", "kulcha", "puri",
+    "samosa", "kachori", "pakora", "vada", "dosa", "idli", "batter", "masala", "incense", "dhoop", "camphor",
+    "diya", "wick", "ghee", "yogurt", "paneer", "cheese", "jam", "honey", "vinegar", "cake", "wafer",
+    "chocolate", "syrup", "sharbat", "lassi", "buttermilk", "noodle", "pasta", "vermicelli", "poha", "rava",
+    "sabudana", "makhana", "jaggery", "sugar", "salt", "cone", "tub", "stick", "cup", "aarti", "khakhra",
+    "spread", "custard", "essence", "tenderizer"
+  ],
+  "trailing_modifiers": [
+    "oily", "dry", "plain", "salted", "unsalted", "spicy", "hot", "sweet", "mild", "brown", "white", "red",
+    "green", "yellow", "black", "organic", "unpolished", "polished", "loose", "bottle", "refill", "jar",
+    "sortex", "raw", "roasted", "fried", "cut", "whole", "split", "big", "small", "fine", "coarse", "thick",
+    "thin", "new", "fresh"
+  ],
+  "frozen_words": [
+    "frozen", "icecream", "kulfi"
+  ],
+  "non_brand_leading_words": [
+    "chicken", "goat", "lamb", "beef", "fish", "shrimp", "fresh", "organic", "red", "green", "black", "white",
+    "yellow", "brown", "pink", "blue", "whole", "dry", "dried", "frozen", "mango", "banana", "onion", "potato",
+    "tomato", "garlic", "ginger", "sweet", "mixed", "curry", "chili", "paneer", "steel", "stainless",
+    "aluminium", "aluminum", "brass", "clay", "copper", "iron", "ceramic", "glass", "plastic", "wooden", "bowl",
+    "sauce", "tea", "rice", "milk", "ghee", "instant", "spice", "spiced", "pooja", "puja", "crispy", "jelly",
+    "kit", "flat", "cutting", "photo", "container", "table", "serving", "spatula", "baking", "water", "family",
+    "coconut", "lemon", "lime", "cucumber", "carrot", "eggplant", "cilantro", "okra", "karela", "dudhi",
+    "drumstick", "bell", "corn", "neem", "rose", "lotus", "lily", "rangoli", "diya", "cotton", "thread",
+    "kulfi", "choco", "chocolate", "egg", "eggs", "king", "om", "dubai", "himalayan", "tawa", "wok", "peeler",
+    "spoon", "plate", "glass", "tray", "lunch", "gripe", "medjool", "alphonso", "mysore", "valor", "kesar",
+    "momo", "tomato", "cheese", "cutting", "iron", "rohu", "tender", "raw", "roasted", "salted", "plain", "hot",
+    "spicy", "mild", "double", "triple", "small", "large", "big", "mini", "jumbo", "baby", "kids", "honey",
+    "turmeric", "sugar", "salt", "masala", "ragi", "bajra", "jowar", "atta", "besan", "sooji", "poha", "moong",
+    "urad", "toor", "chana", "rajma", "cumin", "pepper", "cardamom", "clove", "cinnamon", "sesame", "peanut",
+    "cashew", "almond", "pistachio", "raisin", "date", "fig", "saffron", "tamarind", "jaggery", "gur", "kaju",
+    "badam", "pista", "matar", "aloo", "palak", "methi", "dal", "pan", "paan", "arali", "erukkam", "thums",
+    "flower", "mixed", "loose", "button", "scallion", "anar", "papaya", "pears", "guava", "tulsi", "tulasi",
+    "car", "kitchen", "top", "happy", "tiny", "fair", "mountain", "pass", "surprise", "tongue", "serving",
+    "donut", "marble", "copper", "crane", "deer", "tiger", "baker", "saute", "acrylic", "container", "bangles",
+    "iron", "la", "gg", "chx", "satya", "sumac", "carrom", "matcha", "modak", "mithai", "roti", "friendly",
+    "boomi", "lota", "ghee", "hesh", "popping", "rakhi", "shahi", "yrs", "kesar", "agarabatti", "agabatti"
+  ],
+  "brand_auto_detect": {
+    "min_leading_count": 3,
+    "max_nonleading_share": 0.2
+  },
+  "scoring": {
+    "min_score": 0.46,
+    "default_limit": 8,
+    "same_subcategory_boost": 1.08,
+    "same_category_boost": 1.04,
+    "other_category_group_factor": 0.6,
+    "other_category_factor": 0.8,
+    "frozen_mismatch_factor": 0.72,
+    "fresh_mismatch_factor": 0.72,
+    "type_conflict_factor": 0.55,
+    "missing_type_factor": 0.8,
+    "head_mismatch_factor": 0.7,
+    "extra_type_factor": 0.85,
+    "single_brand_token_factor": 0.6,
+    "weak_word_factor": 0.35,
+    "unique_token_factor": 0.6,
+    "same_product_min_score": 0.9
+  },
+  "plural_exceptions": [
+    "gas", "glass", "grass", "class", "chips", "peas", "masoor", "moss", "dress", "press", "bus", "plus",
+    "citrus", "cress", "floss", "lotus", "hibiscus", "asparagus", "cactus", "couscous", "hummus", "anchovies",
+    "series", "species", "molasses", "noodles", "sweets", "oats", "ghees", "is", "his", "this", "yes", "cheese",
+    "less", "gloss", "kiss", "boss", "loss", "miss", "mess", "chess", "bliss", "swiss", "kids", "ras", "khas",
+    "papas", "dus", "das", "kurkures", "haldirams", "mitchells", "lays", "hands", "chings", "narasus", "jiyas",
+    "banne", "nawabs", "mothers", "kns", "mcvities", "trs", "mdh", "gms", "gps", "thums", "halls", "ahmeds",
+    "patanjalis", "shezans", "sujatas"
+  ],
+  "type_equivalents": [["powder", "masala"]],
+  "typo_protected": [
+    "better", "bitter", "butter", "strong", "string", "sheet", "shell", "stick", "sticks", "float", "flake",
+    "breads", "break", "broast", "roast", "toast", "ground", "round", "pound", "rings", "wings", "river",
+    "liver", "liner", "latte", "plate", "touch", "pouch", "spout", "south", "valve", "value", "greek", "green",
+    "glove", "clove", "morning", "insta", "gosht", "ghost", "puree", "halwai", "mitha", "mocha", "doodh",
+    "makhan", "kesari", "shera", "basket", "gasket", "cutter", "chick", "thick", "guard", "gourd", "crown",
+    "brown", "cross", "sizes", "shake", "shark", "munch", "punch", "bunch", "panch", "peach"
+  ]
+}

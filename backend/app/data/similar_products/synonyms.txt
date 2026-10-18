@@ -1,0 +1,335 @@
+# Similar-products synonym / transliteration table (version 1, Sep 2026).
+#
+# Format:  canonical = variant, variant, multi word variant, ...
+# - Matching is on lowercased, punctuation-stripped name tokens, longest
+#   phrase first, AFTER pack sizes are removed and BEFORE plural stemming
+#   (list plural forms explicitly when they differ from a plain trailing "s").
+# - The canonical side may be several words ("chana dal"); each word becomes a
+#   product token. A variant can also map to itself plus a qualifier.
+# - Built from the store's real catalog (every spelling below occurs in the
+#   Toast export or is a common Indian / Pakistani / South Indian name for a
+#   product the store stocks), cross-checked against Hindi / Telugu / Tamil
+#   grocery glossaries (vegrecipesofindia.com, organicmandya.com dal list,
+#   nriol.com Telugu grocery table).
+
+# --- Lentils, pulses, beans ----------------------------------------------
+toor = tuvar, toovar, tur, tuar, arhar, arahar, thuvaram, thuvar, togari, kandi, pigeon pea, pigeon peas, red gram
+moong = mung, mong, moog, green gram, pesara, pesalu, pasi, pasipayir, hesaru
+urad = urid, urad, udad, udid, black gram, minapa, minumulu, minapappu, uddi, ulundu, uzhunnu
+masoor = masur, masoor, masoor dal, red lentil, red lentils, mysore dal
+chana dal = chana daal, channa dal, chana dhal, split bengal gram, bengal gram dal, senaga pappu, kadalai paruppu, kadale bele
+chana = channa, chanaa, chhana, senaga, kadalai, kadale, bengal gram
+chickpea = chickpeas, chick pea, chick peas, garbanzo, garbanzo beans, kabuli chana, kabuli channa, kabuli, chole, chhole, safed chana
+kalachana = kala chana, kala channa, black chana, black chickpea, black chickpeas, brown chana, desi chana
+rajma = kidney beans, kidney bean, red kidney beans, lal lobia
+lobia = chawli, chowli, black eyed peas, black eyed beans, black eye beans, black eye peas, blackeye peas, cowpeas, cowpea, alasanda, alasandalu, karamani, thattai payaru
+horsegram = kulthi, kulith, horse gram, ulavalu, kollu, hurali
+moth = matki, moth beans, moth bean, mat beans
+val = vaal, field beans, field bean, pavta, avarai, mochai
+matar = vatana, dried peas, dry peas, white peas, dried white peas, safed matar
+dal = daal, dhal, dhall, pappu, paruppu, bele, lentil, lentils
+peas = pea, green peas, hara matar, matar frozen
+
+# --- Spices (whole + ground) --------------------------------------------
+# Crispy fried onions (birista) are a pantry item, not fresh onions.
+friedonion = fried onion, fried onions, birista, crispy onion, crispy onions, fried onion flakes
+# A snack flavour, not asafoetida or cumin ("Jabson Peanut Hing Jeera").
+hingjeera = hing jeera, heeng jeera, hing zeera
+cumin = jeera, jira, zeera, zira, jeerakam, jeelakarra, jeelakara, seeragam, jeeragam
+shahjeera = shahi jeera, shah jeera, kala jeera, caraway, caraway seeds
+turmeric = haldi, huldi, pasupu, manjal, arishina
+coriander = dhania, dhaniya, dhaniyaa, dhana, dhaniyalu, kothamalli, malli, kothimbir seeds
+cilantro = coriander leaves, coriander leaf, hara dhania, kottimira, kothimbir, kothamalli leaves, cilantro bunch
+fenugreek = methi, methi dana, menthulu, menthi, vendhayam, uluva
+kasurimethi = kasuri methi, kasoori methi, kasturi methi, dried fenugreek leaves, dry methi leaves, dried methi
+ajwain = ajwan, ajowan, ajmo, ajma, omam, oma, vamu, carom, carom seeds, bishops weed
+fennel = saunf, sonf, soonf, sompu, sombu, sopu, perinjeeragam, badi saunf, aniseed, anise seed, anise seeds
+staranise = star anise, badiyan, badian, chakri phool, chakra phool, anasa puvvu
+nigella = kalonji, kalongi, kalunji, onion seeds, onion seed, nigella seeds, black seed, black seeds, karunjeeragam
+hing = heeng, asafoetida, asafetida, asafoetida powder, inguva, perungayam, perungaya
+amchur = amchoor, amchor, aamchur, dry mango powder, dried mango powder, mango powder
+cardamom = elaichi, elachi, ilaichi, illaichi, elaichi green, elakkai, yelakkai, yelakulu, elakulu, cardamon, green cardamom
+blackcardamom = black cardamom, badi elaichi, moti elaichi, kali elaichi
+clove = cloves, laung, lavang, lavangam, grambu, krambu
+cinnamon = dalchini, dalchina, darchini, pattai, lavangapatta, cassia
+pepper = kali mirch, kalimirch, kali mirchi, black pepper, miriyalu, milagu, kurumulaku, peppercorn, peppercorns
+mustard = rai, raee, sarson, sarso, avalu, aavalu, kadugu, sasive, mohri
+poppy = khus khus, khuskhus, khas khas, khaskhas, posto, gasagasalu, gasagasaalu, kasa kasa, poppy seeds
+sesame = til, till, nuvvulu, nuvvu, ellu, gingelly, gingely, gingerly, sesame seeds
+bayleaf = bay leaf, bay leaves, tej patta, tejpatta, tejpat, biryani leaf, biryani leaves, tamalpatra, brinji
+curryleaf = curry leaf, curry leaves, kadi patta, kari patta, karipatta, kadipatta, karivepaku, karuveppilai, curry patta
+chili = chilli, chillies, chilly, chilies, chile, chiles, mirchi, mirch, mirapakaya, mirapa, milagai, molagai, lal mirch, lal mirchi, red chilli, red chili, red chillies, chillie
+ginger = adrak, adrakh, allam, inji, sonth, sonth powder, saunth, soonth, dry ginger, shunti
+garlic = lahsun, lehsun, lasun, lassan, vellulli, velluli, poondu, bellulli
+tamarind = imli, imlee, chintapandu, chinthapandu, chinta pandu, chintha pandu, puli, hunase
+mango kesar = kesar mango, kesar mangoes, kesar mangos
+saffron = kesar, keshar, zafran, zafraan, kumkumapuvvu, kungumapoo
+mace = javitri, jawitri, japatri
+nutmeg = jaiphal, jaifal, jathikai, jajikaya
+blacksalt = black salt, kala namak, kalanamak, sanchal, sonchal, bit lobon
+rocksalt = rock salt, sendha namak, sendha, saindhava, himalayan pink salt, pink salt
+salt = namak, uppu
+chaat = chat, chaat masala, chat masala
+garam = garam masala
+biryani = biriyani, biriani, briyani, biryanii
+sambar = sambhar, saambar, sambaar
+rasam = rasam powder
+kasuri = kasoori
+pavbhaji = pav bhaji, pao bhaji
+chole masala = chana masala, chole masala, channa masala, chhole masala
+tandoori = tandori, tandoor
+tikka = tika masala
+kashmiri = kasmiri, kashmir
+
+# --- Flours, grains, rice ------------------------------------------------
+atta = chakki atta, whole wheat flour, wheat flour, whole wheat atta, wheat atta, gehu atta, godhuma pindi, godhumai maavu, durum atta, sharbati atta
+maida = all purpose flour, all-purpose flour, plain flour, refined flour, refined wheat flour, apf
+besan = gram flour, chickpea flour, chana flour, chana atta, senaga pindi, kadalai maavu, besan flour
+riceflour = rice flour, chawal atta, chawal ka atta, biyyam pindi, bium pindi, arisi maavu, rice atta
+ragi = nachni, nachani, finger millet, mandua, ragulu, kezhvaragu
+jowar = jwari, jowari, jonna, jonnalu, sorghum, white millet, cholam
+bajra = bajri, sajja, sajjalu, kambu, pearl millet
+foxtail = foxtail millet, kangni, korra, korralu, thinai, navane, kakum
+littlemillet = little millet, kutki, samai, sama, saamai, sama rice
+barnyard = barnyard millet, sanwa, samvat, sama ke chawal, udalu, kuthiraivali, oodalu
+kodo = kodo millet, kodra, arikelu, varagu, harka
+proso = proso millet, cheena, variga, panivaragu
+rava = rawa, ravva, sooji, suji, soojee, semolina, bombay rava, upma rava, samolina
+idli rava = idly rava, idli rawa, rice rava, idli ravva, cream of rice
+dalia = daliya, dalia split, broken wheat, cracked wheat, lapsi, godhuma rava, bulgur
+poha = pauwa, pawa, pohe, poah, aval, avalakki, atukulu, beaten rice, flattened rice, rice flakes, chura, chira
+sabudana = sago, saboodana, saggubiyyam, javvarisi, tapioca pearls, tapioca pearl
+vermicelli = seviyan, sevaiyan, sevai, semiya, semia, semiyan, sevian
+makhana = phool makhana, foxnut, fox nut, fox nuts, foxnuts, lotus seeds, lotus seed, makhane
+sonamasoori = sona masoori, sona masuri, sona mahsuri, sonamasuri, sona massori
+matta = rose matta, rosematta, kerala matta, palakkadan matta, vadi matta
+jeerakasala = jeera samba, jeerakasala, kaima rice, jeerakashala
+basmati = basmathi, basmatti
+parboiled = boiled, par boiled, ukda, ukdi, puzhungal
+cornflour = corn flour, cornstarch, corn starch, makki atta, makai atta, maize flour
+singhara = singhara atta, water chestnut flour, singoda
+kuttu = kuttu atta, buckwheat flour, buckwheat
+rajgira = rajgira atta, amaranth flour, ramdana, amaranth
+quinoa = kinwa
+oats = oat, rolled oats, oatmeal
+
+# --- Dairy -----------------------------------------------------------------
+ghee = ghruta, neyyi, nei, clarified butter, desi ghee, cow ghee, pure ghee
+paneer = panir, cottage cheese, indian cottage cheese
+yogurt = yoghurt, yogourt, dahi, curd, curds, perugu, thayir, mosaru
+buttermilk = chaas, chhaas, chaach, majjiga, moru, mor, butter milk
+khoya = khoa, khowa, mawa, maawa
+lassi = lasi
+kulfi = kulfee, qulfi
+
+# --- Sweets ---------------------------------------------------------------
+laddu = ladoo, laddoo, ladu, laddus, ladoos, laddoos, lddu
+barfi = burfi, burfee, barfee, barfy, burfy
+katli = katri, kathli
+cashew = kaju, cashews, cashew nuts, cashewnut, cashewnuts, jeedi pappu, mundiri
+almond = badam, badaam, almonds
+pistachio = pista, pistachios, pistachio nuts
+raisin = kishmish, kismis, raisins, sultana, sultanas, dry grapes
+walnut = akhrot, walnuts, akrot
+fig = anjeer, anjir, figs, athi
+date = khajur, khajoor, khajuri, dates, kharjura, kharjuram, dry dates, chhuhara
+apricot = khubani, jardalu, apricots
+gulabjamun = gulab jamun, gulab jamoon, gulab jaamun, gulab jambu
+rasgulla = rasagulla, rasgolla, rosogolla, rasogolla, rasagola, rasagolla, roshogolla
+rasmalai = ras malai, rasamalai
+jalebi = jilebi, jalabi, jalebee, jilapi, imarti
+halwa = halva, halwah, halava
+peda = pedha, pera, pedas
+soanpapdi = soan papdi, son papdi, sohan papdi, soan papri, soan patti, soan pappdi, patisa, shahi patisa, patissa
+mysorepak = mysore pak, mysore paak
+kheer = payasam, payasa, payesh, kheer mix, phirni
+chikki = chiki, gajak, gachak
+gujiya = gujia, karanji, kajjikayalu
+kalakand = kalakhand, milk cake
+chamcham = cham cham, chum chum, chumchum
+malpua = malpura
+
+# --- Snacks -----------------------------------------------------------------
+bhujia = bhujiya, bujia, bhujiaa
+chivda = chiwda, chevda, chevdo, chivada, chiwra, chuda, chewda, poha chivda
+mixture = mixchar, mixtures, mix namkeen, namkeen mix
+murukku = muruku, murkku, chakli, chakri, chakralu, jantikalu, janthikalu
+khakhra = khakra, khakara, khakhara, khakharas, khakhras
+mathri = mathiya, mathari, mathi
+papad = papadum, papadom, pappadam, pappadum, appalam, appadam, poppadom, poppadum, appalams, papads
+fryums = vadiyalu, vadam, vadagam, fryum
+panipuri = pani puri, golgappa, gol gappa, puchka, phuchka, gupchup
+bhel = bhelpuri, bhel puri
+rusk = rusks, toast, toasts
+biscuit = biscuits, cookie, cookies, biskut, biskoot
+milk biscuit = milk bikis, milkbikis, bikis
+biscuit marie = marie, marie gold, marie lite
+biscuit bourbon = bourbon
+biscuit good day = good day
+biscuit krackjack = krackjack, krack jack
+biscuit monaco = monaco
+biscuit hide seek = hide seek, hide and seek
+biscuit digestive = digestive
+chips = chip, crisps
+namkeen = namkin, namkeens
+samosa = samosas, samsa, singara
+kachori = kachodi, kachoris, kachauri
+pakora = pakoda, pakodi, bhajji, bajji, pakoras, pakodas
+chakodi = chekodilu, chekodi, chekkodi
+chekkalu = chekka, thattai, nippattu, nipattu
+boondi = bundi, boondhi, bhoondi
+sev = shev, sevu, omapodi, oma podi
+
+# --- Breads -----------------------------------------------------------------
+roti = chapati, chapathi, chappati, phulka, fulka, rotis
+naan = nan, naans, nann
+paratha = parotta, porotta, parota, parata, paratah, prantha, parantha, paratta, barotta, parathas
+kulcha = kulchas
+puri = poori, pooris, puris
+bhatura = bhatoora, bhature, bhatoore
+thepla = theplas
+
+# --- Pickles, condiments --------------------------------------------------
+pickle = achar, achaar, aachar, athanu, uragaya, urugaya, oorugai, urukai, pickles, uppinakayi
+mango pickle = avakaya, avakai, avakaaya, aavakaaya, mango avakaya, avakaya mango
+chutney = chatni, chutni, chatney, pachadi, thogayal, thuvaiyal
+thokku = thokkku, tokku
+gongura = roselle, sorrel leaves, pulicha keerai
+sauce = sauces, ketchup
+paste = pastes
+vinegar = sirka
+
+# --- Tea, coffee, drinks --------------------------------------------------
+tea = chai, chaa, chaye, teas
+coffee = kaapi, kapi, coffe
+icecream = ice cream, ice creams, ice-cream, icecreams
+juice = juices, nectar
+soda = sodas
+roohafza = rooh afza, ruh afza
+sharbat = sherbet, sharbet, sherbat, shurbat, syrup, squash
+coconutwater = coconut water, tender coconut water, coco water
+
+# --- Produce ----------------------------------------------------------------
+okra = bhindi, bhendi, ladies finger, lady finger, ladyfinger, bendakaya, bendakai, vendakkai
+eggplant = baingan, brinjal, brinjals, eggplants, vankaya, kathirikai, badanekai, aubergine, begun
+bottlegourd = bottle gourd, lauki, louki, dudhi, doodhi, dudi, sorakaya, anapakaya, sorakkai, opo, opo squash
+bittergourd = bitter gourd, bitter melon, karela, karella, kakarakaya, pavakkai, hagalakai
+tindora = tindola, tondli, tendli, ivy gourd, dondakaya, kovakkai, kundru, tindoora
+ridgegourd = ridge gourd, turai, turiya, tori, beerakaya, peerkangai, luffa
+snakegourd = snake gourd, chichinda, potlakaya, pudalangai
+drumstick = drumsticks, moringa, murungakkai, mulakkada, sahjan, saragwa, shevga
+spinach = palak, palakura, keerai
+potato = aloo, alu, potatoes, batata, bangaladumpa, urulaikizhangu
+onion = pyaz, pyaaz, kanda, onions, ullipaya, vengayam, eerulli
+tomato = tamatar, tomatoes, tamota, thakkali
+radish = mooli, muli, daikon, mullangi, radishes
+taro = arbi, arvi, colocasia, eddo, eddoes, chamagadda, seppankizhangu, patra leaves
+yam = suran, elephant foot yam, jimikand, kanda gadda, senai
+kantola = kantoli, kakrol, spiny gourd, teasel gourd, akakara, kartoli
+valor = papdi, surti papdi, indian flat beans, flat beans, broad beans, chikkudukaya, avarekai, sem, lilva
+guar = guvar, gavar, cluster beans, cluster bean, goruchikkudu, kothavarangai
+parwal = parval, pointed gourd, potol
+tinda = round gourd, apple gourd, indian squash
+pumpkin = kaddu, gummadikaya, poosanikai, kaddu red
+jackfruit = kathal, katahal, panasa, chakka, pala
+mint = pudina, podina, phudina, mint leaves
+lemon = nimbu, limbu, nimmakaya, lemons
+lime = limes
+amla = aamla, amlaa, amalaki, usirikaya, usirikaaya, nellikai, nellikkai, indian gooseberry, gooseberry
+plantain = raw banana, green banana, kacha kela, aratikaya, vazhakkai, plantains
+banana = bananas, kela
+mango = mangoes, mangos, aam, mamidi, mamidikaya, raw mango, kairi
+curryleafplant = curry leaf plant
+methileaf = methi leaves, fresh methi, fenugreek leaves, menthi kura
+cucumber = kheera, khira, dosakaya, cucumbers
+cauliflower = gobi, phool gobi, gobhi
+cabbage = patta gobi, bandh gobhi
+carrot = gajar, carrots
+coconut = nariyal, kobbari, thengai, thenga, coconuts, kopra coconut
+copra = kopra, khopra, dry coconut, dried coconut, copra halves, coconut halves, kobbari chippa
+betel = paan, pan leaves, betel leaves, betel leaf, tamalapaku, vetrilai
+arecanut = supari, supadi, betel nut, betelnut, vakka, pakku
+
+# --- Coconut products -------------------------------------------------------
+grated = shredded, shreded, shreadded, shredd, shred, scraped, grated fresh, fresh grated, grate
+desiccated = dessicated, desicated, desiccated coconut, dessicated coconut, desiccated coconut powder, dessicated coconut powder, desiccated coconut flakes, coconut powder, dry coconut powder, coconut flakes powder
+slices = slice, sliced
+
+# --- Meat, fish -------------------------------------------------------------
+goat = mutton, bakra, meka, aadu
+keema = kheema, qeema, keema minced, mince, minced, ground meat, qima
+shrimp = prawn, prawns, jhinga, royyalu, eral, shrimps
+chicken = murgh, murg, kodi, koli
+fish = machli, machhi, meen, chepa
+
+# --- Oils --------------------------------------------------------------------
+oil = tel, ennai, nune, oils
+peanut = groundnut, ground nut, moongphali, mungfali, verusenaga, pallilu, kadalekai, peanuts, groundnuts
+castor = arandi, castor oil, amudham
+vanaspati = dalda, vanaspathi
+sunflower = surajmukhi
+kachighani = kachi ghani, kachchi ghani, kachi ghani mustard
+
+# --- Pooja ---------------------------------------------------------------------
+incense = agarbatti, agarabatti, agarbathi, agarbathies, agarbattis, agarbati, agabatti, agarbathy, agrab, insense, insc, incence, incense sticks, incense stick, insense sticks, insc stick, udubatti, agarbatthi
+dhoop = dhoopa, dhup, sambrani, sambraani, loban, dhoop sticks
+camphor = kapur, karpur, kapoor, karpoor, karpuram, karpooram, kacha karpura, bhimseni
+diya = deepam, diyas, deeya, deepalu, agal vilakku, vilakku
+wick = wicks, vattulu, vatti, batti, bati, cotton wicks, deepam vatti, jyot
+kumkum = kumkuma, kunkum, kumkumam
+sindoor = sindur, sinduram, vermilion
+chandan = sandal, sandalwood, gandham, chandanam
+rangoli = kolam powder, muggulu
+roli = mouli, kalava, raksha sutra
+
+# --- Personal care -------------------------------------------------------------
+henna = mehndi, mehendi, mehandi, gorintaku, maruthani
+hairoil = hair oil, hair oils
+toothpaste = tooth paste, dant manjan, manjan
+soap = soaps, bath soap, bathing bar
+shampoo = shampoos
+
+# --- Misc pantry ------------------------------------------------------------------
+jaggery = gur, gud, goor, gurr, bellam, bellamu, vellam, sharkara, panela, gur jaggery, jaggery cubes, gud cubes
+mishri = misri, kalkandu, kallu sakkare, rock sugar, sugar candy, dhaga mishri, patika bellam
+sugar = cheeni, chini, shakkar, sakkare, sakkarai
+noodles = noodle, hakka noodles, chowmein, chow mein
+readymeal = ready to eat, ready-to-eat, rte, heat and eat, heat n eat, heat & eat, instant meal
+honey = shahad, madhu, tene
+soya = soy, soyabean, soybean, soya chunks, nutrela, meal maker
+vada = vadai, vade, wada, vadas
+dosa = dosai, dosas, dhosa
+idli = idly, idlis, idlies, iddli, idlli, idily
+upma = uppuma, uppittu
+uttapam = uthappam, uttappam, oothappam, uthapam, uttapa
+pongal = pongali
+murmura = puffed rice, kurmura, muri, mamra, borugulu, pori, maramaralu, mandakki
+sattu = sathu, satu
+pulao = pulav, pilaf, pulau
+khichdi = khichadi, khichri, kitchari
+nihari = nehari
+haleem = halim
+korma = kurma, qorma
+karahi = kadai, kadhai, karhai, kadai masala
+
+# --- Forms, materials --------------------------------------------------------
+whole = seed, seeds, sabut, sabat, sabit, akha
+steel = ss, stainless steel, stainless
+organic = org, orgnic, organik, orgainc
+
+# --- Abbreviations and glued words seen in the catalog ------------------------
+powder = pwd, pwdr, powdr, podwer, powderd, pwder
+masala = msala, masal
+toor dal = toordal, tuvardal, toovardal, arhardal
+moong dal = moongdal, mungdal
+urad dal = uraddal
+chana dal = chanadal, channadal
+masoor dal = masoordal
+aarti = arti, aarati, aarthi, aarti plate, arti plate
+jaggery = jaggary, jaggeri, jagery
+turmeric = tumeric, termeric
+toor = tuver
+vermicelli = vermecelli, vermicilli
+vanaspati = banaspati
+chakodi = chegodi, chegodilu
+telugu = telegu

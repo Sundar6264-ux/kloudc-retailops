@@ -1,0 +1,73 @@
+# Brands whose name IS the product (version 1, Sep 2026).
+#
+# Format:  brand alias = implied product words
+# Added to an item's product words when its name has no product-type word
+# of its own ("Nescafe Gold 190g" -> coffee, "Maaza Mango 1LT" -> mango
+# drink, "Shahi Kulfi Mango" -> kulfi, "Parle-G 376g" -> biscuit). Matched on
+# the detected canonical brand (see brands.txt), case-insensitive.
+Nescafe = coffee instant
+Bru = coffee instant
+Narasu's = coffee
+Maaza = drink
+Frooti = mango drink
+Shezan = drink
+Rooh Afza = sharbat
+Horlicks = malt drink
+Boost = malt drink
+Tang = drink
+Pakola = drink
+Thums Up = soda
+Limca = soda
+Coca-Cola = soda
+Fanta = soda
+Sprite = soda
+Pepsi = soda
+Shahi Kulfi = kulfi
+Parle = biscuit
+Britannia = biscuit
+Sunfeast = biscuit
+McVitie's = biscuit
+Maggi = noodles
+Wai Wai = noodles
+Top Ramen = noodles
+Mr. Noodles = noodles
+Buldak = noodles
+Cycle = incense
+Hem = incense
+Zed Black = incense
+Shraddha = incense
+Lay's = chips
+Kurkure = namkeen
+Vatika = hairoil
+Parachute = oil
+Colgate = toothpaste
+Vicco = toothpaste
+Santoor = soap
+Mysore Sandal = soap
+Lux = soap
+Medimix = soap
+Chandrika = soap
+Cinthol = soap
+Sunsilk = shampoo
+Kinder = chocolate
+Cadbury = chocolate
+Ferrero = chocolate
+Milka = chocolate
+Maltesers = chocolate
+Kit Kat = chocolate
+Nutella = spread chocolate
+Lipton = tea
+Tetley = tea
+Tapal = tea
+Wagh Bakri = tea
+Red Label = tea
+Taj Mahal = tea
+Society = tea
+Vital = tea
+Brooke Bond = tea
+Tata = tea
+Shan = masala
+MDH = masala
+Everest = masala
+Mehran = masala
+Halls = candy

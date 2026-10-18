@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.spicetown.watchdog</string>
+
+    <!-- Checks every core service (backend, labels, cloudflared) is
+         actually loaded, and re-bootstraps any that aren't - see
+         watchdog.sh for the full reasoning. Runs as root (no UserName key)
+         since only root can bootstrap/bootout system-domain services. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/sundar/spicetown-backend/backend/scripts/watchdog.sh</string>
+    </array>
+
+    <!-- A short-lived check-and-exit script, not a long-running process -
+         StartInterval (not RunAtLoad+KeepAlive) is the right primitive:
+         run every 5 minutes, plus once immediately when this daemon itself
+         is (re)loaded (e.g. right after a real system boot). -->
+    <key>StartInterval</key>
+    <integer>300</integer>
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/sundar/spicetown-backend/backend/logs/watchdog.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/sundar/spicetown-backend/backend/logs/watchdog.error.log</string>
+</dict>
+</plist>

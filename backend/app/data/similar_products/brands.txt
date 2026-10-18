@@ -1,0 +1,338 @@
+# Similar-products brand list (version 1, Sep 2026).
+#
+# Format:  Canonical Brand | alias | alias ...
+# - Matched on normalized name tokens (lowercase, apostrophes and punctuation
+#   stripped), longest alias first.
+# - A leading "^" means "only when the name STARTS with it" - for brands that
+#   are also ordinary words (Deep Bowl, Sun Dried, Royal, National, Golden,
+#   Double...). Unmarked brands are also recognised mid-name ("Black Salt
+#   Powder Swad 400gm", "Organic Ajwain Seeds Jiva 7oz").
+# - Store house codes that prefix a real brand (PC = Prestige Concept, a
+#   vendor) are listed in rules.json "vendor_prefixes", not here.
+# - Built from the store's real catalog (every leading word/phrase used on 3+
+#   items was reviewed by hand) plus well-known Indian / Pakistani / South
+#   Indian grocery brands sold in US stores.
+
+^Deep | deep | deep foods
+Swad | swad
+Laxmi | laxmi | lx | lx. | laxmi brand
+Anand | anand
+Vadilal | vadilal
+TRS | tr | trs
+Haldiram's | haldirams | haldiram | haldiramss | haldiram s
+Shan | shan
+^Telugu Foods | telugu | telugu foods
+^National | national
+^24 Mantra | 24 mantra | 24 organic | 24 mantra organic | 24
+Britannia | britannia | britania | britanni
+Arun | arun
+Bikaji | bikaji
+Aara | aara
+MDH | mdh
+Bansi | bansi
+Jabson | jabson | jabsons
+Bhakti | bhakti
+Kitchen Xpress | kx | kitchen xpress
+RES | res
+Dabur | dabur
+Amul | amul
+Ching's | chings | ching s | ching
+Taza | taza
+^United King | united king | united
+Jiya | jiya | jiyas | jiya s
+Aachi | aachi
+Jain Foods | jf | jain foods | jainfoods
+Nestle | nestle
+GPR | gpr
+Everest | everest
+Pran | pran
+Aromiraa | aromiraa
+Gits | gits
+Maggi | maggi | maggie
+EBM | ebm
+^American Drop | american drop | american dew
+Knorr | knorr
+Deccan | deccan
+DN | dn
+KCB | kcb
+^Vital | vital
+HD | hd
+Patanjali | patanjali
+Daily Delight | daily delight | dd
+Vijay | vijay
+^Royal | royal
+Parachute | parachute
+Vedic Secrets | vedic secrets | vedic
+^Shahi Kulfi | shahi kulfi
+Amma | amma
+Mitchell's | mitchells | mitchelles | mitchelless
+Shraddha | shraddha
+Tata | tata
+Sunfeast | sunfeast
+Vinod | vinod
+Aashirvaad | aashirvaad | ashirvad | aashirvad
+Mezban | mezban
+Lay's | lays
+Cadbury | cadbury
+Shahzada | shahzada
+HM | hm
+Viola | viola
+^Chef Seasons | chef seasons
+Sujata | sujata
+Arya | arya
+Al Safa | alsafa | al safa
+777 | 777
+Hem | hem
+Tapal | tapal
+CK | ck
+Nescafe | nescafe
+Parle | parle | parle g
+MTR | mtr
+^Sakthi | sakthi
+Pocas | pocas | pocasville
+^Super Shyne | super shyne | super shane
+Shezan | shezan
+Brahmins | brahmins
+Anil | anil
+5AAB | 5aab
+RiceUp | riceup
+Adukale | adukale
+Hawkins | hawkins
+Mirch Masala | mirch masala
+Bambino | bambino
+Kurkure | kurkure | kur kure
+Priyems | priyems
+^Double Horse | double horse | tenali double horse
+Raju | raju
+Ashwin | ashwin
+Bikano | bikano
+Tetley | tetley
+Mario | mario
+Foco | foco
+Kinder | kinder
+^Prestige | prestige
+^Eco | eco
+Bru | bru
+Buldak | buldak | samyang
+Meharban | meharban
+Goya | goya
+Preema | preema
+Vidhya | vidhya
+^Quik | quik
+Verka | verka
+Dettol | dettol
+Maaza | maaza
+^Karachi | karachi
+Shree | shree | shri
+Nutella | nutella
+Bindi | bindi
+Kangana | kangana
+Godrej | godrej
+Yardley | yardley
+Krishval | krishval
+Anaganaga | anaganaga
+Banne Nawab's | banne | banne nawabs | banne nawab s
+Brio | brio
+Meenu | meenu
+Idhayam | idhayam
+Gopuram | gopuram
+Frooti | frooti
+Eatco | eatco
+Beyoglu | beyoglu
+Colonal | colonal
+Qarshi | qarshi
+KLG | klg
+Manna | manna
+Raghav | raghav
+Toybox | toybox
+Radhey | radhey
+^Quick Bury | quick bury
+Keshav | keshav
+K&N's | k&n | kn | k n s | kns
+Wagh Bakri | wagh bakri | wagh
+Sher | sher
+Kohinoor | kohinoor
+Lipton | lipton
+Gharana | gharana
+Falak | falak
+Shahnawaz | shahnawaz
+Tez | tez
+Kontos | kontos
+^Taj Mahal | taj mahal | taj
+Lijjat | lijjat
+WB | wb
+^Just Organik | just organik
+Saffola | saffola
+Brar | brar
+Bhagwati | bhagwati | shri bhagwati
+Jiva | jiva | jiva organics
+Pachranga | pachranga
+Coca-Cola | coke | coca cola
+Spyce | spyce
+Fanta | fanta
+Vicks | vicks
+Mr. Noodles | mr noodles | mrnoodles
+Vatika | vatika | dabur vatika
+Balaji | balaji
+^Mama Earth | mama earth | mamaearth
+Ayur | ayur
+Eno | eno
+OKF | okf
+Iyengar | iyengar
+^Grand | grand
+BSK | bsk
+Biscolata | biscolata
+Kawan | kawan
+Chaokoh | chaokoh
+Chitale | chitale
+^More | more
+Nandi | nandi
+Nirapara | nirapara
+Thums Up | thums up
+Kolson | kolson
+Kashmira | kashmira
+Johar | johar
+^Society | society
+Sprite | sprite
+Hand's | hands
+Aha | aha
+Hamdard | hamdard
+^Cycle | cycle
+Tooba | tooba
+Ritirivaj | ritirivaj
+Heinz | heinz
+Switz | switz
+Wai Wai | wai wai
+Pepsi | pepsi
+^Three Rivers | three rivers
+^Halls | halls
+Hesh | hesh
+Santoor | santoor
+Triveni | triveni
+Besler | besler
+Bajaj | bajaj
+Colgate | colgate
+Rossmoor | rossmoor
+Samrat | samarat | samrat
+Krrichh | krricchh | krrichh
+Himalaya | himalaya
+TOK | tok
+Priya | priya
+Tulasi | tulasi
+KTC | ktc
+RMD | rmd
+Zeeba | zeeba
+Godavari | godavari
+Sundelight | sundelight
+Mampster | mampster
+Gramiyaa | gramiyaa
+Narasu's | narasus | narasu s
+GRB | grb
+Boomi | boomi
+Ajwa | ajwa
+Kissan | kissan
+Sikandar | sikandar
+Daawat | daawat | dawat
+Shri Lal Mahal | shrilalmahal | shri lal mahal | lal mahal
+Tamicon | tamicon
+Nutrela | nutrela
+Farmvilla | farmvilla
+Jhatpot | jhatpot
+Pavizham | pavizham
+McVitie's | mcvities
+Ziyad | ziyad
+^Metro | metro
+Dalda | dalda
+Besbite | besbite
+Horlicks | horlicks
+Wellmade | wellmade
+Rosso | rosso
+Dulhan | dulhan
+Pitambari | pitambari
+Vicco | vicco
+Milaf | milaf
+^Boost | boost
+Pakola | pakola
+Kirtiraj | kirtiraj
+Mauli | mauli
+Nilon | nilon | nilons
+Ferrero | ferrero
+Ahmed | ahmed | ahmed foods
+Hemani | hemani
+Drinko | drinko
+Maltesers | maltesers
+Lux | lux
+Limca | limca
+Laziza | laziza
+^Tang | tang
+Camelicious | camelicious
+Anverally | anverally
+Milton | milton
+Achmani | achmani
+Sunsilk | sunsilk
+Starlite | starlite
+Milka | milka
+Satya | satya
+Mr. Bite | mr bite | mrbite
+Kit Kat | kit kat | kitkat
+Organic Tattva | organic tattva
+Red Label | red label | brooke bond red label | brooke bond | brookbond red label | brookbond | brook bond
+Chun Guang | chun guang
+Vinut | vinut
+Vifon | vifon
+Corniche | corniche
+Lord Ganesh | lord ganesh
+Golden Temple | golden temple
+Golden Star | golden star
+^Sun | sun
+Emami | emami
+Mehran | mehran
+Pillsbury | pillsbury
+Mother's Recipe | mothers recipe | mother s recipe
+Ashoka | ashoka
+India Gate | india gate
+Tilda | tilda
+Lal Qilla | lal qilla
+Zafarani | zafarani
+Nirav | nirav
+Surati | surati
+Shastha | shastha
+^Eastern | eastern
+Kitchens of India | kitchens of india
+Top Ramen | top ramen
+Mother Dairy | mother dairy
+Nanak | nanak
+Gopi | gopi
+Kwality | kwality
+Havmor | havmor
+Girnar | girnar
+Cothas | cothas
+^Leo | leo
+Medimix | medimix
+Chandrika | chandrika
+Cinthol | cinthol
+Bhikharam Chandmal | bhikharam chandmal | bhikaram
+^Garden | garden namkeen
+Uncle Chipps | uncle chipps
+Bingo | bingo
+Unibic | unibic
+Priyagold | priyagold | priya gold
+Anmol | anmol
+Bisk Farm | bisk farm
+Rooh Afza | roohafza hamdard
+Rafhan | rafhan
+Udupi | udupi
+Sona | sona foods
+Pataks | pataks | patak s
+Maharaja | maharaja
+Haldi Ram | haldi ram
+Bikanervala | bikanervala
+Lotus | lotus biscoff
+Prestige Concept | prestige concept
+Zed Black | zed black
+Mysore Sandal | mysore sandal
+Neha | neha
+Metromilan | metromilan
+
+Shakti | shakti | shakti masala
+^LG | lg | laljee godhoo | lalji godhoo

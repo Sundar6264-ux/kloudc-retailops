@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  TEMPLATE - not installed. Nightly database backup as a user LaunchAgent.
+  Install steps (and the "Mac mini not logged in" caveat) are in
+  scripts/backup/README.md. Paths assume the production checkout at
+  /Users/sundar/spicetown-backend and backups in ~/spicetown-backups/nightly.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.spicetown.backup</string>
+
+    <!-- Standard-library-only script: any python3 works; the prod venv's
+         is used so the runtime is the one the server already runs on. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/sundar/spicetown-backend/backend/.venv312/bin/python</string>
+        <string>/Users/sundar/spicetown-backend/backend/scripts/backup/backup_db.py</string>
+        <string>--db</string>
+        <string>/Users/sundar/spicetown-backend/backend/spicetown.db</string>
+        <string>--dest</string>
+        <string>/Users/sundar/spicetown-backups/nightly</string>
+        <string>--keep-days</string>
+        <string>30</string>
+    </array>
+
+    <!-- 03:30 store time: the store is closed and it is before the 04:00
+         sales sync / 04:05 inventory / 04:15 open checks / 04:30 Insights
+         jobs. If the Mac was asleep at 03:30, launchd runs it on wake. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <!-- Background priority: never slows the server down. -->
+    <key>Nice</key>
+    <integer>15</integer>
+    <key>LowPriorityIO</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <!-- The script keeps its own one-line-per-run log in
+         ~/spicetown-backups/nightly/backup.log; these catch anything else. -->
+    <key>StandardOutPath</key>
+    <string>/Users/sundar/spicetown-backend/backend/logs/backup.launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/sundar/spicetown-backend/backend/logs/backup.launchd.error.log</string>
+</dict>
+</plist>

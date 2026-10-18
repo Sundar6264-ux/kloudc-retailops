@@ -1,0 +1,567 @@
+"""Daily cron job wiring, via APScheduler running in-process with the API server.
+
+Chosen over OS-level cron/node-cron because the job needs to write into the same
+SQLite DB and be inspectable from the API (job status endpoint) without shelling
+out or reading log files. The tradeoff: the scheduler only runs while the FastAPI
+process is up, so the process needs to be kept alive (e.g. under systemd/pm2/a
+container restart policy) for the daily job to fire reliably.
+"""
+
+import datetime as dt
+import logging
+import zoneinfo
+from typing import Optional
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.triggers.interval import IntervalTrigger
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.config import get_settings
+from app.db import SessionLocal
+from app.models import JobRun
+from app.pos.capabilities import Capability
+from app.pos.gating import drop_unsupported_jobs, has_capability
+from app.services.fix_issues import warm_fix_issues_cache
+from app.services.notification_triggers import CART_REMOVAL_CHECK_MINUTES, OPEN_ORDER_SUMMARY_TIMES, run_alert_job
+from app.services.open_orders import refresh_open_orders_cache
+from app.services.sales_sync import JOB_NAME, sync_sales_for_date
+
+logger = logging.getLogger(__name__)
+
+_scheduler: Optional[BackgroundScheduler] = None
+_notification_scheduler: Optional[BackgroundScheduler] = None
+_team_scheduler: Optional[BackgroundScheduler] = None
+
+
+def _dates_without_successful_sync(db: Session, start: dt.date, end: dt.date) -> list[dt.date]:
+    """Every date in [start, end] that does NOT have a successful sales-sync run yet.
+
+    A date can have a failed run (e.g. Toast rate-limited us) and still show up
+    here - "missing" means "not yet confirmed synced", not "never attempted".
+    """
+    stmt = select(JobRun.business_date).where(
+        JobRun.job_name == JOB_NAME,
+        JobRun.status == "success",
+        JobRun.business_date >= start,
+        JobRun.business_date <= end,
+    )
+    synced = {row[0] for row in db.execute(stmt)}
+
+    missing = []
+    d = start
+    while d <= end:
+        if d not in synced:
+            missing.append(d)
+        d += dt.timedelta(days=1)
+    return missing
+
+
+def run_daily_sales_sync() -> None:
+    """Runs at the scheduled hour, AND once right after the service starts up.
+
+    Rather than only syncing "yesterday", this scans the trailing
+    `sales_sync_backfill_days` window and (re-)syncs every date in it that
+    doesn't have a confirmed-successful run - so a missed night (service was
+    down, Toast had an outage, etc.) gets caught up automatically on the next
+    run instead of silently staying missing forever.
+    """
+    settings = get_settings()
+    tz = zoneinfo.ZoneInfo(settings.store_timezone)
+    # "Yesterday" in the restaurant's local timezone - the most recent business
+    # date that's actually closed out by the time this runs.
+    through_date = (dt.datetime.now(tz) - dt.timedelta(days=1)).date()
+    window_start = through_date - dt.timedelta(days=settings.sales_sync_backfill_days - 1)
+
+    db = SessionLocal()
+    try:
+        missing_dates = _dates_without_successful_sync(db, window_start, through_date)
+        if not missing_dates:
+            logger.info("Sales sync: %s already up to date, nothing to backfill", through_date)
+            return
+
+        if len(missing_dates) > 1:
+            logger.warning(
+                "Sales sync: %d missing day(s) in the last %d days, backfilling: %s",
+                len(missing_dates), settings.sales_sync_backfill_days, missing_dates,
+            )
+
+        for business_date in missing_dates:
+            job = sync_sales_for_date(db, business_date)
+            logger.info("Sales sync for %s: %s (%s)", business_date, job.status, job.detail)
+    finally:
+        db.close()
+    # New sales change the Fix Issues Slow / Dead forecast: recompute it now
+    # rather than on someone's first page load. Never raises.
+    warm_fix_issues_cache(refresh=True)
+
+
+def run_sales_repull_job() -> None:
+    """Sales accuracy re-pull (services/sales_accuracy.py): compare the last
+    SALES_REPULL_DAYS business dates with Toast Analytics and re-sync only the
+    dates that changed. A no-op without Analytics credentials."""
+    from app.services.sales_accuracy import run_sales_repull
+
+    db = SessionLocal()
+    try:
+        job = run_sales_repull(db)
+        if job is not None:
+            logger.info("Sales accuracy re-pull: %s (%s)", job.status, job.detail)
+    finally:
+        db.close()
+
+
+def _repull_times(raw: str) -> list:
+    """"06:30,12:30" -> [(6, 30), (12, 30)]; bad entries are skipped."""
+    out = []
+    for part in (raw or "").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            hour, minute = (int(x) for x in part.split(":", 1))
+        except ValueError:
+            logger.warning("SALES_REPULL_TIMES: ignoring %r (want HH:MM)", part)
+            continue
+        if 0 <= hour <= 23 and 0 <= minute <= 59:
+            out.append((hour, minute))
+    return out
+
+
+def run_open_orders_full_scan() -> None:
+    """Re-scans every business date since real sales began for still-open
+    orders (see open_orders.py::FIRST_REAL_SALES_DATE) and fully replaces
+    `open_order_cache`. This is the only path that can notice an order
+    stuck open on some OLD date - the frequent today-only refresh below
+    never looks at a date again once it's no longer "today". Slow (minutes,
+    ~100+ Toast calls), which is exactly why it only runs once a day rather
+    than on every dashboard load.
+    """
+    db = SessionLocal()
+    try:
+        job = refresh_open_orders_cache(db, full=True)
+        logger.info("Open orders full scan: %s (%s)", job.status, job.detail)
+    finally:
+        db.close()
+
+
+def run_open_orders_today_refresh() -> None:
+    """Cheap refresh (one Toast call) of just today's open orders - covers
+    the vast majority of real changes (an order opening or closing) without
+    the cost of the full historical scan above.
+    """
+    db = SessionLocal()
+    try:
+        job = refresh_open_orders_cache(db, full=False)
+        logger.info("Open orders today refresh: %s (%s)", job.status, job.detail)
+    finally:
+        db.close()
+
+
+def run_open_orders_summary() -> None:
+    """Refresh today's open orders from Toast, then send the opening /
+    mid-day / closing summary. A failed refresh still sends the summary from
+    the last good cache (at most one refresh interval old)."""
+    try:
+        run_open_orders_today_refresh()
+    except Exception:
+        logger.exception("Open orders summary: refresh before the summary failed")
+    run_alert_job("open_orders_morning")
+
+
+def run_inventory_api_snapshot() -> None:
+    """04:05: the inventory snapshot from the Toast API (services/
+    inventory_api.py). Writes it only with the switch on (the Inventory from
+    Toast page's setting, else INVENTORY_API_SNAPSHOTS - read at run time) and no
+    CSV for today; always records a side-by-side comparison with today's
+    CSV when there is one. Waits (up to ~20 min) for the 04:00 sales sync of
+    yesterday, since the 7/30/90-day sales are computed from it."""
+    import time as _time
+
+    from app.services.inventory_api import rerun_for_late_csv, run_api_snapshot
+
+    yesterday = dt.datetime.now(zoneinfo.ZoneInfo(get_settings().store_timezone)).date() - dt.timedelta(days=1)
+    for _ in range(20):
+        db = SessionLocal()
+        try:
+            if not _dates_without_successful_sync(db, yesterday, yesterday):
+                break
+        finally:
+            db.close()
+        _time.sleep(60)
+    db = SessionLocal()
+    try:
+        job = run_api_snapshot(db)
+        logger.info("Inventory API snapshot: %s", job.status)
+        # A CSV uploaded while this run waited for Toast missed it: compare
+        # again now (the upload's own re-run skipped a running date).
+        rerun_for_late_csv(db, job.business_date)
+    except Exception:
+        logger.exception("Inventory API snapshot: late CSV check failed")
+    finally:
+        db.close()
+
+
+def run_menu_barcode_recheck() -> None:
+    """Hourly: Toast menu metadata, then the full menu only if it changed
+    (services/inventory_api.py, contract item 6)."""
+    from app.services.inventory_api import refresh_menu_cache
+
+    db = SessionLocal()
+    try:
+        job = refresh_menu_cache(db)
+        logger.info("Menu barcode re-check: %s (%s)", job.status, job.detail)
+    finally:
+        db.close()
+
+
+def run_insights_nightly() -> None:
+    """04:30 (after the 04:00 closeout and sales sync): Toast Analytics
+    reports for Insights (services/insights_data.py) - yesterday, re-pulls
+    of recent days that changed, a little more history, the menu map, then
+    Loss watch / Odd checks flags. A no-op without Analytics credentials."""
+    from app.services.insights_data import run_nightly
+
+    db = SessionLocal()
+    try:
+        job = run_nightly(db)
+        if job is not None:
+            logger.info("Insights nightly: %s", job.status)
+    finally:
+        db.close()
+
+
+def run_insights_catchup() -> None:
+    """Hourly 05:20-23:20: reads the last two closed days of each Insights
+    report that are missing (e.g. refused for Toast's daily limit) as soon as
+    the budget frees. Checks the cache first: no Toast call when nothing is
+    missing (services/insights_data.run_catchup)."""
+    from app.services.insights_data import run_catchup
+
+    db = SessionLocal()
+    try:
+        run_catchup(db)
+    finally:
+        db.close()
+
+
+def run_morning_summary() -> None:
+    """09:00: one Morning summary push per person instead of ~6 separate
+    ones (notification_triggers.run_morning_job, which also sends each 9 AM
+    alert on its own to whoever turned it on). Refreshes today's open orders
+    first, as the opening open-checks summary did; the Fix Issues reopen
+    honours SCHEDULER_ENABLED, as run_fix_issues_reopened does."""
+    from app.services.notification_triggers import run_morning_job
+
+    try:
+        if has_capability(Capability.OPEN_ORDERS):  # multi-store MT6; always true for Toast
+            run_open_orders_today_refresh()
+    except Exception:
+        logger.exception("Morning summary: open orders refresh failed")
+    run_morning_job(include_fix_issues=get_settings().scheduler_enabled)
+
+
+def run_fix_issues_reopened() -> None:
+    """Move Fix Issues "more time" closes whose week is up back to open,
+    then one combined push (alert fix_issues_reopened). Not scheduled since
+    Oct 15 - run_morning_summary does this at 09:00; kept for manual runs. Lives on the
+    notification scheduler (NOTIFICATIONS_ENABLED) and also honours
+    SCHEDULER_ENABLED, like the contract asks. With either off, the reopen
+    still happens lazily whenever the list is read."""
+    if not get_settings().scheduler_enabled:
+        logger.info("fix_issues_reopened skipped (SCHEDULER_ENABLED=false); lists reopen lazily on read")
+        return
+    run_alert_job("fix_issues_reopened")
+
+
+def start_scheduler() -> Optional[BackgroundScheduler]:
+    global _scheduler
+    if _scheduler is not None:
+        return _scheduler
+
+    settings = get_settings()
+    if not settings.scheduler_enabled:
+        logger.info("Scheduler disabled (SCHEDULER_ENABLED=false) - no scheduled jobs will run")
+        return None
+    tz = zoneinfo.ZoneInfo(settings.store_timezone)
+
+    scheduler = BackgroundScheduler(timezone=tz)
+    scheduler.add_job(
+        run_daily_sales_sync,
+        trigger=CronTrigger(hour=settings.sales_sync_hour, minute=settings.sales_sync_minute, timezone=tz),
+        id="daily_sales_sync",
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
+    # Also run the same (gap-aware) sync once shortly after the service starts up -
+    # a restart (crash, reboot, Mac was asleep at 4am) is exactly when a day is
+    # most likely to have been missed, and otherwise it'd sit missing until the
+    # next scheduled run, up to ~24h later.
+    scheduler.add_job(
+        run_daily_sales_sync,
+        trigger=DateTrigger(run_date=dt.datetime.now(tz) + dt.timedelta(seconds=10)),
+        id="startup_catchup_sync",
+        replace_existing=True,
+    )
+
+    # Open orders cache: one full history sweep a day, plus a frequent
+    # cheap today-only refresh (see run_open_orders_*'s own docstrings for
+    # why it's split this way).
+    scheduler.add_job(
+        run_open_orders_full_scan,
+        trigger=CronTrigger(
+            hour=settings.open_orders_full_scan_hour,
+            minute=settings.open_orders_full_scan_minute,
+            timezone=tz,
+        ),
+        id="open_orders_full_scan",
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
+    scheduler.add_job(
+        run_open_orders_today_refresh,
+        trigger=IntervalTrigger(minutes=settings.open_orders_today_refresh_minutes),
+        id="open_orders_today_refresh",
+        replace_existing=True,
+        # At a 1-minute interval (OPEN_ORDERS_TODAY_REFRESH_MINUTES=1 in
+        # prod) a slow Toast response must never stack runs: one at a time,
+        # and missed ticks collapse into a single catch-up run.
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=60,
+    )
+    # Populate the cache shortly after startup too, same reasoning as the
+    # sales-sync catchup above - otherwise a freshly restarted service shows
+    # an empty "all-time" view until the next scheduled tick (up to 24h for
+    # the full scan). Runs the cheap today-only refresh immediately (fast,
+    # so the dashboard has *something* right away) and the full scan a bit
+    # after that (slow, shouldn't block/compete with startup).
+    scheduler.add_job(
+        run_open_orders_today_refresh,
+        trigger=DateTrigger(run_date=dt.datetime.now(tz) + dt.timedelta(seconds=15)),
+        id="startup_open_orders_today",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_open_orders_full_scan,
+        trigger=DateTrigger(run_date=dt.datetime.now(tz) + dt.timedelta(seconds=30)),
+        id="startup_open_orders_full_scan",
+        replace_existing=True,
+    )
+
+    # Sales accuracy re-pull: a few times a day (after close, then while the
+    # day's edits land in Toast Analytics). Nothing at startup - it's not
+    # time-critical and Analytics has tight hourly limits.
+    if settings.sales_repull_enabled:
+        for hour, minute in _repull_times(settings.sales_repull_times):
+            scheduler.add_job(
+                run_sales_repull_job,
+                trigger=CronTrigger(hour=hour, minute=minute, timezone=tz),
+                id=f"sales_repull_{hour:02d}{minute:02d}",
+                replace_existing=True,
+                misfire_grace_time=1800,
+                coalesce=True,
+                max_instances=1,
+            )
+
+    # Insights from Toast Analytics: one nightly fill after the closeout.
+    if settings.insights_nightly_enabled:
+        scheduler.add_job(
+            run_insights_nightly,
+            trigger=CronTrigger(
+                hour=settings.insights_nightly_hour, minute=settings.insights_nightly_minute, timezone=tz
+            ),
+            id="insights_nightly",
+            replace_existing=True,
+            misfire_grace_time=3600,
+            coalesce=True,
+            max_instances=1,
+        )
+        from app.services.insights_data import CATCHUP_HOURS, CATCHUP_MINUTE
+
+        scheduler.add_job(
+            run_insights_catchup,
+            trigger=CronTrigger(
+                hour=",".join(str(h) for h in CATCHUP_HOURS), minute=CATCHUP_MINUTE, timezone=tz
+            ),
+            id="insights_catchup",
+            replace_existing=True,
+            misfire_grace_time=1800,
+            coalesce=True,
+            max_instances=1,
+        )
+
+    # Inventory from the Toast API (contract items 1 and 6): the nightly
+    # snapshot / side-by-side comparison, and the hourly barcode re-check.
+    scheduler.add_job(
+        run_inventory_api_snapshot,
+        trigger=CronTrigger(
+            hour=settings.inventory_api_snapshot_hour, minute=settings.inventory_api_snapshot_minute, timezone=tz
+        ),
+        id="inventory_api_snapshot",
+        replace_existing=True,
+        misfire_grace_time=3600,
+        coalesce=True,
+        max_instances=1,
+    )
+    if settings.menu_barcode_recheck_minutes > 0:
+        scheduler.add_job(
+            run_menu_barcode_recheck,
+            trigger=IntervalTrigger(minutes=settings.menu_barcode_recheck_minutes),
+            id="menu_barcode_recheck",
+            replace_existing=True,
+            misfire_grace_time=600,
+            coalesce=True,
+            max_instances=1,
+        )
+
+    # Fix Issues' Slow / Dead forecast is kept in memory, so a restart
+    # empties it: work it out shortly after startup (after the sales
+    # catch-up above has had a head start) instead of on the first page load.
+    scheduler.add_job(
+        warm_fix_issues_cache,
+        trigger=DateTrigger(run_date=dt.datetime.now(tz) + dt.timedelta(seconds=20)),
+        id="startup_fix_issues_warmup",
+        replace_existing=True,
+    )
+
+    # Multi-store MT6: a POS job is registered only when the store's POS has
+    # what it needs (app/pos/gating.py). Removes nothing for Spice Town.
+    drop_unsupported_jobs(scheduler)
+    scheduler.start()
+    _scheduler = scheduler
+    logger.info(
+        "Scheduler started: daily_sales_sync at %02d:%02d, open_orders_full_scan at %02d:%02d, "
+        "open_orders_today_refresh every %dmin (%s)",
+        settings.sales_sync_hour,
+        settings.sales_sync_minute,
+        settings.open_orders_full_scan_hour,
+        settings.open_orders_full_scan_minute,
+        settings.open_orders_today_refresh_minutes,
+        settings.store_timezone,
+    )
+    return scheduler
+
+
+def shutdown_scheduler() -> None:
+    global _scheduler
+    if _scheduler is not None:
+        _scheduler.shutdown(wait=False)
+        _scheduler = None
+
+
+def start_notification_scheduler() -> Optional[BackgroundScheduler]:
+    """Push-notification alert jobs (services/notification_triggers.py), in
+    their own scheduler so they're governed by NOTIFICATIONS_ENABLED rather
+    than SCHEDULER_ENABLED: none of them call Toast, so the dev instance -
+    which turns the main scheduler off to protect the Toast rate limit - can
+    still run them. Quiet hours are enforced inside run_alert_job itself, so
+    a schedule here can never send at night by mistake.
+    """
+    global _notification_scheduler
+    if _notification_scheduler is not None:
+        return _notification_scheduler
+
+    settings = get_settings()
+    if not settings.notifications_enabled:
+        logger.info("Notification scheduler disabled (NOTIFICATIONS_ENABLED=false)")
+        return None
+    tz = zoneinfo.ZoneInfo(settings.store_timezone)
+
+    scheduler = BackgroundScheduler(timezone=tz)
+    # The 9:00 alerts (order_due, critical_vendors, inventory_upload_due,
+    # inventory_api_ready, loss_watch, daily_sales_summary, fix_issues_reopened,
+    # the opening open-checks count) all run in run_morning_summary below.
+    jobs = [
+        ("closing_checklist", CronTrigger(hour=21, minute=30, timezone=tz), 1200),
+        ("invoice_failed", IntervalTrigger(minutes=10), 300),
+        ("cart_removal_request", IntervalTrigger(minutes=CART_REMOVAL_CHECK_MINUTES), 300),
+    ]
+    for key, trigger, grace in jobs:
+        scheduler.add_job(
+            run_alert_job,
+            trigger=trigger,
+            args=[key],
+            id=f"notify_{key}",
+            replace_existing=True,
+            misfire_grace_time=grace,
+            coalesce=True,
+        )
+    scheduler.add_job(
+        run_morning_summary,
+        trigger=CronTrigger(hour=9, minute=0, timezone=tz),
+        id="notify_morning_summary",
+        replace_existing=True,
+        misfire_grace_time=3600,
+        coalesce=True,
+    )
+    # Open orders: mid-day / closing summaries (the opening one is in the
+    # morning job), each after a fresh today refresh so the count is current.
+    for hour, minute in OPEN_ORDER_SUMMARY_TIMES:
+        if (hour, minute) == (9, 0):
+            continue
+        scheduler.add_job(
+            run_open_orders_summary,
+            trigger=CronTrigger(hour=hour, minute=minute, timezone=tz),
+            id=f"notify_open_orders_{hour:02d}{minute:02d}",
+            replace_existing=True,
+            misfire_grace_time=1800,
+            coalesce=True,
+        )
+    drop_unsupported_jobs(scheduler)  # multi-store MT6, as in start_scheduler
+    scheduler.start()
+    _notification_scheduler = scheduler
+    logger.info(
+        "Notification scheduler started: morning summary (+ its opt-in 9 AM alerts) 09:00, closing_checklist 21:30, invoice_failed + cart_removal_request every 10min, open orders summaries 16:00 / 21:30; "
+        "quiet hours 22:00-07:00 (%s)",
+        settings.store_timezone,
+    )
+    return scheduler
+
+
+def start_team_scheduler() -> Optional[BackgroundScheduler]:
+    """Team hub jobs (change-feed prune, recurring tasks, reminders) - every
+    job registered in app/team/jobs.py. Governed by TEAM_JOBS_ENABLED, not
+    SCHEDULER_ENABLED: none of them call Toast, so dev runs them too.
+    """
+    global _team_scheduler
+    if _team_scheduler is not None:
+        return _team_scheduler
+
+    settings = get_settings()
+    if not settings.team_jobs_enabled:
+        logger.info("Team scheduler disabled (TEAM_JOBS_ENABLED=false)")
+        return None
+    from app.team.jobs import TEAM_JOBS
+
+    tz = zoneinfo.ZoneInfo(settings.store_timezone)
+    scheduler = BackgroundScheduler(timezone=tz)
+    for job in TEAM_JOBS:
+        scheduler.add_job(
+            job.func,
+            trigger=job.trigger(tz),
+            id=f"team_{job.id}",
+            replace_existing=True,
+            misfire_grace_time=job.misfire_grace_time,
+            coalesce=True,
+        )
+    scheduler.start()
+    _team_scheduler = scheduler
+    logger.info("Team scheduler started: %s", ", ".join(j.id for j in TEAM_JOBS))
+    return scheduler
+
+
+def shutdown_team_scheduler() -> None:
+    global _team_scheduler
+    if _team_scheduler is not None:
+        _team_scheduler.shutdown(wait=False)
+        _team_scheduler = None
+
+
+def shutdown_notification_scheduler() -> None:
+    global _notification_scheduler
+    if _notification_scheduler is not None:
+        _notification_scheduler.shutdown(wait=False)
+        _notification_scheduler = None

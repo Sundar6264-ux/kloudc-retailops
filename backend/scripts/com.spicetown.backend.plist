@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.spicetown.backend</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/sundar/spicetown-backend/backend/.venv/bin/uvicorn</string>
+        <string>app.main:app</string>
+        <string>--host</string>
+        <string>0.0.0.0</string>
+        <string>--port</string>
+        <string>8000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/sundar/spicetown-backend/backend</string>
+
+    <!-- LaunchDaemon (system domain), not a LaunchAgent: runs regardless of whether
+         anyone is logged into the GUI, which matters on an always-on server Mac.
+         Runs as `sundar` (not root) so it has normal ownership of the SQLite DB, .env, etc. -->
+    <key>UserName</key>
+    <string>sundar</string>
+
+    <!-- Start at boot, and restart automatically if it ever crashes. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/sundar/spicetown-backend/backend/logs/backend.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/sundar/spicetown-backend/backend/logs/backend.error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:/opt/homebrew/sbin</string>
+    </dict>
+</dict>
+</plist>

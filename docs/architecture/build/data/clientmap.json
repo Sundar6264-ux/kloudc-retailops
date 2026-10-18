@@ -1,0 +1,3391 @@
+{
+ "web": {
+  "AuthContext.jsx": {
+   "endpoints": [
+    "GET /api/auth/me",
+    "POST /api/auth/login",
+    "POST /api/auth/logout",
+    "POST /api/auth/mobile-login"
+   ],
+   "files": [
+    "AuthContext.jsx"
+   ]
+  },
+  "components/CartButton.jsx": {
+   "endpoints": [
+    "GET /api/ordering/cart"
+   ],
+   "files": [
+    "components/CartButton.jsx"
+   ]
+  },
+  "components/ChatWidget.jsx": {
+   "endpoints": [
+    "POST /api/ask"
+   ],
+   "files": [
+    "components/AskBot.jsx",
+    "components/ChatWidget.jsx",
+    "components/InfoBlock.jsx"
+   ]
+  },
+  "components/Sidebar.jsx": {
+   "endpoints": [
+    "GET /api/team/bootstrap",
+    "GET /api/team/updates"
+   ],
+   "files": [
+    "components/Sidebar.jsx",
+    "components/team/teamSyncEngine.js",
+    "components/team/usePageActive.js",
+    "components/team/useTeamBadges.js",
+    "components/team/useTeamSync.js",
+    "featureRoutes.js"
+   ]
+  },
+  "pages/ChangePasswordPage.jsx": {
+   "endpoints": [
+    "POST /api/auth/change-password"
+   ],
+   "files": [
+    "components/PasswordInput.jsx",
+    "pages/ChangePasswordPage.jsx"
+   ]
+  },
+  "pages/ChecklistAdminPage.jsx": {
+   "endpoints": [
+    "DELETE /api/checklists/admin/definitions/{}/draft",
+    "DELETE /api/checklists/admin/definitions/{}/public-link",
+    "DELETE /api/checklists/admin/whatsapp-groups/{}",
+    "GET /api/checklists/admin/definitions",
+    "GET /api/checklists/admin/definitions/{}",
+    "GET /api/checklists/admin/definitions/{}/public-link",
+    "GET /api/checklists/admin/definitions/{}/versions/{}",
+    "GET /api/checklists/admin/meta",
+    "GET /api/checklists/admin/whatsapp-groups",
+    "GET /api/checklists/admin/whatsapp-groups/available",
+    "PATCH /api/checklists/admin/definitions/{}",
+    "PATCH /api/checklists/admin/whatsapp-groups/{}",
+    "POST /api/checklists/admin/definitions",
+    "POST /api/checklists/admin/definitions/order",
+    "POST /api/checklists/admin/definitions/{}/duplicate",
+    "POST /api/checklists/admin/definitions/{}/public-link/rotate",
+    "POST /api/checklists/admin/definitions/{}/publish",
+    "POST /api/checklists/admin/definitions/{}/revert/{}",
+    "POST /api/checklists/admin/whatsapp-groups",
+    "POST /api/checklists/media",
+    "POST /api/team/media",
+    "PUT /api/checklists/admin/definitions/{}",
+    "PUT /api/checklists/admin/definitions/{}/public-link"
+   ],
+   "files": [
+    "components/checklists/ChecklistAdminList.jsx",
+    "components/checklists/ChecklistEditor.jsx",
+    "components/checklists/ChecklistFields.jsx",
+    "components/checklists/ChecklistForm.jsx",
+    "components/checklists/ChecklistImage.jsx",
+    "components/checklists/ItemEditor.jsx",
+    "components/checklists/PublicLinkPanel.jsx",
+    "components/checklists/WhatsAppGroupsPanel.jsx",
+    "components/checklists/editorModel.js",
+    "components/checklists/model.js",
+    "components/checklists/uploadContext.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/ChecklistAdminPage.jsx"
+   ]
+  },
+  "pages/DailyChecklistsPage.jsx": {
+   "endpoints": [
+    "GET /api/auth/users",
+    "GET /api/checklists",
+    "GET /api/checklists/schema/{}",
+    "GET /api/checklists/schemas",
+    "GET /api/checklists/{}",
+    "POST /api/checklists/media",
+    "POST /api/checklists/{}/submit"
+   ],
+   "files": [
+    "components/DailyChecklists.jsx",
+    "components/InfoBlock.jsx",
+    "components/SortableTh.jsx",
+    "components/checklists/ChecklistAnswers.jsx",
+    "components/checklists/ChecklistFields.jsx",
+    "components/checklists/ChecklistForm.jsx",
+    "components/checklists/ChecklistImage.jsx",
+    "components/checklists/model.js",
+    "components/checklists/uploadContext.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/DailyChecklistsPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/DeliveryReviewPage.jsx": {
+   "endpoints": [
+    "DELETE /api/reconciliation/suggested-deliveries/dismiss",
+    "GET /api/reconciliation/delivery-candidates",
+    "GET /api/reconciliation/delivery-history",
+    "GET /api/reconciliation/suggested-deliveries",
+    "POST /api/reconciliation/delivery-confirm",
+    "POST /api/reconciliation/suggested-deliveries/dismiss"
+   ],
+   "files": [
+    "components/DeliveryReview.jsx",
+    "components/InfoBlock.jsx",
+    "components/suggestions/SuggestedDeliveries.jsx",
+    "components/suggestions/suggestionsModel.js",
+    "glossary.jsx",
+    "pages/DeliveryReviewPage.jsx"
+   ]
+  },
+  "pages/FixIssuesPage.jsx": {
+   "endpoints": [
+    "GET /api/issues/reasons",
+    "GET /api/issues/report",
+    "GET /api/issues/summary",
+    "GET /api/issues/{}",
+    "GET /api/issues/{}/export",
+    "GET /api/issues/{}/history",
+    "GET /api/ordering/item-weekly-sales",
+    "POST /api/issues/close",
+    "POST /api/issues/reopen"
+   ],
+   "files": [
+    "components/DataSourceNote.jsx",
+    "components/FixIssues.jsx",
+    "components/InfoBlock.jsx",
+    "components/SortableTh.jsx",
+    "components/issueLeads/FixIssueFilters.jsx",
+    "components/issueLeads/issueLeadsModel.js",
+    "components/weeklySales/WeeklySalesTable.jsx",
+    "components/weeklySales/weeklySalesModel.js",
+    "format.js",
+    "glossary.jsx",
+    "groupByCategory.js",
+    "pages/FixIssuesPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/FlyersPage.jsx": {
+   "endpoints": [
+    "DELETE /api/checklists/admin/whatsapp-groups/{}",
+    "DELETE /api/flyers/{}",
+    "GET /api/checklists/admin/whatsapp-groups",
+    "GET /api/checklists/admin/whatsapp-groups/available",
+    "GET /api/flyers",
+    "GET /api/flyers/meta",
+    "GET /api/flyers/{}",
+    "PATCH /api/checklists/admin/whatsapp-groups/{}",
+    "PATCH /api/flyers/{}",
+    "POST /api/checklists/admin/whatsapp-groups",
+    "POST /api/flyers",
+    "POST /api/flyers/{}/send",
+    "POST /api/flyers/{}/sends/{}/retry"
+   ],
+   "files": [
+    "components/checklists/WhatsAppGroupsPanel.jsx",
+    "components/checklists/editorModel.js",
+    "components/checklists/model.js",
+    "components/flyers/FlyerDrawer.jsx",
+    "components/flyers/FlyerImage.jsx",
+    "components/flyers/FlyerLibrary.jsx",
+    "components/flyers/FlyerUploadCard.jsx",
+    "components/flyers/GroupChecklist.jsx",
+    "components/flyers/SendFlyerModal.jsx",
+    "components/flyers/SendStatus.jsx",
+    "components/flyers/WhatsAppText.jsx",
+    "components/flyers/flyerModel.js",
+    "components/flyers/useDialog.js",
+    "components/flyers/useFlyerLibrary.js",
+    "glossary.jsx",
+    "pages/FlyersPage.jsx"
+   ]
+  },
+  "pages/GlossaryPage.jsx": {
+   "endpoints": [],
+   "files": [
+    "glossary.jsx",
+    "pages/GlossaryPage.jsx"
+   ]
+  },
+  "pages/HelpPage.jsx": {
+   "endpoints": [
+    "DELETE /api/reconciliation/purchases/{}",
+    "GET /api/inventory/items/search",
+    "GET /api/reconciliation/demo",
+    "GET /api/reconciliation/invoice-gaps",
+    "GET /api/reconciliation/invoice-gaps/export",
+    "GET /api/reconciliation/purchases",
+    "GET /api/reconciliation/purchases/export",
+    "GET /api/reconciliation/report",
+    "GET /api/reconciliation/report/export",
+    "POST /api/reconciliation/purchases",
+    "POST /api/reconciliation/purchases/upload"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/Reconciliation.jsx",
+    "components/SortableTh.jsx",
+    "format.js",
+    "glossary.jsx",
+    "pages/HelpPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/InventoryApiPage.jsx": {
+   "endpoints": [
+    "GET /api/inventory-api/compare",
+    "GET /api/inventory-api/compare/nightly",
+    "GET /api/inventory-api/status",
+    "GET /api/inventory-api/switch",
+    "POST /api/inventory-api/menu-recheck",
+    "PUT /api/inventory-api/switch"
+   ],
+   "files": [
+    "components/flyers/useDialog.js",
+    "components/inventoryApi/InventoryApiSwitch.jsx",
+    "components/inventoryApi/inventoryApiModel.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/InventoryApiPage.jsx"
+   ]
+  },
+  "pages/InventoryReportsPage.jsx": {
+   "endpoints": [
+    "GET /api/inventory/price-changes",
+    "GET /api/inventory/price-changes/export",
+    "GET /api/inventory/price-history",
+    "GET /api/reports/store-vs-container",
+    "GET /api/reports/store-vs-container/export",
+    "GET /api/reports/vendor-price-comparison",
+    "GET /api/reports/vendor-price-comparison/export",
+    "GET /api/sales/export"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/InventoryReports.jsx",
+    "components/SalesDownload.jsx",
+    "components/SortableTh.jsx",
+    "components/StoreVsContainer.jsx",
+    "format.js",
+    "glossary.jsx",
+    "groupByCategory.js",
+    "pages/InventoryReportsPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/InvoiceSubmissionPage.jsx": {
+   "endpoints": [
+    "DELETE /api/invoices/{}/close-suggestion/dismiss",
+    "DELETE /api/invoices/{}/permanent",
+    "GET /api/invoices",
+    "GET /api/invoices/trash",
+    "GET /api/invoices/{}",
+    "GET /api/ordering/suppliers",
+    "POST /api/invoices",
+    "POST /api/invoices/{}/approve-delete",
+    "POST /api/invoices/{}/cancel-delete-request",
+    "POST /api/invoices/{}/close-suggestion/dismiss",
+    "POST /api/invoices/{}/delete",
+    "POST /api/invoices/{}/mark-toast-closed",
+    "POST /api/invoices/{}/override-status",
+    "POST /api/invoices/{}/request-delete",
+    "POST /api/invoices/{}/resend",
+    "POST /api/invoices/{}/restore",
+    "POST /api/invoices/{}/unmark-toast-closed"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/InvoiceSubmission.jsx",
+    "components/SortableTh.jsx",
+    "components/suggestions/InvoiceCloseSuggestions.jsx",
+    "components/suggestions/suggestionsModel.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/InvoiceSubmissionPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/IssueLeadsPage.jsx": {
+   "endpoints": [
+    "GET /api/issue-leads",
+    "GET /api/issue-leads/preview",
+    "POST /api/issue-leads/run-now",
+    "PUT /api/issue-leads",
+    "PUT /api/issue-leads/settings"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/issueLeads/issueLeadsModel.js",
+    "format.js",
+    "pages/IssueLeadsPage.jsx"
+   ]
+  },
+  "pages/ItemsSoldPage.jsx": {
+   "endpoints": [
+    "GET /api/sales/accuracy",
+    "GET /api/sales/export",
+    "GET /api/sales/items-sold",
+    "GET /api/sales/items-sold/export",
+    "POST /api/sales/accuracy/run"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/ItemsSold.jsx",
+    "components/SalesAccuracy.jsx",
+    "components/SalesDownload.jsx",
+    "components/SortableTh.jsx",
+    "format.js",
+    "glossary.jsx",
+    "pages/ItemsSoldPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/LoginPage.jsx": {
+   "endpoints": [],
+   "files": [
+    "components/PasswordInput.jsx",
+    "pages/LoginPage.jsx"
+   ]
+  },
+  "pages/NoAccessPage.jsx": {
+   "endpoints": [],
+   "files": [
+    "pages/NoAccessPage.jsx"
+   ]
+  },
+  "pages/NotificationSettingsPage.jsx": {
+   "endpoints": [
+    "GET /api/notifications/defaults",
+    "GET /api/notifications/prefs",
+    "GET /api/notifications/recent",
+    "GET /api/notifications/volume",
+    "GET /api/team/chat/settings",
+    "POST /api/notifications/defaults/reset",
+    "POST /api/notifications/prefs/reset",
+    "PUT /api/notifications/defaults",
+    "PUT /api/notifications/prefs",
+    "PUT /api/team/chat/settings"
+   ],
+   "files": [
+    "components/notifications/notificationsModel.js",
+    "format.js",
+    "pages/NotificationSettingsPage.jsx"
+   ]
+  },
+  "pages/OpenOrdersPage.jsx": {
+   "endpoints": [
+    "GET /api/orders/employees",
+    "GET /api/orders/open",
+    "GET /api/orders/open/all-time",
+    "GET /api/orders/open/export",
+    "POST /api/orders/open/all-time/rescan"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/OpenOrders.jsx",
+    "components/SortableTh.jsx",
+    "format.js",
+    "glossary.jsx",
+    "pages/OpenOrdersPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/Overview.jsx": {
+   "endpoints": [
+    "GET /api/checklists",
+    "GET /api/inventory/invoice-vendors-today",
+    "GET /api/invoices",
+    "GET /api/jobs/status",
+    "GET /api/ordering/cart",
+    "GET /api/ordering/reorder-candidates",
+    "GET /api/ordering/suppliers",
+    "GET /api/orders/open/all-time",
+    "GET /api/reconciliation/delivery-history",
+    "GET /api/sales/items-sold",
+    "GET /api/vendor-calendar",
+    "POST /api/inventory/upload",
+    "POST /api/weekly-digest/generate"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/InventoryUpload.jsx",
+    "components/JobStatusWidget.jsx",
+    "components/OverviewWidgets.jsx",
+    "components/WeeklyDigest.jsx",
+    "format.js",
+    "glossary.jsx",
+    "pages/Overview.jsx"
+   ]
+  },
+  "pages/PlacedOrdersPage.jsx": {
+   "endpoints": [
+    "GET /api/ordering/orders",
+    "POST /api/ordering/orders/{}/order-again"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/PlacedOrders.jsx",
+    "components/SortableTh.jsx",
+    "components/cartAdd/cartAddModel.js",
+    "components/cartAdd/cartVendorPanels.js",
+    "components/orderActions/orderActionsModel.js",
+    "components/placedOrderSource.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/PlacedOrdersPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/PoSectionsPage.jsx": {
+   "endpoints": [
+    "DELETE /api/categories/items/{}",
+    "DELETE /api/categories/renames/{}",
+    "DELETE /api/categories/vendor-rules/{}",
+    "GET /api/categories/cart-preview",
+    "GET /api/categories/changes",
+    "GET /api/categories/history",
+    "GET /api/categories/items",
+    "GET /api/categories/options",
+    "GET /api/categories/vendor-rules",
+    "POST /api/categories/changes/undo",
+    "POST /api/categories/items/bulk",
+    "POST /api/categories/items/move",
+    "POST /api/categories/items/reset",
+    "POST /api/categories/renames",
+    "POST /api/categories/vendor-rules",
+    "PUT /api/categories/cart-lines/{}",
+    "PUT /api/categories/items/{}"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/PoSections.jsx",
+    "components/SectionControls.jsx",
+    "format.js",
+    "pages/PoSectionsPage.jsx"
+   ]
+  },
+  "pages/PublicChecklistPage.jsx": {
+   "endpoints": [
+    "GET /api/public/checklists/{}",
+    "POST /api/checklists/media",
+    "POST /api/public/checklists/{}/media",
+    "POST /api/public/checklists/{}/submit"
+   ],
+   "files": [
+    "components/checklists/ChecklistFields.jsx",
+    "components/checklists/ChecklistForm.jsx",
+    "components/checklists/ChecklistImage.jsx",
+    "components/checklists/model.js",
+    "components/checklists/uploadContext.js",
+    "pages/PublicChecklistPage.jsx"
+   ]
+  },
+  "pages/PurchaseOrderPage.jsx": {
+   "endpoints": [
+    "DELETE /api/ordering/cart",
+    "DELETE /api/ordering/cart/items/{}",
+    "DELETE /api/ordering/cart/items/{}/removal-request",
+    "GET /api/categories/options",
+    "GET /api/inventory/items/search",
+    "GET /api/ordering/cart",
+    "GET /api/ordering/orders/recent",
+    "GET /api/ordering/po-send/preview",
+    "GET /api/ordering/po-send/preview.pdf",
+    "GET /api/ordering/supplier-projection",
+    "GET /api/ordering/suppliers",
+    "PATCH /api/ordering/cart/items/{}",
+    "POST /api/ordering/cart/items",
+    "POST /api/ordering/cart/items/{}/removal-request",
+    "POST /api/ordering/cart/items/{}/removal-request/approve",
+    "POST /api/ordering/cart/items/{}/removal-request/reject",
+    "POST /api/ordering/cart/mark-placed",
+    "POST /api/ordering/po-send",
+    "POST /api/ordering/purchase-order/export-pdf",
+    "PUT /api/categories/cart-lines/{}"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/PurchaseOrderCart.jsx",
+    "components/SectionControls.jsx",
+    "components/cartAdd/AddItemsForm.jsx",
+    "components/cartAdd/cartAddModel.js",
+    "components/cartAdd/cartVendorPanels.js",
+    "components/flyers/useDialog.js",
+    "components/poSend/SendPoDialog.jsx",
+    "components/poSend/poSendModel.js",
+    "components/projectionQty/projectionQtyModel.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/PurchaseOrderPage.jsx",
+    "productMatch.js"
+   ]
+  },
+  "pages/ReconciliationPage.jsx": {
+   "endpoints": [
+    "DELETE /api/reconciliation/purchases/{}",
+    "GET /api/inventory/items/search",
+    "GET /api/reconciliation/demo",
+    "GET /api/reconciliation/invoice-gaps",
+    "GET /api/reconciliation/invoice-gaps/export",
+    "GET /api/reconciliation/purchases",
+    "GET /api/reconciliation/purchases/export",
+    "GET /api/reconciliation/report",
+    "GET /api/reconciliation/report/export",
+    "POST /api/reconciliation/purchases",
+    "POST /api/reconciliation/purchases/upload"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/Reconciliation.jsx",
+    "components/SortableTh.jsx",
+    "format.js",
+    "glossary.jsx",
+    "pages/ReconciliationPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/ReorderPage.jsx": {
+   "endpoints": [
+    "DELETE /api/order-actions/placed/{}",
+    "DELETE /api/reorder/critical-dismissals/{}",
+    "GET /api/ordering/cart",
+    "GET /api/ordering/item-weekly-sales",
+    "GET /api/ordering/reorder-candidates",
+    "GET /api/reorder/critical-dismissals",
+    "POST /api/order-actions",
+    "POST /api/ordering/cart/items",
+    "POST /api/reorder/critical-dismissals"
+   ],
+   "files": [
+    "components/CriticalDismissals.jsx",
+    "components/DataSourceNote.jsx",
+    "components/InfoBlock.jsx",
+    "components/ReorderCandidates.jsx",
+    "components/cartAdd/cartAddModel.js",
+    "components/cartAdd/cartVendorPanels.js",
+    "components/orderActions/orderActionsModel.js",
+    "components/reorderCart/ReorderCart.jsx",
+    "components/reorderCart/reorderCartModel.js",
+    "components/weeklySales/WeeklySalesTable.jsx",
+    "components/weeklySales/weeklySalesModel.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/ReorderPage.jsx",
+    "productMatch.js"
+   ]
+  },
+  "pages/SupplierProjectionPage.jsx": {
+   "endpoints": [
+    "GET /api/ordering/cart",
+    "GET /api/ordering/item-weekly-sales",
+    "GET /api/ordering/similar-items",
+    "GET /api/ordering/supplier-projection",
+    "GET /api/ordering/suppliers",
+    "PATCH /api/ordering/cart/items/{}",
+    "POST /api/ordering/cart/items"
+   ],
+   "files": [
+    "components/DataSourceNote.jsx",
+    "components/InfoBlock.jsx",
+    "components/SortableTh.jsx",
+    "components/SupplierProjection.jsx",
+    "components/cartAdd/cartAddModel.js",
+    "components/cartAdd/cartVendorPanels.js",
+    "components/projectionQty/projectionQtyModel.js",
+    "components/weeklySales/WeeklySalesTable.jsx",
+    "components/weeklySales/weeklySalesModel.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/SupplierProjectionPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/TeamAnnouncementsPage.jsx": {
+   "endpoints": [
+    "GET /api/team/announcements",
+    "GET /api/team/announcements/{}/recipients",
+    "GET /api/team/bootstrap",
+    "GET /api/team/updates",
+    "PATCH /api/team/announcements/{}",
+    "POST /api/team/announcements",
+    "POST /api/team/announcements/{}/ack",
+    "POST /api/team/announcements/{}/remind",
+    "POST /api/team/announcements/{}/seen",
+    "POST /api/team/media"
+   ],
+   "files": [
+    "components/team/AnnouncementCompose.jsx",
+    "components/team/TeamMediaImage.jsx",
+    "components/team/taskUtils.js",
+    "components/team/teamSyncEngine.js",
+    "components/team/useDialogA11y.js",
+    "components/team/usePageActive.js",
+    "components/team/useTeamBadges.js",
+    "components/team/useTeamSync.js",
+    "pages/TeamAnnouncementsPage.jsx"
+   ]
+  },
+  "pages/TeamChatPage.jsx": {
+   "endpoints": [
+    "DELETE /api/team/blocks/{}",
+    "DELETE /api/team/messages/{}",
+    "DELETE /api/team/messages/{}/pin",
+    "GET /api/team/assignees",
+    "GET /api/team/blocks",
+    "GET /api/team/bootstrap",
+    "GET /api/team/channels",
+    "GET /api/team/channels/{}",
+    "GET /api/team/channels/{}/members",
+    "GET /api/team/channels/{}/messages",
+    "GET /api/team/channels/{}/pins",
+    "GET /api/team/chat/settings",
+    "GET /api/team/messages/search",
+    "GET /api/team/messages/{}/seen-by",
+    "GET /api/team/people",
+    "GET /api/team/updates",
+    "PATCH /api/team/channels/{}/me",
+    "POST /api/team/blocks",
+    "POST /api/team/channels/dm",
+    "POST /api/team/channels/{}/messages",
+    "POST /api/team/channels/{}/read",
+    "POST /api/team/media",
+    "POST /api/team/messages/{}/pin",
+    "POST /api/team/messages/{}/report",
+    "POST /api/team/tasks",
+    "PUT /api/team/chat/settings"
+   ],
+   "files": [
+    "components/team/ChatConversation.jsx",
+    "components/team/ChatExtras.jsx",
+    "components/team/TaskCreateForm.jsx",
+    "components/team/TeamMediaImage.jsx",
+    "components/team/taskEditModel.js",
+    "components/team/taskLinks.js",
+    "components/team/taskUtils.js",
+    "components/team/teamAdvancedModel.js",
+    "components/team/teamSyncEngine.js",
+    "components/team/useDialogA11y.js",
+    "components/team/usePageActive.js",
+    "components/team/useTeamBadges.js",
+    "components/team/useTeamSync.js",
+    "pages/TeamChatPage.jsx"
+   ]
+  },
+  "pages/TeamModerationPage.jsx": {
+   "endpoints": [
+    "DELETE /api/team/messages/{}/pin",
+    "GET /api/team/blocks",
+    "GET /api/team/messages/search",
+    "GET /api/team/messages/{}/seen-by",
+    "GET /api/team/reports",
+    "POST /api/team/messages/{}/pin",
+    "POST /api/team/reports/{}/dismiss",
+    "POST /api/team/reports/{}/resolve"
+   ],
+   "files": [
+    "components/team/ChatExtras.jsx",
+    "components/team/TeamMediaImage.jsx",
+    "components/team/taskUtils.js",
+    "components/team/teamAdvancedModel.js",
+    "components/team/useDialogA11y.js",
+    "pages/TeamModerationPage.jsx"
+   ]
+  },
+  "pages/TeamTasksPage.jsx": {
+   "endpoints": [
+    "GET /api/team/assignees",
+    "GET /api/team/bootstrap",
+    "GET /api/team/task-stats",
+    "GET /api/team/task-summary",
+    "GET /api/team/tasks",
+    "GET /api/team/tasks/{}",
+    "GET /api/team/updates",
+    "PATCH /api/team/tasks/{}",
+    "PATCH /api/team/tasks/{}/items/{}",
+    "POST /api/team/task-batches/{}/cancel",
+    "POST /api/team/tasks",
+    "POST /api/team/tasks/bulk",
+    "POST /api/team/tasks/{}/cant-do",
+    "POST /api/team/tasks/{}/comments",
+    "POST /api/team/tasks/{}/complete",
+    "POST /api/team/tasks/{}/reopen",
+    "POST /api/team/tasks/{}/start",
+    "PUT /api/team/tasks/{}/items"
+   ],
+   "files": [
+    "components/team/TaskBoard.jsx",
+    "components/team/TaskCreateForm.jsx",
+    "components/team/TaskDetailDrawer.jsx",
+    "components/team/TaskStats.jsx",
+    "components/team/taskEditModel.js",
+    "components/team/taskLinks.js",
+    "components/team/taskUtils.js",
+    "components/team/teamAdvancedModel.js",
+    "components/team/teamSyncEngine.js",
+    "components/team/useDialogA11y.js",
+    "components/team/usePageActive.js",
+    "components/team/useTeamSync.js",
+    "glossary.jsx",
+    "pages/TeamTasksPage.jsx"
+   ]
+  },
+  "pages/TeamTemplatesPage.jsx": {
+   "endpoints": [
+    "DELETE /api/team/templates/{}",
+    "GET /api/team/assignees",
+    "GET /api/team/bootstrap",
+    "GET /api/team/templates",
+    "PATCH /api/team/templates/{}",
+    "POST /api/team/templates",
+    "POST /api/team/templates/preview",
+    "POST /api/team/templates/{}/create-task"
+   ],
+   "files": [
+    "components/team/taskEditModel.js",
+    "components/team/taskLinks.js",
+    "components/team/taskUtils.js",
+    "components/team/teamAdvancedModel.js",
+    "pages/TeamTemplatesPage.jsx"
+   ]
+  },
+  "pages/TeamsPage.jsx": {
+   "endpoints": [
+    "GET /api/auth/users",
+    "GET /api/team/teams",
+    "PATCH /api/team/teams/{}",
+    "POST /api/team/teams",
+    "PUT /api/team/teams/{}/members"
+   ],
+   "files": [
+    "pages/TeamsPage.jsx"
+   ]
+  },
+  "pages/UsersPage.jsx": {
+   "endpoints": [
+    "DELETE /api/auth/users/{}",
+    "GET /api/auth/features",
+    "GET /api/auth/users",
+    "PATCH /api/auth/users/{}/can-assign",
+    "PATCH /api/auth/users/{}/features",
+    "PATCH /api/auth/users/{}/hide-sales",
+    "POST /api/auth/users",
+    "POST /api/auth/users/{}/set-password"
+   ],
+   "files": [
+    "components/PasswordInput.jsx",
+    "glossary.jsx",
+    "pages/UsersPage.jsx"
+   ]
+  },
+  "pages/VendorCalendarPage.jsx": {
+   "endpoints": [
+    "DELETE /api/order-actions/placed/{}",
+    "DELETE /api/order-actions/skip",
+    "DELETE /api/vendor-calendar/schedule-suggestions/dismiss",
+    "DELETE /api/vendor-calendar/schedules/{}",
+    "DELETE /api/vendor-calendar/skips",
+    "GET /api/ordering/suppliers",
+    "GET /api/reorder/critical-dismissals",
+    "GET /api/vendor-calendar",
+    "GET /api/vendor-calendar/schedule-suggestions",
+    "GET /api/vendor-calendar/schedules",
+    "PATCH /api/vendor-calendar/schedules/{}",
+    "POST /api/order-actions",
+    "POST /api/reorder/critical-dismissals",
+    "POST /api/vendor-calendar/schedule-suggestions/accept-all",
+    "POST /api/vendor-calendar/schedule-suggestions/dismiss",
+    "POST /api/vendor-calendar/schedules",
+    "POST /api/vendor-calendar/skips"
+   ],
+   "files": [
+    "components/CriticalDismissals.jsx",
+    "components/InfoBlock.jsx",
+    "components/VendorCalendar.jsx",
+    "components/flyers/useDialog.js",
+    "components/orderActions/orderActionsModel.js",
+    "components/suggestions/ScheduleSuggestions.jsx",
+    "components/suggestions/scheduleSuggestionsModel.js",
+    "components/suggestions/suggestionsModel.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/VendorCalendarPage.jsx"
+   ]
+  },
+  "pages/VendorContactsPage.jsx": {
+   "endpoints": [
+    "DELETE /api/ordering/vendor-contacts/{}",
+    "GET /api/ordering/cart",
+    "GET /api/ordering/po-send/preview",
+    "GET /api/ordering/po-send/preview.pdf",
+    "GET /api/ordering/po-sends",
+    "GET /api/ordering/vendor-contacts",
+    "PATCH /api/ordering/vendor-contacts/{}",
+    "POST /api/ordering/po-send",
+    "POST /api/ordering/vendor-contacts"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/flyers/useDialog.js",
+    "components/poSend/SendPoDialog.jsx",
+    "components/poSend/VendorContacts.jsx",
+    "components/poSend/poSendModel.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/VendorContactsPage.jsx"
+   ]
+  },
+  "pages/insights/AddonsPage.jsx": {
+   "endpoints": [
+    "GET /api/insights/addons"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/SortableTh.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/AddonsPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/insights/ChannelsPage.jsx": {
+   "endpoints": [
+    "GET /api/insights/channels"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/charts.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/ChannelsPage.jsx"
+   ]
+  },
+  "pages/insights/CheckTrendsPage.jsx": {
+   "endpoints": [
+    "GET /api/insights/check-trends"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/charts.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/CheckTrendsPage.jsx"
+   ]
+  },
+  "pages/insights/DailyComparePage.jsx": {
+   "endpoints": [
+    "GET /api/insights/compare"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/DailyComparePage.jsx"
+   ]
+  },
+  "pages/insights/HeatmapPage.jsx": {
+   "endpoints": [
+    "GET /api/insights/hourly-heatmap"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/charts.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/HeatmapPage.jsx"
+   ]
+  },
+  "pages/insights/LossWatchPage.jsx": {
+   "endpoints": [
+    "GET /api/insights/loss-watch",
+    "POST /api/insights/loss-watch/{}/ack"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/SortableTh.jsx",
+    "components/insights/FlagAck.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/LossWatchPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/insights/MenuPerformancePage.jsx": {
+   "endpoints": [
+    "GET /api/insights/menu-performance"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/MenuPerformancePage.jsx"
+   ]
+  },
+  "pages/insights/OddChecksPage.jsx": {
+   "endpoints": [
+    "GET /api/insights/odd-checks",
+    "POST /api/insights/loss-watch/{}/ack"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/SortableTh.jsx",
+    "components/insights/FlagAck.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/OddChecksPage.jsx",
+    "productMatch.js",
+    "useTableControls.js"
+   ]
+  },
+  "pages/insights/PrepForecastPage.jsx": {
+   "endpoints": [
+    "GET /api/insights/prep-forecast"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/charts.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/PrepForecastPage.jsx"
+   ]
+  },
+  "pages/insights/ReturningCustomersPage.jsx": {
+   "endpoints": [
+    "GET /api/insights/returning-customers"
+   ],
+   "files": [
+    "components/InfoBlock.jsx",
+    "components/insights/InsightsCommon.jsx",
+    "components/insights/charts.jsx",
+    "components/insights/insightsModel.js",
+    "featureRoutes.js",
+    "format.js",
+    "glossary.jsx",
+    "pages/insights/ReturningCustomersPage.jsx"
+   ]
+  }
+ },
+ "web_funcs": {
+  "login": [
+   "POST /api/auth/login",
+   "POST /api/auth/mobile-login"
+  ],
+  "logout": [
+   "POST /api/auth/logout"
+  ],
+  "getMe": [
+   "GET /api/auth/me"
+  ],
+  "changePassword": [
+   "POST /api/auth/change-password"
+  ],
+  "listUsers": [
+   "GET /api/auth/users"
+  ],
+  "createUser": [
+   "POST /api/auth/users"
+  ],
+  "setUserPassword": [
+   "POST /api/auth/users/{}/set-password"
+  ],
+  "listFeatures": [
+   "GET /api/auth/features"
+  ],
+  "setUserFeatures": [
+   "PATCH /api/auth/users/{}/features"
+  ],
+  "deleteUser": [
+   "DELETE /api/auth/users/{}"
+  ],
+  "setUserCanAssign": [
+   "PATCH /api/auth/users/{}/can-assign"
+  ],
+  "setUserHideSales": [
+   "PATCH /api/auth/users/{}/hide-sales"
+  ],
+  "listTeams": [
+   "GET /api/team/teams"
+  ],
+  "createTeam": [
+   "POST /api/team/teams"
+  ],
+  "updateTeam": [
+   "PATCH /api/team/teams/{}"
+  ],
+  "setTeamMembers": [
+   "PUT /api/team/teams/{}/members"
+  ],
+  "getTeamBootstrap": [
+   "GET /api/team/bootstrap"
+  ],
+  "listAssignablePeople": [
+   "GET /api/team/assignees"
+  ],
+  "listTasks": [
+   "GET /api/team/tasks"
+  ],
+  "createTask": [
+   "POST /api/team/tasks"
+  ],
+  "getTask": [
+   "GET /api/team/tasks/{}"
+  ],
+  "updateTask": [
+   "PATCH /api/team/tasks/{}"
+  ],
+  "completeTask": [
+   "POST /api/team/tasks/{}/complete"
+  ],
+  "cantDoTask": [
+   "POST /api/team/tasks/{}/cant-do"
+  ],
+  "reopenTask": [
+   "POST /api/team/tasks/{}/reopen"
+  ],
+  "commentOnTask": [
+   "POST /api/team/tasks/{}/comments"
+  ],
+  "setTaskItem": [
+   "PATCH /api/team/tasks/{}/items/{}"
+  ],
+  "replaceTaskItems": [
+   "PUT /api/team/tasks/{}/items"
+  ],
+  "bulkTasks": [
+   "POST /api/team/tasks/bulk"
+  ],
+  "getTaskSummary": [
+   "GET /api/team/task-summary"
+  ],
+  "getTaskBatch": [
+   "GET /api/team/task-batches/{}"
+  ],
+  "cancelTaskBatch": [
+   "POST /api/team/task-batches/{}/cancel"
+  ],
+  "uploadTeamMedia": [
+   "POST /api/team/media"
+  ],
+  "listAnnouncements": [
+   "GET /api/team/announcements"
+  ],
+  "createAnnouncement": [
+   "POST /api/team/announcements"
+  ],
+  "updateAnnouncement": [
+   "PATCH /api/team/announcements/{}"
+  ],
+  "markAnnouncementSeen": [
+   "POST /api/team/announcements/{}/seen"
+  ],
+  "ackAnnouncement": [
+   "POST /api/team/announcements/{}/ack"
+  ],
+  "getAnnouncementRecipients": [
+   "GET /api/team/announcements/{}/recipients"
+  ],
+  "remindAnnouncement": [
+   "POST /api/team/announcements/{}/remind"
+  ],
+  "listReports": [
+   "GET /api/team/reports"
+  ],
+  "resolveReport": [
+   "POST /api/team/reports/{}/resolve"
+  ],
+  "dismissReport": [
+   "POST /api/team/reports/{}/dismiss"
+  ],
+  "listAllBlocks": [
+   "GET /api/team/blocks"
+  ],
+  "listTaskTemplates": [
+   "GET /api/team/templates"
+  ],
+  "createTaskTemplate": [
+   "POST /api/team/templates"
+  ],
+  "updateTaskTemplate": [
+   "PATCH /api/team/templates/{}"
+  ],
+  "deactivateTaskTemplate": [
+   "DELETE /api/team/templates/{}"
+  ],
+  "previewTaskTemplate": [
+   "POST /api/team/templates/preview"
+  ],
+  "getJobStatus": [
+   "GET /api/jobs/status"
+  ],
+  "getInventoryApiStatus": [
+   "GET /api/inventory-api/status"
+  ],
+  "getInventoryApiCompare": [
+   "GET /api/inventory-api/compare"
+  ],
+  "getInventoryApiNightlyCompare": [
+   "GET /api/inventory-api/compare/nightly"
+  ],
+  "getInventoryApiSwitch": [
+   "GET /api/inventory-api/switch"
+  ],
+  "setInventoryApiSwitch": [
+   "PUT /api/inventory-api/switch"
+  ],
+  "runInventoryApiMenuRecheck": [
+   "POST /api/inventory-api/menu-recheck"
+  ],
+  "uploadInventoryWithProgress": [
+   "POST /api/inventory/upload"
+  ],
+  "submitInvoiceWithProgress": [
+   "POST /api/invoices"
+  ],
+  "getInvoiceSubmissions": [
+   "GET /api/invoices"
+  ],
+  "getInvoiceSubmission": [
+   "GET /api/invoices/{}"
+  ],
+  "resendInvoiceSubmission": [
+   "POST /api/invoices/{}/resend"
+  ],
+  "overrideInvoiceStatus": [
+   "POST /api/invoices/{}/override-status"
+  ],
+  "markInvoiceToastClosed": [
+   "POST /api/invoices/{}/mark-toast-closed"
+  ],
+  "unmarkInvoiceToastClosed": [
+   "POST /api/invoices/{}/unmark-toast-closed"
+  ],
+  "requestDeleteInvoice": [
+   "POST /api/invoices/{}/request-delete"
+  ],
+  "cancelDeleteRequest": [
+   "POST /api/invoices/{}/cancel-delete-request"
+  ],
+  "approveDeleteInvoice": [
+   "POST /api/invoices/{}/approve-delete"
+  ],
+  "adminDeleteInvoice": [
+   "POST /api/invoices/{}/delete"
+  ],
+  "restoreInvoice": [
+   "POST /api/invoices/{}/restore"
+  ],
+  "permanentlyDeleteInvoice": [
+   "DELETE /api/invoices/{}/permanent"
+  ],
+  "getInvoiceTrash": [
+   "GET /api/invoices/trash"
+  ],
+  "getReorderCandidates": [
+   "GET /api/ordering/reorder-candidates"
+  ],
+  "getCriticalDismissals": [
+   "GET /api/reorder/critical-dismissals"
+  ],
+  "hideCriticalVendor": [
+   "POST /api/reorder/critical-dismissals"
+  ],
+  "showCriticalVendorAgain": [
+   "DELETE /api/reorder/critical-dismissals/{}"
+  ],
+  "getSuppliers": [
+   "GET /api/ordering/suppliers"
+  ],
+  "getVendorSchedules": [
+   "GET /api/vendor-calendar/schedules"
+  ],
+  "createVendorSchedule": [
+   "POST /api/vendor-calendar/schedules"
+  ],
+  "updateVendorSchedule": [
+   "PATCH /api/vendor-calendar/schedules/{}"
+  ],
+  "deleteVendorSchedule": [
+   "DELETE /api/vendor-calendar/schedules/{}"
+  ],
+  "getVendorCalendar": [
+   "GET /api/vendor-calendar"
+  ],
+  "skipVendorOrder": [
+   "POST /api/vendor-calendar/skips"
+  ],
+  "unskipVendorOrder": [
+   "DELETE /api/vendor-calendar/skips"
+  ],
+  "postOrderAction": [
+   "POST /api/order-actions"
+  ],
+  "undoOrderPlacedOutside": [
+   "DELETE /api/order-actions/placed/{}"
+  ],
+  "undoOrderSkip": [
+   "DELETE /api/order-actions/skip"
+  ],
+  "getInvoiceVendorsToday": [
+   "GET /api/inventory/invoice-vendors-today"
+  ],
+  "getSupplierProjection": [
+   "GET /api/ordering/supplier-projection"
+  ],
+  "getItemWeeklySales": [
+   "GET /api/ordering/item-weekly-sales"
+  ],
+  "getSimilarItems": [
+   "GET /api/ordering/similar-items"
+  ],
+  "exportPurchaseOrderPdf": [
+   "POST /api/ordering/purchase-order/export-pdf"
+  ],
+  "getCart": [
+   "GET /api/ordering/cart"
+  ],
+  "getCartProjection": [
+   "GET /api/ordering/cart"
+  ],
+  "addToCart": [
+   "POST /api/ordering/cart/items"
+  ],
+  "updateCartItem": [
+   "PATCH /api/ordering/cart/items/{}"
+  ],
+  "deleteCartItem": [
+   "DELETE /api/ordering/cart/items/{}"
+  ],
+  "requestCartRemoval": [
+   "POST /api/ordering/cart/items/{}/removal-request"
+  ],
+  "cancelCartRemoval": [
+   "DELETE /api/ordering/cart/items/{}/removal-request"
+  ],
+  "approveCartRemoval": [
+   "POST /api/ordering/cart/items/{}/removal-request/approve"
+  ],
+  "rejectCartRemoval": [
+   "POST /api/ordering/cart/items/{}/removal-request/reject"
+  ],
+  "clearSupplierCart": [
+   "DELETE /api/ordering/cart"
+  ],
+  "markOrderPlaced": [
+   "POST /api/ordering/cart/mark-placed"
+  ],
+  "getRecentPlacedOrders": [
+   "GET /api/ordering/orders/recent"
+  ],
+  "getPlacedOrders": [
+   "GET /api/ordering/orders"
+  ],
+  "orderAgain": [
+   "POST /api/ordering/orders/{}/order-again"
+  ],
+  "getItemsSold": [
+   "GET /api/sales/items-sold"
+  ],
+  "getSalesAccuracy": [
+   "GET /api/sales/accuracy"
+  ],
+  "runSalesAccuracy": [
+   "POST /api/sales/accuracy/run"
+  ],
+  "getPriceChanges": [
+   "GET /api/inventory/price-changes"
+  ],
+  "searchPriceHistory": [
+   "GET /api/inventory/price-history"
+  ],
+  "downloadSales": [
+   "GET /api/sales/export"
+  ],
+  "getMissingBarcodes": [
+   "GET /api/reports/missing-barcodes"
+  ],
+  "getInvalidBarcodes": [
+   "GET /api/reports/invalid-barcodes"
+  ],
+  "downloadMissingBarcodes": [
+   "GET /api/reports/missing-barcodes/export"
+  ],
+  "downloadInvalidBarcodes": [
+   "GET /api/reports/invalid-barcodes/export"
+  ],
+  "downloadPriceChanges": [
+   "GET /api/inventory/price-changes/export"
+  ],
+  "getDeadStock": [
+   "GET /api/reports/dead-stock"
+  ],
+  "downloadDeadStock": [
+   "GET /api/reports/dead-stock/export"
+  ],
+  "getVendorPriceComparison": [
+   "GET /api/reports/vendor-price-comparison"
+  ],
+  "getNegativeInventory": [
+   "GET /api/reports/negative-inventory"
+  ],
+  "downloadNegativeInventory": [
+   "GET /api/reports/negative-inventory/export"
+  ],
+  "downloadVendorPriceComparison": [
+   "GET /api/reports/vendor-price-comparison/export"
+  ],
+  "getStoreVsContainer": [
+   "GET /api/reports/store-vs-container"
+  ],
+  "downloadStoreVsContainer": [
+   "GET /api/reports/store-vs-container/export"
+  ],
+  "downloadItemsSold": [
+   "GET /api/sales/items-sold/export"
+  ],
+  "downloadOpenOrders": [
+   "GET /api/orders/open/export"
+  ],
+  "downloadInvoiceGaps": [
+   "GET /api/reconciliation/invoice-gaps/export"
+  ],
+  "downloadPurchaseLog": [
+   "GET /api/reconciliation/purchases/export"
+  ],
+  "searchItems": [
+   "GET /api/inventory/items/search"
+  ],
+  "logPurchase": [
+   "POST /api/reconciliation/purchases"
+  ],
+  "uploadPurchaseLogWithProgress": [
+   "POST /api/reconciliation/purchases/upload"
+  ],
+  "getPurchases": [
+   "GET /api/reconciliation/purchases"
+  ],
+  "deletePurchase": [
+   "DELETE /api/reconciliation/purchases/{}"
+  ],
+  "getDeliveryCandidates": [
+   "GET /api/reconciliation/delivery-candidates"
+  ],
+  "getDeliveryHistory": [
+   "GET /api/reconciliation/delivery-history"
+  ],
+  "getSuggestedDeliveries": [
+   "GET /api/reconciliation/suggested-deliveries"
+  ],
+  "dismissSuggestedDelivery": [
+   "POST /api/reconciliation/suggested-deliveries/dismiss"
+  ],
+  "undoDismissSuggestedDelivery": [
+   "DELETE /api/reconciliation/suggested-deliveries/dismiss"
+  ],
+  "getInvoiceCloseSuggestions": [
+   "GET /api/invoices/close-suggestions"
+  ],
+  "dismissInvoiceCloseSuggestion": [
+   "POST /api/invoices/{}/close-suggestion/dismiss"
+  ],
+  "undoDismissInvoiceCloseSuggestion": [
+   "DELETE /api/invoices/{}/close-suggestion/dismiss"
+  ],
+  "getScheduleSuggestions": [
+   "GET /api/vendor-calendar/schedule-suggestions"
+  ],
+  "dismissScheduleSuggestion": [
+   "POST /api/vendor-calendar/schedule-suggestions/dismiss"
+  ],
+  "undoDismissScheduleSuggestion": [
+   "DELETE /api/vendor-calendar/schedule-suggestions/dismiss"
+  ],
+  "acceptAllScheduleSuggestions": [
+   "POST /api/vendor-calendar/schedule-suggestions/accept-all"
+  ],
+  "confirmDelivery": [
+   "POST /api/reconciliation/delivery-confirm"
+  ],
+  "getReconciliationDemo": [
+   "GET /api/reconciliation/demo"
+  ],
+  "getReconciliationReport": [
+   "GET /api/reconciliation/report"
+  ],
+  "downloadReconciliationReport": [
+   "GET /api/reconciliation/report/export"
+  ],
+  "getInvoiceGaps": [
+   "GET /api/reconciliation/invoice-gaps"
+  ],
+  "askQuestion": [
+   "POST /api/ask"
+  ],
+  "generateWeeklyDigest": [
+   "POST /api/weekly-digest/generate"
+  ],
+  "getTransferCandidates": [
+   "GET /api/transfers/candidates"
+  ],
+  "confirmTransfers": [
+   "POST /api/transfers/confirm"
+  ],
+  "getChecklistSchemas": [
+   "GET /api/checklists/schemas"
+  ],
+  "getChecklistSchema": [
+   "GET /api/checklists/schema/{}"
+  ],
+  "submitChecklist": [
+   "POST /api/checklists/{}/submit"
+  ],
+  "getChecklistSubmissions": [
+   "GET /api/checklists"
+  ],
+  "getChecklistSubmission": [
+   "GET /api/checklists/{}"
+  ],
+  "getChecklistSchemaVersion": [
+   "GET /api/checklists/schema/{}"
+  ],
+  "uploadChecklistPhoto": [
+   "POST /api/checklists/media"
+  ],
+  "getPublicChecklist": [
+   "GET /api/public/checklists/{}"
+  ],
+  "submitPublicChecklist": [
+   "POST /api/public/checklists/{}/submit"
+  ],
+  "uploadPublicChecklistPhoto": [
+   "POST /api/public/checklists/{}/media"
+  ],
+  "listChecklistDefinitions": [
+   "GET /api/checklists/admin/definitions"
+  ],
+  "getChecklistDefinition": [
+   "GET /api/checklists/admin/definitions/{}"
+  ],
+  "createChecklistDefinition": [
+   "POST /api/checklists/admin/definitions"
+  ],
+  "saveChecklistDraft": [
+   "PUT /api/checklists/admin/definitions/{}"
+  ],
+  "publishChecklistDefinition": [
+   "POST /api/checklists/admin/definitions/{}/publish"
+  ],
+  "duplicateChecklistDefinition": [
+   "POST /api/checklists/admin/definitions/{}/duplicate"
+  ],
+  "updateChecklistDefinition": [
+   "PATCH /api/checklists/admin/definitions/{}"
+  ],
+  "getChecklistDefinitionVersion": [
+   "GET /api/checklists/admin/definitions/{}/versions/{}"
+  ],
+  "reorderChecklistDefinitions": [
+   "POST /api/checklists/admin/definitions/order"
+  ],
+  "discardChecklistDraft": [
+   "DELETE /api/checklists/admin/definitions/{}/draft"
+  ],
+  "getChecklistEditorMeta": [
+   "GET /api/checklists/admin/meta"
+  ],
+  "getChecklistPublicLink": [
+   "GET /api/checklists/admin/definitions/{}/public-link"
+  ],
+  "saveChecklistPublicLink": [
+   "PUT /api/checklists/admin/definitions/{}/public-link"
+  ],
+  "rotateChecklistPublicLink": [
+   "POST /api/checklists/admin/definitions/{}/public-link/rotate"
+  ],
+  "deleteChecklistPublicLink": [
+   "DELETE /api/checklists/admin/definitions/{}/public-link"
+  ],
+  "revertChecklistDefinition": [
+   "POST /api/checklists/admin/definitions/{}/revert/{}"
+  ],
+  "listWhatsAppGroups": [
+   "GET /api/checklists/admin/whatsapp-groups"
+  ],
+  "listAvailableWhatsAppGroups": [
+   "GET /api/checklists/admin/whatsapp-groups/available"
+  ],
+  "addWhatsAppGroup": [
+   "POST /api/checklists/admin/whatsapp-groups"
+  ],
+  "updateWhatsAppGroup": [
+   "PATCH /api/checklists/admin/whatsapp-groups/{}"
+  ],
+  "deleteWhatsAppGroup": [
+   "DELETE /api/checklists/admin/whatsapp-groups/{}"
+  ],
+  "getOpenOrders": [
+   "GET /api/orders/open"
+  ],
+  "getOrderEmployees": [
+   "GET /api/orders/employees"
+  ],
+  "getAllTimeOpenOrders": [
+   "GET /api/orders/open/all-time"
+  ],
+  "rescanAllTimeOpenOrders": [
+   "POST /api/orders/open/all-time/rescan"
+  ],
+  "getIssueReasons": [
+   "GET /api/issues/reasons"
+  ],
+  "getIssueSummary": [
+   "GET /api/issues/summary"
+  ],
+  "getIssueList": [
+   "GET /api/issues/{}"
+  ],
+  "getIssueHistory": [
+   "GET /api/issues/{}/history"
+  ],
+  "closeIssues": [
+   "POST /api/issues/close"
+  ],
+  "reopenIssues": [
+   "POST /api/issues/reopen"
+  ],
+  "getIssueReport": [
+   "GET /api/issues/report"
+  ],
+  "downloadIssues": [
+   "GET /api/issues/{}/export"
+  ],
+  "getTeamUpdates": [
+   "GET /api/team/updates"
+  ],
+  "listChatChannels": [
+   "GET /api/team/channels"
+  ],
+  "getChatChannel": [
+   "GET /api/team/channels/{}"
+  ],
+  "listChatPeople": [
+   "GET /api/team/people"
+  ],
+  "openDirectMessage": [
+   "POST /api/team/channels/dm"
+  ],
+  "listChannelMembers": [
+   "GET /api/team/channels/{}/members"
+  ],
+  "listChatMessages": [
+   "GET /api/team/channels/{}/messages"
+  ],
+  "sendChatMessage": [
+   "POST /api/team/channels/{}/messages"
+  ],
+  "markChannelRead": [
+   "POST /api/team/channels/{}/read"
+  ],
+  "updateMyChannel": [
+   "PATCH /api/team/channels/{}/me"
+  ],
+  "deleteChatMessage": [
+   "DELETE /api/team/messages/{}"
+  ],
+  "reportChatMessage": [
+   "POST /api/team/messages/{}/report"
+  ],
+  "getChatSettings": [
+   "GET /api/team/chat/settings"
+  ],
+  "setHidePreviews": [
+   "PUT /api/team/chat/settings"
+  ],
+  "getNotificationPrefs": [
+   "GET /api/notifications/prefs"
+  ],
+  "setNotificationPref": [
+   "PUT /api/notifications/prefs"
+  ],
+  "resetNotificationPrefs": [
+   "POST /api/notifications/prefs/reset"
+  ],
+  "getNotificationDefaults": [
+   "GET /api/notifications/defaults"
+  ],
+  "setNotificationDefault": [
+   "PUT /api/notifications/defaults"
+  ],
+  "resetNotificationDefaults": [
+   "POST /api/notifications/defaults/reset"
+  ],
+  "getRecentNotifications": [
+   "GET /api/notifications/recent"
+  ],
+  "getNotificationVolume": [
+   "GET /api/notifications/volume"
+  ],
+  "listMyBlocks": [
+   "GET /api/team/blocks"
+  ],
+  "blockUser": [
+   "POST /api/team/blocks"
+  ],
+  "unblockUser": [
+   "DELETE /api/team/blocks/{}"
+  ],
+  "setTaskStarted": [
+   "POST /api/team/tasks/{}/start"
+  ],
+  "getTaskStats": [
+   "GET /api/team/task-stats"
+  ],
+  "createTaskFromTemplate": [
+   "POST /api/team/templates/{}/create-task"
+  ],
+  "listChannelPins": [
+   "GET /api/team/channels/{}/pins"
+  ],
+  "pinChatMessage": [
+   "DELETE /api/team/messages/{}/pin",
+   "POST /api/team/messages/{}/pin"
+  ],
+  "getMessageSeenBy": [
+   "GET /api/team/messages/{}/seen-by"
+  ],
+  "searchChatMessages": [
+   "GET /api/team/messages/search"
+  ],
+  "uploadChatAttachment": [
+   "POST /api/team/media"
+  ],
+  "getGlossary": [
+   "GET /api/glossary"
+  ],
+  "getSectionItems": [
+   "GET /api/categories/items"
+  ],
+  "getSectionOptions": [
+   "GET /api/categories/options"
+  ],
+  "setItemSection": [
+   "PUT /api/categories/items/{}"
+  ],
+  "resetItemSection": [
+   "DELETE /api/categories/items/{}"
+  ],
+  "bulkSetSection": [
+   "POST /api/categories/items/bulk"
+  ],
+  "bulkResetSection": [
+   "POST /api/categories/items/reset"
+  ],
+  "moveItemsToSection": [
+   "POST /api/categories/items/move"
+  ],
+  "getSectionVendorRules": [
+   "GET /api/categories/vendor-rules"
+  ],
+  "createSectionVendorRule": [
+   "POST /api/categories/vendor-rules"
+  ],
+  "deactivateSectionVendorRule": [
+   "DELETE /api/categories/vendor-rules/{}"
+  ],
+  "getSections": [
+   "GET /api/categories/sections"
+  ],
+  "getSectionRenames": [
+   "GET /api/categories/renames"
+  ],
+  "renameSection": [
+   "POST /api/categories/renames"
+  ],
+  "undoSectionRename": [
+   "DELETE /api/categories/renames/{}"
+  ],
+  "getSectionHistory": [
+   "GET /api/categories/history"
+  ],
+  "getSectionChanges": [
+   "GET /api/categories/changes"
+  ],
+  "undoLastSectionChange": [
+   "POST /api/categories/changes/undo"
+  ],
+  "getSectionCartPreview": [
+   "GET /api/categories/cart-preview"
+  ],
+  "setCartLineSection": [
+   "PUT /api/categories/cart-lines/{}"
+  ],
+  "getFlyerMeta": [
+   "GET /api/flyers/meta"
+  ],
+  "listFlyers": [
+   "GET /api/flyers"
+  ],
+  "getFlyer": [
+   "GET /api/flyers/{}"
+  ],
+  "uploadFlyerWithProgress": [
+   "POST /api/flyers"
+  ],
+  "updateFlyer": [
+   "PATCH /api/flyers/{}"
+  ],
+  "deleteFlyer": [
+   "DELETE /api/flyers/{}"
+  ],
+  "sendFlyer": [
+   "POST /api/flyers/{}/send"
+  ],
+  "retryFlyerSend": [
+   "POST /api/flyers/{}/sends/{}/retry"
+  ],
+  "getVendorContacts": [
+   "GET /api/ordering/vendor-contacts"
+  ],
+  "createVendorContact": [
+   "POST /api/ordering/vendor-contacts"
+  ],
+  "updateVendorContact": [
+   "PATCH /api/ordering/vendor-contacts/{}"
+  ],
+  "deleteVendorContact": [
+   "DELETE /api/ordering/vendor-contacts/{}"
+  ],
+  "getPoSendPreview": [
+   "GET /api/ordering/po-send/preview"
+  ],
+  "fetchPoSendPdfUrl": [
+   "GET /api/ordering/po-send/preview.pdf"
+  ],
+  "sendPurchaseOrder": [
+   "POST /api/ordering/po-send"
+  ],
+  "getPoSends": [
+   "GET /api/ordering/po-sends"
+  ],
+  "getInsightsHeatmap": [
+   "GET /api/insights/hourly-heatmap"
+  ],
+  "getInsightsChannels": [
+   "GET /api/insights/channels"
+  ],
+  "getInsightsCompare": [
+   "GET /api/insights/compare"
+  ],
+  "getInsightsCheckTrends": [
+   "GET /api/insights/check-trends"
+  ],
+  "getInsightsLossWatch": [
+   "GET /api/insights/loss-watch"
+  ],
+  "getInsightsOddChecks": [
+   "GET /api/insights/odd-checks"
+  ],
+  "getInsightsMenuPerformance": [
+   "GET /api/insights/menu-performance"
+  ],
+  "getInsightsAddons": [
+   "GET /api/insights/addons"
+  ],
+  "getInsightsPrepForecast": [
+   "GET /api/insights/prep-forecast"
+  ],
+  "getInsightsReturningCustomers": [
+   "GET /api/insights/returning-customers"
+  ],
+  "ackLossWatch": [
+   "POST /api/insights/loss-watch/{}/ack"
+  ],
+  "getIssueLeads": [
+   "GET /api/issue-leads"
+  ],
+  "saveIssueLeads": [
+   "PUT /api/issue-leads"
+  ],
+  "acceptIssueLeadProposal": [
+   "POST /api/issue-leads/accept-proposal"
+  ],
+  "getIssueLeadPreview": [
+   "GET /api/issue-leads/preview"
+  ],
+  "saveIssueLeadSettings": [
+   "PUT /api/issue-leads/settings"
+  ],
+  "runIssueLeadTasksNow": [
+   "POST /api/issue-leads/run-now"
+  ]
+ },
+ "app": {
+  "features/reconciliation/screens/reconciliation_hub_screen.dart": {
+   "repos": [],
+   "providers": []
+  },
+  "features/reconciliation/screens/reconciliation_report_screen.dart": {
+   "repos": [
+    "features/reconciliation/data/reconciliation_repository.dart",
+    "features/reports/data/report_downloads_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/reconciliation/providers/reconciliation_providers.dart"
+   ]
+  },
+  "features/reconciliation/screens/invoice_gaps_screen.dart": {
+   "repos": [
+    "features/reconciliation/data/reconciliation_repository.dart",
+    "features/reports/data/report_downloads_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/reconciliation/providers/reconciliation_providers.dart"
+   ]
+  },
+  "features/reconciliation/screens/reconciliation_demo_screen.dart": {
+   "repos": [
+    "features/reconciliation/data/reconciliation_repository.dart",
+    "features/reports/data/report_downloads_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/reconciliation/providers/reconciliation_providers.dart"
+   ]
+  },
+  "features/reconciliation/screens/log_purchase_screen.dart": {
+   "repos": [
+    "features/reconciliation/data/reconciliation_repository.dart",
+    "features/reports/data/report_downloads_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/reconciliation/providers/reconciliation_providers.dart"
+   ]
+  },
+  "features/insights/screens/menu_performance_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/addons_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/loss_watch_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/daily_compare_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/heatmap_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/channels_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/insights_hub_screen.dart": {
+   "repos": [],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart"
+   ]
+  },
+  "features/insights/screens/returning_customers_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/check_trends_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/odd_checks_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/insights/screens/prep_forecast_screen.dart": {
+   "repos": [
+    "features/insights/data/insights_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/inventory_api/screens/inventory_from_toast_screen.dart": {
+   "repos": [
+    "features/inventory_api/data/inventory_api_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/inventory_api/providers/inventory_api_providers.dart"
+   ]
+  },
+  "features/home/screens/home_screen.dart": {
+   "repos": [
+    "features/checklists/data/checklists_repository.dart",
+    "features/insights/data/insights_repository.dart",
+    "features/invoices/data/invoice_close_suggestions_repository.dart",
+    "features/invoices/data/invoices_repository.dart",
+    "features/orders/data/orders_repository.dart",
+    "features/purchase_cart/data/cart_repository.dart",
+    "features/reorder/data/critical_dismissals_repository.dart",
+    "features/reorder/data/reorder_repository.dart",
+    "features/scanner/data/labels_repository.dart",
+    "features/suppliers/data/item_weekly_sales_repository.dart",
+    "features/suppliers/data/suppliers_repository.dart",
+    "features/team/tasks/data/tasks_repository.dart",
+    "features/vendors/data/order_actions_repository.dart",
+    "features/vendors/data/schedule_suggestions_repository.dart",
+    "features/vendors/data/vendor_calendar_repository.dart",
+    "features/vendors/data/vendor_schedule_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/checklists/providers/checklists_providers.dart",
+    "features/home/providers/order_due_actions.dart",
+    "features/home/providers/today_providers.dart",
+    "features/insights/providers/insights_providers.dart",
+    "features/invoices/providers/invoices_providers.dart",
+    "features/orders/providers/orders_providers.dart",
+    "features/purchase_cart/providers/cart_providers.dart",
+    "features/reorder/providers/critical_dismissals_providers.dart",
+    "features/reorder/providers/reorder_providers.dart",
+    "features/scanner/providers/labels_providers.dart",
+    "features/suppliers/providers/suppliers_providers.dart",
+    "features/team/tasks/providers/tasks_providers.dart",
+    "features/vendors/providers/vendor_calendar_providers.dart"
+   ]
+  },
+  "features/inventory_bot/screens/ask_bot_screen.dart": {
+   "repos": [
+    "features/inventory_bot/data/ask_bot_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/inventory_bot/providers/ask_bot_providers.dart"
+   ]
+  },
+  "features/reorder/screens/reorder_candidates_screen.dart": {
+   "repos": [
+    "features/reorder/data/critical_dismissals_repository.dart",
+    "features/reorder/data/reorder_repository.dart",
+    "features/vendors/data/order_actions_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/home/providers/order_due_actions.dart",
+    "features/home/providers/today_providers.dart",
+    "features/reorder/providers/critical_dismissals_providers.dart",
+    "features/reorder/providers/reorder_providers.dart"
+   ]
+  },
+  "features/reorder/screens/reorder_vendor_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/cart_repository.dart"
+   ],
+   "providers": [
+    "features/purchase_cart/providers/cart_panels.dart",
+    "features/purchase_cart/providers/cart_providers.dart"
+   ]
+  },
+  "features/reorder/screens/reorder_detail_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/cart_repository.dart",
+    "features/reorder/data/critical_dismissals_repository.dart",
+    "features/reorder/data/reorder_repository.dart",
+    "features/suppliers/data/item_weekly_sales_repository.dart",
+    "features/suppliers/data/suppliers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/cart_panels.dart",
+    "features/purchase_cart/providers/cart_providers.dart",
+    "features/reorder/providers/critical_dismissals_providers.dart",
+    "features/reorder/providers/reorder_providers.dart",
+    "features/suppliers/providers/suppliers_providers.dart"
+   ]
+  },
+  "features/reorder/screens/bulk_add_sheet.dart": {
+   "repos": [
+    "features/purchase_cart/data/cart_repository.dart"
+   ],
+   "providers": []
+  },
+  "features/vendors/screens/vendor_schedules_sheet.dart": {
+   "repos": [
+    "features/vendors/data/schedule_suggestions_repository.dart",
+    "features/vendors/data/vendor_calendar_repository.dart",
+    "features/vendors/data/vendor_schedule_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/home/providers/today_providers.dart",
+    "features/vendors/providers/vendor_calendar_providers.dart"
+   ]
+  },
+  "features/vendors/screens/vendor_calendar_screen.dart": {
+   "repos": [
+    "features/suppliers/data/item_weekly_sales_repository.dart",
+    "features/suppliers/data/suppliers_repository.dart",
+    "features/vendors/data/schedule_suggestions_repository.dart",
+    "features/vendors/data/vendor_calendar_repository.dart",
+    "features/vendors/data/vendor_schedule_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/suppliers/providers/suppliers_providers.dart",
+    "features/vendors/providers/vendor_calendar_providers.dart"
+   ]
+  },
+  "features/suppliers/screens/supplier_projection_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/cart_repository.dart",
+    "features/suppliers/data/item_weekly_sales_repository.dart",
+    "features/suppliers/data/suppliers_repository.dart",
+    "features/vendors/data/schedule_suggestions_repository.dart",
+    "features/vendors/data/vendor_calendar_repository.dart",
+    "features/vendors/data/vendor_schedule_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/cart_panels.dart",
+    "features/purchase_cart/providers/cart_providers.dart",
+    "features/suppliers/providers/suppliers_providers.dart",
+    "features/suppliers/providers/vendor_picker_providers.dart",
+    "features/vendors/providers/vendor_calendar_providers.dart"
+   ]
+  },
+  "features/sales/screens/items_sold_screen.dart": {
+   "repos": [
+    "features/reports/data/report_downloads_repository.dart",
+    "features/sales/data/sales_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/sales/providers/sales_providers.dart"
+   ]
+  },
+  "features/invoices/screens/invoice_trash_screen.dart": {
+   "repos": [
+    "features/invoices/data/invoice_close_suggestions_repository.dart",
+    "features/invoices/data/invoices_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/invoices/providers/invoices_providers.dart"
+   ]
+  },
+  "features/invoices/screens/scan_naming_sheets.dart": {
+   "repos": [],
+   "providers": []
+  },
+  "features/invoices/screens/invoice_submit_sheet.dart": {
+   "repos": [
+    "features/invoices/data/invoice_close_suggestions_repository.dart",
+    "features/invoices/data/invoices_repository.dart",
+    "features/suppliers/data/item_weekly_sales_repository.dart",
+    "features/suppliers/data/suppliers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/invoices/providers/invoices_providers.dart",
+    "features/suppliers/providers/suppliers_providers.dart",
+    "features/suppliers/providers/vendor_picker_providers.dart"
+   ]
+  },
+  "features/invoices/screens/invoice_submission_screen.dart": {
+   "repos": [
+    "features/invoices/data/invoice_close_suggestions_repository.dart",
+    "features/invoices/data/invoices_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/invoices/providers/invoices_providers.dart"
+   ]
+  },
+  "features/invoices/screens/scan_review_screen.dart": {
+   "repos": [
+    "features/invoices/data/invoice_close_suggestions_repository.dart",
+    "features/invoices/data/invoices_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/invoices/providers/invoices_providers.dart"
+   ]
+  },
+  "features/checklists/screens/checklist_form_screen.dart": {
+   "repos": [
+    "features/checklists/data/checklists_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/checklists/providers/checklists_providers.dart"
+   ]
+  },
+  "features/checklists/screens/public_checklist_links_screen.dart": {
+   "repos": [
+    "features/checklists/data/checklist_public_links_repository.dart",
+    "features/checklists/data/checklists_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/checklists/providers/checklists_providers.dart"
+   ]
+  },
+  "features/checklists/screens/checklist_history_screen.dart": {
+   "repos": [
+    "features/admin/data/admin_users_repository.dart",
+    "features/checklists/data/checklists_repository.dart"
+   ],
+   "providers": [
+    "features/admin/providers/admin_users_providers.dart",
+    "features/authentication/providers/auth_providers.dart",
+    "features/checklists/providers/checklists_providers.dart"
+   ]
+  },
+  "features/checklists/screens/checklist_detail_screen.dart": {
+   "repos": [
+    "features/checklists/data/checklists_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/checklists/providers/checklists_providers.dart"
+   ]
+  },
+  "features/checklists/screens/daily_checklists_screen.dart": {
+   "repos": [
+    "features/checklists/builder/data/checklist_builder_repository.dart",
+    "features/checklists/data/checklists_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/checklists/providers/checklists_providers.dart"
+   ]
+  },
+  "features/checklists/builder/screens/checklist_builder_settings_sheet.dart": {
+   "repos": [
+    "features/checklists/builder/data/checklist_builder_repository.dart"
+   ],
+   "providers": [
+    "features/checklists/builder/data/checklist_builder_providers.dart"
+   ]
+  },
+  "features/checklists/builder/screens/reorder_sections_screen.dart": {
+   "repos": [
+    "features/checklists/builder/data/checklist_builder_repository.dart"
+   ],
+   "providers": []
+  },
+  "features/checklists/builder/screens/checklist_builder_editor_screen.dart": {
+   "repos": [
+    "features/checklists/builder/data/checklist_builder_repository.dart",
+    "features/checklists/data/checklists_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/checklists/builder/data/checklist_builder_providers.dart",
+    "features/checklists/providers/checklists_providers.dart"
+   ]
+  },
+  "features/checklists/builder/screens/checklist_builder_versions_screen.dart": {
+   "repos": [
+    "features/checklists/builder/data/checklist_builder_repository.dart"
+   ],
+   "providers": []
+  },
+  "features/checklists/builder/screens/builder_common.dart": {
+   "repos": [
+    "features/checklists/builder/data/checklist_builder_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart"
+   ]
+  },
+  "features/checklists/builder/screens/checklist_builder_list_screen.dart": {
+   "repos": [
+    "features/checklists/builder/data/checklist_builder_repository.dart",
+    "features/checklists/data/checklists_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/checklists/builder/data/checklist_builder_providers.dart",
+    "features/checklists/providers/checklists_providers.dart"
+   ]
+  },
+  "features/checklists/builder/screens/checklist_builder_preview.dart": {
+   "repos": [],
+   "providers": []
+  },
+  "features/checklists/builder/screens/builder_pickers.dart": {
+   "repos": [
+    "features/checklists/builder/data/checklist_builder_repository.dart"
+   ],
+   "providers": []
+  },
+  "features/fix_issues/screens/close_issue_sheet.dart": {
+   "repos": [
+    "features/fix_issues/data/fix_issues_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/fix_issues/providers/fix_issues_providers.dart"
+   ]
+  },
+  "features/fix_issues/screens/issue_details_sheet.dart": {
+   "repos": [
+    "features/suppliers/data/item_weekly_sales_repository.dart",
+    "features/suppliers/data/suppliers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/suppliers/providers/suppliers_providers.dart"
+   ]
+  },
+  "features/fix_issues/screens/fix_issues_screen.dart": {
+   "repos": [
+    "features/fix_issues/data/fix_issues_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/fix_issues/providers/fix_issues_providers.dart"
+   ]
+  },
+  "features/fix_issues/screens/closed_report_screen.dart": {
+   "repos": [
+    "features/fix_issues/data/fix_issues_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/fix_issues/providers/fix_issues_providers.dart"
+   ]
+  },
+  "features/fix_issues/screens/issue_list_screen.dart": {
+   "repos": [
+    "features/fix_issues/data/fix_issues_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/fix_issues/providers/fix_issues_providers.dart"
+   ]
+  },
+  "features/admin/screens/admin_users_screen.dart": {
+   "repos": [
+    "features/admin/data/admin_users_repository.dart"
+   ],
+   "providers": [
+    "features/admin/providers/admin_users_providers.dart",
+    "features/authentication/providers/auth_providers.dart"
+   ]
+  },
+  "features/admin/screens/issue_leads_screen.dart": {
+   "repos": [
+    "features/admin/data/issue_leads_repository.dart"
+   ],
+   "providers": []
+  },
+  "features/search/screens/product_search_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/po_send_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/po_send_providers.dart"
+   ]
+  },
+  "features/flyers/screens/flyer_edit_sheet.dart": {
+   "repos": [
+    "features/flyers/data/flyers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/flyers/providers/flyers_providers.dart"
+   ]
+  },
+  "features/flyers/screens/new_flyer_screen.dart": {
+   "repos": [
+    "features/flyers/data/flyers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/flyers/providers/flyers_providers.dart"
+   ]
+  },
+  "features/flyers/screens/flyer_send_sheets.dart": {
+   "repos": [
+    "features/flyers/data/flyers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/flyers/providers/flyers_providers.dart"
+   ]
+  },
+  "features/flyers/screens/flyers_library_screen.dart": {
+   "repos": [
+    "features/flyers/data/flyers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/flyers/providers/flyers_providers.dart"
+   ]
+  },
+  "features/flyers/screens/flyer_detail_screen.dart": {
+   "repos": [
+    "features/flyers/data/flyers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/flyers/providers/flyers_providers.dart"
+   ]
+  },
+  "features/purchase_cart/screens/placed_orders_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/cart_repository.dart",
+    "features/purchase_cart/data/placed_orders_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/cart_providers.dart",
+    "features/purchase_cart/providers/placed_orders_providers.dart"
+   ]
+  },
+  "features/purchase_cart/screens/recent_orders_screen.dart": {
+   "repos": [],
+   "providers": []
+  },
+  "features/purchase_cart/screens/add_cart_item_sheet.dart": {
+   "repos": [
+    "features/purchase_cart/data/cart_repository.dart",
+    "features/suppliers/data/item_weekly_sales_repository.dart",
+    "features/suppliers/data/suppliers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/cart_panels.dart",
+    "features/purchase_cart/providers/cart_projection_settings.dart",
+    "features/purchase_cart/providers/cart_providers.dart",
+    "features/suppliers/providers/suppliers_providers.dart"
+   ]
+  },
+  "features/purchase_cart/screens/purchase_cart_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/cart_projection_repository.dart",
+    "features/purchase_cart/data/cart_repository.dart",
+    "features/purchase_cart/data/placed_orders_repository.dart",
+    "features/purchase_cart/data/po_send_repository.dart",
+    "features/suppliers/data/item_weekly_sales_repository.dart",
+    "features/suppliers/data/suppliers_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/cart_line_projection.dart",
+    "features/purchase_cart/providers/cart_panels.dart",
+    "features/purchase_cart/providers/cart_projection_settings.dart",
+    "features/purchase_cart/providers/cart_providers.dart",
+    "features/purchase_cart/providers/placed_orders_providers.dart",
+    "features/purchase_cart/providers/po_send_providers.dart",
+    "features/suppliers/providers/suppliers_providers.dart"
+   ]
+  },
+  "features/purchase_cart/screens/send_po_sheet.dart": {
+   "repos": [
+    "features/purchase_cart/data/cart_repository.dart",
+    "features/purchase_cart/data/placed_orders_repository.dart",
+    "features/purchase_cart/data/po_send_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/cart_providers.dart",
+    "features/purchase_cart/providers/placed_orders_providers.dart",
+    "features/purchase_cart/providers/po_send_providers.dart"
+   ]
+  },
+  "features/purchase_cart/screens/vendor_contacts_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/po_send_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/po_send_providers.dart"
+   ]
+  },
+  "features/team/tasks/screens/task_schedules_screen.dart": {
+   "repos": [
+    "features/team/data/team_repository.dart",
+    "features/team/tasks/data/tasks_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/providers/team_providers.dart",
+    "features/team/tasks/providers/task_patches.dart",
+    "features/team/tasks/providers/tasks_providers.dart"
+   ]
+  },
+  "features/team/tasks/screens/task_detail_screen.dart": {
+   "repos": [
+    "features/team/data/team_repository.dart",
+    "features/team/tasks/data/tasks_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/providers/team_providers.dart",
+    "features/team/tasks/providers/task_patches.dart",
+    "features/team/tasks/providers/tasks_providers.dart"
+   ]
+  },
+  "features/team/tasks/screens/tasks_segment.dart": {
+   "repos": [
+    "features/team/data/team_repository.dart",
+    "features/team/tasks/data/tasks_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/providers/team_providers.dart",
+    "features/team/tasks/providers/task_patches.dart",
+    "features/team/tasks/providers/tasks_providers.dart"
+   ]
+  },
+  "features/team/tasks/screens/task_stats_screen.dart": {
+   "repos": [
+    "features/team/data/team_repository.dart",
+    "features/team/tasks/data/tasks_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/providers/team_providers.dart",
+    "features/team/tasks/providers/task_patches.dart",
+    "features/team/tasks/providers/tasks_providers.dart"
+   ]
+  },
+  "features/team/tasks/screens/task_edit_sheet.dart": {
+   "repos": [
+    "features/team/data/team_repository.dart",
+    "features/team/tasks/data/tasks_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/providers/team_providers.dart",
+    "features/team/tasks/providers/task_patches.dart",
+    "features/team/tasks/providers/tasks_providers.dart"
+   ]
+  },
+  "features/team/chat/screens/chat_segment.dart": {
+   "repos": [
+    "features/team/chat/data/chat_repository.dart",
+    "features/team/data/team_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/chat/providers/chat_providers.dart",
+    "features/team/providers/team_providers.dart"
+   ]
+  },
+  "features/team/chat/screens/chat_settings_screen.dart": {
+   "repos": [
+    "features/team/chat/data/chat_repository.dart",
+    "features/team/data/team_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/chat/providers/chat_providers.dart",
+    "features/team/providers/team_providers.dart"
+   ]
+  },
+  "features/team/chat/screens/chat_search_screen.dart": {
+   "repos": [
+    "features/team/chat/data/chat_repository.dart",
+    "features/team/data/team_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/chat/providers/chat_providers.dart",
+    "features/team/providers/team_providers.dart"
+   ]
+  },
+  "features/team/chat/screens/conversation_screen.dart": {
+   "repos": [
+    "features/team/chat/data/chat_repository.dart",
+    "features/team/data/team_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/chat/providers/chat_providers.dart",
+    "features/team/providers/team_providers.dart"
+   ]
+  },
+  "features/team/announcements/screens/announcements_segment.dart": {
+   "repos": [
+    "features/team/announcements/data/announcements_repository.dart",
+    "features/team/data/team_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/announcements/providers/announcements_providers.dart",
+    "features/team/providers/team_providers.dart"
+   ]
+  },
+  "features/team/announcements/screens/announcement_detail_screen.dart": {
+   "repos": [
+    "features/team/announcements/data/announcements_repository.dart",
+    "features/team/data/team_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/announcements/providers/announcements_providers.dart",
+    "features/team/providers/team_providers.dart"
+   ]
+  },
+  "features/team/announcements/screens/announcement_compose_sheet.dart": {
+   "repos": [
+    "features/team/announcements/data/announcements_repository.dart",
+    "features/team/chat/data/chat_repository.dart",
+    "features/team/data/team_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/announcements/providers/announcements_providers.dart",
+    "features/team/chat/providers/chat_providers.dart",
+    "features/team/providers/team_providers.dart"
+   ]
+  },
+  "features/team/screens/team_screen.dart": {
+   "repos": [
+    "features/team/data/team_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/team/providers/team_providers.dart"
+   ]
+  },
+  "features/team/moderation/screens/reports_screen.dart": {
+   "repos": [
+    "features/team/chat/data/chat_repository.dart"
+   ],
+   "providers": [
+    "features/team/chat/providers/chat_providers.dart"
+   ]
+  },
+  "features/inventory/screens/inventory_upload_screen.dart": {
+   "repos": [
+    "features/inventory/data/inventory_repository.dart",
+    "features/jobs/data/jobs_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/inventory/providers/inventory_providers.dart",
+    "features/jobs/providers/jobs_providers.dart"
+   ]
+  },
+  "features/delivery/screens/delivery_review_screen.dart": {
+   "repos": [
+    "features/delivery/data/delivery_repository.dart",
+    "features/delivery/data/delivery_suggestions_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/delivery/providers/delivery_providers.dart",
+    "features/suppliers/providers/vendor_picker_providers.dart"
+   ]
+  },
+  "features/delivery/screens/suggested_delivery_screen.dart": {
+   "repos": [
+    "features/delivery/data/delivery_repository.dart",
+    "features/delivery/data/delivery_suggestions_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/delivery/providers/delivery_providers.dart",
+    "features/suppliers/providers/vendor_picker_providers.dart"
+   ]
+  },
+  "features/inventory_reports/screens/vendor_price_comparison_screen.dart": {
+   "repos": [
+    "features/inventory_reports/data/inventory_reports_repository.dart",
+    "features/reports/data/report_downloads_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/inventory_reports/providers/inventory_reports_providers.dart"
+   ]
+  },
+  "features/inventory_reports/screens/price_change_log_screen.dart": {
+   "repos": [
+    "features/inventory_reports/data/inventory_reports_repository.dart",
+    "features/reports/data/report_downloads_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/inventory_reports/providers/inventory_reports_providers.dart"
+   ]
+  },
+  "features/inventory_reports/screens/inventory_reports_hub_screen.dart": {
+   "repos": [],
+   "providers": []
+  },
+  "features/inventory_reports/screens/store_vs_container_screen.dart": {
+   "repos": [
+    "features/inventory_reports/data/inventory_reports_repository.dart",
+    "features/reports/data/report_downloads_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/inventory_reports/providers/inventory_reports_providers.dart"
+   ]
+  },
+  "features/orders/screens/open_orders_screen.dart": {
+   "repos": [
+    "features/orders/data/orders_repository.dart",
+    "features/reports/data/report_downloads_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/orders/providers/orders_providers.dart"
+   ]
+  },
+  "features/account/screens/delete_account_screen.dart": {
+   "repos": [
+    "features/account/data/account_repository.dart"
+   ],
+   "providers": [
+    "features/account/providers/account_providers.dart",
+    "features/authentication/providers/auth_providers.dart"
+   ]
+  },
+  "features/account/screens/about_screen.dart": {
+   "repos": [],
+   "providers": []
+  },
+  "features/account/screens/change_password_screen.dart": {
+   "repos": [
+    "features/account/data/account_repository.dart"
+   ],
+   "providers": [
+    "features/account/providers/account_providers.dart",
+    "features/authentication/providers/auth_providers.dart"
+   ]
+  },
+  "features/account/screens/more_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/po_send_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/po_send_providers.dart"
+   ]
+  },
+  "features/scanner/screens/barcode_scanner_screen.dart": {
+   "repos": [
+    "features/scanner/data/labels_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/scanner/providers/labels_providers.dart"
+   ]
+  },
+  "features/scanner/screens/create_label_screen.dart": {
+   "repos": [
+    "features/scanner/data/labels_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/scanner/providers/labels_providers.dart"
+   ]
+  },
+  "features/scanner/screens/label_history_screen.dart": {
+   "repos": [
+    "features/scanner/data/labels_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/scanner/providers/labels_providers.dart"
+   ]
+  },
+  "features/scanner/screens/manual_lookup_screen.dart": {
+   "repos": [
+    "features/scanner/data/labels_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/scanner/providers/labels_providers.dart"
+   ]
+  },
+  "features/scanner/screens/product_scan_result_screen.dart": {
+   "repos": [
+    "features/scanner/data/labels_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/scanner/providers/labels_providers.dart"
+   ]
+  },
+  "features/categories/screens/product_categories_screen.dart": {
+   "repos": [
+    "features/categories/data/categories_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/categories/providers/categories_providers.dart"
+   ]
+  },
+  "features/categories/screens/category_form.dart": {
+   "repos": [],
+   "providers": []
+  },
+  "features/authentication/screens/login_screen.dart": {
+   "repos": [],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart"
+   ]
+  },
+  "features/authentication/screens/splash_screen.dart": {
+   "repos": [],
+   "providers": []
+  },
+  "features/notifications/screens/notification_settings_screen.dart": {
+   "repos": [
+    "features/notifications/data/notifications_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/notifications/providers/notifications_providers.dart"
+   ]
+  },
+  "features/notifications/screens/store_notification_defaults_screen.dart": {
+   "repos": [
+    "features/notifications/data/notifications_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/notifications/providers/notifications_providers.dart"
+   ]
+  },
+  "features/help/screens/help_screen.dart": {
+   "repos": [],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart"
+   ]
+  },
+  "features/store/screens/store_screen.dart": {
+   "repos": [
+    "features/purchase_cart/data/po_send_repository.dart"
+   ],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart",
+    "features/purchase_cart/providers/po_send_providers.dart"
+   ]
+  },
+  "core/glossary/glossary_screen.dart": {
+   "repos": [],
+   "providers": [
+    "features/authentication/providers/auth_providers.dart"
+   ]
+  }
+ },
+ "repo_eps": {
+  "features/reports/data/report_downloads_repository.dart": [
+   "GET /api/inventory/price-changes/export",
+   "GET /api/orders/open/export",
+   "GET /api/reconciliation/purchases/export",
+   "GET /api/reports/store-vs-container/export",
+   "GET /api/reports/vendor-price-comparison/export"
+  ],
+  "features/reconciliation/data/reconciliation_repository.dart": [
+   "DELETE /api/reconciliation/purchases/{}",
+   "GET /api/inventory/items/search",
+   "GET /api/reconciliation/demo",
+   "GET /api/reconciliation/invoice-gaps",
+   "GET /api/reconciliation/purchases",
+   "GET /api/reconciliation/report",
+   "POST /api/reconciliation/purchases"
+  ],
+  "features/insights/data/insights_repository.dart": [
+   "GET /api/insights/addons",
+   "GET /api/insights/channels",
+   "GET /api/insights/check-trends",
+   "GET /api/insights/compare",
+   "GET /api/insights/hourly-heatmap",
+   "GET /api/insights/loss-watch",
+   "GET /api/insights/menu-performance",
+   "GET /api/insights/odd-checks",
+   "GET /api/insights/prep-forecast",
+   "GET /api/insights/returning-customers",
+   "POST /api/insights/loss-watch/{}/ack"
+  ],
+  "features/sales/data/sales_repository.dart": [
+   "GET /api/sales/items-sold"
+  ],
+  "features/inventory_api/data/inventory_api_repository.dart": [
+   "GET /api/inventory-api/status",
+   "GET /api/inventory-api/switch",
+   "PUT /api/inventory-api/switch"
+  ],
+  "features/team/tasks/data/tasks_repository.dart": [
+   "GET /api/team/assignees",
+   "GET /api/team/task-stats",
+   "GET /api/team/task-summary",
+   "GET /api/team/tasks",
+   "GET /api/team/tasks/{}",
+   "GET /api/team/templates",
+   "GET /api/team/templates/{}",
+   "PATCH /api/team/tasks/{}",
+   "PATCH /api/team/tasks/{}/items/{}",
+   "PATCH /api/team/templates/{}",
+   "POST /api/team/task-batches/{}/cancel",
+   "POST /api/team/tasks",
+   "POST /api/team/tasks/{}/cant-do",
+   "POST /api/team/tasks/{}/comments",
+   "POST /api/team/tasks/{}/comments/{}/report",
+   "POST /api/team/tasks/{}/complete",
+   "POST /api/team/tasks/{}/reopen",
+   "POST /api/team/tasks/{}/report",
+   "POST /api/team/tasks/{}/start",
+   "POST /api/team/templates",
+   "POST /api/team/templates/{}/create-task",
+   "PUT /api/team/tasks/{}/items"
+  ],
+  "features/checklists/data/checklists_repository.dart": [
+   "GET /api/checklists",
+   "GET /api/checklists/schema/{}",
+   "GET /api/checklists/schemas",
+   "GET /api/checklists/{}",
+   "POST /api/checklists/{}/submit"
+  ],
+  "features/invoices/data/invoice_close_suggestions_repository.dart": [
+   "DELETE /api/invoices/{}/close-suggestion/dismiss",
+   "POST /api/invoices/{}/close-suggestion/dismiss"
+  ],
+  "features/invoices/data/invoices_repository.dart": [
+   "DELETE /api/invoices/{}/permanent",
+   "GET /api/invoices",
+   "GET /api/invoices/check-duplicate",
+   "GET /api/invoices/trash",
+   "GET /api/invoices/{}",
+   "POST /api/invoices",
+   "POST /api/invoices/{}/approve-delete",
+   "POST /api/invoices/{}/cancel-delete-request",
+   "POST /api/invoices/{}/delete",
+   "POST /api/invoices/{}/mark-toast-closed",
+   "POST /api/invoices/{}/override-status",
+   "POST /api/invoices/{}/request-delete",
+   "POST /api/invoices/{}/resend",
+   "POST /api/invoices/{}/restore",
+   "POST /api/invoices/{}/unmark-toast-closed"
+  ],
+  "features/purchase_cart/data/cart_repository.dart": [
+   "DELETE /api/ordering/cart",
+   "DELETE /api/ordering/cart/items/{}",
+   "DELETE /api/ordering/cart/items/{}/removal-request",
+   "GET /api/ordering/cart",
+   "GET /api/ordering/orders/recent",
+   "PATCH /api/ordering/cart/items/{}",
+   "POST /api/ordering/cart/items",
+   "POST /api/ordering/cart/items/{}/removal-request",
+   "POST /api/ordering/cart/items/{}/removal-request/approve",
+   "POST /api/ordering/cart/items/{}/removal-request/reject",
+   "POST /api/ordering/cart/mark-placed",
+   "POST /api/ordering/purchase-order/export-pdf"
+  ],
+  "features/scanner/data/labels_repository.dart": [
+   "GET /api/preview/{}.png",
+   "GET /api/print-history",
+   "GET /api/print/{}",
+   "GET /api/search",
+   "POST /api/print",
+   "POST /api/products/custom"
+  ],
+  "features/orders/data/orders_repository.dart": [
+   "GET /api/orders/employees",
+   "GET /api/orders/open",
+   "GET /api/orders/open/all-time",
+   "POST /api/orders/open/all-time/rescan"
+  ],
+  "features/reorder/data/critical_dismissals_repository.dart": [
+   "DELETE /api/reorder/critical-dismissals/{}",
+   "GET /api/reorder/critical-dismissals",
+   "POST /api/reorder/critical-dismissals"
+  ],
+  "features/reorder/data/reorder_repository.dart": [
+   "GET /api/ordering/reorder-candidates"
+  ],
+  "features/vendors/data/order_actions_repository.dart": [
+   "DELETE /api/order-actions/placed/{}",
+   "DELETE /api/order-actions/skip",
+   "POST /api/order-actions"
+  ],
+  "features/vendors/data/vendor_calendar_repository.dart": [
+   "DELETE /api/vendor-calendar/skips",
+   "GET /api/vendor-calendar",
+   "POST /api/vendor-calendar/skips"
+  ],
+  "features/vendors/data/schedule_suggestions_repository.dart": [
+   "DELETE /api/vendor-calendar/schedule-suggestions/dismiss",
+   "GET /api/vendor-calendar/schedule-suggestions",
+   "POST /api/vendor-calendar/schedule-suggestions/accept-all",
+   "POST /api/vendor-calendar/schedule-suggestions/dismiss"
+  ],
+  "features/vendors/data/vendor_schedule_repository.dart": [
+   "DELETE /api/vendor-calendar/schedules/{}",
+   "GET /api/vendor-calendar/schedules",
+   "PATCH /api/vendor-calendar/schedules/{}",
+   "POST /api/vendor-calendar/schedules"
+  ],
+  "features/suppliers/data/item_weekly_sales_repository.dart": [
+   "GET /api/ordering/item-weekly-sales"
+  ],
+  "features/suppliers/data/suppliers_repository.dart": [
+   "GET /api/ordering/similar-items",
+   "GET /api/ordering/supplier-projection",
+   "GET /api/ordering/suppliers"
+  ],
+  "features/inventory_bot/data/ask_bot_repository.dart": [
+   "POST /api/ask"
+  ],
+  "features/checklists/data/checklist_public_links_repository.dart": [
+   "DELETE /api/checklists/admin/definitions/{}/public-link",
+   "GET /api/checklists/admin/definitions/{}/public-link",
+   "POST /api/checklists/admin/definitions/{}/public-link/rotate",
+   "PUT /api/checklists/admin/definitions/{}/public-link"
+  ],
+  "features/admin/data/admin_users_repository.dart": [
+   "DELETE /api/auth/users/{}",
+   "GET /api/auth/features",
+   "GET /api/auth/users",
+   "PATCH /api/auth/users/{}/features",
+   "PATCH /api/auth/users/{}/hide-sales",
+   "POST /api/auth/users",
+   "POST /api/auth/users/{}/set-password"
+  ],
+  "features/checklists/builder/data/checklist_builder_repository.dart": [
+   "DELETE /api/checklists/admin/definitions/{}/draft",
+   "GET /api/checklists/admin/definitions",
+   "GET /api/checklists/admin/definitions/{}",
+   "GET /api/checklists/admin/definitions/{}/versions/{}",
+   "GET /api/checklists/admin/meta",
+   "PATCH /api/checklists/admin/definitions/{}",
+   "POST /api/checklists/admin/definitions",
+   "POST /api/checklists/admin/definitions/order",
+   "POST /api/checklists/admin/definitions/{}/duplicate",
+   "POST /api/checklists/admin/definitions/{}/publish",
+   "POST /api/checklists/admin/definitions/{}/revert/{}",
+   "PUT /api/checklists/admin/definitions/{}"
+  ],
+  "features/fix_issues/data/fix_issues_repository.dart": [
+   "GET /api/issues/report",
+   "GET /api/issues/summary",
+   "GET /api/issues/{}",
+   "GET /api/issues/{}/export",
+   "POST /api/issues/close",
+   "POST /api/issues/reopen"
+  ],
+  "features/admin/data/issue_leads_repository.dart": [
+   "GET /api/issue-leads",
+   "GET /api/issue-leads/preview",
+   "POST /api/issue-leads/run-now",
+   "PUT /api/issue-leads",
+   "PUT /api/issue-leads/settings"
+  ],
+  "features/purchase_cart/data/po_send_repository.dart": [
+   "DELETE /api/ordering/vendor-contacts/{}",
+   "GET /api/ordering/po-send/preview",
+   "GET /api/ordering/po-send/preview.pdf",
+   "GET /api/ordering/po-sends",
+   "GET /api/ordering/vendor-contacts",
+   "PATCH /api/ordering/vendor-contacts/{}",
+   "POST /api/ordering/po-send",
+   "POST /api/ordering/vendor-contacts"
+  ],
+  "features/flyers/data/flyers_repository.dart": [
+   "DELETE /api/flyers/{}",
+   "GET /api/flyers",
+   "GET /api/flyers/meta",
+   "GET /api/flyers/{}",
+   "PATCH /api/flyers/{}",
+   "POST /api/flyers",
+   "POST /api/flyers/{}/send",
+   "POST /api/flyers/{}/sends/{}/retry"
+  ],
+  "features/purchase_cart/data/placed_orders_repository.dart": [
+   "GET /api/ordering/orders",
+   "POST /api/ordering/orders/{}/order-again"
+  ],
+  "features/purchase_cart/data/cart_projection_repository.dart": [
+   "GET /api/ordering/cart"
+  ],
+  "features/team/data/team_repository.dart": [
+   "GET /api/team/bootstrap",
+   "GET /api/team/rules",
+   "GET /api/team/updates",
+   "POST /api/team/rules/accept"
+  ],
+  "features/team/chat/data/chat_repository.dart": [
+   "DELETE /api/team/blocks/{}",
+   "DELETE /api/team/messages/{}",
+   "DELETE /api/team/messages/{}/pin",
+   "GET /api/team/blocks",
+   "GET /api/team/channels",
+   "GET /api/team/channels/{}",
+   "GET /api/team/channels/{}/members",
+   "GET /api/team/channels/{}/messages",
+   "GET /api/team/channels/{}/pins",
+   "GET /api/team/chat/settings",
+   "GET /api/team/messages/search",
+   "GET /api/team/messages/{}/seen-by",
+   "GET /api/team/people",
+   "PATCH /api/team/channels/{}/me",
+   "POST /api/team/blocks",
+   "POST /api/team/channels/dm",
+   "POST /api/team/channels/{}/messages",
+   "POST /api/team/channels/{}/read",
+   "POST /api/team/messages/{}/pin",
+   "POST /api/team/messages/{}/report",
+   "POST /api/team/reports/{}/dismiss",
+   "POST /api/team/reports/{}/resolve",
+   "PUT /api/team/chat/settings"
+  ],
+  "features/team/announcements/data/announcements_repository.dart": [
+   "GET /api/team/announcements",
+   "GET /api/team/announcements/{}",
+   "GET /api/team/announcements/{}/recipients",
+   "PATCH /api/team/announcements/{}",
+   "POST /api/team/announcements",
+   "POST /api/team/announcements/{}/ack",
+   "POST /api/team/announcements/{}/remind",
+   "POST /api/team/announcements/{}/seen"
+  ],
+  "features/inventory/data/inventory_repository.dart": [
+   "POST /api/inventory/upload"
+  ],
+  "features/jobs/data/jobs_repository.dart": [
+   "GET /api/jobs/status"
+  ],
+  "features/delivery/data/delivery_repository.dart": [
+   "GET /api/reconciliation/delivery-candidates",
+   "POST /api/reconciliation/delivery-confirm"
+  ],
+  "features/delivery/data/delivery_suggestions_repository.dart": [
+   "DELETE /api/reconciliation/suggested-deliveries/dismiss",
+   "GET /api/reconciliation/suggested-deliveries",
+   "POST /api/reconciliation/suggested-deliveries/dismiss"
+  ],
+  "features/inventory_reports/data/inventory_reports_repository.dart": [
+   "GET /api/inventory/price-changes",
+   "GET /api/inventory/price-history",
+   "GET /api/reports/duplicate-products",
+   "GET /api/reports/invalid-barcodes",
+   "GET /api/reports/missing-barcodes",
+   "GET /api/reports/store-vs-container",
+   "GET /api/reports/vendor-price-comparison"
+  ],
+  "features/account/data/account_repository.dart": [
+   "POST /api/auth/change-password",
+   "POST /api/auth/delete-account"
+  ],
+  "features/categories/data/categories_repository.dart": [
+   "DELETE /api/categories/items/{}",
+   "DELETE /api/categories/vendor-rules/{}",
+   "GET /api/categories/items",
+   "GET /api/categories/options",
+   "GET /api/categories/vendor-rules",
+   "POST /api/categories/items/bulk",
+   "POST /api/categories/items/reset",
+   "POST /api/categories/vendor-rules",
+   "PUT /api/categories/items/{}"
+  ],
+  "features/notifications/data/notifications_repository.dart": [
+   "DELETE /api/notifications/devices",
+   "GET /api/notifications/defaults",
+   "GET /api/notifications/prefs",
+   "GET /api/team/chat/settings",
+   "POST /api/notifications/devices",
+   "POST /api/notifications/test",
+   "POST /api/notifications/unregister",
+   "PUT /api/notifications/defaults",
+   "PUT /api/notifications/prefs",
+   "PUT /api/team/chat/settings"
+  ],
+  "features/search/data/product_search_repository.dart": [
+   "GET /api/inventory/items/by-barcode",
+   "GET /api/inventory/items/search"
+  ]
+ },
+ "app_consts": {
+  "health": "/api/health",
+  "glossary": "/api/glossary",
+  "mobileLogin": "/api/auth/mobile-login",
+  "logout": "/api/auth/logout",
+  "me": "/api/auth/me",
+  "changePassword": "/api/auth/change-password",
+  "deleteAccount": "/api/auth/delete-account",
+  "users": "/api/auth/users",
+  "features": "/api/auth/features",
+  "userFeatures": "/api/auth/users/{}/features",
+  "setUserPassword": "/api/auth/users/{}/set-password",
+  "openOrders": "/api/orders/open",
+  "openOrdersAllTime": "/api/orders/open/all-time",
+  "openOrdersRescan": "/api/orders/open/all-time/rescan",
+  "employees": "/api/orders/employees",
+  "itemsSold": "/api/sales/items-sold",
+  "reorderCandidates": "/api/ordering/reorder-candidates",
+  "criticalDismissals": "/api/reorder/critical-dismissals",
+  "criticalDismissal": "/api/reorder/critical-dismissals/{}",
+  "suppliers": "/api/ordering/suppliers",
+  "supplierProjection": "/api/ordering/supplier-projection",
+  "itemWeeklySales": "/api/ordering/item-weekly-sales",
+  "similarItems": "/api/ordering/similar-items",
+  "cart": "/api/ordering/cart",
+  "cartItems": "/api/ordering/cart/items",
+  "cartItem": "/api/ordering/cart/items/{}",
+  "cartRemovalRequest": "/api/ordering/cart/items/{}/removal-request",
+  "cartRemovalApprove": "/api/ordering/cart/items/{}/removal-request/approve",
+  "cartRemovalReject": "/api/ordering/cart/items/{}/removal-request/reject",
+  "purchaseOrderExportPdf": "/api/ordering/purchase-order/export-pdf",
+  "cartMarkPlaced": "/api/ordering/cart/mark-placed",
+  "recentPlacedOrders": "/api/ordering/orders/recent",
+  "placedOrders": "/api/ordering/orders",
+  "placedOrderAgain": "/api/ordering/orders/{}/order-again",
+  "vendorContacts": "/api/ordering/vendor-contacts",
+  "vendorContact": "/api/ordering/vendor-contacts/{}",
+  "poSendPreview": "/api/ordering/po-send/preview",
+  "poSendPreviewPdf": "/api/ordering/po-send/preview.pdf?supplier={}",
+  "poSend": "/api/ordering/po-send",
+  "poSends": "/api/ordering/po-sends",
+  "vendorCalendar": "/api/vendor-calendar",
+  "orderActions": "/api/order-actions",
+  "scheduleSuggestions": "/api/vendor-calendar/schedule-suggestions",
+  "scheduleSuggestionsDismiss": "/api/vendor-calendar/schedule-suggestions/dismiss",
+  "scheduleSuggestionsAcceptAll": "/api/vendor-calendar/schedule-suggestions/accept-all",
+  "itemSearch": "/api/inventory/items/search",
+  "inventoryApiStatus": "/api/inventory-api/status",
+  "inventoryApiSwitch": "/api/inventory-api/switch",
+  "itemByBarcode": "/api/inventory/items/by-barcode",
+  "inventoryUpload": "/api/inventory/upload",
+  "priceChanges": "/api/inventory/price-changes",
+  "priceHistory": "/api/inventory/price-history",
+  "missingBarcodes": "/api/reports/missing-barcodes",
+  "invalidBarcodes": "/api/reports/invalid-barcodes",
+  "vendorPriceComparison": "/api/reports/vendor-price-comparison",
+  "negativeInventory": "/api/reports/negative-inventory",
+  "duplicateProducts": "/api/reports/duplicate-products",
+  "storeVsContainer": "/api/reports/store-vs-container",
+  "vendorPriceComparisonExport": "/api/reports/vendor-price-comparison/export",
+  "priceChangesExport": "/api/inventory/price-changes/export",
+  "storeVsContainerExport": "/api/reports/store-vs-container/export",
+  "itemsSoldExport": "/api/sales/items-sold/export?start={}&end={}",
+  "openOrdersExport": "/api/orders/open/export?mode={}",
+  "reconciliationReportExport": "/api/reconciliation/report/export?start={}&end={}",
+  "invoiceGapsExport": "/api/reconciliation/invoice-gaps/export?start={}&end={}",
+  "purchaseLogExport": "/api/reconciliation/purchases/export",
+  "issuesSummary": "/api/issues/summary",
+  "issuesReasons": "/api/issues/reasons",
+  "issuesReport": "/api/issues/report",
+  "issuesClose": "/api/issues/close",
+  "issuesReopen": "/api/issues/reopen",
+  "issueList": "/api/issues/{}",
+  "issueExport": "/api/issues/{}/export?status={}",
+  "reconciliationPurchases": "/api/reconciliation/purchases",
+  "reconciliationPurchase": "/api/reconciliation/purchases/{}",
+  "reconciliationDemo": "/api/reconciliation/demo",
+  "reconciliationReport": "/api/reconciliation/report",
+  "reconciliationInvoiceGaps": "/api/reconciliation/invoice-gaps",
+  "deliveryCandidates": "/api/reconciliation/delivery-candidates",
+  "deliveryConfirm": "/api/reconciliation/delivery-confirm",
+  "suggestedDeliveries": "/api/reconciliation/suggested-deliveries",
+  "suggestedDeliveriesDismiss": "/api/reconciliation/suggested-deliveries/dismiss",
+  "transferCandidates": "/api/transfers/candidates",
+  "transferConfirm": "/api/transfers/confirm",
+  "invoices": "/api/invoices",
+  "invoiceTrash": "/api/invoices/trash",
+  "invoiceCheckDuplicate": "/api/invoices/check-duplicate",
+  "invoice": "/api/invoices/{}",
+  "invoiceResend": "/api/invoices/{}/resend",
+  "invoiceRequestDelete": "/api/invoices/{}/request-delete",
+  "invoiceCancelDeleteRequest": "/api/invoices/{}/cancel-delete-request",
+  "invoiceApproveDelete": "/api/invoices/{}/approve-delete",
+  "invoiceDelete": "/api/invoices/{}/delete",
+  "invoiceRestore": "/api/invoices/{}/restore",
+  "invoicePermanentDelete": "/api/invoices/{}/permanent",
+  "invoiceMarkToastClosed": "/api/invoices/{}/mark-toast-closed",
+  "invoiceCloseSuggestionDismiss": "/api/invoices/{}/close-suggestion/dismiss",
+  "invoiceUnmarkToastClosed": "/api/invoices/{}/unmark-toast-closed",
+  "invoiceOverrideStatus": "/api/invoices/{}/override-status",
+  "checklistSchemas": "/api/checklists/schemas",
+  "checklistSchema": "/api/checklists/schema/{}",
+  "checklistSubmit": "/api/checklists/{}/submit",
+  "checklists": "/api/checklists",
+  "checklistMedia": "/api/checklists/media",
+  "checklist": "/api/checklists/{}",
+  "checklistPublicLink": "/api/checklists/admin/definitions/{}/public-link",
+  "checklistPublicLinkRotate": "/api/checklists/admin/definitions/{}/public-link/rotate",
+  "checklistAdminMeta": "/api/checklists/admin/meta",
+  "checklistAdminDefinitions": "/api/checklists/admin/definitions",
+  "checklistAdminOrder": "/api/checklists/admin/definitions/order",
+  "checklistAdminDefinition": "/api/checklists/admin/definitions/{}",
+  "checklistAdminDraft": "/api/checklists/admin/definitions/{}/draft",
+  "checklistAdminPublish": "/api/checklists/admin/definitions/{}/publish",
+  "checklistAdminDuplicate": "/api/checklists/admin/definitions/{}/duplicate",
+  "checklistAdminVersion": "/api/checklists/admin/definitions/{}/versions/{}",
+  "checklistAdminRevert": "/api/checklists/admin/definitions/{}/revert/{}",
+  "ask": "/api/ask",
+  "jobStatus": "/api/jobs/status",
+  "notificationDevices": "/api/notifications/devices",
+  "notificationPrefs": "/api/notifications/prefs",
+  "notificationTest": "/api/notifications/test",
+  "notificationUnregister": "/api/notifications/unregister",
+  "appConfig": "/api/app/config",
+  "teamBootstrap": "/api/team/bootstrap",
+  "teamUpdates": "/api/team/updates",
+  "teamTasks": "/api/team/tasks",
+  "teamTaskBatches": "/api/team/task-batches",
+  "teamTemplates": "/api/team/templates",
+  "teamTemplatesPreview": "/api/team/templates/preview",
+  "teamAssignees": "/api/team/assignees",
+  "teamMedia": "/api/team/media",
+  "teamAnnouncements": "/api/team/announcements",
+  "teamChannels": "/api/team/channels",
+  "teamChannelsDm": "/api/team/channels/dm",
+  "teamPeople": "/api/team/people",
+  "teamMessages": "/api/team/messages",
+  "teamChatSettings": "/api/team/chat/settings",
+  "teamBlocks": "/api/team/blocks",
+  "teamReports": "/api/team/reports",
+  "teamRules": "/api/team/rules",
+  "teamTaskStats": "/api/team/task-stats",
+  "teamMessagesSearch": "/api/team/messages/search",
+  "categoryItems": "/api/categories/items",
+  "categoryItem": "/api/categories/items/{}",
+  "categoryItemsBulk": "/api/categories/items/bulk",
+  "categoryItemsReset": "/api/categories/items/reset",
+  "categoryOptions": "/api/categories/options",
+  "categoryVendorRules": "/api/categories/vendor-rules",
+  "categoryVendorRule": "/api/categories/vendor-rules/{}",
+  "categoryHistory": "/api/categories/history",
+  "flyers": "/api/flyers",
+  "flyersMeta": "/api/flyers/meta",
+  "flyer": "/api/flyers/{}",
+  "flyerSend": "/api/flyers/{}/send",
+  "flyerRetrySend": "/api/flyers/{}/sends/{}/retry",
+  "insightsHeatmap": "/api/insights/hourly-heatmap",
+  "insightsChannels": "/api/insights/channels",
+  "insightsCompare": "/api/insights/compare",
+  "insightsCheckTrends": "/api/insights/check-trends",
+  "insightsLossWatch": "/api/insights/loss-watch",
+  "insightsLossWatchAck": "/api/insights/loss-watch/{}/ack",
+  "insightsOddChecks": "/api/insights/odd-checks",
+  "insightsMenuPerformance": "/api/insights/menu-performance",
+  "insightsAddons": "/api/insights/addons",
+  "insightsPrepForecast": "/api/insights/prep-forecast",
+  "insightsReturningCustomers": "/api/insights/returning-customers",
+  "issueLeads": "/api/issue-leads",
+  "issueLeadsAcceptProposal": "/api/issue-leads/accept-proposal",
+  "issueLeadsPreview": "/api/issue-leads/preview",
+  "issueLeadsSettings": "/api/issue-leads/settings",
+  "issueLeadsRunNow": "/api/issue-leads/run-now"
+ }
+}
