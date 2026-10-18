@@ -1445,3 +1445,132 @@ Owner actions (placeholders, never faked):
    needs it) and `PLATFORM_REQUIRE_TOTP` (recommended for production).
 
 ---
+
+---
+
+## As built - C (platform backend)
+
+Branch `plat/platform-backend` (worktree `wt-platform`), on top of B's
+interface commit (cherry-picked as `f1e986d`). Not pushed.
+
+### What exists
+
+| Part | Where |
+|---|---|
+| Platform DB models + session/engine + migrations | `app/platform/models.py`, `db.py`; `alembic_platform/` (`p0001`); `alembic.ini` `[platform]` (`alembic -n platform upgrade head`) |
+| Settings reader | `app/platform/config.py` `pget(name)`: `process_settings()` field, else env, else default |
+| Codes, reserved list, db names | `app/platform/codes.py` |
+| Vault | `crypto.py` (AES-256-GCM, ring, dev ring, `seal_text` for TOTP), `credentials.py` (contract 8.3 API exactly), `connector_tests.py` (`TESTERS`, `run_test` scrubs secrets from messages) |
+| Audit | `audit.py` (`audit()`, scrubbed details, `list_audit`), PG trigger blocks UPDATE/DELETE; B's `app.tenancy.events` are subscribed (e.g. `store.identity_mismatch`) |
+| Lockout + rate limits | `throttle.py` (login_attempts in the platform DB; per-process sliding windows for public/write routes) |
+| Sign-up | `signup.py` |
+| Provisioning | `provisioning.py` (8 steps, resumable, `MIGRATOR` hook = `app.migrate.upgrade_store_db` from A) |
+| Registry ops | `stores.py` (suspend/resume/archive, settings via B's `validate_store_setting`) |
+| Masters | `masters.py` (accounts, platform sessions, TOTP, support sessions) |
+| Login | `login.py`, used by `app/routers/auth.py` |
+| Dedicated hosting | `hosting.py` (marked block), runbook `docs/DEDICATED_HOSTING_RUNBOOK.md` (+ pointer `docs/DEDICATED_HOSTING.md`) |
+| Sources for B | `sources.py` (`PlatformRegistrySource`, `PlatformSettingsSource`, `configure()`) |
+| Public lookup | `lookup.py` (`StoreRecord` of the M2 directory -> byte-identical shape) |
+| HTTP | `routes.py` (`install(app)` = routers + `PlatformError` handler + sources + event audit) |
+| CLI | `python -m app.platform` (`migrate-platform`, `create-master`, `list-stores`, `provision`, `approve`, `retry`, `suspend`, `resume`, `migrate-all`, `gen-key`, `rotate-keys`, `purge-store`, `prune-logins`) |
+| Platform job | `app/platform/jobs.py` `PLATFORM_JOBS` (prune login_attempts daily 03:30 UTC) - **B: register on the leader** |
+| Compose | `docker-compose.platform.yml` |
+
+Touched outside `app/platform` (owned by C or one-line includes):
+`app/main.py` (one include: `install(app)` after the routers),
+`app/routers/auth.py` (login/mobile-login/logout/me rewritten, new
+`support-login`), `app/store/__main__.py` (`init_store()` refactor; CLI and
+`store_init()` unchanged), `app/store/__init__.py` (lazy `init_store`),
+`app/routers/notifications.py` (unregister `store_code`),
+`app/routers/checklist_public.py` + `app/services/checklist_public.py`
+(`/c/<CODE>/<link>`), `tests/test_review_route_gates.py` (`PUBLIC` += the
+6 new public routes). `app/demo_guard.py`: **not touched by C** - B's
+`get_optional_db` change covers the platform/public routes (no store ->
+the guard is a no-op); new store-admin write routes are refused for demo
+users by the guard (not on its allowlist) and also by the routes themselves
+(`demo_read_only` for a demo user, demo_mode or the DEMO store).
+
+### Interface changes / additions (additive)
+
+- **Tables beyond section 3:** `support_sessions` (master support sessions:
+  who, store, as whom, reason, expiry, ended) and `owner_setup_tokens`
+  (one-time owner password links, sha256 only). Columns:
+  `stores.owner_username`; `dedicated_hosting_requests.previous_api_base_url`
+  / `previous_db_host_ref` (for rollback). Check constraints on
+  `stores.status` / `hosting`.
+- **`stores.pack_id`** is the pack *file name* (`test_toast`, from
+  `backend/packs/` or `PRIVATE_PACKS_DIR`); the pack's internal id is in the
+  audit row.
+- **Extra settings (env only, not Settings fields; B may add them):**
+  `PLATFORM_SESSION_HOURS` (12), `PLATFORM_SUPPORT_MINUTES` (30; 5-120),
+  `OWNER_SETUP_LINK_HOURS` (72), `SIGNUP_RATE_OVERALL_PER_HOUR` (50),
+  `PLATFORM_WRITE_RATE_PER_MINUTE` (60), `INTEGRATION_TEST_RATE_PER_MINUTE` (5).
+- **Login** (4.5): body also takes `totp`. A master with TOTP and no code ->
+  401 `{"error":"totp_required"}` (password was right); a wrong code is the
+  usual 401. Platform login reply: `{"scope":"platform","store_code":"PLATFORM","user":{...},"api_base_url":null,"totp_setup_required":bool}`
+  (+ `token`, `expires_at` on mobile-login). New error bodies (403/409/429)
+  are `{"error","message",...}` **plus `detail`** (= message) for old clients;
+  401 stays `{"detail": "Incorrect store ID, username or password"}`. Single
+  mode keeps `"Incorrect username or password"` for a request **without**
+  `store_code` (old clients/tests); lockout in single mode only when a
+  platform DB is configured. Order for a not-ready store: 403
+  `store_not_ready` only when the sign-up owner's username + password match,
+  else 401. A dedicated store not served here: 409 `store_moved` (no password
+  check possible). Suspended: 403 only after a correct password.
+- **New routes** (all `{"error","message"}`):
+  - `POST /api/auth/support-login {token}` (public; sets the website cookie
+    from a master's support token);
+  - `POST /api/signup/owner-setup {store_code, token, password}` (public;
+    redeems a one-time setup link `<PLATFORM_PUBLIC_URL>/#/setup?store=&token=`
+    - **D: add the `/#/setup` page**);
+  - `GET /api/platform/config`; `GET /api/platform/stores/{code}/integrations`
+    (masked); `POST /api/platform/stores/{code}/support-session
+    {reason, username?, minutes?}` -> `{token, store_code, username, expires_at, minutes}`;
+    `POST /api/platform/support-sessions/{id}/end`;
+    `POST /api/platform/stores/{code}/owner-setup-link {username?}` ->
+    `{setup_url}`; `POST /api/platform/hosting-requests/{id}/start|cancel`
+    (besides approve/reject/complete/rollback); `GET /api/platform/hosting-requests`
+    returns `{"enabled", "requests"}`;
+  - `POST /api/platform/users/me/totp/setup` -> `{secret, otpauth_uri, pending}`,
+    `POST /api/platform/users/me/totp/enable {pending, code}`;
+  - `GET /api/settings/integrations/{kind}`, `GET/PATCH /api/settings/store`
+    (store admin: name, short name, address, phone, email, colours, logo,
+    icon, AI switch, labels URL, from-name), `GET /api/settings/hosting`,
+    `POST /api/settings/hosting/request {reason, target_api_base_url?}`.
+  - `PUT /api/settings/integrations/clover` -> 501 like `/clover/connect`
+    (Clover tokens only through OAuth in M3).
+  - `POST /api/platform/signups/{id}/approve` reply adds `login_url`;
+    `GET /api/signup/status` adds `store_status` while provisioning.
+  - Sign-up validation errors carry `field`; code clashes are 409
+    `code_unavailable` with `reason` (`reserved` / `taken` / `requested`).
+- **Platform routes on a server without a platform DB** -> 404.
+- **Public checklist links** in multi mode: `<PLATFORM_PUBLIC_URL>/c/<CODE>/<slug>-<code>`;
+  the `path` field of the admin view follows; the API calls keep
+  `?store=CODE` (B's middleware).
+- `notifications/unregister` in multi mode opens `tenant_session(store_code,
+  allow_inactive=True)` itself; unknown store -> still 200.
+- **Global state** in `app/platform` that B's cache lint must allow (all
+  product-wide, not per store): `db._engine/_engine_url/_factory/_lock`,
+  `crypto._ring/_lock`, `throttle._limiters/_limiters_lock`,
+  `provisioning._running/_running_lock/_results/MIGRATOR/INIT_STORE`,
+  `sources._configured`, `masters._DUMMY_HASH`, `credentials.KINDS`,
+  `connector_tests.TESTERS`, `errors.MESSAGES`, `jobs.PLATFORM_JOBS`.
+
+### Tests
+
+`tests/platform/` (PostgreSQL, `STOREOPS_TEST_PG_URL`, prefix
+`STOREOPS_TEST_DB_PREFIX`, default `so_c`): 81 tests. On this branch 64 pass
+and 17 skip (`needs_b`: they need B's store-bound sessions
+`app.auth.lookup_session` + `get_db`); with B's work-in-progress applied in a
+scratch tree **all 81 pass** (incl. the 18.3 attack suite and the
+integrations secret scan). Until A merges, provisioning uses a test-only
+`create_all` + stamp migrator (conftest `create_all_migrator`); with A's
+`app.migrate` installed the real migrator is used automatically.
+
+### Deferred / for the integration stage
+
+- Run `tests/platform` after B and A merge (no skips expected); B registers
+  `PLATFORM_JOBS` on the leader; B adds the allowlist entries above.
+- Attack items 8 (caches), 9 (jobs), 14 (push) are in B's tenancy tests.
+- Rate limits are per process (fine with one web process per node).
+- Clover OAuth (M3); emailing setup links (links are shown to the master).
