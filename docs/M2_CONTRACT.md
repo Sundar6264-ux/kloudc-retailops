@@ -1383,3 +1383,158 @@ App (`storeops-app`, commits `812beb2`..`06c6a98`, history kept):
 - `e2e/regression/*` still uses the origin store's local paths (it runs
   against production copies on the origin machine); left as is.
 - The Capacitor wrapper keeps Capacitor's default splash/icon art.
+
+---
+
+## As built - MT9 (website per store)
+
+Branch `m2/mt9-website` (worktree `/Users/sundar/storeops/worktrees/mt9`),
+rebased on `main` after MT7a. Files: `frontend/src/**`, `frontend/index.html`,
+`frontend/e2e/**`, `backend/app/glossary.py` (+ its test and the name
+allowlist lines for these files).
+
+**Store context (`frontend/src/store/`)**
+- `StoreContext.jsx`: `StoreProvider` fetches `GET /api/app/branding` once at
+  boot, before login (plain fetch, `credentials: "omit"`, 5 s cap; 404 or an
+  error -> product defaults). It sets the document title (`<name> - StoreOps`,
+  or `StoreOps` with no store name), favicon (`icon_url`), `theme-color`, the
+  CSS variables and the store time zone. Hooks: `useBranding()` (branding
+  only: login page, public checklist page), `useStore()` (branding + `/me`),
+  `usePosName()`, `usePosText()`, `useStoreAllows(element)`.
+- `branding.js`: `normalizeBranding(raw)` (every field has a fallback;
+  `capabilities` / `storeFeatures` stay `null` = "not told"),
+  `storeView(branding, me)` (`/me`'s `pos_name`, `capabilities`,
+  `store_features`, `store_code` win when present), `brandCssVars()`:
+  `--brand`, `--brand-secondary`, `--accent` (the brand colour darkened only
+  as far as needed for 4.5:1 with white text), `--accent-hover`,
+  `--accent-soft`, `--accent-rgb`. `index.css` defaults are the product
+  colours; the old hard-coded red shadows use `rgba(var(--accent-rgb), a)`.
+- `gating.js`: `ROUTE_REQUIREMENTS` (keyed like `ROUTES_BY_KEY`, plus the
+  footer key `labels`), `FEATURE_REQUIREMENTS` (grant keys: `open_orders`,
+  `sales_insights`, `ask_bot` -> `ai`) and `ELEMENT_REQUIREMENTS` (page
+  controls): `inventory_upload`, `price_change_log`, `items_sold_today`,
+  `received_evidence`, `sales_accuracy_badge`, `invoice_ap_inbox`,
+  `whatsapp`, `also_in_pos`. `null` capabilities / store features (an older
+  server) = everything on, except `labels`, which needs `labels_url`.
+  `currentPosName()` / `setCurrentPosName()`: the POS name for text built
+  outside React (row facts, labels in module-level tables), set from
+  branding at boot and from `/me` after login.
+
+**Gating as built**
+- `AuthContext.hasFeature` applies `FEATURE_REQUIREMENTS` for everyone,
+  admins included; `routeVisible`, `buildSidebar`, `firstAccessiblePath` and
+  `footerLinks` take `store` and apply `ROUTE_REQUIREMENTS`.
+- A direct URL to a page the store can't have **redirects** to
+  `#/not-available?page=<route key>` (`pages/NotAvailablePage.jsx`, "Not
+  available for this store"), before the grant check. `/insights` and
+  `/inventory-api` included.
+- Contract table differences: the inventory upload card is on **Overview**
+  (not Inventory Reports) and is hidden there; the sales-accuracy check is
+  on **Items Sold** (admins), hidden without `day_totals`; Items Sold without
+  `live_today_sales` drops "Today" and opens on a new "Yesterday" choice;
+  "received evidence" = the Fix Issues detail's "Last received" row.
+- Invoices: without `ap_inbox` the AP email result line, its table column,
+  its override, the "Closed" column and "Looks closed in <pos>" are hidden
+  and the AP channel is neither waited on nor resent; without `whatsapp` the
+  same for WhatsApp. Flyers without `whatsapp`: library only (no group
+  picker, no Send). Checklist builder: group picker hidden. Send PO:
+  WhatsApp option hidden.
+
+**Text**
+- Sidebar: "Inventory from <pos>", "Also in <pos>" + note
+  (`ALSO_IN_POS`, renamed from `ALSO_IN_TOAST`; route labels may hold
+  `{pos}`, rendered with `routeLabel(route, posName)`). Store name and logo
+  in the sidebar, login page and public checklist page (`StoreLogo`: the
+  image, or the first letter on the brand colour if it can't load).
+- Help: every POS mention is `{pos}`; the jump list renders titles with
+  `posText`. Other pages: visible "Toast" text follows `currentPosName()`
+  (JSX text, strings inside functions, getters for module-level tables such
+  as `CODE_LABEL.item_id`, `JOB_LABELS.toast_sales_sync`). For a Toast store
+  every sentence reads as before. Code identifiers (`markInvoiceToastClosed`,
+  `toast_*` keys) are unchanged (contract rule 0.1).
+- `backend/app/glossary.py`: POS mentions are `{pos}`, "New York" is
+  `{store_city}` (new placeholder: the last part of `STORE_TIMEZONE`,
+  `_` -> space); `get_glossary()` and `reason_term()` fill them per request
+  (`localize_term`). Store-specific menu, folder and house-item wording made
+  neutral.
+- Neutral wording everywhere in `frontend/src` (no store, kitchen, place or
+  domain names; flyer default categories are Groceries / Others; WhatsApp
+  role defaults "Store staff group" / "Kitchen staff group"); browser
+  storage keys renamed `storeops_*` (sidebar, cart panels, tasks layout,
+  mobile token); sales export file `sales.csv`.
+
+**Time zone**: `format.js` `setStoreTimeZone(tz)` / `getStoreTimeZone()` /
+`storeDateTimeFormat()` / `lazyStoreFormat()` / `inStoreZone()` /
+`storeDateStr()` / `storeZoneCity()`; `DEFAULT_STORE_TIME_ZONE` (the server
+default) is the only zone literal in `frontend/src`. All former
+`America/New_York` sites (FixIssues, DailyChecklists, ReorderCandidates,
+InvoiceSubmission, insights, PlacedOrders, OverviewWidgets, team, chat,
+flyers, suggestions) and "store time (New York)" texts use it; the Overview
+greeting and date are store time.
+
+**Tests**
+- `node --test`: `store/gating.test.mjs` (every contract row; visible pages /
+  links / controls for the three fake stores; `/me` over branding; older
+  server), `store/branding.test.mjs` (normalising, title, contrast, time
+  zone switching incl. Chicago/New York day boundary, web fixtures vs the
+  server's `.branding.json` field names when MT7's files exist),
+  `store/noStoreNames.test.mjs` (no origin-store names in `frontend/src` +
+  `index.html`; no zone literal outside `format.js`); updated
+  `featureRoutes`, `insightsModel`, `flyerModel`, `productMatch` tests.
+- Backend: `tests/test_glossary_store_words.py` (Toast store reads as
+  before, Clover store never says Toast, city from the zone, reason texts
+  filled, no names). Allowlist: every `frontend/` and `glossary.py` line
+  removed.
+- Fixtures: `frontend/src/test/fixtures/branding.js` and
+  `frontend/e2e/fixtures/branding-<code>.json` (the three bodies of section
+  7, written from the contract; MT7's generated files are compared by name).
+
+**Playwright (`frontend/e2e/store/`)**: `run.sh` builds the website, makes
+two fresh databases (alembic head, the old migrations' seeded rows removed
+as in 3.5 step 3, four generated logins: admin, staff, "Hide sales numbers"
+staff, the App Review demo login), serves the fake Toast store (8861) and
+the fake Clover store (8862) with `serve.py`, and runs `stores.mjs` at 1280
+and 375 for every role: name / title / logo / `--accent` colour, store time
+in Team > Tasks, menu contents per store, gated URLs -> Not available,
+Label Scanner, no origin-store names, no "Toast" on the Clover store.
+`serve.py` blocks every non-loopback lookup and connection in-process, points
+every outside base URL at `127.0.0.1:9`, turns schedulers/push off and
+replaces smtplib. Before MT7 merges it adds, from the fixture, the Clover
+provider entry and `GET /api/app/branding` (it prints which fallbacks it
+used); after MT7 the real ones are used.
+
+**Results (Oct 18)**
+- `node --test` (all 226 website tests): 226 passed. `vite build` ok.
+- Backend: glossary-related files (`test_ops_glossary`, `test_glossary_store_words`,
+  `test_no_spicetown_names`, `test_flyers`, `test_insights`, `test_ops_fix_issues`,
+  `test_review_route_gates`, `test_suggestions_b3`, `test_ops_snooze_cartremove`,
+  `test_critical_dismissals`, `test_store_vs_container`,
+  `test_open_checks_tab_names`, `test_regress_min_order_and_add_all`): all pass on 3.9; the
+  first three also on 3.12.
+- Playwright (`run.sh`, two stores x 4 roles x 1280/375): 658 checks, 0
+  failures. 81 hits classed as **server text** (the same words are in an API
+  response on that page), all for the server batches below. Harness
+  fallbacks used: branding route and Clover provider (MT7 not merged yet).
+
+**For other batches (found by the Playwright sweep; server data, not website)**
+- MT8 (store pack / store-init): built-in checklists are re-seeded with the
+  origin store's titles when the table is empty (`checklist_admin.ensure_seeded`);
+  `/api/flyers/meta` categories (`services/flyers.py`); house-vendor /
+  issue-lead names (`issue_leads.py`, `schedule_suggestions.py`,
+  `similar_products.py`); Fix Issues close-reason labels still say Toast
+  (`services/fix_issues.py`; the glossary `does` text is already per store).
+- MT7 (settings / string sites): notification type descriptions in
+  `services/notifications.py` say Toast; `items_sold.py` / `routers/sales.py`
+  POS error messages say Toast (and a Clover store without an adapter gets
+  500/503 from Items Sold today; `/api/orders/employees` 500s when the POS is
+  unreachable). Invoices: the server should report the AP email channel as
+  not applicable (`toast_applicable: false`) when `ap_inbox` is off; the
+  website already hides and never waits on it.
+- First e2e run only: the harness used a wrong setting name for the Toast API
+  base, so the fake Toast store's server tried Toast's login endpoint 16
+  times with blank credentials (all refused, 401; no data). Fixed: the
+  harness now sets `TOAST_API_BASE` / `TOAST_ANALYTICS_BASE` to the discard
+  port, asserts them, and blocks every non-loopback lookup and connection.
+- Deferred: Insights pages' own explanatory text still says Toast (only
+  stores with `analytics_reports`, i.e. Toast, can open them); `/me` has no
+  `timezone`, so the zone comes from branding only.

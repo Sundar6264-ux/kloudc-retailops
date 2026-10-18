@@ -1,6 +1,10 @@
 // node --test src/components/suggestions/suggestionsModel.test.mjs (no deps).
 import assert from "node:assert/strict";
 import test from "node:test";
+import { setCurrentPosName } from "../../store/gating.js";
+
+// The store's POS name in these labels follows the store (MT9); a Toast store.
+setCurrentPosName("Toast");
 
 import {
   closeSummary,
@@ -57,6 +61,9 @@ test("confirm payload matches the manual review's body", () => {
 
 test("labels and formatting", () => {
   assert.equal(evidenceLabel("toast_received"), "Received in Toast");
+  setCurrentPosName("Clover");
+  assert.equal(evidenceLabel("toast_received"), "Received in Clover");
+  setCurrentPosName("Toast");
   assert.equal(evidenceLabel("stock_rise"), "Stock rose");
   assert.equal(formatIsoDay("2026-10-11"), "Sun, Oct 11");
   assert.equal(formatIsoDay(""), "");
