@@ -90,6 +90,18 @@ def test_example_file_holds_the_three_fake_stores_on_fake_hosts():
     assert dict(stores.stores["DEMO"].branding)["timezone"] == "America/New_York"
 
 
+def test_example_file_matches_the_fake_store_servers_branding():
+    # Contract 7: the directory's fake stores and MT7's branding fixtures
+    # (what each fake store server answers) describe the same stores.
+    fixtures = pathlib.Path(__file__).parent / "fixtures" / "stores"
+    stores = load_stores_file(EXAMPLE, DirectoryConfig())
+    for code, rec in stores.stores.items():
+        server = json.loads((fixtures / f"{code}.branding.json").read_text())
+        assert server["store_code"] == code
+        assert server["name"] == rec.name
+        assert {k: server[k] for k, _ in rec.branding} == dict(rec.branding), code
+
+
 def _problems(data, cfg=None):
     with pytest.raises(StoresFileError) as exc:
         parse_stores(data, cfg or DirectoryConfig())
