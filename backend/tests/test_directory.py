@@ -332,8 +332,22 @@ def test_rate_limit_per_hour(stores_file, clock):
 
 def test_client_ip_comes_from_the_configured_header_else_the_socket(stores_file, clock):
     behind = TestClient(create_app(_cfg(stores_file, rate_per_minute=1), clock=clock))
-    assert _get(behind, "/v1/stores/DEMO", ip="203.0.113.9, 10.0.0.1").status_code == 200
+    assert _get(behind, "/v1/stores/DEMO", ip="203.0.113.9").status_code == 200
     assert _get(behind, "/v1/stores/DEMO", ip="203.0.113.9").status_code == 429
+    assert _get(behind, "/v1/stores/DEMO", ip="203.0.113.10").status_code == 200
+
+
+def test_a_forwarded_for_list_is_keyed_on_the_proxys_entry_not_the_clients(stores_file, clock):
+    # With DIRECTORY_CLIENT_IP_HEADER=X-Forwarded-For the client writes the
+    # start of the list; only the last entry (added by the proxy in front of
+    # the service) can be trusted, so a made-up first entry must not reset
+    # the limit.
+    cfg = _cfg(stores_file, rate_per_minute=1, client_ip_header="X-Forwarded-For")
+    client = TestClient(create_app(cfg, clock=clock))
+    xff = "X-Forwarded-For"
+    assert client.get("/v1/stores/DEMO", headers={xff: "1.1.1.1, 203.0.113.9"}).status_code == 200
+    assert client.get("/v1/stores/DEMO", headers={xff: "2.2.2.2, 203.0.113.9"}).status_code == 429
+    assert client.get("/v1/stores/DEMO", headers={xff: "203.0.113.9"}).status_code == 429
     direct = TestClient(create_app(_cfg(stores_file, rate_per_minute=1, client_ip_header=""), clock=clock))
     assert _get(direct, "/v1/stores/DEMO", ip="1.1.1.1").status_code == 200
     # The header is ignored without the setting, so spoofing it does not help.

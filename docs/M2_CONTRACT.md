@@ -2064,8 +2064,10 @@ skipped without it; GitHub's Ubuntu runners have Node.
   - Worker: per isolate, plus the optional `DIRECTORY_RATE_LIMITER` binding
     (`[[ratelimits]]`, 10/60 s; when it refuses, the Worker answers 429 with
     `Retry-After: 60`), plus a Cloudflare WAF rule (owner).
-  - Client IP: Python uses `DIRECTORY_CLIENT_IP_HEADER` (first value of a
-    comma list) or the socket peer. The Worker uses `CF-Connecting-IP`.
+  - Client IP: Python uses `DIRECTORY_CLIENT_IP_HEADER` (the last value of
+    a comma list such as `X-Forwarded-For`: the one the proxy in front
+    appended; the client controls the rest) or the socket peer. The Worker
+    uses `CF-Connecting-IP`.
 - Before MT7 merges, `Settings` still has the legacy `app_store_url` /
   `play_store_url` defaults. The directory ignores both, with a warning, and
   never shows them: an App Store URL must be a listing (`/id<N>`), and a Play

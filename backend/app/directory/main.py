@@ -92,10 +92,12 @@ def _if_none_match(request: Request, etag: str) -> bool:
 
 def _client_ip(request: Request, header: str) -> str:
     if header:
+        # The last entry: in a comma list (X-Forwarded-For) the client writes
+        # everything before the value the proxy in front of us appended.
         value = request.headers.get(header, "")
-        first = value.split(",")[0].strip()
-        if first:
-            return first
+        last = value.split(",")[-1].strip()
+        if last:
+            return last
     return request.client.host if request.client else "unknown"
 
 
