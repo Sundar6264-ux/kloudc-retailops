@@ -251,7 +251,16 @@ def get_items_sold(db: Session, start_date: dt.date, end_date: Optional[dt.date]
     today = restaurant_today()
     groups = []
     live_at = None
-    if end_date >= today:
+    # A store whose POS has no live sales (CSV-only / DEMO, M2 MT13) serves
+    # every day from the stored orders; Toast always has it, so this is
+    # unchanged for Toast stores.
+    from app.pos.capabilities import Capability
+    from app.pos.gating import has_capability
+
+    live = has_capability(Capability.LIVE_TODAY_SALES)
+    if end_date >= today and not live:
+        groups.append(_items_sold_stored(db, start_date, end_date))
+    elif end_date >= today:
         live_dates = [today - dt.timedelta(days=1), today, today + dt.timedelta(days=1)]
         live_items, live_at = _items_sold_live(start_date, end_date, live_dates, fresh)
         groups.append(live_items)
@@ -263,7 +272,9 @@ def get_items_sold(db: Session, start_date: dt.date, end_date: Optional[dt.date]
     else:
         groups.append(_items_sold_stored(db, start_date, end_date))
 
-    if start_date == end_date == today:
+    if not live:
+        source = "stored"
+    elif start_date == end_date == today:
         source = "live"  # pulled fresh from Toast just now, not yet in our DB
     elif end_date >= today:
         source = "mixed"  # stored history plus today, pulled live

@@ -1,175 +1,140 @@
 {
   "pack_version": 1,
   "pack_id": "demo",
-  "label": "DEMO store (placeholder until MT13 writes it)",
+  "label": "StoreOps DEMO store (made-up data for App Review and sales demos)",
+
   "menu": {
     "excluded_category_groups": [],
-    "kitchen_groups": [],
-    "grocery_menus": [],
-    "kitchen_menu_prefixes": [],
-    "kitchen_label": "Kitchen"
+    "kitchen_groups": ["DELI"],
+    "grocery_menus": []
   },
+
   "po_sections": {
     "other_section": "Other",
     "extra_sections": [],
     "rules": [
-      {
-        "section_from": "category"
-      }
+      {"when": {"group": ["DELI"]}, "section": "Deli counter"},
+      {"when": {"group": ["FROZEN"]}, "lookup": "category",
+       "map": {"Frozen Vegetables": "Frozen - Vegetables", "Ice Cream": "Frozen - Desserts",
+               "Frozen Meals": "Frozen - Meals"}},
+      {"when": {"group": ["FROZEN"]}, "section": "Frozen - Other"},
+      {"when": {"group": ["PRODUCE"]}, "section": "Produce"},
+      {"when": {"group": ["DAIRY"]}, "section": "Dairy & Eggs"},
+      {"lookup": "category", "map": {"Soft Drinks": "Drinks", "Juice": "Drinks", "Water": "Drinks",
+                                       "Chips": "Snacks", "Cookies": "Snacks", "Crackers": "Snacks"}},
+      {"section_from": "category"}
     ]
   },
-  "house_vendors": {
-    "prefixes": []
-  },
+
+  "house_vendors": {"prefixes": ["storeops demo market"]},
+
   "channels": {
     "empty": "Other",
     "rules": [
-      {
-        "equals": [
-          "no dining option"
-        ],
-        "channel": "Other"
-      },
-      {
-        "starts_with": [
-          "in-store",
-          "in store"
-        ],
-        "channel": "In-store"
-      },
-      {
-        "equals": [
-          "pick up",
-          "pickup",
-          "take out",
-          "takeout"
-        ],
-        "channel": "Pick up"
-      }
+      {"equals": ["no dining option"], "channel": "Other"},
+      {"starts_with": ["in-store", "in store"], "channel": "In-store"},
+      {"equals": ["pick up", "pickup", "take out", "takeout"], "channel": "Pick up"}
     ],
     "split_on": " - ",
-    "rename": {
-      "online ordering": "Online ordering"
-    },
+    "rename": {"online ordering": "Online ordering"},
     "default": "Other"
   },
+
   "issue_leads": {
-    "document_title": "Suggested leads",
-    "leads": [],
-    "fallback": {
-      "key": "admin",
-      "name": "Store admin",
-      "title": "Inventory & Purchase"
+    "leads": [
+      {"key": "grocery_lead", "name": "Grocery lead", "title": "Grocery",
+       "departments": "Dry goods, drinks, snacks and household.",
+       "vendors": ["Demo Dry Goods Wholesale", "Demo Beverage Distributors", "Demo Snack Wholesale",
+                   "Demo Household Supply"]},
+      {"key": "produce_lead", "name": "Produce lead", "title": "Fresh",
+       "departments": "Produce, dairy, bakery, frozen and the deli counter.",
+       "vendors": ["Demo Produce Supply", "Sample Dairy Distributors", "Demo Bakery Supply",
+                   "Placeholder Frozen Foods"]}
+    ],
+    "fallback": {"key": "admin", "name": "Store admin", "title": "Inventory & Purchase"},
+    "section_proposals": {
+      "produce": {"lead": "produce_lead", "basis": "document", "why": "Produce"},
+      "dairy & eggs": {"lead": "produce_lead", "basis": "document", "why": "Dairy"},
+      "drinks": {"lead": "grocery_lead", "basis": "document", "why": "Drinks"},
+      "snacks": {"lead": "grocery_lead", "basis": "guess", "why": "Next to Drinks"}
     },
-    "section_proposals": {},
-    "section_notes": {}
+    "section_notes": {"other": "Anything without a section."}
   },
+
   "checklists": [
     {
-      "checklist_type": "daily_closing",
-      "title": "Daily Closing Checklist",
-      "short_name": "Closing",
-      "description": "Complete before leaving for the night.",
-      "sort_order": 1,
-      "settings": {
-        "closing": true,
-        "whatsapp_group": "store",
-        "all_as_usual": false
-      },
+      "checklist_type": "demo_opening",
+      "title": "Opening Checklist",
+      "short_name": "Opening",
+      "description": "Complete before the doors open.",
+      "sort_order": 0,
+      "settings": {"closing": false, "whatsapp_group": null, "all_as_usual": false},
       "schema": {
+        "format": "items",
+        "legacy_order": false,
         "sections": [
-          {
-            "id": "s_closing",
-            "title": "Closing",
-            "description": null,
-            "items": [
-              {
-                "id": "q_doors",
-                "type": "multiple_choice",
-                "title": "Front and back doors locked?",
-                "description": null,
-                "required": true,
-                "options": [
-                  {
-                    "value": "Yes",
-                    "issue_tag": null
-                  },
-                  {
-                    "value": "No",
-                    "issue_tag": "issue"
-                  }
-                ]
-              },
-              {
-                "id": "q_lights",
-                "type": "multiple_choice",
-                "title": "Lights and equipment turned off?",
-                "description": null,
-                "required": true,
-                "options": [
-                  {
-                    "value": "Yes",
-                    "issue_tag": null
-                  },
-                  {
-                    "value": "No",
-                    "issue_tag": "not_turned_off"
-                  }
-                ]
-              },
-              {
-                "id": "q_cash",
-                "type": "multiple_choice",
-                "title": "Cash counted and put away?",
-                "description": null,
-                "required": true,
-                "options": [
-                  {
-                    "value": "Yes",
-                    "issue_tag": null
-                  },
-                  {
-                    "value": "No",
-                    "issue_tag": "issue"
-                  }
-                ]
-              },
-              {
-                "id": "q_notes",
-                "type": "paragraph",
-                "title": "Anything unusual tonight?",
-                "description": null,
-                "required": false,
-                "flag_if_answered": true
-              }
-            ]
-          }
+          {"id": "s1", "title": "Store floor", "description": null, "items": [
+            {"id": "q_lights", "type": "multiple_choice", "title": "Lights and signs on?",
+             "description": null, "required": true,
+             "options": [{"value": "Yes", "issue_tag": null}, {"value": "No", "issue_tag": "issue"}]},
+            {"id": "q_registers", "type": "multiple_choice", "title": "Registers counted and ready?",
+             "description": null, "required": true,
+             "options": [{"value": "Yes", "issue_tag": null}, {"value": "No", "issue_tag": "critical"}]},
+            {"id": "q_produce", "type": "multiple_choice", "title": "Produce display stocked?",
+             "description": null, "required": true,
+             "options": [{"value": "Yes", "issue_tag": null}, {"value": "Low", "issue_tag": "low_stock"}]}
+          ]},
+          {"id": "s2", "title": "Coolers", "description": null, "items": [
+            {"id": "q_cooler", "type": "multiple_choice", "title": "Dairy cooler temperature",
+             "description": null, "required": true,
+             "options": [{"value": "Below 41°F", "issue_tag": null},
+                         {"value": "Above 41°F", "issue_tag": "critical"}]},
+            {"id": "q_notes", "type": "paragraph", "title": "Anything unusual?",
+             "description": null, "required": false, "flag_if_answered": true}
+          ]}
+        ]
+      }
+    },
+    {
+      "checklist_type": "demo_closing",
+      "title": "Closing Checklist",
+      "short_name": "Closing",
+      "description": "Complete before leaving.",
+      "sort_order": 1,
+      "settings": {"closing": true, "whatsapp_group": null, "all_as_usual": false},
+      "schema": {
+        "format": "items",
+        "legacy_order": false,
+        "sections": [
+          {"id": "s1", "title": "Closing", "description": null, "items": [
+            {"id": "q_doors", "type": "multiple_choice", "title": "Front doors locked?",
+             "description": null, "required": true,
+             "options": [{"value": "Yes", "issue_tag": null}, {"value": "No", "issue_tag": "critical"}]},
+            {"id": "q_floor", "type": "multiple_choice", "title": "Floor swept and mopped?",
+             "description": null, "required": true,
+             "options": [{"value": "Yes", "issue_tag": null}, {"value": "No", "issue_tag": "cleanup"}]},
+            {"id": "q_deli", "type": "multiple_choice", "title": "Deli slicer and ovens off?",
+             "description": null, "required": true,
+             "options": [{"value": "Yes", "issue_tag": null}, {"value": "No", "issue_tag": "not_turned_off"}]},
+            {"id": "q_restock", "type": "multiple_choice", "title": "Shelves faced and restocked?",
+             "description": null, "required": true,
+             "options": [{"value": "Yes", "issue_tag": null},
+                         {"value": "Needs morning restock", "issue_tag": "morning_prep"}]},
+            {"id": "q_notes", "type": "paragraph", "title": "Anything unusual?",
+             "description": null, "required": false, "flag_if_answered": true}
+          ]}
         ]
       }
     }
   ],
-  "whatsapp_roles": [
-    {
-      "key": "store",
-      "label": "Store staff group"
-    }
-  ],
+
+  "whatsapp_roles": [{"key": "store", "label": "Store staff group"}],
+
   "flyer_categories": [
-    {
-      "key": "groceries",
-      "label": "Groceries",
-      "folder": "Groceries"
-    },
-    {
-      "key": "offers",
-      "label": "Offers",
-      "folder": "Offers"
-    },
-    {
-      "key": "others",
-      "label": "Others",
-      "folder": "Others"
-    }
+    {"key": "groceries", "label": "Groceries", "folder": "Groceries"},
+    {"key": "offers", "label": "Offers", "folder": "Offers"},
+    {"key": "others", "label": "Others", "folder": "Others"}
   ],
+
   "category_rules": []
 }

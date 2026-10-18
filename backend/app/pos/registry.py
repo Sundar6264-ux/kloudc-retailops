@@ -23,8 +23,15 @@ def _toast() -> PosConnector:
     return ToastConnector()
 
 
-# provider name -> factory. Adapters register here (Clover arrives in M3).
-PROVIDERS: Dict[str, Callable[[], PosConnector]] = {"toast": _toast}
+def _csv() -> PosConnector:
+    from app.pos.adapters.csv_only.connector import CsvOnlyConnector
+
+    return CsvOnlyConnector()
+
+
+# provider name -> factory. Adapters register here (Clover arrives in M3;
+# "csv" = the CSV-only connector, M2 batch MT13).
+PROVIDERS: Dict[str, Callable[[], PosConnector]] = {"toast": _toast, "csv": _csv}
 
 _cache: Dict[str, PosConnector] = {}
 _lock = threading.Lock()

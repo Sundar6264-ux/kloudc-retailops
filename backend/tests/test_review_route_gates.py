@@ -26,6 +26,8 @@ PUBLIC = {
     ("POST", "/api/notifications/unregister"),
     ("GET", "/api/app/config"),
     ("GET", "/api/health"),
+    # Legal links + AI consent notice (M2 MT13, app/routers/legal.py).
+    ("GET", "/api/app/legal"),
     # Public checklist link (routers/checklist_public.py): reach only the one
     # checklist a valid, enabled link token names - see
     # tests/test_public_checklist_link.py. Nothing else may join this list

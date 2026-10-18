@@ -1,4 +1,5 @@
-"""App Review demo accounts (DEMO_USERNAMES, docs/APP_REVIEW_BUILD7_CONTRACT.md).
+"""App Review demo accounts (DEMO_USERNAMES, docs/APP_REVIEW_BUILD7_CONTRACT.md),
+and the DEMO store's DEMO_MODE (every login is a demo login).
 
 The ONE place that decides whether a login is a demo account. A demo user
 can look at everything its features allow, but nothing it does may reach
@@ -31,8 +32,20 @@ def is_demo_username(username: Optional[str]) -> bool:
     return bool(username) and username.strip().lower() in demo_usernames()
 
 
+def demo_mode() -> bool:
+    """The DEMO store (DEMO_MODE, multi-store plan 3.1a, M2 MT13): every login
+    is treated as a demo login. Read with getattr so this works before the
+    setting exists (contract rule 8)."""
+    return bool(getattr(get_settings(), "demo_mode", False))
+
+
 def is_demo_user(user: Optional[User]) -> bool:
-    return user is not None and is_demo_username(user.username)
+    """A demo login: its username is in DEMO_USERNAMES, or this server is the
+    DEMO store (then every login is). Only who is *acting* changes with
+    DEMO_MODE - which rows count as demo-made (demo_user_ids /
+    demo_made_clause) still follows DEMO_USERNAMES, so the store's made-up
+    data stays visible."""
+    return user is not None and (demo_mode() or is_demo_username(user.username))
 
 
 def demo_user_ids(db: Session) -> Set[int]:

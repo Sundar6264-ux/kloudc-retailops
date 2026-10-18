@@ -1,0 +1,63 @@
+# StoreOps DEMO store - Docker Compose service (M2 batch MT13, plan 3.1a / D11).
+#
+#   cp deploy/demo/demo.env.example deploy/demo/demo.env   # then fill it in (no secrets needed)
+#   docker compose -f deploy/demo/docker-compose.demo.yml up -d --build
+#
+# One container runs the DEMO API server and its nightly made-up-data reset
+# (backend/scripts/demo/run_demo.py). POS_PROVIDER=csv: it never calls a POS;
+# every outside channel (WhatsApp, e-mail, AI, push, Toast) is forced off by
+# run_demo.py whatever demo.env says. Data lives in the `demo-data` volume and
+# is rebuilt every night at 03:30 store time.
+#
+# Uses the store image from the root Dockerfile (MT7a): WORKDIR /app/backend,
+# its entrypoint runs any command other than "serve" as a one-off, so the
+# runner below replaces the normal "migrate + uvicorn" start. The data set
+# lives in /data/demo inside the volume (the entrypoint makes /data/uploads,
+# which the DEMO data folder must not share).
+# Built and tested by GitHub Actions only (no Docker on the store's Mac).
+name: storeops-demo
+
+services:
+  demo:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: storeops:demo
+    working_dir: /app/backend
+    command:
+      - python
+      - scripts/demo/run_demo.py
+      - --data-dir
+      - /data/demo
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reset-at
+      - "03:30"
+    env_file:
+      - demo.env
+    environment:
+      STORE_CODE: DEMO
+      POS_PROVIDER: csv
+      DEMO_MODE: "true"
+    volumes:
+      - demo-data:/data
+    ports:
+      # Local only: the tunnel / reverse proxy publishes the DEMO host.
+      - "127.0.0.1:8030:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      # The first start builds the data set before the server listens.
+      start_period: 180s
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+
+volumes:
+  demo-data:

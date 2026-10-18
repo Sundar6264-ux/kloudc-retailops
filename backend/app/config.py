@@ -89,6 +89,9 @@ class Settings(BaseSettings):
     # digest has no written summary. ANTHROPIC_API_KEY is still needed for
     # real calls.
     ai_enabled: bool = False
+    # Text of the AI notice the app shows before the first Ask bot question
+    # (GET /api/app/legal). Blank -> app/legal.py DEFAULT_AI_CONSENT_NOTICE.
+    ai_consent_notice: str = ""
     # JSON object: WhatsApp role key -> Whapi chat id, e.g.
     # {"store": "120363000000000000@g.us"}. Wins over the two old
     # WHAPI_*_CHECKLIST_GROUP_ID settings below; rows set on the WhatsApp

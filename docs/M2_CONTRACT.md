@@ -108,6 +108,7 @@ the field name in upper case unless the table says otherwise.
 | `toast_invoice_email` | `TOAST_INVOICE_EMAIL` | str | **`""`** (was Spice Town's inbox) | Old name, still read. |
 | `labels_url` | `LABELS_URL` | str | `""` | Labels site origin. Blank = no labels for this store (Scan tab, Print Label History, website "Label Scanner" link hidden; the app never sends a token anywhere for labels). Replaces `LABELS_APP_URL` (`frontend/src/featureRoutes.js`) and the app's `LABELS_BASE_URL` define. |
 | `ai_enabled` | `AI_ENABLED` | bool | `False` | Per-store AI switch (Apple 5.1.2(i)). Off -> `ask_bot` dropped from `allowed_features`, weekly digest skips the AI paragraph. The key `ANTHROPIC_API_KEY` is still needed for real calls. |
+| `ai_consent_notice` | `AI_CONSENT_NOTICE` | str | `""` -> `app/legal.py` `DEFAULT_AI_CONSENT_NOTICE` | Text of the AI notice the app shows before the first Ask bot question; served by `GET /api/app/legal` (MT13). |
 | `whatsapp_group_chat_ids` | `WHATSAPP_GROUP_CHAT_IDS` | str (JSON object) | `""` | Role key -> Whapi chat id, e.g. `{"store":"120363000000000000@g.us"}`. Wins over the old `WHAPI_SPICE_TOWN_CHECKLIST_GROUP_ID` (role `store`) and `WHAPI_STREET_KITCHEN_CHECKLIST_GROUP_ID` (role `kitchen`), which are still read. Rows in `whatsapp_groups` win over both (today's rule). |
 | `smtp_host` | `SMTP_HOST` | str | `"smtp.gmail.com"` | Replaces the literal at `toast_email.py:81`, `po_send.py:65-66`. |
 | `smtp_port` | `SMTP_PORT` | int | `465` | |
@@ -2426,3 +2427,184 @@ Tests after the verifier fixes: `tests/test_directory.py` 57 passed; Worker
 `node --test` 7 passed; full backend suite 2622 passed, 19 skipped on both
 Python 3.9 and 3.12 (run before the trailing-slash test was added; that file
 was re-run on both afterwards).
+
+## As built - MT13 prep (DEMO store, CSV-only connector, legal and AI notice)
+
+Branches: server `m2/mt13-demo` (worktree `/Users/sundar/storeops/worktrees/mt13`),
+app `m2/mt13-legal` (worktree `/Users/sundar/storeops/worktrees/mt13-app`).
+Nothing is submitted or created with Apple, Google or Firebase.
+
+**CSV-only connector** (`backend/app/pos/adapters/csv_only/`, plan 3.1a / 4.5):
+- `CsvOnlyConnector`: `source="csv"`, `display_name="CSV upload"`,
+  `capabilities = CSV_CAPABILITIES` (read with `getattr` from
+  `app/pos/capabilities.py`, falling back to `{csv_catalog_import}` until MT7
+  adds the constant). Every other connector method raises `NotSupported`;
+  `health()` is always "configured". The package imports no HTTP client
+  (tested).
+- `parse_catalog_export(filename, content)` -> `CatalogRow`s for `.csv` /
+  `.xlsx` (canonical template headers + common aliases: SKU, UPC, Qty on
+  hand, Vendor ...); `canonical_csv(...)` renames aliased headers so a file
+  goes through today's Inventory upload unchanged. `template.py`:
+  `TEMPLATE_HEADERS` (all already in the upload page's `COLUMN_MAP`, tested),
+  `template_csv(rows)`.
+- Registered in `app/pos/registry.py` (`PROVIDERS["csv"]`, a 5-line factory -
+  more than the one-line rule, noted here). With it, the M1 gating already
+  gives a CSV store: `pos_name()` "CSV upload", capabilities
+  `["csv_catalog_import"]`, Open Checks / Sales insights dropped, and the
+  16 POS jobs not registered (seen in a live run of the DEMO server).
+- **Fix outside MT13's files (one hunk):** `services/items_sold.get_items_sold`
+  called the POS live for "today" on every store; a store without
+  `live_today_sales` now serves today from stored orders (`source "stored"`).
+  Toast stores unchanged (they have the capability). Found by the DEMO smoke
+  check (HTTP 500 on `/api/sales/items-sold`).
+
+**DEMO_MODE** (`app/demo.py`, contract 1.1): `demo_mode()` reads
+`getattr(settings, "demo_mode", False)`; `is_demo_user()` is True for every
+login when it is on (the read-only guard, flyers/PO/AI refusals all follow).
+Which rows count as demo-made (`demo_user_ids`, `demo_made_clause`,
+`hidden_from`) still follows `DEMO_USERNAMES`, so the store's made-up data
+stays visible to the reviewer.
+
+**Legal + AI notice** (server):
+- `app/legal.py` + `GET /api/app/legal` (`app/routers/legal.py`, public, never
+  401, `Cache-Control: public, max-age=300`; registered in `app/main.py` with
+  one import + one include line; added to the PUBLIC list of
+  `tests/test_review_route_gates.py`). Body:
+  `{"schema": 1, "product", "company", "privacy_url", "terms_url"|null,
+  "support_url", "ai": {"enabled", "provider": "Anthropic", "service":
+  "Claude", "notice", "notice_version"}, "demo"}`. `notice_version` = first
+  12 hex of sha256(notice) (the app uses the same rule).
+- Settings read with `getattr` and the 1.1 defaults: `company_name`,
+  `product_name`, `privacy_url`, `terms_url`, `support_url`, `ai_enabled`,
+  `demo_mode`, and the **new row `ai_consent_notice` (`AI_CONSENT_NOTICE`)
+  added to 1.1 in this batch** - MT7 adds the field to `config.py` and
+  `.env.example`.
+
+**DEMO store** (`backend/scripts/demo/`, `backend/packs/demo.json`, `deploy/demo/`, `docs/DEMO_STORE.md`):
+- `generate_demo_data.py --out NEW_DIR [--seed --days 90 --items 400 --end-date --timezone]`:
+  fresh SQLite at Alembic head (subprocess), the migration-seeded rows of
+  `checklist_definitions(+versions)`, `category_overrides`, `whatsapp_groups`
+  cleared, then `python -m app.store init --code DEMO --pack packs/demo.json`
+  **when MT8's `app/store/__main__.py` exists** (else the same pack rows
+  directly), then made-up data: 9 role logins + `appreview`, ~400 items
+  (EAN-13 in the 20-29 in-store range), 90 days of sales lines
+  (`orders.source = "csv"`), weekly catalog CSV uploads through the real
+  `inventory_parser.parse_and_store` (snapshots + item_vendors), schedules,
+  contacts (`.example`), purchase log, placed orders, cart, ~50 sample
+  invoice PDFs (`fake_pdf.py`, each marked SAMPLE; channels recorded as
+  `DEMO_NOT_SENT`), 2 checklists x 45 days, tasks + 3 templates, team chat,
+  announcements, and a `setting_changes` row `demo_dataset` (marker).
+  Full size: ~14 s, 39.7k order lines, 27 MB DB. Same seed + end date = same
+  data (tested digest), apart from password hashes.
+- Review login `appreview`: all features except `marketing_flyers`,
+  `category_edits`, `sales_insights`; `can_assign` off. Password from
+  `DEMO_REVIEW_PASSWORD` (env or the DEMO checkout's `.env`) or a random one
+  kept in `<data-dir>/review_password` (mode 600, survives resets). Never in git.
+- `smoke_demo.py --data DIR`: boots the app on the data with the DEMO
+  settings, signs in as `appreview` (bearer), checks `/api/auth/me`, every
+  parameterless GET (113) has no 5xx, 10 main pages non-empty, a write is
+  403, POS-only routes 403/409.
+- `reset_demo.py --data-dir DIR [--swap]`: data folder must be new/empty
+  (only `logs/` allowed) or carry `.storeops-demo-data`; builds `next/`,
+  smoke-checks a copy, swaps `live -> old -> deleted` only when the folder
+  being replaced is a generated DEMO data set (marker file + marker row).
+- `run_demo.py --data-dir DIR --port 8030 --reset-at 03:30`: one process
+  for server + nightly reset (build while serving, stop, swap, start). It
+  forces `STORE_CODE=DEMO`, `POS_PROVIDER=csv`, `DEMO_MODE=true`, blank
+  credentials and discard-port base URLs (`SAFE_OVERRIDES`), refuses another
+  `STORE_CODE` or `DEMO_MODE=false`, and exits non-zero if the server dies.
+  The nightly reset is **out of process**, so `POS_NEUTRAL_JOB_FUNCS` is not
+  touched.
+- `deploy/demo/com.kloudc.storeops.demo.plist` (LaunchDaemon template,
+  `__PLACEHOLDERS__`, Background priority), `deploy/demo/docker-compose.demo.yml`
+  (service `demo`, volume `demo-data`, data in `/data/demo`, `127.0.0.1:8030`;
+  uses MT7a's store image - `/app/backend`, its entrypoint runs the runner as a
+  one-off command), `deploy/demo/demo.env.example` (no secrets).
+- `packs/demo.json`: pack v1 per section 3.1 (DELI kitchen group, PO-section
+  rules, 2 leads, 2 checklists in items form, role `store`, generic channels
+  and flyer categories). Checklists validate with `checklist_engine`; the
+  test also runs MT8's `load_pack_file` when it exists.
+
+**Docs:** `docs/APP_REVIEW_NOTES.md` (draft notes with store code `DEMO`,
+~2,700 characters), `docs/OWNER_CHECKLIST_STORE_RECORDS.md` (Apple App ID /
+Team ID / APNs key / ASC record, Play signing fingerprints, Firebase project +
+per-store FCM-only service accounts, domain/terms; nothing created),
+`docs/DEMO_STORE.md` (runbook).
+
+**App (`storeops-app`, minimal; MT11/MT12 own the rest of `lib/`):**
+- `lib/core/config/legal_links.dart`: `productName`, `companyName`,
+  `privacyPolicyUrl`, `supportUrl` (now `--dart-define`s with the same
+  defaults), `termsUrl` (null until `TERMS_URL` is defined), `copyrightLine()`,
+  and `class LegalLinks {company, privacyUrl, supportUrl, termsUrl?}` with
+  `LegalLinks.fromJson(branding.legal)` (https only, blank -> defaults) and
+  `LegalLinks.defaults` - **the type `TenantConfig.legal` (5.2) should use.**
+- About: Terms row when set; footer "StoreOps · © <year> KloudC LLC".
+  Login footer: "For store staff - accounts are issued by your manager." +
+  Privacy + Terms (when set).
+- `lib/core/legal/ai_consent.dart`: `defaultAiConsentNotice` (identical to
+  the server's), `aiNoticeVersion()`, `AiConsentStore` (shared_preferences
+  `ai_consent_accepted[.<scope>].<version>`; MT11 can pass the store code as
+  scope), `ensureAiConsent(context, notice:, scope:)`, `AiConsentDialog`
+  ("Before you ask" / "Not now" / "I agree" + Privacy link). Wired into
+  `ask_bot_screen.dart` `_send` (3 lines): nothing is sent before agreement;
+  "Not now" keeps the typed question. MT12 may pass the store's
+  `/api/app/legal` notice later.
+
+**Tests:** server `test_csv_only_connector.py` (18), `test_legal_and_demo_mode.py`
+(7), `test_demo_data.py` (13: counts/marker, no forbidden names and only
+`.example` e-mails in any text column, EAN-13, sample PDFs + hashes,
+determinism, refusals, smoke on the data, pack, reset folder safety, swap,
+runner env, reset time across DST, reset end to end). App
+`test/core/legal/ai_consent_test.dart`, `test/core/legal/legal_links_test.dart`;
+`audit_c_ask_bot_test.dart` pre-agrees the notice in `setUp`.
+Full runs (rebased on `main` @ `6d2cc7f` / app `main` @ `783033a`): backend
+3.9 and 3.12 each 2488 passed, 19 skipped; app `flutter analyze` clean,
+`flutter test --concurrency=2` 5351 passed, 6 skipped, 2 failed - both in
+`final_ios_metadata_test.dart`, fixed on app `main` by `93c51bf`; after
+rebasing onto it that file, the new tests and the App Review journey pass.
+
+**Deferred / for other batches:**
+- MT7: add `ai_consent_notice`, `demo_mode` and the legal fields to
+  `config.py` / `.env.example`; `CSV_CAPABILITIES` in `capabilities.py`;
+  `gating.PROVIDERS["csv"]` fallback (the registered adapter already answers).
+- MT8: when `app.store init` lands, the generator uses it automatically;
+  re-run `tests/test_demo_data.py` then.
+- MT12: `_exampleQuestions` in `ask_bot_screen.dart` still names a real
+  vendor; Info.plist permission strings (MT7a app) still name the old store -
+  `docs/APP_REVIEW_NOTES.md` "Permissions" must match the final strings.
+- Upload page for CSV stores: `parse_and_store` still reads canonical headers
+  only; an alias file needs `canonical_csv` first (not wired into the route).
+- `is_demo_submission` (invoices/checklists) still keys on `DEMO_USERNAMES`;
+  in the DEMO store every outside channel is blank anyway (forced by the runner).
+
+## As built - MT13 verification (adversarial check of the demo track)
+
+Both MT13 branches now carry a merge of `main` (server `2c43df8`, app
+`2ce8a2c`), so they merge into `main` without conflicts.
+
+- **Server merge:** `backend/packs/demo.json` is MT13's DEMO pack. On
+  `main` it was MT8's placeholder. MT13's pack passes `load_pack_file`.
+- **App merge: one `LegalLinks` type.** MT11 and MT13 each built one. The
+  merged app keeps `TenantConfig.legal` (MT11) and adds MT13's rules to it:
+  only https links are taken from the server, and the product's Terms link
+  comes from the `TERMS_URL` define. `legal_links.dart` now holds only the
+  product defaults (the `COMPANY_NAME`, `PRIVACY_URL`, `SUPPORT_URL` and
+  `TERMS_URL` defines) and `copyrightLine(company)`.
+- **App merge: About and login footer.** Both stay store-aware (MT11) and
+  gain the Terms link plus "StoreOps · © <build year> <company>".
+- **`AI_CONSENT_NOTICE`:** it is now a field in `config.py` and a line in
+  `.env.example`. Before, `extra="ignore"` dropped it silently.
+- **Blank `COMPANY_NAME`:** `settings_view.company_name()` returns the
+  product default, matching `GET /api/app/legal`. A test checks that the
+  `legal` block in branding equals the one from `/api/app/legal`.
+- **App AI notice, per store:** `aiNoticeProvider` reads the notice from
+  the store's `GET /api/app/legal` (`ai.notice`) and falls back to the
+  default. `ask_bot_screen` sends `scope: <store code>`, so the saved
+  answer key is `ai_consent_accepted.<CODE>.<version>`. Agreeing at one
+  store no longer counts for another. The Privacy link in the notice is the
+  store's own.
+- **Ask bot example question:** the website and the app no longer name one
+  of the origin store's vendors.
+- **`test_demo_data` determinism:** the test now ignores
+  `uploads/.store_identity`. MT8's store init writes a random instance id
+  into that file on every build.
