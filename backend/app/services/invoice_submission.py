@@ -202,6 +202,27 @@ def is_demo_not_sent(sent: bool, error: Optional[str]) -> bool:
     return not sent and error == DEMO_NOT_SENT
 
 
+# --- Channels a store has switched off (StoreOps M2 store features, contract 1.3) ---
+# A store without WhatsApp (no WHAPI_API_TOKEN) or without an AP inbox
+# (AP_INBOX_EMAIL blank) records that channel like this - not sent, this text
+# as the reason - and it never counts as failed: the invoice is done once the
+# channels the store does have are done, and no "failed to send" alert goes
+# out for a channel the store doesn't use. A misconfigured channel the store
+# DOES use (token set but no chat id, inbox set but no SMTP login) still fails.
+WHATSAPP_OFF = "WhatsApp is not set up for this store."
+AP_EMAIL_OFF = "The AP inbox email is not set up for this store."
+
+
+def is_channel_off(sent: bool, error: Optional[str]) -> bool:
+    return not sent and error in (WHATSAPP_OFF, AP_EMAIL_OFF)
+
+
+def _channel_feature_on(feature: str) -> bool:
+    from app.store.settings_view import has_store_feature
+
+    return has_store_feature(feature)
+
+
 def record_demo_not_sent(db: Session, entry: InvoiceSubmission, channels: List[str]) -> InvoiceSubmission:
     if "whatsapp" in channels:
         entry.whatsapp_sent = False
@@ -251,7 +272,7 @@ def _attempt_whatsapp(db: Session, entry: InvoiceSubmission) -> None:
             entry.whatsapp_ambiguous = True
     except WhapiNotConfigured as exc:
         entry.whatsapp_sent = False
-        entry.whatsapp_error = str(exc)
+        entry.whatsapp_error = str(exc) if _channel_feature_on("whatsapp") else WHATSAPP_OFF
         entry.whatsapp_ambiguous = False
     except Exception as exc:  # noqa: BLE001 - a send failure must never break the submission
         logger.exception("WhatsApp send failed for invoice submission %s", entry.id)
@@ -297,7 +318,8 @@ def _attempt_toast_email(db: Session, entry: InvoiceSubmission, uploads_dir: pat
         entry.toast_email_error = None
     except (UnsupportedFileType, EmailNotConfigured) as exc:
         entry.toast_email_sent = False
-        entry.toast_email_error = str(exc)
+        off = isinstance(exc, EmailNotConfigured) and not _channel_feature_on("ap_inbox")
+        entry.toast_email_error = AP_EMAIL_OFF if off else str(exc)
     except Exception as exc:  # noqa: BLE001 - a send failure must never break the submission
         logger.exception("Toast email send failed for invoice submission %s", entry.id)
         entry.toast_email_sent = False
@@ -611,7 +633,10 @@ def _processing_status(entry: InvoiceSubmission) -> str:
     if wa_demo and (skips_toast(entry.submission_type) or is_demo_not_sent(entry.toast_email_sent, entry.toast_email_error)):
         # An App Review demo submission: saved, deliberately not sent - done.
         return "completed"
-    if skips_toast(entry.submission_type):
+    wa_off = is_channel_off(entry.whatsapp_sent, entry.whatsapp_error)
+    if skips_toast(entry.submission_type) or is_channel_off(entry.toast_email_sent, entry.toast_email_error):
+        if wa_off:
+            return "completed"  # nothing this store sends: saved is done
         whatsapp_done = entry.whatsapp_sent or entry.whatsapp_error is not None
         if not whatsapp_done:
             return "pending"
@@ -619,6 +644,14 @@ def _processing_status(entry: InvoiceSubmission) -> str:
         if whatsapp_failed:
             return "failed"
         return "completed" if entry.whatsapp_sent else "in_progress"
+
+    if wa_off:
+        # The AP inbox email alone (this store has no WhatsApp).
+        if not (entry.toast_email_sent or entry.toast_email_error is not None):
+            return "pending"
+        if not entry.toast_email_sent:
+            return "failed"
+        return "completed" if entry.toast_closed_at is not None else "in_progress"
 
     whatsapp_done = entry.whatsapp_sent or entry.whatsapp_error is not None
     toast_done = entry.toast_email_sent or entry.toast_email_error is not None
@@ -648,9 +681,10 @@ def can_mark_toast_closed(entry: InvoiceSubmission) -> bool:
     type anyway, so this already falls out naturally, spelled out here for
     clarity).
     """
-    if skips_toast(entry.submission_type):
+    if skips_toast(entry.submission_type) or is_channel_off(entry.toast_email_sent, entry.toast_email_error):
         return False
-    return entry.whatsapp_sent and entry.toast_email_sent and entry.toast_closed_at is None
+    whatsapp_ok = entry.whatsapp_sent or is_channel_off(entry.whatsapp_sent, entry.whatsapp_error)
+    return bool(whatsapp_ok and entry.toast_email_sent and entry.toast_closed_at is None)
 
 
 def mark_toast_closed(db: Session, entry: InvoiceSubmission, user: User) -> InvoiceSubmission:
@@ -659,7 +693,8 @@ def mark_toast_closed(db: Session, entry: InvoiceSubmission, user: User) -> Invo
     event this app cannot detect on its own. Denormalizes the confirming
     user's name, same pattern as submitted_by_name/deleted_by_name.
     """
-    if not (entry.whatsapp_sent and entry.toast_email_sent):
+    whatsapp_ok = entry.whatsapp_sent or is_channel_off(entry.whatsapp_sent, entry.whatsapp_error)
+    if not (whatsapp_ok and entry.toast_email_sent):
         raise ToastClosureStateError(
             "Both WhatsApp and Toast email must succeed before this can be marked closed in Toast."
         )
@@ -693,7 +728,7 @@ def submission_out(entry: InvoiceSubmission) -> dict:
         "transfer_direction": entry.transfer_direction,
         "transfer_direction_label": TRANSFER_DIRECTIONS.get(entry.transfer_direction or ""),
         "type_label": type_display_label(entry.submission_type, entry.transfer_direction),
-        "toast_applicable": not skips_toast(entry.submission_type),
+        "toast_applicable": toast_applicable(entry),
         "total_amount": entry.total_amount,
         "notes": entry.notes,
         "submitted_by_name": entry.submitted_by_name,
@@ -722,11 +757,19 @@ def submission_out(entry: InvoiceSubmission) -> dict:
     }
 
 
+def toast_applicable(entry: InvoiceSubmission) -> bool:
+    """False for a type that never emails the AP inbox, and for a store
+    without an AP inbox (the channel was recorded as off)."""
+    return not skips_toast(entry.submission_type) and not is_channel_off(
+        entry.toast_email_sent, entry.toast_email_error
+    )
+
+
 def ap_aliases(entry: InvoiceSubmission) -> dict:
     """The ap_* keys: each equals its toast_* twin in submission_out."""
     closed_at = entry.toast_closed_at
     return {
-        "ap_applicable": not skips_toast(entry.submission_type),
+        "ap_applicable": toast_applicable(entry),
         "ap_email_sent": entry.toast_email_sent,
         "ap_email_error": entry.toast_email_error,
         "ap_email_status_overridden_by": entry.toast_email_status_overridden_by,

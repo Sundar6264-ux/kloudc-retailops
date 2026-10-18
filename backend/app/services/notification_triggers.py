@@ -30,7 +30,13 @@ from app.services.checklist_schemas import checklist_title, closing_checklist_ty
 from app.services.critical_dismissals import annotate_vendor_groups
 from app.services.inventory_api import inventory_upload_due_alerts
 from app.services.inventory_api_readiness import inventory_api_ready_alerts
-from app.services.invoice_submission import TRANSFER_TYPE, is_demo_not_sent, skips_toast, type_display_label
+from app.services.invoice_submission import (
+    TRANSFER_TYPE,
+    is_channel_off,
+    is_demo_not_sent,
+    skips_toast,
+    type_display_label,
+)
 from app.services.notifications import (
     Alert,
     dispatch_alert,
@@ -190,6 +196,7 @@ def _failed_channels(entry: InvoiceSubmission) -> List[str]:
         and entry.whatsapp_error is not None
         and not entry.whatsapp_ambiguous
         and not is_demo_not_sent(entry.whatsapp_sent, entry.whatsapp_error)
+        and not is_channel_off(entry.whatsapp_sent, entry.whatsapp_error)
     ):
         channels.append("whatsapp")
     if (
@@ -197,6 +204,7 @@ def _failed_channels(entry: InvoiceSubmission) -> List[str]:
         and not entry.toast_email_sent
         and entry.toast_email_error is not None
         and not is_demo_not_sent(entry.toast_email_sent, entry.toast_email_error)
+        and not is_channel_off(entry.toast_email_sent, entry.toast_email_error)
     ):
         channels.append("toast_email")
     return channels
