@@ -968,6 +968,7 @@ def _row(db, ctype, when):
     db.commit()
 
 
+@pytest.mark.suite_pack  # two WhatsApp roles (store, kitchen)
 def test_closing_alert_is_still_one_notification_driven_by_settings(db, admin_client):
     alerts = closing_checklist_alerts(db, NIGHT)
     assert len(alerts) == 1 and alerts[0].body.count(",") == 1  # the three built-ins
@@ -1004,6 +1005,7 @@ def managers_team(db, monkeypatch):
     return team
 
 
+@pytest.mark.suite_pack  # two WhatsApp roles (store, kitchen)
 def test_nightly_tasks_and_their_whatsapp_group_follow_settings(db, admin_client, managers_team, monkeypatch):
     from app.services import whapi_client
 
