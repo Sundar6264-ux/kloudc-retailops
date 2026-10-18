@@ -624,7 +624,8 @@ change needs a server restart (`reload_pack` exists for tests).
 | `identity show` | print the stamp and the uploads marker |
 
 All commands use `DATABASE_URL` / `UPLOADS_ROOT` from settings. Docker:
-`docker compose run --rm api python -m app.store init --code XYZ --pack /packs/xyz.json`.
+`docker compose run --rm --no-deps -v "$PWD/xyz.json:/packs/xyz.json:ro" store python -m app.store init --code XYZ --pack /packs/xyz.json`
+(the compose service is `store`; corrected by the identity verifier).
 
 ### 3.5 `store-init` (one transaction, idempotent for the same code + pack)
 

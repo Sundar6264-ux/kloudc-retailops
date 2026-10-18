@@ -30,11 +30,18 @@ separate `storeops-app` repository.
 
 ## Run a store with Docker (recommended)
 
-    cp .env.example .env          # fill in the store's settings; never commit it
+    cp .env.example .env          # fill in the store's settings (STORE_CODE first); never commit it
+    # Once, before the first start: migrate, load the store pack, stamp the
+    # store identity. The server refuses to start without that stamp.
+    docker compose run --rm --no-deps store sh -c \
+      "alembic upgrade head && python -m app.store init --code <STORE_CODE> --pack packs/generic.json"
     docker compose up -d          # builds the image, migrates the database, starts the store
     curl -s http://127.0.0.1:8000/api/health
     docker compose exec store python scripts/seed_admin.py   # first admin login (asks for a password)
 
+- A store's own pack file (not in the image): add
+  `-v "$PWD/<code>.json:/packs/<code>.json:ro"` to the `run` line and pass
+  `--pack /packs/<code>.json`.
 - The store's data lives in the `store-data` volume (`/data` in the
   container): `storeops.db`, uploads and flyers.
 - Off-site backup: `docker compose --profile backup up -d litestream` once

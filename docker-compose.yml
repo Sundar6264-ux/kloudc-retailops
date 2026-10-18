@@ -1,6 +1,9 @@
 # One StoreOps store: the store container plus an optional Litestream sidecar.
 #
 #   cp .env.example .env                       # the store's settings (never in git)
+#   docker compose run --rm --no-deps store sh -c \
+#     "alembic upgrade head && python -m app.store init --code <STORE_CODE> --pack packs/generic.json"
+#                                              # once: pack + identity stamp (no start without it)
 #   docker compose up -d                       # build, migrate, start
 #   docker compose --profile backup up -d      # also start Litestream (after the R2 setup)
 #
