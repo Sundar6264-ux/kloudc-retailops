@@ -42,6 +42,7 @@ from app.routers import inventory_api as inventory_api_router  # Inventory from 
 from app.routers import insights as insights_router  # Insights from Toast Analytics (docs/INSIGHTS_CONTRACT.md)
 from app.routers import issue_leads as issue_leads_router  # Fix Issues category & vendor leads (W4)
 from app.routers import order_actions as order_actions_router  # Today-tab order actions (BATCH_OCT14 W1)
+from app.routers import legal as legal_router  # GET /api/app/legal: legal links + AI notice (M2 MT13)
 from app.services import flyer_sender
 from app.team import router_core as team_router_core
 from app.team import router_chat as team_router_chat
@@ -89,6 +90,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(legal_router.router)
 app.include_router(jobs.router)
 app.include_router(inventory.router)
 app.include_router(inventory_api_router.router)
