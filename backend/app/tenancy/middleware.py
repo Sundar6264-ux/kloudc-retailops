@@ -136,6 +136,8 @@ class TenantMiddleware:
                     {"error": "store_mismatch", "message": "This request names a different store than your login."},
                 )
                 return
+            if ref is not None and ref.status == "archived":
+                ref = None  # an archived store answers like an unknown one (401)
             if ref is None:
                 with no_store():
                     await self.app(scope, receive, send)

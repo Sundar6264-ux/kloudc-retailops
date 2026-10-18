@@ -171,6 +171,17 @@ def health():
 # FastAPI's normal JSON error behavior unchanged.
 @app.exception_handler(HTTPException)
 async def _public_invoice_auth_redirect(request: Request, exc: HTTPException):
+    code = getattr(exc, "error_code", None)
+    if code and not request.url.path.startswith("/public/invoices/"):
+        # Store access refused (app/db.py, PLATFORM_CONTRACT 4.3): the old
+        # "detail" plus the new {"error", "message"}.
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail, "error": code, "message": exc.detail},
+            headers=getattr(exc, "headers", None),
+        )
     if request.url.path.startswith("/public/invoices/") and exc.status_code in (401, 403):
         next_param = quote(request.url.path, safe="")
         login_url = f"{effective_public_base_url()}/#/login?next={next_param}"

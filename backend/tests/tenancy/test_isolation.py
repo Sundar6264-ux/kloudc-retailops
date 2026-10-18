@@ -57,7 +57,7 @@ def test_header_or_query_naming_another_store_is_409(multi):
 def test_no_store_means_401_and_platform_scope_403(multi):
     assert TestClient(app).get("/api/auth/me").status_code == 401
     r = _client("PLATFORM.whatever").get("/api/auth/me")
-    assert r.status_code in (401, 403)
+    assert r.status_code == 403 and r.json()["error"] == "platform_scope"
     # Logged-out routes without a store still work (health, static).
     assert TestClient(app).get("/api/health").json() == {"status": "ok"}
 
@@ -68,9 +68,12 @@ def test_inactive_store_tokens_are_refused_with_403(multi):
     a = seed_users("ALPHA", "alice")
     update_test_store("ALPHA", status="suspended")
     r = _client(a["alice"][1]).get("/api/auth/me")
-    assert r.status_code == 403 and "suspended" in r.json()["detail"]
+    assert r.status_code == 403 and r.json()["error"] == "store_suspended" and "suspended" in r.json()["detail"]
     update_test_store("ALPHA", status="provisioning")
-    assert _client(a["alice"][1]).get("/api/auth/me").status_code == 403
+    r = _client(a["alice"][1]).get("/api/auth/me")
+    assert r.status_code == 403 and r.json()["error"] == "store_not_ready"
+    update_test_store("ALPHA", status="archived")
+    assert _client(a["alice"][1]).get("/api/auth/me").status_code == 401
 
 
 def test_public_store_route_takes_store_query(multi):
@@ -169,7 +172,7 @@ def test_identity_mismatch_is_refused(multi):
             tenant_engine("ALPHA")
         assert ("store.identity_mismatch", "ALPHA") in seen
         r = _client(a["alice"][1]).get("/api/auth/me")
-        assert r.status_code == 503
+        assert r.status_code == 503 and r.json()["error"] == "store_unavailable"
     finally:
         events.remove_listener(listener)
 

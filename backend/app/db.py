@@ -95,6 +95,16 @@ class Base(DeclarativeBase):
     pass
 
 
+def _store_access_error(status: int, error: str, message: str):
+    """An HTTPException whose answer also carries {"error", "message"}
+    (app/main.py renders it; "detail" stays the message for old clients)."""
+    from fastapi import HTTPException
+
+    exc = HTTPException(status_code=status, detail=message)
+    exc.error_code = error  # type: ignore[attr-defined]
+    return exc
+
+
 def _store_session_or_http_error() -> Session:
     """SessionLocal() for a request; multi mode without a store -> 401 (or
     403 for an inactive store / a master's session), a store whose database
@@ -106,18 +116,18 @@ def _store_session_or_http_error() -> Session:
     if current_store() is None:
         block = current_store_block()
         if block == "suspended":
-            raise HTTPException(status_code=403, detail="This store is suspended. Contact support.")
+            raise _store_access_error(403, "store_suspended", "This store is suspended. Contact support.")
         if block:
-            raise HTTPException(status_code=403, detail="This store is not ready yet.")
+            raise _store_access_error(403, "store_not_ready", "This store is not ready yet.")
         if current_scope() == "platform":
-            raise HTTPException(status_code=403, detail="Sign in with a store login to use this page.")
+            raise _store_access_error(403, "platform_scope", "Sign in with a store login to use this page.")
         raise HTTPException(status_code=401, detail="Not logged in")
     try:
         return SessionLocal()
     except StoreIdentityError:
-        raise HTTPException(status_code=503, detail="This store's data is not available (identity check failed).")
+        raise _store_access_error(503, "store_unavailable", "This store's data is not available right now.")
     except StoreUnavailable:
-        raise HTTPException(status_code=503, detail="This store's data is not available right now. Try again soon.")
+        raise _store_access_error(503, "store_unavailable", "This store's data is not available right now. Try again soon.")
 
 
 def get_db() -> Generator[Session, None, None]:
