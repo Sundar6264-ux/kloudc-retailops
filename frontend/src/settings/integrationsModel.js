@@ -102,11 +102,30 @@ export function integrationView(spec, row) {
   };
 }
 
-// GET /api/settings/integrations -> a view per known kind, in page order
-// (a kind the server leaves out shows as "Not set up").
-export function integrationViews(rows) {
-  const byKind = Object.fromEntries((Array.isArray(rows) ? rows : []).filter((r) => r && r.kind).map((r) => [r.kind, r]));
-  return INTEGRATIONS.map((spec) => integrationView(spec, byKind[spec.kind]));
+const POS_KINDS = { toast: "toast", clover: "clover" };
+
+// The integrations this store can use: only its own POS's connector (a
+// Clover store never sees Toast, and the other way round; a CSV-upload store
+// has none). An unknown POS (older server) shows both. One already saved
+// always shows, so it can still be removed.
+export function kindsForStore(posName, rows = []) {
+  const pos = String(posName || "").trim().toLowerCase();
+  const saved = new Set((Array.isArray(rows) ? rows : []).filter((r) => r && r.configured).map((r) => r.kind));
+  return INTEGRATIONS.filter((spec) => {
+    if (!(spec.kind in POS_KINDS)) return true;
+    if (saved.has(spec.kind)) return true;
+    if (!pos) return true;
+    return pos === spec.kind;
+  }).map((spec) => spec.kind);
+}
+
+// GET /api/settings/integrations -> a view per kind this store can use, in
+// page order (a kind the server leaves out shows as "Not set up").
+export function integrationViews(rows, posName = null) {
+  const list = Array.isArray(rows) ? rows : [];
+  const byKind = Object.fromEntries(list.filter((r) => r && r.kind).map((r) => [r.kind, r]));
+  const kinds = new Set(kindsForStore(posName, list));
+  return INTEGRATIONS.filter((spec) => kinds.has(spec.kind)).map((spec) => integrationView(spec, byKind[spec.kind]));
 }
 
 // The form's starting values: the saved public fields; secret boxes empty.

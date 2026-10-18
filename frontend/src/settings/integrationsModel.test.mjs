@@ -12,6 +12,7 @@ import {
   integrationErrorMessage,
   integrationView,
   integrationViews,
+  kindsForStore,
 } from "./integrationsModel.js";
 
 const TOAST = INTEGRATIONS_BY_KIND.toast;
@@ -142,4 +143,20 @@ test("error messages", () => {
   assert.match(integrationErrorMessage(err(429, {})), /Wait a minute/);
   assert.match(integrationErrorMessage(err(403, { detail: "The demo account can look around" })), /demo/);
   assert.match(integrationErrorMessage(new TypeError("fetch")), /Can't reach/);
+});
+
+test("only the store's own POS connector (a Clover store never sees Toast)", () => {
+  assert.deepEqual(kindsForStore("Toast"), ["toast", "whatsapp", "smtp", "ai"]);
+  assert.deepEqual(kindsForStore("Clover"), ["clover", "whatsapp", "smtp", "ai"]);
+  assert.deepEqual(kindsForStore("CSV upload"), ["whatsapp", "smtp", "ai"]);
+  assert.deepEqual(kindsForStore(null), ["toast", "clover", "whatsapp", "smtp", "ai"], "older server: both");
+  assert.deepEqual(
+    kindsForStore("Clover", [{ kind: "toast", configured: true }]),
+    ["toast", "clover", "whatsapp", "smtp", "ai"],
+    "a saved one stays visible so it can be removed",
+  );
+  assert.deepEqual(
+    integrationViews([], "Clover").map((v) => v.kind),
+    ["clover", "whatsapp", "smtp", "ai"],
+  );
 });

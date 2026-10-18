@@ -66,6 +66,9 @@ function addStore(code, name, status, extra = {}) {
 addStore("DEMO_GROCERY", "Demo Grocery", "active");
 addStore("PAUSED_MART", "Paused Mart", "suspended", { status_reason: "Paused by the platform.", maintenance_message: "Paused for maintenance." });
 addStore("MOVED_MART", "Moved Mart", "active", { hosting: "dedicated", api_base_url: "https://moved.storeops.invalid" });
+addStore("CLOVER_MART", "Clover Mart", "active", { pos_provider: "clover" });
+
+const POS_NAMES = { toast: "Toast", clover: "Clover", csv: "CSV upload" };
 
 const masters = new Map([["owner", { username: "owner", password: MASTER_PW, display_name: "Platform Owner", role: "master" }]]);
 const sessions = new Map(); // sha(token) -> {scope, code?, username}
@@ -129,7 +132,7 @@ function branding(store) {
     primary_color: "#1D4ED8",
     secondary_color: "#334155",
     timezone: store.timezone,
-    pos_name: "Toast",
+    pos_name: POS_NAMES[store.pos_provider],
     capabilities: ["sales", "catalog", "stock_levels", "open_orders"],
     store_features: ["ai"],
     logo_url: null,
@@ -145,7 +148,7 @@ function me(store, user) {
     allowed_features: user.is_admin ? FEATURES : ["overview", "help"],
     hide_sales: false,
     store_code: store.code,
-    pos_name: "Toast",
+    pos_name: POS_NAMES[store.pos_provider],
     capabilities: ["sales", "catalog", "stock_levels", "open_orders"],
     store_features: ["ai"],
     scope: "store",

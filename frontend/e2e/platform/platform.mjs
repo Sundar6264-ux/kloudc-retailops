@@ -173,6 +173,15 @@ async function run(browser, width) {
     check(!seen.some((t) => t.includes(SECRET)), T("no integrations response carries the secret"));
     await noSideways(page, T("integrations"));
     await shot(page, `integrations-toast-${width}`);
+    check(!(await page.isVisible('[data-testid="int-tile-clover"]')), T("a Toast store has no Clover tile"));
+
+    // A Clover store: its Connect placeholder, and never a Toast tile.
+    await logout(page, width);
+    await login(page, "CLOVER_MART", "owner", STORE_PW);
+    await page.goto(`${BASE}/#/settings/integrations`);
+    await page.waitForSelector('[data-testid="int-tile-clover"]');
+    check(!(await page.isVisible('[data-testid="int-tile-toast"]')), T("a Clover store has no Toast tile"));
+    check(!/Toast/.test(await page.innerText("main")), T("a Clover store's Integrations never says Toast"));
     await page.click('[data-testid="int-tile-clover"]');
     await page.click('[data-testid="clover-connect"]');
     await settle(page);
@@ -180,6 +189,8 @@ async function run(browser, width) {
     await shot(page, `integrations-clover-${width}`);
 
     // Remembered Store ID after sign-out
+    await logout(page, width);
+    await login(page, "DEMO_GROCERY", "owner", STORE_PW);
     await logout(page, width);
     check((await page.inputValue('[data-testid="login-store-id"]')) === "DEMO_GROCERY", T("Store ID prefilled after sign-out"));
     // Lockout after 5 failures for this user

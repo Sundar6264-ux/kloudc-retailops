@@ -12,6 +12,7 @@ import {
   integrationErrorMessage,
   integrationViews,
 } from "../settings/integrationsModel.js";
+import { useStore } from "../store/StoreContext.jsx";
 import "../platform/platform.css";
 
 function readOpen() {
@@ -51,7 +52,8 @@ export default function IntegrationsPage() {
     load();
   }, [load]);
 
-  const views = useMemo(() => integrationViews(rows), [rows]);
+  const { posName } = useStore();
+  const views = useMemo(() => integrationViews(rows, posName), [rows, posName]);
   const current = views.find((v) => v.kind === open) || views[0];
 
   function choose(kind) {
