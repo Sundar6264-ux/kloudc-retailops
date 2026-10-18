@@ -3,7 +3,7 @@ import re
 import zoneinfo
 from functools import lru_cache
 from typing import Optional
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,10 +18,15 @@ REFUSED_DOMAIN = "spicetown.shop"
 def refused_host(value: str) -> bool:
     """True when `value` (a URL, a host, or a cookie domain like ".x.y") is
     REFUSED_DOMAIN or ends with "." + REFUSED_DOMAIN."""
-    raw = (value or "").strip().lower()
+    raw = unquote((value or "").strip().lower()).replace("\\", "/")
     if not raw:
         return False
-    host = urlsplit(raw).hostname if "://" in raw else raw.split("/", 1)[0].split(":", 1)[0]
+    if raw.startswith("//"):  # scheme-relative: browsers use the page's scheme
+        raw = "https:" + raw
+    if "://" in raw:
+        host = urlsplit(raw).hostname
+    else:
+        host = raw.split("/", 1)[0].rsplit("@", 1)[-1].split(":", 1)[0]
     host = (host or "").strip(".")
     return host == REFUSED_DOMAIN or host.endswith("." + REFUSED_DOMAIN)
 
