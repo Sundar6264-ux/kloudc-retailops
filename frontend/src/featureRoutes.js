@@ -75,6 +75,9 @@ export const FEATURE_ROUTES = [
   { path: "/checklists/admin", label: "Checklist builder", feature: null, key: "setup_checklist_builder", admin: true },
   { path: "/issue-leads", label: "Category & vendor leads", feature: null, key: "setup_issue_leads", admin: true },
   { path: "/inventory-api", label: "Inventory from {pos}", feature: null, key: "setup_inventory_api", admin: true },
+  // Settings -> Integrations (docs/PLATFORM_CONTRACT.md 13.5): the store's
+  // POS, WhatsApp, email and AI connections.
+  { path: "/settings/integrations", label: "Integrations", feature: null, key: "setup_integrations", admin: true },
 ];
 
 // The Insights pages that only repeat the POS's own reports (owner, Oct 14):
@@ -162,19 +165,20 @@ export const NAV_GROUPS = [
       "vendor_contacts",
       "setup_issue_leads",
       "setup_inventory_api",
+      "setup_integrations",
     ],
   },
 ];
 
 // Below the groups, for everyone: the label printer (another app, only when
 // the store has one: its address is branding `labels_url`), Help (its
-// Glossary tab is /glossary, for anyone without Help), Notifications and
-// Change password. Log out is in the sidebar footer.
+// Glossary tab is /glossary, for anyone without Help) and Change password.
+// Log out is in the sidebar footer. (Notifications left the website: alerts
+// are chosen in the app - docs/PLATFORM_CONTRACT.md P8.)
 export const FOOTER_LINKS = [
   { key: "labels", label: "Label Scanner ↗", hrefFrom: "labelsUrl", external: true },
   { key: "help", label: "Help", path: "/help", feature: "help", activePaths: ["/help", "/glossary"] },
   { key: "glossary", label: "Glossary", path: "/glossary", unlessFeature: "help" },
-  { key: "notifications", label: "Notifications", path: "/notifications" },
   { key: "change_password", label: "Change password", path: "/change-password" },
 ];
 

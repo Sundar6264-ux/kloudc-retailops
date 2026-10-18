@@ -4,6 +4,7 @@ import ChecklistForm from "../components/checklists/ChecklistForm.jsx";
 import { ChecklistUploadContext } from "../components/checklists/uploadContext.js";
 import StoreLogo from "../components/StoreLogo.jsx";
 import { useBranding } from "../store/StoreContext.jsx";
+import { storeFromPath } from "../login/loginModel.js";
 
 // The logged-out checklist page: /c/{slug}-{code}, e.g. /c/kitchen-4821
 // (docs/PUBLIC_CHECKLIST_LINK_CONTRACT.md). main.jsx renders ONLY this for /c/
@@ -97,6 +98,7 @@ function nameProblem(mode, names, value) {
 
 export default function PublicChecklistPage() {
   const token = useMemo(() => tokenFromPath(window.location.pathname), []);
+  const store = useMemo(() => storeFromPath(window.location.pathname), []);
   const [state, setState] = useState(token ? "loading" : "inactive");
   const [form, setForm] = useState(null);
   const [loadError, setLoadError] = useState(null);
@@ -109,7 +111,7 @@ export default function PublicChecklistPage() {
 
   function load() {
     setLoadError(null);
-    return getPublicChecklist(token)
+    return getPublicChecklist(token, store)
       .then((data) => {
         setForm(data);
         setState("ready");
@@ -134,7 +136,7 @@ export default function PublicChecklistPage() {
   const upload = useMemo(
     () => async (file) => {
       try {
-        const res = await uploadPublicChecklistPhoto(token, file);
+        const res = await uploadPublicChecklistPhoto(token, file, store);
         mediaKeys.current[String(res.id)] = res.key;
         // Shown from the phone's own copy - uploaded photos can't be viewed through the link.
         return { id: res.id, url: URL.createObjectURL(file), width: res.width, height: res.height };
@@ -183,12 +185,16 @@ export default function PublicChecklistPage() {
     const keys = {};
     for (const [id, key] of Object.entries(mediaKeys.current)) keys[id] = key;
     try {
-      return await submitPublicChecklist(token, {
-        name: name.trim().replace(/\s+/g, " "),
-        answers,
-        definition_version: schema.version,
-        media_keys: keys,
-      });
+      return await submitPublicChecklist(
+        token,
+        {
+          name: name.trim().replace(/\s+/g, " "),
+          answers,
+          definition_version: schema.version,
+          media_keys: keys,
+        },
+        store,
+      );
     } catch (err) {
       if (err.status === 404) {
         setState("inactive");

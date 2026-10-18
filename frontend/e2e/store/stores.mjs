@@ -194,7 +194,8 @@ async function runStore(browser, store) {
       }
 
       // ---- sweep every page in this role's menu ----
-      const sweep = [...internal, "#/glossary", "#/help", "#/notifications"];
+      // (#/notifications is gone from the website: it redirects to the dashboard.)
+      const sweep = [...internal, "#/glossary", "#/help"];
       for (const hash of sweep) {
         apiText = [];
         await page.goto(`${base}/${hash}`);

@@ -44,7 +44,9 @@ export function applyBranding(store) {
   if (store.loaded) setFavicon(store.iconUrl);
 }
 
-export function StoreProvider({ children }) {
+// `storeCode`: the store to brand for when the page itself says (a shared
+// server's public checklist link); otherwise the server's own / the product's.
+export function StoreProvider({ children, storeCode = null }) {
   const [branding, setBranding] = useState(null);
 
   useEffect(() => {
@@ -57,12 +59,40 @@ export function StoreProvider({ children }) {
       setBranding(b);
     };
     const timer = setTimeout(() => finish(null), BRANDING_TIMEOUT_MS);
-    getBranding()
+    getBranding(storeCode)
       .then(finish)
       .catch(() => finish(null))
       .finally(() => clearTimeout(timer));
     return () => clearTimeout(timer);
   }, []);
+
+  // A shared server answers branding per store (docs/PLATFORM_CONTRACT.md
+  // 4.4): after sign-in AuthProvider says which store this is, and the
+  // page takes on that store's name, logo and colours (the product's again
+  // after sign-out). Nothing to do when it's already that store's.
+  useEffect(() => {
+    let current = 0;
+    function onStore(e) {
+      const code = e?.detail?.code || null;
+      if (branding && (branding.code || null) === code) return;
+      const mine = ++current;
+      getBranding(code)
+        .then((raw) => {
+          if (mine !== current) return;
+          const b = normalizeBranding(raw);
+          applyBranding(b);
+          setBranding(b);
+        })
+        .catch(() => {
+          // keep what's showing
+        });
+    }
+    window.addEventListener("store:changed", onStore);
+    return () => {
+      current++;
+      window.removeEventListener("store:changed", onStore);
+    };
+  }, [branding]);
 
   if (!branding) {
     return (

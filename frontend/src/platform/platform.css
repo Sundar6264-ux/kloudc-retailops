@@ -1,0 +1,517 @@
+/* Platform pages (docs/PLATFORM_CONTRACT.md 14): the one login page,
+   sign-up + pending, the master console and Settings -> Integrations.
+   Every custom button's :hover carries :not(:disabled) (skill gotcha #10). */
+
+/* --- Login / sign-up (logged out) --- */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: 340px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-sizing: border-box;
+}
+
+.login-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.3rem;
+  min-width: 0;
+}
+
+.login-title {
+  font-size: 1.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.login-links,
+.login-foot {
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.login-foot {
+  font-size: 0.72rem;
+}
+
+.signup-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 1.5rem 1rem 3rem;
+  box-sizing: border-box;
+}
+
+.signup-card {
+  max-width: 640px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.signup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+}
+
+.signup-grid .full {
+  grid-column: 1 / -1;
+}
+
+.signup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  min-width: 0;
+}
+
+.signup-field input,
+.signup-field select,
+.signup-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field-error {
+  color: var(--failed-text);
+  font-size: 0.78rem;
+}
+
+.field-ok {
+  color: var(--success-text);
+  font-size: 0.78rem;
+}
+
+.field-hint {
+  font-size: 0.76rem;
+}
+
+/* Hidden from people (and screen readers), still in the form: bots fill it. */
+.signup-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.signup-check {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-size: 0.85rem;
+}
+
+.signup-check input {
+  margin-top: 0.15rem;
+}
+
+.signup-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.pending-state {
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin: 0.5rem 0;
+}
+
+@media (max-width: 600px) {
+  .signup-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Status chips --- */
+
+.pf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--subtle-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.pf-chip.tone-good {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border-color: transparent;
+}
+
+.pf-chip.tone-bad {
+  background: var(--failed-bg);
+  color: var(--failed-text);
+  border-color: transparent;
+}
+
+.pf-chip.tone-warn {
+  background: var(--running-bg);
+  color: var(--running-text);
+  border-color: transparent;
+}
+
+.pf-chip.tone-info {
+  background: var(--info-bg);
+  color: var(--info-text);
+  border-color: transparent;
+}
+
+/* --- Slim frozen header (search + filter + info), tiles as tabs --- */
+
+.pf-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding: 0.5rem 0 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pf-head-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.pf-head-row h1 {
+  font-size: 1.2rem;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pf-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.pf-head-row select {
+  max-width: 11rem;
+}
+
+button.pf-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: 0 0 auto;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  font-weight: 700;
+}
+
+button.pf-icon:hover:not(:disabled) {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.pf-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+button.pf-tab {
+  width: 100%;
+  padding: 0.5rem 0.4rem;
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+button.pf-tab:hover:not(:disabled) {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+button.pf-tab.active,
+button.pf-tab.active:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pf-count {
+  font-size: 0.72rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 0.4rem;
+}
+
+.pf-info {
+  font-size: 0.82rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+}
+
+.pf-info p {
+  margin: 0 0 0.35rem;
+}
+
+.pf-info p:last-child {
+  margin: 0;
+}
+
+/* --- Rows --- */
+
+.pf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pf-row {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.pf-row-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.pf-row-title {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.pf-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.pf-row-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.pf-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.pf-actions button {
+  width: auto;
+  padding: 0.35rem 0.7rem;
+}
+
+.pf-inline-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+  align-items: end;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--border);
+}
+
+.pf-inline-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  min-width: 0;
+}
+
+.pf-inline-form input,
+.pf-inline-form select,
+.pf-inline-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pf-empty {
+  padding: 1.2rem;
+  text-align: center;
+}
+
+.pf-banner {
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  background: var(--running-bg);
+  color: var(--running-text);
+}
+
+.pf-banner.ok {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.pf-banner.bad {
+  background: var(--failed-bg);
+  color: var(--failed-text);
+}
+
+/* --- Integrations --- */
+
+.int-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+button.int-tile {
+  width: 100%;
+  text-align: left;
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-start;
+}
+
+button.int-tile:hover:not(:disabled) {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+button.int-tile.active,
+button.int-tile.active:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.int-tile-name {
+  font-weight: 650;
+}
+
+.int-tile-saved {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.int-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem 1rem;
+}
+
+.int-form .full {
+  grid-column: 1 / -1;
+}
+
+.int-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  min-width: 0;
+}
+
+.int-field input,
+.int-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.int-field textarea {
+  min-height: 4.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+.int-field-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.int-field-check input {
+  width: auto;
+}
+
+.int-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+  align-items: center;
+}
+
+.int-actions button {
+  width: auto;
+}
+
+.int-meta {
+  font-size: 0.78rem;
+  margin-top: 0.6rem;
+}
+
+@media (max-width: 600px) {
+  .int-form {
+    grid-template-columns: 1fr;
+  }
+  .pf-head-row select {
+    max-width: 8rem;
+  }
+  button.pf-tab {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.2rem;
+  }
+}

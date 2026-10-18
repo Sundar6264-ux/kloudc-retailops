@@ -95,6 +95,7 @@ test("admin menu: 3 top links, Team, Ordering, Stock, Sales & Insights, Setup", 
         "Vendor contacts",
         "Category & vendor leads",
         "Inventory from Toast",
+        "Integrations",
       ],
     },
   ]);
@@ -141,7 +142,7 @@ test("flyers-only login: Team holds News + Flyers; nothing admin", () => {
 
 test("Setup pages are declared, admin-only and never a landing page", () => {
   const setup = NAV_GROUPS.find((g) => g.key === "setup");
-  for (const key of ["setup_users", "setup_teams", "setup_checklist_builder", "setup_issue_leads", "setup_inventory_api"]) {
+  for (const key of ["setup_users", "setup_teams", "setup_checklist_builder", "setup_issue_leads", "setup_inventory_api", "setup_integrations"]) {
     assert.ok(setup.features.includes(key), key);
     const r = ROUTES_BY_KEY[key];
     assert.equal(r.feature, null);
@@ -165,14 +166,14 @@ test("every menu key points at a route, and every non-retired page is in the men
   assert.deepEqual(menuless.sort(), ["/purchase-order", "/transfer-review"]);
 });
 
-test("footer: Label Scanner, Help (or Glossary without Help), Notifications, Change password", () => {
+test("footer: Label Scanner, Help (or Glossary without Help), Change password - no Notifications", () => {
   assert.deepEqual(
     footerLinks(ctxFor(ADMIN)).map((l) => l.label),
-    ["Label Scanner ↗", "Help", "Notifications", "Change password"],
+    ["Label Scanner ↗", "Help", "Change password"],
   );
   assert.deepEqual(
     footerLinks(ctxFor(FLYERS_ONLY)).map((l) => l.label),
-    ["Label Scanner ↗", "Glossary", "Notifications", "Change password"],
+    ["Label Scanner ↗", "Glossary", "Change password"],
   );
   const help = footerLinks(ctxFor(ADMIN)).find((l) => l.key === "help");
   assert.deepEqual(help.activePaths, ["/help", "/glossary"]);
@@ -210,6 +211,8 @@ test("every old address still has a route (bookmarks)", () => {
     assert.ok(app.includes(`path="${p}"`), `route for ${p}`);
   }
   assert.match(app, /path="\/transfer-review" element={<Navigate to="\/delivery-review" replace \/>}/);
+  // The Notifications page left the website (docs/PLATFORM_CONTRACT.md P8).
+  assert.match(app, /path="\/notifications" element={<Navigate to="\/" replace \/>}/);
   assert.match(app, /path="\/glossary" element={<HelpPage tab="glossary" \/>}/);
 });
 

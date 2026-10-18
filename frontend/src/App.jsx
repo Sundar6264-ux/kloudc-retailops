@@ -35,7 +35,10 @@ import TeamModerationPage from "./pages/TeamModerationPage.jsx";
 import TeamChatPage from "./pages/TeamChatPage.jsx";
 import ChangePasswordPage from "./pages/ChangePasswordPage.jsx";
 import NoAccessPage from "./pages/NoAccessPage.jsx";
-import NotificationSettingsPage from "./pages/NotificationSettingsPage.jsx";
+import SignupPage from "./pages/SignupPage.jsx";
+import SignupPendingPage from "./pages/SignupPendingPage.jsx";
+import PlatformConsolePage from "./pages/PlatformConsolePage.jsx";
+import IntegrationsPage from "./pages/IntegrationsPage.jsx";
 import FlyersPage from "./pages/FlyersPage.jsx";
 import InventoryApiPage from "./pages/InventoryApiPage.jsx";
 import IssueLeadsPage from "./pages/IssueLeadsPage.jsx";
@@ -51,6 +54,7 @@ import LossWatchPage from "./pages/insights/LossWatchPage.jsx";
 import OddChecksPage from "./pages/insights/OddChecksPage.jsx";
 import { menuPerformanceRedirect } from "./components/insights/insightsModel.js";
 import { GlossaryProvider } from "./glossary.jsx";
+import { isPlatformUser } from "./login/loginModel.js";
 
 // Wraps a page element: 403-equivalent redirect (to the user's first
 // accessible tab, or the no-access page) if they haven't been granted this
@@ -151,8 +155,26 @@ function AppShell() {
     );
   }
 
+  // Logged out: the one login page (docs/PLATFORM_CONTRACT.md 14) for
+  // every address, plus the public sign-up pages.
   if (!user) {
-    return <LoginPage />;
+    return (
+      <Routes>
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/signup/pending" element={<SignupPendingPage />} />
+        <Route path="*" element={<LoginPage />} />
+      </Routes>
+    );
+  }
+
+  // A master (Store ID PLATFORM) sees only the platform console.
+  if (isPlatformUser(user)) {
+    return (
+      <Routes>
+        <Route path="/platform" element={<PlatformConsolePage />} />
+        <Route path="*" element={<Navigate to="/platform" replace />} />
+      </Routes>
+    );
   }
 
   return (
@@ -382,8 +404,19 @@ function AppShell() {
               whole page for anyone without Help). Same address as before, so
               every "All definitions" link and bookmark still works. */}
           <Route path="/glossary" element={<HelpPage tab="glossary" />} />
-          {/* Everyone's own push alerts (+ the store defaults for admins). */}
-          <Route path="/notifications" element={<NotificationSettingsPage />} />
+          {/* The Notifications page is gone from the website (alerts are
+              chosen in the app; the API stays for it): an old link or
+              bookmark lands on the dashboard. */}
+          <Route path="/notifications" element={<Navigate to="/" replace />} />
+          {/* Settings -> Integrations: store admins (the API is require_admin). */}
+          <Route
+            path="/settings/integrations"
+            element={user.is_admin ? <IntegrationsPage /> : <Navigate to="/" replace />}
+          />
+          {/* Signed in already: the sign-up and platform pages go home. */}
+          <Route path="/signup/*" element={<Navigate to="/" replace />} />
+          <Route path="/platform" element={<Navigate to="/" replace />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/no-access" element={<NoAccessPage />} />
           <Route path="/not-available" element={<NotAvailablePage />} />

@@ -73,13 +73,18 @@ async function patchJSON(path, body) {
   return res.json();
 }
 
-export async function login(username, password) {
+// One login for everyone (docs/PLATFORM_CONTRACT.md 4.5): Store ID +
+// username + password. Store ID PLATFORM signs a master in (reply
+// {"scope":"platform","user":{...}}). `store_code` is left out when blank:
+// a single-store (M2) server accepts that.
+export async function login(storeCode, username, password) {
+  const body = { username, password, ...(storeCode ? { store_code: storeCode } : {}) };
   if (isNative()) {
-    const result = await postJSON("/api/auth/mobile-login", { username, password });
+    const result = await postJSON("/api/auth/mobile-login", body);
     await setToken(result.token);
     return result;
   }
-  return postJSON("/api/auth/login", { username, password });
+  return postJSON("/api/auth/login", body);
 }
 
 export async function logout() {
@@ -94,8 +99,11 @@ export async function logout() {
 // colours, time zone, POS name and capabilities. No login and no cookies
 // (it is the same for everyone), so a plain fetch, never the 401 bounce.
 // null when the server has no branding endpoint (older server).
-export async function getBranding() {
-  const res = await fetch(`${API_BASE}/api/app/branding`, { credentials: "omit" });
+// `storeCode` asks a shared (multi-store) server for that store's branding
+// (contract 4.4 `?store=CODE`); a single-store server ignores it.
+export async function getBranding(storeCode) {
+  const q = storeCode ? `?store=${encodeURIComponent(storeCode)}` : "";
+  const res = await fetch(`${API_BASE}/api/app/branding${q}`, { credentials: "omit" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`branding ${res.status}`);
   return res.json();
@@ -1266,13 +1274,19 @@ async function publicRequest(path, options = {}) {
   return body;
 }
 
-export function getPublicChecklist(token) {
-  return publicRequest(`/api/public/checklists/${encodeURIComponent(token)}`);
+// `store`: the Store ID from a shared server's link (/c/<CODE>/<token>,
+// docs/PLATFORM_CONTRACT.md 4.4); null for a single-store server's /c/<token>.
+function storeQuery(store) {
+  return store ? `?store=${encodeURIComponent(store)}` : "";
+}
+
+export function getPublicChecklist(token, store = null) {
+  return publicRequest(`/api/public/checklists/${encodeURIComponent(token)}${storeQuery(store)}`);
 }
 
 // body: {name, answers, definition_version, media_keys}
-export function submitPublicChecklist(token, body) {
-  return publicRequest(`/api/public/checklists/${encodeURIComponent(token)}/submit`, {
+export function submitPublicChecklist(token, body, store = null) {
+  return publicRequest(`/api/public/checklists/${encodeURIComponent(token)}/submit${storeQuery(store)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -1280,10 +1294,13 @@ export function submitPublicChecklist(token, body) {
 }
 
 // Returns {id, key, width, height}; send `id` in the answer and {id: key} in media_keys.
-export function uploadPublicChecklistPhoto(token, file) {
+export function uploadPublicChecklistPhoto(token, file, store = null) {
   const body = new FormData();
   body.append("file", file);
-  return publicRequest(`/api/public/checklists/${encodeURIComponent(token)}/media`, { method: "POST", body });
+  return publicRequest(`/api/public/checklists/${encodeURIComponent(token)}/media${storeQuery(store)}`, {
+    method: "POST",
+    body,
+  });
 }
 
 // --- Checklist builder (admin; docs/CHECKLIST_BUILDER_CONTRACT.md) ---------
@@ -1575,57 +1592,6 @@ export async function setHidePreviews(hidePreviews) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ hide_previews: !!hidePreviews }),
   });
-  return res.json();
-}
-
-// Notifications page (docs/BATCH_OCT15_CONTRACT.md "As built - NOTIFICATIONS
-// (server)"): my own switches, Reset to recommended, and (admins) the store
-// defaults per alert and role. Each answers with the whole new state.
-export async function getNotificationPrefs() {
-  const res = await request("/api/notifications/prefs");
-  return res.json();
-}
-
-export async function setNotificationPref(key, enabled) {
-  const res = await request("/api/notifications/prefs", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key, enabled: !!enabled }),
-  });
-  return res.json();
-}
-
-export async function resetNotificationPrefs() {
-  return postJSON("/api/notifications/prefs/reset", {});
-}
-
-export async function getNotificationDefaults() {
-  const res = await request("/api/notifications/defaults");
-  return res.json();
-}
-
-// enabled: true / false, or null for "back to recommended".
-export async function setNotificationDefault(key, role, enabled) {
-  const res = await request("/api/notifications/defaults", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key, role, enabled }),
-  });
-  return res.json();
-}
-
-export async function resetNotificationDefaults() {
-  return postJSON("/api/notifications/defaults/reset", {});
-}
-
-export async function getRecentNotifications(limit = 30) {
-  const res = await request(`/api/notifications/recent?limit=${limit}`);
-  return (await res.json()).items || [];
-}
-
-// Admins: pushes per person over the last `days`.
-export async function getNotificationVolume(days = 14) {
-  const res = await request(`/api/notifications/volume?days=${days}`);
   return res.json();
 }
 
@@ -2065,3 +2031,125 @@ export async function saveIssueLeadSettings(body) {
 export async function runIssueLeadTasksNow() {
   return postJSON("/api/issue-leads/run-now", {});
 }
+
+// --- Platform (docs/PLATFORM_CONTRACT.md 13) ------------------------------
+
+// Public, no session (sign-up, store lookup): a plain fetch that never
+// sends the cookie and never fires the 401 bounce. Errors carry status and
+// the JSON body like request()'s.
+async function platformPublicRequest(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, { ...options, credentials: "omit" });
+  let body = null;
+  try {
+    body = await res.json();
+  } catch {
+    // no JSON body
+  }
+  if (!res.ok) {
+    const message =
+      (body && (body.message || (typeof body.detail === "string" ? body.detail : null))) || res.statusText;
+    const error = new Error(message);
+    error.status = res.status;
+    error.body = body;
+    throw error;
+  }
+  return body;
+}
+
+function putJSON(path, body) {
+  return request(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then((res) => res.json());
+}
+
+// Store lookup (13.4): the M2 directory's JSON for one Store ID; null for an
+// unknown one (404) or a server without the route.
+export async function lookupStore(code) {
+  try {
+    return await platformPublicRequest(`/api/public/stores/${encodeURIComponent(code)}`);
+  } catch (e) {
+    if (e.status === 404 || e.status === 405) return null;
+    throw e;
+  }
+}
+
+// Sign-up (13.3).
+export async function submitSignup(body) {
+  return platformPublicRequest("/api/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function checkStoreCode(code) {
+  return platformPublicRequest(`/api/signup/code-available?code=${encodeURIComponent(code)}`);
+}
+
+export async function getSignupStatus(requestId, token) {
+  const q = new URLSearchParams({ request_id: String(requestId), token: String(token) });
+  return platformPublicRequest(`/api/signup/status?${q.toString()}`);
+}
+
+// Master console (13.1): master session only.
+const P = "/api/platform";
+
+export async function platformGet(path) {
+  const res = await request(`${P}${path}`);
+  return res.json();
+}
+
+export async function platformPost(path, body = {}) {
+  return postJSON(`${P}${path}`, body);
+}
+
+export async function platformPut(path, body = {}) {
+  return putJSON(`${P}${path}`, body);
+}
+
+export const listSignups = (status = "pending") =>
+  platformGet(`/signups${status ? `?status=${encodeURIComponent(status)}` : ""}`);
+export const approveSignup = (id, body) => platformPost(`/signups/${id}/approve`, body);
+export const rejectSignup = (id, note) => platformPost(`/signups/${id}/reject`, { note });
+export const listPlatformStores = (status = "") =>
+  platformGet(`/stores${status ? `?status=${encodeURIComponent(status)}` : ""}`);
+export const getPlatformStore = (code) => platformGet(`/stores/${encodeURIComponent(code)}`);
+export const suspendStore = (code, reason) => platformPost(`/stores/${encodeURIComponent(code)}/suspend`, { reason });
+export const resumeStore = (code) => platformPost(`/stores/${encodeURIComponent(code)}/resume`, {});
+export const retryProvisioning = (code) => platformPost(`/stores/${encodeURIComponent(code)}/retry-provisioning`, {});
+export const archiveStore = (code, confirm) => platformPost(`/stores/${encodeURIComponent(code)}/archive`, { confirm });
+export const getStoreSettings = (code) => platformGet(`/stores/${encodeURIComponent(code)}/settings`);
+export const putStoreSettings = (code, settings) => platformPut(`/stores/${encodeURIComponent(code)}/settings`, settings);
+export const requestHosting = (code, body) => platformPost(`/stores/${encodeURIComponent(code)}/hosting-requests`, body);
+export const listHostingRequests = (status = "") =>
+  platformGet(`/hosting-requests${status ? `?status=${encodeURIComponent(status)}` : ""}`);
+export const hostingAction = (id, action, body = {}) => platformPost(`/hosting-requests/${id}/${action}`, body);
+export const getAudit = (query) => platformGet(`/audit?${query}`);
+export const listPacks = () => platformGet("/packs");
+
+// Settings -> Integrations (13.5): store admin.
+const I = "/api/settings/integrations";
+
+export async function listIntegrations() {
+  const res = await request(I);
+  return res.json();
+}
+
+export const saveIntegration = (kind, body) => putJSON(`${I}/${encodeURIComponent(kind)}`, body);
+
+// `body` = unsaved values ({public, secrets}) to test before saving, or
+// nothing to test what's saved.
+export const testIntegration = (kind, body) => postJSON(`${I}/${encodeURIComponent(kind)}/test`, body || {});
+
+export async function deleteIntegration(kind) {
+  const res = await request(`${I}/${encodeURIComponent(kind)}`, { method: "DELETE" });
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export const connectClover = () => postJSON(`${I}/clover/connect`, {});

@@ -12,6 +12,19 @@
 // server's own default (TOAST_TIMEZONE), so nothing shifts when it is unset.
 export const DEFAULT_STORE_TIME_ZONE = "America/New_York";
 
+// The US zones a new store most often picks, offered first on the sign-up
+// form (signup/signupModel.js timezoneOptions); the rest come from the
+// browser's own list.
+export const COMMON_US_TIME_ZONES = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Phoenix",
+  "America/Los_Angeles",
+  "America/Anchorage",
+  "Pacific/Honolulu",
+];
+
 let storeTimeZone = DEFAULT_STORE_TIME_ZONE;
 const formatterCache = new Map();
 
