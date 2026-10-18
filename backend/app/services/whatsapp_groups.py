@@ -43,8 +43,14 @@ from app.timeutil import utcnow
 
 logger = logging.getLogger(__name__)
 
-# (key, label) - what migration 0044 seeds.
-BUILTIN_GROUPS = (("store", "Spice Town staff group"), ("kitchen", "Street Kitchen staff group"))
+# (key, label): the built-in roles, the store pack's whatsapp_roles
+# (builtin_groups()). BUILTIN_GROUPS still reads them (module __getattr__).
+
+
+def builtin_groups() -> tuple:
+    from app.store import pack as store_pack
+
+    return tuple((r.key, r.label) for r in store_pack.whatsapp_roles())
 MAX_LABEL = 60
 MAX_KEY = 40
 KEY_RE = re.compile(r"^[a-z0-9_]{1,40}$")
@@ -64,20 +70,20 @@ class GroupError(Exception):
 
 
 def _env_chat_id(key: str) -> str:
-    settings = get_settings()
-    return {
-        "store": settings.whapi_spice_town_checklist_group_id,
-        "kitchen": settings.whapi_street_kitchen_checklist_group_id,
-    }.get(key, "") or ""
+    """A role's chat id from the settings (WHATSAPP_GROUP_CHAT_IDS, or the two
+    legacy WHAPI_*_CHECKLIST_GROUP_ID settings for "store" / "kitchen")."""
+    from app.store.settings_view import whatsapp_role_chat_ids
+
+    return whatsapp_role_chat_ids(get_settings()).get(key, "") or ""
 
 
 def ensure_seeded(db: Session) -> None:
-    """Adds the two built-ins to an empty table (a fresh test database;
-    production is seeded by migration 0044)."""
+    """Adds the store pack's built-in roles to an empty table (a fresh
+    database; a store set up with `python -m app.store init` already has them)."""
     if db.execute(select(func.count(WhatsAppGroup.id))).scalar_one():
         return
     now = utcnow()
-    for key, label in BUILTIN_GROUPS:
+    for key, label in builtin_groups():
         db.add(WhatsAppGroup(key=key, label=label, chat_id=None, builtin=True, active=True,
                              created_at=now, created_by="built-in"))
     db.commit()
@@ -107,7 +113,7 @@ def resolve_chat_id(key: Optional[str], db: Optional[Session] = None) -> str:
             row, empty = None, True
         if row is not None:
             return _chat_id_for_row(row)
-        if empty and key in dict(BUILTIN_GROUPS):
+        if empty and key in dict(builtin_groups()):
             return _env_chat_id(key)
         return ""
     finally:
@@ -336,3 +342,9 @@ def available(db: Session, refresh: bool = False) -> dict:
     items = [{"chat_id": g["chat_id"], "name": g["name"], "already_added_key": known.get(g["chat_id"])} for g in groups]
     items.sort(key=lambda g: (g["already_added_key"] is not None, (g["name"] or "").lower()))
     return {"items": items}
+
+
+def __getattr__(name):
+    if name == "BUILTIN_GROUPS":
+        return builtin_groups()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

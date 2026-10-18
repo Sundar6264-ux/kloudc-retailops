@@ -6,9 +6,9 @@ Today the vendor list only exists as the Toast Retail CSV's ";"-joined
 list one row per vendor, so a store whose POS has no vendor field (Clover,
 plan section 4.9) can keep its vendors here.
 
-For Spice Town the table is a mirror of each item's newest CSV row (the CSV
+For a Toast store the table is a mirror of each item's newest CSV row (the CSV
 wins): services/item_vendors.py refreshes it on every CSV upload, and the
-0061 migration backfilled it. Nothing reads it for a Spice Town page in M1 -
+0061 migration backfilled it. Nothing reads it for a Toast store's page in M1 -
 the pages keep reading the snapshot's own field through
 item_vendors.vendors_of().
 

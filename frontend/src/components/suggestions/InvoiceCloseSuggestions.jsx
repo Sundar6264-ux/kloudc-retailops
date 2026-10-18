@@ -2,6 +2,7 @@ import { useState } from "react";
 import { dismissInvoiceCloseSuggestion, markInvoiceToastClosed, undoDismissInvoiceCloseSuggestion } from "../../api";
 import { Term } from "../../glossary.jsx";
 import { closeSummary, formatStoreDay } from "./suggestionsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 function money(n) {
   return n != null ? `$${Number(n).toFixed(2)}` : "$Unknown";
@@ -37,7 +38,7 @@ export default function InvoiceCloseSuggestions({ items, onChanged, readOnly }) 
     <section className="card sugg-card" aria-labelledby="close-sugg-title">
       <div className="card-header">
         <h2 id="close-sugg-title" style={{ margin: 0 }}>
-          <Term k="invoice_close_suggested">Looks closed in Toast</Term>{" "}
+          <Term k="invoice_close_suggested">Looks closed in {currentPosName()}</Term>{" "}
           {suggested.length > 0 && <span className="pill pill-info sugg-count">{suggested.length}</span>}
         </h2>
         {summary && <span className="muted" style={{ fontSize: "0.85rem" }}>{summary}</span>}
@@ -89,7 +90,7 @@ export default function InvoiceCloseSuggestions({ items, onChanged, readOnly }) 
                 disabled={busyId === item.id || readOnly}
                 onClick={() => run(item.id, () => markInvoiceToastClosed(item.id))}
               >
-                {busyId === item.id ? "Saving…" : "Mark closed in Toast"}
+                {busyId === item.id ? "Saving…" : `Mark closed in ${currentPosName()}`}
               </button>
             </div>
           </li>

@@ -1,7 +1,7 @@
 """Which POS this server talks to (multi-store plan 4.2).
 
 ``get_connector()`` reads the ``POS_PROVIDER`` setting (default ``toast``, so
-Spice Town needs no change) and returns that POS's connector. Step 1 runs one
+a Toast store needs no change) and returns that POS's connector. Step 1 runs one
 server copy per store, so one setting is enough; Step 2 will look it up per
 store.
 """

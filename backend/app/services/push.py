@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # A named app rather than firebase_admin's default one, so nothing else in
 # the process (a future Firebase use) can collide with this initialization.
-_APP_NAME = "spicetown-notifications"
+_APP_NAME = "storeops-notifications"
 # FCM's per-request limit for send_each.
 _BATCH_SIZE = 500
 
@@ -101,6 +101,20 @@ def _is_invalid_token_error(exc: Exception) -> bool:
     return False
 
 
+def with_store(data: Dict[str, str]) -> Dict[str, str]:
+    """`data` plus "store": STORE_CODE (StoreOps M2, contract 5.6), so an app
+    signed in to another store can tell the alert isn't for it. Nothing is
+    added while STORE_CODE is blank (dev, tests). Every other key unchanged."""
+    from app.store.settings_view import store_code
+
+    code = store_code()
+    if not code:
+        return dict(data)
+    out = dict(data)
+    out["store"] = code
+    return out
+
+
 def send_to_tokens(
     tokens: List[str],
     title: str,
@@ -123,6 +137,7 @@ def send_to_tokens(
     from firebase_admin import messaging
 
     result = SendResult()
+    data = with_store(data)
     # FCM data values must all be strings.
     data = {k: str(v) for k, v in data.items() if v is not None}
     for start in range(0, len(tokens), _BATCH_SIZE):

@@ -19,6 +19,9 @@ from app.services import similar_products as sp
 from tests.conftest import client_for, make_user
 from tests.similar_products_eval import FIXTURE_PATH, LABELS_PATH, evaluate, load_fixture, load_labels, split
 
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 TODAY = dt.date.today()
 
 
@@ -128,7 +131,7 @@ def test_matches_exclude_self_container_and_kitchen(fixture_index):
         for m in fixture_index.similar(q["item_id"]):
             assert m.item.item_id != q["item_id"]
             assert not m.item.is_container_row
-            assert (m.item.category_group or "").upper() not in {"STREET KITCHEN", "CATERING MENU"}
+            assert (m.item.category_group or "").upper() not in {"KITCHEN", "CATERING MENU"}
 
 
 @requires_catalog_fixture
@@ -204,7 +207,7 @@ def store(db):
     # Container duplicate of Laxmi: its stock counts towards Laxmi's on hand.
     snap(db, "laxmi-c", "Laxmi Grated Coconut 400g", qty=12, price=None, supplier=None)
     snap(db, "milk", "Deep Coconut Milk 400ml", supplier="Chetak")
-    snap(db, "kitchen", "Grated Coconut Chutney Plate", group="STREET KITCHEN", supplier=None, category="Kitchen")
+    snap(db, "kitchen", "Grated Coconut Chutney Plate", group="KITCHEN", supplier=None, category="Kitchen")
     snap(db, "old", "Vadilal Grated Coconut 312g", day=TODAY - dt.timedelta(days=3))  # not in the latest upload
     for d in range(1, 11):
         sale(db, "dd", TODAY - dt.timedelta(days=d), 2)

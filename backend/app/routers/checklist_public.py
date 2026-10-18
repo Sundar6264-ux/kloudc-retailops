@@ -12,6 +12,8 @@ rotated link always gets the same 404.
 """
 
 import logging
+from html import escape as _html_escape
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.exceptions import HTTPException
@@ -24,6 +26,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.config import frontend_dist_dir
 from app.db import get_db
 from app.services import checklist_public as svc
+from app.store import settings_view as sv
 from app.services.checklist_submission import (
     ChecklistStaleVersionError,
     ChecklistValidationError,
@@ -248,7 +251,7 @@ p{margin:0;color:#6b5d52;line-height:1.5}
 .brand{display:flex;align-items:center;justify-content:center;gap:10px;font-size:1.3rem;font-weight:700;margin:0 0 1.25rem}
 .brand img{width:36px;height:36px;border-radius:8px}
 </style></head>
-<body><main><div class="brand"><img src="/logo-header.png" alt="" width="36" height="36"><span>Spice Town</span></div><h1>%s</h1><p>%s</p></main></body></html>"""
+<body><main><div class="brand"><img src="%s" alt="" width="36" height="36"><span>%s</span></div><h1>%s</h1><p>%s</p></main></body></html>"""
 
 
 def _page_headers(csp: str) -> dict:
@@ -258,10 +261,17 @@ def _page_headers(csp: str) -> dict:
 
 
 def _message_page(status: int, title: str, text: str) -> HTMLResponse:
+    logo = sv.logo_path_or_url()
+    img_src = "'self'"
+    parts = urlsplit(logo)
+    if parts.scheme in ("http", "https") and parts.netloc:
+        img_src += f" {parts.scheme}://{parts.netloc}"
     return HTMLResponse(
-        _NOT_ACTIVE_HTML % (title, text),
+        _NOT_ACTIVE_HTML % (_html_escape(logo, quote=True), _html_escape(sv.store_display_name()), title, text),
         status_code=status,
-        headers=_page_headers("default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"),
+        headers=_page_headers(
+            f"default-src 'none'; img-src {img_src}; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
+        ),
     )
 
 

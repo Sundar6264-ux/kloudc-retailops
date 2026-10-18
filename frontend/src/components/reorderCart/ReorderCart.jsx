@@ -41,6 +41,7 @@ import {
   selectedCandidates,
   splitPostable,
 } from "./reorderCartModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const CART_PATH = "/purchase-order";
 
@@ -411,7 +412,7 @@ export function VendorCartBar({ rc, vendor, items }) {
   if (!canAddToVendor(vendor)) {
     return (
       <p className="rc-cart-bar-note rc-cart-unassigned">
-        No vendor is set in Toast for these items, so there's no vendor cart to add them to from here. Add them on the{" "}
+        No vendor is set in {currentPosName()} for these items, so there's no vendor cart to add them to from here. Add them on the{" "}
         <Link to={CART_PATH}>Purchase Order Cart</Link> under the vendor you order them from.
       </p>
     );

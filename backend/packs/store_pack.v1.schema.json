@@ -1,0 +1,732 @@
+{
+ "$defs": {
+  "CategoryRule": {
+   "additionalProperties": false,
+   "properties": {
+    "match_type": {
+     "title": "Match Type",
+     "type": "string"
+    },
+    "match_value": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "items": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "type": "array"
+      }
+     ],
+     "title": "Match Value"
+    },
+    "category_group": {
+     "title": "Category Group",
+     "type": "string"
+    },
+    "category": {
+     "title": "Category",
+     "type": "string"
+    },
+    "subcategory": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Subcategory"
+    },
+    "note": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Note"
+    }
+   },
+   "required": [
+    "match_type",
+    "match_value",
+    "category_group",
+    "category"
+   ],
+   "title": "CategoryRule",
+   "type": "object"
+  },
+  "ChannelRule": {
+   "additionalProperties": false,
+   "properties": {
+    "equals": {
+     "anyOf": [
+      {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Equals"
+    },
+    "starts_with": {
+     "anyOf": [
+      {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Starts With"
+    },
+    "channel": {
+     "title": "Channel",
+     "type": "string"
+    }
+   },
+   "required": [
+    "channel"
+   ],
+   "title": "ChannelRule",
+   "type": "object"
+  },
+  "Channels": {
+   "additionalProperties": false,
+   "properties": {
+    "empty": {
+     "default": "Other",
+     "title": "Empty",
+     "type": "string"
+    },
+    "rules": {
+     "items": {
+      "$ref": "#/$defs/ChannelRule"
+     },
+     "title": "Rules",
+     "type": "array"
+    },
+    "split_on": {
+     "default": " - ",
+     "title": "Split On",
+     "type": "string"
+    },
+    "rename": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "title": "Rename",
+     "type": "object"
+    },
+    "default": {
+     "type": "string",
+     "default": "Other",
+     "title": "Default"
+    }
+   },
+   "title": "Channels",
+   "type": "object"
+  },
+  "FallbackLead": {
+   "additionalProperties": false,
+   "properties": {
+    "key": {
+     "default": "admin",
+     "title": "Key",
+     "type": "string"
+    },
+    "name": {
+     "default": "Store admin",
+     "title": "Name",
+     "type": "string"
+    },
+    "title": {
+     "default": "Inventory & Purchase",
+     "title": "Title",
+     "type": "string"
+    }
+   },
+   "title": "FallbackLead",
+   "type": "object"
+  },
+  "FlyerCategory": {
+   "additionalProperties": false,
+   "properties": {
+    "key": {
+     "title": "Key",
+     "type": "string"
+    },
+    "label": {
+     "title": "Label",
+     "type": "string"
+    },
+    "folder": {
+     "title": "Folder",
+     "type": "string"
+    }
+   },
+   "required": [
+    "key",
+    "label",
+    "folder"
+   ],
+   "title": "FlyerCategory",
+   "type": "object"
+  },
+  "HouseVendors": {
+   "additionalProperties": false,
+   "properties": {
+    "prefixes": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Prefixes",
+     "type": "array"
+    }
+   },
+   "title": "HouseVendors",
+   "type": "object"
+  },
+  "IssueLeads": {
+   "additionalProperties": false,
+   "properties": {
+    "document_title": {
+     "default": "Suggested leads",
+     "description": "Shown above the proposed leads on the Leads page.",
+     "title": "Document Title",
+     "type": "string"
+    },
+    "leads": {
+     "items": {
+      "$ref": "#/$defs/Lead"
+     },
+     "title": "Leads",
+     "type": "array"
+    },
+    "fallback": {
+     "$ref": "#/$defs/FallbackLead"
+    },
+    "section_proposals": {
+     "additionalProperties": {
+      "$ref": "#/$defs/Proposal"
+     },
+     "title": "Section Proposals",
+     "type": "object"
+    },
+    "section_notes": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "title": "Section Notes",
+     "type": "object"
+    }
+   },
+   "title": "IssueLeads",
+   "type": "object"
+  },
+  "Lead": {
+   "additionalProperties": false,
+   "properties": {
+    "key": {
+     "title": "Key",
+     "type": "string"
+    },
+    "name": {
+     "title": "Name",
+     "type": "string"
+    },
+    "title": {
+     "default": "",
+     "title": "Title",
+     "type": "string"
+    },
+    "departments": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Departments"
+    },
+    "vendors": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Vendors",
+     "type": "array"
+    }
+   },
+   "required": [
+    "key",
+    "name"
+   ],
+   "title": "Lead",
+   "type": "object"
+  },
+  "Menu": {
+   "additionalProperties": false,
+   "description": "Category groups / menus. Groups compare upper-cased and trimmed, menus\nlower-cased and trimmed.",
+   "properties": {
+    "excluded_category_groups": {
+     "description": "Groups left out of Fix Issues and similar-product checks (kitchen-made).",
+     "items": {
+      "type": "string"
+     },
+     "title": "Excluded Category Groups",
+     "type": "array"
+    },
+    "kitchen_groups": {
+     "description": "Groups whose items are made in the kitchen (no delivery suggestions).",
+     "items": {
+      "type": "string"
+     },
+     "title": "Kitchen Groups",
+     "type": "array"
+    },
+    "grocery_menus": {
+     "description": "POS menus that count as grocery in Insights. Empty = every menu.",
+     "items": {
+      "type": "string"
+     },
+     "title": "Grocery Menus",
+     "type": "array"
+    },
+    "kitchen_menu_prefixes": {
+     "description": "POS menus whose name starts with one of these are the kitchen's (Insights kitchen items).",
+     "items": {
+      "type": "string"
+     },
+     "title": "Kitchen Menu Prefixes",
+     "type": "array"
+    },
+    "kitchen_label": {
+     "default": "Kitchen",
+     "description": "What the kitchen is called in Insights notes.",
+     "title": "Kitchen Label",
+     "type": "string"
+    }
+   },
+   "title": "Menu",
+   "type": "object"
+  },
+  "NameSection": {
+   "additionalProperties": false,
+   "properties": {
+    "name_regex": {
+     "title": "Name Regex",
+     "type": "string"
+    },
+    "section": {
+     "title": "Section",
+     "type": "string"
+    }
+   },
+   "required": [
+    "name_regex",
+    "section"
+   ],
+   "title": "NameSection",
+   "type": "object"
+  },
+  "PackChecklist": {
+   "additionalProperties": false,
+   "properties": {
+    "checklist_type": {
+     "title": "Checklist Type",
+     "type": "string"
+    },
+    "title": {
+     "title": "Title",
+     "type": "string"
+    },
+    "short_name": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Short Name"
+    },
+    "description": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Description"
+    },
+    "sort_order": {
+     "default": 0,
+     "title": "Sort Order",
+     "type": "integer"
+    },
+    "settings": {
+     "additionalProperties": true,
+     "title": "Settings",
+     "type": "object"
+    },
+    "schema": {
+     "additionalProperties": true,
+     "title": "Schema",
+     "type": "object"
+    }
+   },
+   "required": [
+    "checklist_type",
+    "title",
+    "schema"
+   ],
+   "title": "PackChecklist",
+   "type": "object"
+  },
+  "PoSections": {
+   "additionalProperties": false,
+   "properties": {
+    "other_section": {
+     "default": "Other",
+     "title": "Other Section",
+     "type": "string"
+    },
+    "extra_sections": {
+     "items": {
+      "type": "string"
+     },
+     "title": "Extra Sections",
+     "type": "array"
+    },
+    "rules": {
+     "items": {
+      "$ref": "#/$defs/SectionRule"
+     },
+     "title": "Rules",
+     "type": "array"
+    }
+   },
+   "title": "PoSections",
+   "type": "object"
+  },
+  "Proposal": {
+   "additionalProperties": false,
+   "properties": {
+    "lead": {
+     "title": "Lead",
+     "type": "string"
+    },
+    "basis": {
+     "title": "Basis",
+     "type": "string"
+    },
+    "why": {
+     "title": "Why",
+     "type": "string"
+    }
+   },
+   "required": [
+    "lead",
+    "basis",
+    "why"
+   ],
+   "title": "Proposal",
+   "type": "object"
+  },
+  "SectionRule": {
+   "additionalProperties": false,
+   "description": "One PO section rule: an optional condition and exactly one outcome.",
+   "properties": {
+    "when": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/When"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null
+    },
+    "section": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Section"
+    },
+    "lookup": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "subcategory | category | group | category_subcategory",
+     "title": "Lookup"
+    },
+    "map": {
+     "anyOf": [
+      {
+       "additionalProperties": {
+        "type": "string"
+       },
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Map"
+    },
+    "first_match": {
+     "anyOf": [
+      {
+       "items": {
+        "$ref": "#/$defs/NameSection"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "First Match"
+    },
+    "section_from": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "category | subcategory",
+     "title": "Section From"
+    }
+   },
+   "title": "SectionRule",
+   "type": "object"
+  },
+  "WhatsAppRole": {
+   "additionalProperties": false,
+   "properties": {
+    "key": {
+     "title": "Key",
+     "type": "string"
+    },
+    "label": {
+     "title": "Label",
+     "type": "string"
+    }
+   },
+   "required": [
+    "key",
+    "label"
+   ],
+   "title": "WhatsAppRole",
+   "type": "object"
+  },
+  "When": {
+   "additionalProperties": false,
+   "description": "A condition on an item; every key given must hold.",
+   "properties": {
+    "group": {
+     "anyOf": [
+      {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Group"
+    },
+    "category": {
+     "anyOf": [
+      {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Category"
+    },
+    "subcategory": {
+     "anyOf": [
+      {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Subcategory"
+    },
+    "name_regex": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Name Regex"
+    },
+    "name_not_regex": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Name Not Regex"
+    },
+    "any": {
+     "anyOf": [
+      {
+       "items": {
+        "$ref": "#/$defs/When"
+       },
+       "type": "array"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Any"
+    }
+   },
+   "title": "When",
+   "type": "object"
+  }
+ },
+ "additionalProperties": false,
+ "properties": {
+  "pack_version": {
+   "title": "Pack Version",
+   "type": "integer"
+  },
+  "pack_id": {
+   "title": "Pack Id",
+   "type": "string"
+  },
+  "label": {
+   "default": "",
+   "title": "Label",
+   "type": "string"
+  },
+  "menu": {
+   "$ref": "#/$defs/Menu"
+  },
+  "po_sections": {
+   "$ref": "#/$defs/PoSections"
+  },
+  "house_vendors": {
+   "$ref": "#/$defs/HouseVendors"
+  },
+  "channels": {
+   "$ref": "#/$defs/Channels"
+  },
+  "issue_leads": {
+   "$ref": "#/$defs/IssueLeads"
+  },
+  "checklists": {
+   "items": {
+    "$ref": "#/$defs/PackChecklist"
+   },
+   "title": "Checklists",
+   "type": "array"
+  },
+  "whatsapp_roles": {
+   "items": {
+    "$ref": "#/$defs/WhatsAppRole"
+   },
+   "title": "Whatsapp Roles",
+   "type": "array"
+  },
+  "flyer_categories": {
+   "items": {
+    "$ref": "#/$defs/FlyerCategory"
+   },
+   "title": "Flyer Categories",
+   "type": "array"
+  },
+  "category_rules": {
+   "items": {
+    "$ref": "#/$defs/CategoryRule"
+   },
+   "title": "Category Rules",
+   "type": "array"
+  }
+ },
+ "required": [
+  "pack_version",
+  "pack_id"
+ ],
+ "title": "StoreOps store pack (version 1)",
+ "type": "object",
+ "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

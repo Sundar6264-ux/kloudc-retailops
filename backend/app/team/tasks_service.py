@@ -80,7 +80,14 @@ MAX_BATCH = 50
 OPEN_LIST_LIMIT = 500
 
 SYSTEM_USER_ID = 0
-SYSTEM_NAME = "Spice Town"
+# The actor name on automatic tasks is the store itself: system_name()
+# (STORE_NAME). SYSTEM_NAME still reads it (module __getattr__ below).
+
+
+def system_name() -> str:
+    from app.store.settings_view import store_display_name
+
+    return store_display_name()
 
 SOON_BEFORE = dt.timedelta(minutes=30)
 OVERDUE_AFTER = dt.timedelta(hours=1)
@@ -98,7 +105,7 @@ _ASSIGN_PUSH_LOCK = threading.Lock()
 
 
 def store_zone():
-    return recurrence.get_zone(recurrence.DEFAULT_TIMEZONE)
+    return recurrence.get_zone(recurrence.default_timezone())
 
 
 # --- Access -------------------------------------------------------------------
@@ -191,7 +198,7 @@ def add_event(
     system_name: str = "Schedule",
 ) -> None:
     """`system_name` names the actor when there's no user: "Schedule" for
-    recurring occurrences, SYSTEM_NAME for automatic tasks."""
+    recurring occurrences, system_name() for automatic tasks."""
     db.add(
         TaskEvent(
             task_id=task.id,
@@ -272,7 +279,7 @@ class _ListContext:
 
 def _completed_by_out(task: Task) -> Optional[dict]:
     # Closed by the system (an automatic task's signal cleared): no user id,
-    # but still a name, so "Done by Spice Town" reads right.
+    # but still a name, so "Done by <store>" reads right.
     if task.completed_by_user_id is None and not task.completed_by_name:
         return None
     return {"id": task.completed_by_user_id, "name": task.completed_by_name}
@@ -1646,7 +1653,7 @@ def _template_fields(db: Session, data: dict, tpl: Optional[TaskTemplate] = None
             recurrence.get_zone(tz)
         except recurrence.RRuleError as e:
             raise HTTPException(status_code=400, detail=str(e))
-        out.update(rrule="", timezone=tz or recurrence.DEFAULT_TIMEZONE, generate_ahead_minutes=int(ahead))
+        out.update(rrule="", timezone=tz or recurrence.default_timezone(), generate_ahead_minutes=int(ahead))
     else:
         try:
             rule, tz = recurrence.validate_template_fields(rule, tz, int(ahead))
@@ -2207,3 +2214,9 @@ register_team_job(
     lambda tz: IntervalTrigger(minutes=5, timezone=tz),
     misfire_grace_time=240,
 )
+
+
+def __getattr__(name):
+    if name == "SYSTEM_NAME":
+        return system_name()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

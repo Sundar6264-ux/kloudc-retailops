@@ -114,7 +114,7 @@ def search_items(
 
 # Backs the mobile barcode scanner's informational "Item info" panel
 # (vendor/cost/on-hand/last received) - deliberately separate from the print
-# flow, which still talks to spicetown-labels independently and is untouched
+# flow, which still talks to the labels site independently and is untouched
 # by this. Same ungated-beyond-login reasoning as items/search above: a
 # lookup helper reused by whatever page needs it, not a report of its own.
 @router.get("/items/by-barcode")

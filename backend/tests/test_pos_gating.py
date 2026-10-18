@@ -93,12 +93,26 @@ def test_spice_town_is_toast_with_its_full_capability_set():
 
 
 def test_unknown_provider_has_no_capabilities(monkeypatch):
-    fake = types.SimpleNamespace(pos_provider="Clover")
+    fake = types.SimpleNamespace(pos_provider="Square")
     monkeypatch.setattr(gating, "get_settings", lambda: fake)
-    assert gating.pos_provider() == "clover"
-    assert gating.pos_name() == "Clover"
+    assert gating.pos_provider() == "square"
+    assert gating.pos_name() == "Square"
     assert gating.store_capabilities() == frozenset()
     assert gating.features_for_store(["overview", "open_orders", "sales_insights"]) == ["overview"]
+
+
+def test_clover_and_csv_fallback_entries(monkeypatch):
+    """StoreOps M2 (contract section 7): no adapter yet, but the fallback
+    capability sets gate pages and jobs."""
+    from app.pos.capabilities import CLOVER_CAPABILITIES, CSV_CAPABILITIES
+
+    fake = types.SimpleNamespace(pos_provider="Clover")
+    monkeypatch.setattr(gating, "get_settings", lambda: fake)
+    assert gating.pos_name() == "Clover" and gating.store_capabilities() == CLOVER_CAPABILITIES
+    assert gating.features_for_store(["overview", "open_orders", "sales_insights"]) == ["overview", "open_orders"]
+    fake.pos_provider = "csv"
+    assert gating.pos_name() == "CSV upload" and gating.store_capabilities() == CSV_CAPABILITIES
+    assert gating.capability_values() == ["csv_catalog_import"]
 
 
 # --- /api/app/config and /api/auth/me ------------------------------------------------------
@@ -118,7 +132,7 @@ def test_me_adds_pos_fields_and_keeps_allowed_features(db, admin_client):
     staff = make_user(db, "clerk", features=["open_orders", "sales_insights", "overview"])
     me = client_for(db, staff).get("/api/auth/me").json()
     assert me["allowed_features"] == ["open_orders", "sales_insights", "overview"]
-    assert list(me)[-2:] == ["pos_name", "capabilities"]
+    assert list(me)[-4:] == ["pos_name", "capabilities", "store_code", "store_features"]
     assert me["pos_name"] == "Toast" and me["capabilities"] == gating.capability_values()
     admin_me = admin_client.get("/api/auth/me").json()
     assert admin_me["allowed_features"] == [f["key"] for f in FEATURES]
@@ -226,7 +240,7 @@ def test_store_timezone_wins_and_both_names_agree(monkeypatch):
 
 def test_ap_inbox_email_falls_back_wins_or_turns_off(monkeypatch):
     s = _settings(monkeypatch)
-    assert s.ap_inbox_email == s.toast_invoice_email == "spicetown@invoices.toasttab.com"
+    assert s.ap_inbox_email == s.toast_invoice_email == ""  # StoreOps: blank = the AP email channel off
     s = _settings(monkeypatch, TOAST_INVOICE_EMAIL="old@inbox.test")
     assert s.ap_inbox_email == s.toast_invoice_email == "old@inbox.test"
     s = _settings(monkeypatch, TOAST_INVOICE_EMAIL="old@inbox.test", AP_INBOX_EMAIL="ap@inbox.test")

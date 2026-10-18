@@ -6,6 +6,7 @@ import { Term, TermInfo } from "../glossary.jsx";
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
 import { useAuth } from "../AuthContext.jsx";
+import { currentPosName } from "../store/gating.js";
 
 function todayStr() {
   return storeTodayStr();
@@ -222,9 +223,9 @@ export default function OpenOrders() {
         )}
       </div>
 
-      <InfoBlock brief="Checks Toast has recorded that haven't been closed on the POS yet. Tab is the name on the check's tab in Toast, usually the customer.">
+      <InfoBlock brief={`Checks ${currentPosName()} has recorded that haven't been closed on the POS yet. Tab is the name on the check's tab in ${currentPosName()}, usually the customer.`}>
         <p style={{ marginTop: 0 }}>
-          With <strong>All-time off</strong>, this is a live pull straight from Toast for one date
+          With <strong>All-time off</strong>, this is a live pull straight from {currentPosName()} for one date
           (normally today) - fast, one request. Picking a past date will normally show zero results,
           since by then that day's checks have already been closed.
         </p>

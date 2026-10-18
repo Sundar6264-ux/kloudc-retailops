@@ -134,7 +134,7 @@ def neutral_line_rows(order: PosOrder, source: str) -> List[Dict]:
 
 def store_source() -> str:
     """The `source` the store's connector writes (`orders.source`,
-    `pos_item_map`, `sync_cursors`): "toast" for Spice Town."""
+    `pos_item_map`, `sync_cursors`): "toast" for a Toast store."""
     return getattr(registry.get_connector(), "source", "") or TOAST
 
 

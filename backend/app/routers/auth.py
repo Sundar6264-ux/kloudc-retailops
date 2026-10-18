@@ -26,6 +26,7 @@ from app.models import User, UserSession
 from app.pos.gating import capability_values, features_for_store, pos_name
 from app.sales_access import effective_features
 from app.services.notifications import delete_user_notification_data
+from app.store.settings_view import store_code, store_features
 from app.team.bootstrap import delete_user_team_data
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -102,11 +103,15 @@ def _me_out(user: User) -> dict:
     out["allowed_features"] = effective_features(user, out["allowed_features"])
     # Multi-store MT6 (additive): features this store's POS can't support are
     # left out too, and the POS name + capability list ride along so the
-    # website and app can hide POS-only pages. For Spice Town (Toast, every
+    # website and app can hide POS-only pages. For a Toast store (every
     # capability) allowed_features is unchanged.
     out["allowed_features"] = features_for_store(out["allowed_features"])
     out["pos_name"] = pos_name()
     out["capabilities"] = capability_values()
+    # StoreOps M2 (additive, contract 2): which store this server is, and its
+    # non-POS switches (ap_inbox / labels / whatsapp / ai).
+    out["store_code"] = store_code() or None
+    out["store_features"] = store_features()
     return out
 
 

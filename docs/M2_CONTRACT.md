@@ -76,7 +76,7 @@ the field name in upper case unless the table says otherwise.
 | `store_short_name` | `STORE_SHORT_NAME` | str | `""` | Short name (tab bar, push titles). Blank -> effective `store_name`. |
 | `store_address` | `STORE_ADDRESS` | str | `""` | One line, printed as is (PO PDF header/footer, PO email/WhatsApp). Blank -> line omitted. |
 | `store_phone` | `STORE_PHONE` | str | `""` | Printed as is. Blank -> omitted. |
-| `store_email` | `STORE_EMAIL` | str | `""` | Reply-To on PO emails. Blank -> no Reply-To header (today's behaviour). |
+| `store_email` | `STORE_EMAIL` | str | `""` | Reply-To on PO emails. Blank -> the sending address (today's behaviour; MT7 corrected this row). |
 | `store_description` | `STORE_DESCRIPTION` | str | `""` | One sentence for the Ask bot and weekly digest prompts ("a ... store in ..."). Blank -> `"a retail store"`. |
 | `product_name` | `PRODUCT_NAME` | str | `"StoreOps"` | Product name: PDF producer tag, old-app message, web shell fallback. |
 | `company_name` | `COMPANY_NAME` | str | `"KloudC LLC"` | Legal footer / About. |
@@ -84,6 +84,7 @@ the field name in upper case unless the table says otherwise.
 | `public_host` | `PUBLIC_HOST` | str | `""` | This store's public origin (`https://...`, no trailing slash). Blank -> `https://<host-label>.<platform_domain>` where host-label = `store_code` lower-cased with `_` -> `-`; blank and no `store_code` -> the request's own base URL (dev). |
 | `logo_url` | `LOGO_URL` | str | `""` | Absolute `https://` URL or a path on this server. Blank -> `/branding/logo.png` (bundled StoreOps logo). |
 | `icon_url` | `ICON_URL` | str | `""` | Same rules. Blank -> `/branding/icon.png`. |
+| `document_logo_file` | `DOCUMENT_LOGO_FILE` | str | `""` | (MT7 addition) Local image on the PO PDF letterhead. Blank -> the bundled `assets/branding/logo-128.png`. |
 | `brand_color` | `BRAND_COLOR` | str | `"#0F766E"` | Primary colour, `^#[0-9A-Fa-f]{6}$`. |
 | `brand_secondary_color` | `BRAND_SECONDARY_COLOR` | str | `"#334155"` | Secondary colour, same pattern. |
 | `store_timezone` | `STORE_TIMEZONE` | str | `""` -> `TOAST_TIMEZONE` (default `"America/New_York"`) | Existing M1 field. Must be a valid IANA zone (`zoneinfo`). |
@@ -512,7 +513,12 @@ top-level keys are an error; every section is optional and falls back to the
 **`menu`** - category-group names compared upper-cased and trimmed
 (`excluded_category_groups`, `kitchen_groups`); `grocery_menus` compared
 lower-cased and trimmed. Generic: all three empty lists (nothing excluded,
-every menu counts as grocery).
+every menu counts as grocery). MT8 additions: `kitchen_menu_prefixes` (POS
+menus whose lower-cased name starts with one are the kitchen's - Insights
+kitchen items; generic `[]`) and `kitchen_label` (generic `"Kitchen"`, used in
+the menu map's `kitchen_rule` text). `po_sections.other_section` must be
+`"Other"` in version 1. `issue_leads.document_title` (generic `"Suggested
+leads"`) is the Leads page's document title.
 
 **`po_sections`** - replaces `section_for` and `_builtin_sections`
 (`po_sections.py`). Input: `(category_group, category, subcategory, name)`.
@@ -1337,7 +1343,7 @@ files pass on 3.9 too. **Parity** (`scripts/parity`, Python 3.12, a fresh
 read-only copy of the production database, deleted after): import commit
 `56e095c` vs this batch: **114 files compared, DIFFERENCES: 0**.
 
-App (`storeops-app`, commits `cdf79bd`..`06c6a98`, history kept):
+App (`storeops-app`, commits `812beb2`..`06c6a98`, history kept):
 - iOS `PRODUCT_BUNDLE_IDENTIFIER` `com.kloudc.storeops` (+ `.RunnerTests`),
   `CFBundleDisplayName` / `CFBundleName` "StoreOps", permission strings say
   StoreOps; no `DEVELOPMENT_TEAM` (owner picks the team in Xcode). Android
@@ -1372,7 +1378,8 @@ App (`storeops-app`, commits `cdf79bd`..`06c6a98`, history kept):
   issues; `flutter test --concurrency=2` 5343 passed, 6 skipped, 2 failed
   (the iOS metadata audit, fixed in `93c51bf`; that file 9/9 after).
 - CI: `.github/workflows/ci.yml` (Flutter 3.47.2 stable: pub get, analyze,
-  test --concurrency=2, a check that no Firebase/signing file is tracked).
+  test --concurrency=2, a check that no Firebase/signing file is tracked);
+  run `39149278647` green: analyze no issues, **5345 passed, 6 skipped**.
 
 **Deferred / for other batches:**
 - MT7: `po_export.py` letterhead off `spice-town-icon.jpg`; `config.py`
@@ -1383,6 +1390,595 @@ App (`storeops-app`, commits `cdf79bd`..`06c6a98`, history kept):
 - `e2e/regression/*` still uses the origin store's local paths (it runs
   against production copies on the origin machine); left as is.
 - The Capacitor wrapper keeps Capacitor's default splash/icon art.
+
+---
+
+## As built - MT9 (website per store)
+
+Branch `m2/mt9-website` (worktree `/Users/sundar/storeops/worktrees/mt9`),
+rebased on `main` after MT7a. Files: `frontend/src/**`, `frontend/index.html`,
+`frontend/e2e/**`, `backend/app/glossary.py` (+ its test and the name
+allowlist lines for these files).
+
+**Store context (`frontend/src/store/`)**
+- `StoreContext.jsx`: `StoreProvider` fetches `GET /api/app/branding` once at
+  boot, before login (plain fetch, `credentials: "omit"`, 5 s cap; 404 or an
+  error -> product defaults). It sets the document title (`<name> - StoreOps`,
+  or `StoreOps` with no store name), favicon (`icon_url`), `theme-color`, the
+  CSS variables and the store time zone. Hooks: `useBranding()` (branding
+  only: login page, public checklist page), `useStore()` (branding + `/me`),
+  `usePosName()`, `usePosText()`, `useStoreAllows(element)`.
+- `branding.js`: `normalizeBranding(raw)` (every field has a fallback;
+  `capabilities` / `storeFeatures` stay `null` = "not told"),
+  `storeView(branding, me)` (`/me`'s `pos_name`, `capabilities`,
+  `store_features`, `store_code` win when present), `brandCssVars()`:
+  `--brand`, `--brand-secondary`, `--accent` (the brand colour darkened only
+  as far as needed for 4.5:1 with white text), `--accent-hover`,
+  `--accent-soft`, `--accent-rgb`. `index.css` defaults are the product
+  colours; the old hard-coded red shadows use `rgba(var(--accent-rgb), a)`.
+- `gating.js`: `ROUTE_REQUIREMENTS` (keyed like `ROUTES_BY_KEY`, plus the
+  footer key `labels`), `FEATURE_REQUIREMENTS` (grant keys: `open_orders`,
+  `sales_insights`, `ask_bot` -> `ai`) and `ELEMENT_REQUIREMENTS` (page
+  controls): `inventory_upload`, `price_change_log`, `items_sold_today`,
+  `received_evidence`, `sales_accuracy_badge`, `invoice_ap_inbox`,
+  `whatsapp`, `also_in_pos`. `null` capabilities / store features (an older
+  server) = everything on, except `labels`, which needs `labels_url`.
+  `currentPosName()` / `setCurrentPosName()`: the POS name for text built
+  outside React (row facts, labels in module-level tables), set from
+  branding at boot and from `/me` after login.
+
+**Gating as built**
+- `AuthContext.hasFeature` applies `FEATURE_REQUIREMENTS` for everyone,
+  admins included; `routeVisible`, `buildSidebar`, `firstAccessiblePath` and
+  `footerLinks` take `store` and apply `ROUTE_REQUIREMENTS`.
+- A direct URL to a page the store can't have **redirects** to
+  `#/not-available?page=<route key>` (`pages/NotAvailablePage.jsx`, "Not
+  available for this store"), before the grant check. `/insights` and
+  `/inventory-api` included.
+- Contract table differences: the inventory upload card is on **Overview**
+  (not Inventory Reports) and is hidden there; the sales-accuracy check is
+  on **Items Sold** (admins), hidden without `day_totals`; Items Sold without
+  `live_today_sales` drops "Today" and opens on a new "Yesterday" choice;
+  "received evidence" = the Fix Issues detail's "Last received" row.
+- Invoices: without `ap_inbox` the AP email result line, its table column,
+  its override, the "Closed" column and "Looks closed in <pos>" are hidden
+  and the AP channel is neither waited on nor resent; without `whatsapp` the
+  same for WhatsApp. Flyers without `whatsapp`: library only (no group
+  picker, no Send). Checklist builder: group picker hidden. Send PO:
+  WhatsApp option hidden.
+
+**Text**
+- Sidebar: "Inventory from <pos>", "Also in <pos>" + note
+  (`ALSO_IN_POS`, renamed from `ALSO_IN_TOAST`; route labels may hold
+  `{pos}`, rendered with `routeLabel(route, posName)`). Store name and logo
+  in the sidebar, login page and public checklist page (`StoreLogo`: the
+  image, or the first letter on the brand colour if it can't load).
+- Help: every POS mention is `{pos}`; the jump list renders titles with
+  `posText`. Other pages: visible "Toast" text follows `currentPosName()`
+  (JSX text, strings inside functions, getters for module-level tables such
+  as `CODE_LABEL.item_id`, `JOB_LABELS.toast_sales_sync`). For a Toast store
+  every sentence reads as before. Code identifiers (`markInvoiceToastClosed`,
+  `toast_*` keys) are unchanged (contract rule 0.1).
+- `backend/app/glossary.py`: POS mentions are `{pos}`, "New York" is
+  `{store_city}` (new placeholder: the last part of `STORE_TIMEZONE`,
+  `_` -> space); `get_glossary()` and `reason_term()` fill them per request
+  (`localize_term`). Store-specific menu, folder and house-item wording made
+  neutral.
+- Neutral wording everywhere in `frontend/src` (no store, kitchen, place or
+  domain names; flyer default categories are Groceries / Others; WhatsApp
+  role defaults "Store staff group" / "Kitchen staff group"); browser
+  storage keys renamed `storeops_*` (sidebar, cart panels, tasks layout,
+  mobile token); sales export file `sales.csv`.
+
+**Time zone**: `format.js` `setStoreTimeZone(tz)` / `getStoreTimeZone()` /
+`storeDateTimeFormat()` / `lazyStoreFormat()` / `inStoreZone()` /
+`storeDateStr()` / `storeZoneCity()`; `DEFAULT_STORE_TIME_ZONE` (the server
+default) is the only zone literal in `frontend/src`. All former
+`America/New_York` sites (FixIssues, DailyChecklists, ReorderCandidates,
+InvoiceSubmission, insights, PlacedOrders, OverviewWidgets, team, chat,
+flyers, suggestions) and "store time (New York)" texts use it; the Overview
+greeting and date are store time.
+
+**Tests**
+- `node --test`: `store/gating.test.mjs` (every contract row; visible pages /
+  links / controls for the three fake stores; `/me` over branding; older
+  server), `store/branding.test.mjs` (normalising, title, contrast, time
+  zone switching incl. Chicago/New York day boundary, web fixtures vs the
+  server's `.branding.json` field names when MT7's files exist),
+  `store/noStoreNames.test.mjs` (no origin-store names in `frontend/src` +
+  `index.html`; no zone literal outside `format.js`); updated
+  `featureRoutes`, `insightsModel`, `flyerModel`, `productMatch` tests.
+- Backend: `tests/test_glossary_store_words.py` (Toast store reads as
+  before, Clover store never says Toast, city from the zone, reason texts
+  filled, no names). Allowlist: every `frontend/` and `glossary.py` line
+  removed.
+- Fixtures: `frontend/src/test/fixtures/branding.js` and
+  `frontend/e2e/fixtures/branding-<code>.json` (the three bodies of section
+  7, written from the contract; MT7's generated files are compared by name).
+
+**Playwright (`frontend/e2e/store/`)**: `run.sh` builds the website, makes
+two fresh databases (alembic head, the old migrations' seeded rows removed
+as in 3.5 step 3, four generated logins: admin, staff, "Hide sales numbers"
+staff, the App Review demo login), serves the fake Toast store (8861) and
+the fake Clover store (8862) with `serve.py`, and runs `stores.mjs` at 1280
+and 375 for every role: name / title / logo / `--accent` colour, store time
+in Team > Tasks, menu contents per store, gated URLs -> Not available,
+Label Scanner, no origin-store names, no "Toast" on the Clover store.
+`serve.py` blocks every non-loopback lookup and connection in-process, points
+every outside base URL at `127.0.0.1:9`, turns schedulers/push off and
+replaces smtplib. Before MT7 merges it adds, from the fixture, the Clover
+provider entry and `GET /api/app/branding` (it prints which fallbacks it
+used); after MT7 the real ones are used.
+
+**Results (Oct 18)**
+- `node --test` (all 226 website tests): 226 passed. `vite build` ok.
+- Backend: glossary-related files (`test_ops_glossary`, `test_glossary_store_words`,
+  `test_no_spicetown_names`, `test_flyers`, `test_insights`, `test_ops_fix_issues`,
+  `test_review_route_gates`, `test_suggestions_b3`, `test_ops_snooze_cartremove`,
+  `test_critical_dismissals`, `test_store_vs_container`,
+  `test_open_checks_tab_names`, `test_regress_min_order_and_add_all`): all pass on 3.9; the
+  first three also on 3.12.
+- Playwright (`run.sh`, two stores x 4 roles x 1280/375): 658 checks, 0
+  failures. 81 hits classed as **server text** (the same words are in an API
+  response on that page), all for the server batches below. Harness
+  fallbacks used: branding route and Clover provider (MT7 not merged yet).
+
+**For other batches (found by the Playwright sweep; server data, not website)**
+- MT8 (store pack / store-init): built-in checklists are re-seeded with the
+  origin store's titles when the table is empty (`checklist_admin.ensure_seeded`);
+  `/api/flyers/meta` categories (`services/flyers.py`); house-vendor /
+  issue-lead names (`issue_leads.py`, `schedule_suggestions.py`,
+  `similar_products.py`); Fix Issues close-reason labels still say Toast
+  (`services/fix_issues.py`; the glossary `does` text is already per store).
+- MT7 (settings / string sites): notification type descriptions in
+  `services/notifications.py` say Toast; `items_sold.py` / `routers/sales.py`
+  POS error messages say Toast (and a Clover store without an adapter gets
+  500/503 from Items Sold today; `/api/orders/employees` 500s when the POS is
+  unreachable). Invoices: the server should report the AP email channel as
+  not applicable (`toast_applicable: false`) when `ap_inbox` is off; the
+  website already hides and never waits on it.
+- First e2e run only: the harness used a wrong setting name for the Toast API
+  base, so the fake Toast store's server tried Toast's login endpoint 16
+  times with blank credentials (all refused, 401; no data). Fixed: the
+  harness now sets `TOAST_API_BASE` / `TOAST_ANALYTICS_BASE` to the discard
+  port, asserts them, and blocks every non-loopback lookup and connection.
+- Deferred: Insights pages' own explanatory text still says Toast (only
+  stores with `analytics_reports`, i.e. Toast, can open them); `/me` has no
+  `timezone`, so the zone comes from branding only.
+
+---
+
+## As built - MT11 (app: store-code login, tenant config, switch store)
+
+Repository `storeops-app`, branch `m2/mt11-mt12` fast-forwarded into `main`
+and pushed: `197fc76` (store time), `bbd2212` (MT11), `6f7dfe2` (MT12),
+`1809961` (merge of MT7a's identity work), `fb25016` (store links,
+post-merge fixes), `ba945b3` (branding fixture test). Interfaces as in sections 5.1-5.5,
+with these additions and differences:
+
+**Build-time (5.1).** `EnvConfig` (`lib/core/config/env_config.dart`) holds
+`APP_ENV`, `PRODUCT_NAME`, `PLATFORM_DOMAIN`, `DIRECTORY_URL`,
+`STATIC_DIRECTORY_URL`, `EXTRA_ALLOWED_API_HOSTS`, `DEV_API_BASE_URL`
+(ignored outside development). `apiBaseUrl` / `labelsBaseUrl` are gone. A
+compile-time `appDisplayName` (= `PRODUCT_NAME`) is used where the OS shows
+the app's name ("Settings > StoreOps").
+
+**Tenant layer (`lib/core/tenant/`).**
+- `tenant_config.dart`: `TenantConfig` (fields of 5.2, plus `posLabel`,
+  `publicUrl()`, `copyWith`), `DirectoryRecord`, `LegalLinks`,
+  `parseHexColor`. `fromSources(directory, apiBaseUrl, branding,
+  labelsBaseUrl, serverMinBuild*)`; `toStored()` / `fromStored()` round-trip.
+  Min build = max(directory, `/api/app/config`, branding `min_build`).
+- `store_code.dart`: `validStoreCode()` (trim, upper, `-`->`_`, pattern of
+  4.2); `storeCodeFromScan()` accepts only `https://<PLATFORM_DOMAIN>/s/<CODE>`
+  (port 443, exactly two path segments) or a bare code.
+- `api_host_policy.dart`: `ApiHostPolicy` - https, no path/query/userinfo,
+  host ends with `.<PLATFORM_DOMAIN>` or is in `EXTRA_ALLOWED_API_HOSTS`;
+  development also `localhost`, `127.0.0.1`, `10.0.2.2` over http. Applied to
+  `api_base_url` (refused before any request) and to branding `labels_url`
+  (a refused labels URL = no labels for that store).
+- `tenant_http.dart`: `TenantHttp` (unauthenticated GET/POST, no cookies, no
+  redirects, every status returned) - directory, branding, app config and
+  cross-store push unregister. `tenantHttpProvider` is the test seam.
+- `store_resolver.dart`: the 8 steps of 5.3. Differences: a static-copy 404
+  is treated as "not reachable" (saved record, else "Can't reach StoreOps"),
+  not "No store with that code", because the static copy may lag a new store;
+  a directory answer whose `code` differs from the asked code is refused; with
+  the directory down and a saved record, the saved record's own server is
+  still asked for fresh branding (offline only when that fails too).
+- `tenant_storage.dart`: `TenantStorage` (`DeviceTenantStorage`,
+  `MemoryTenantStorage` for tests) with the keys of 5.4; known stores capped
+  at 8; `deleteLegacyKeys()` runs at every launch (cheap, defensive).
+- `tenant_providers.dart`: `envConfigProvider` (moved here; re-exported from
+  `auth_providers.dart`), `tenantConfigProvider`
+  (`TenantConfigNotifier`: `restore`, `resolve`, `activate(config, offline)`,
+  `refreshBranding()` -> `bool moved`, `switchStore({toCode})`,
+  `clearActive`), `storeScopeProvider`, `tenantOfflineProvider`,
+  `tenantStorageProvider`, `storeResolverProvider`.
+- `active_store.dart`: `ActiveStore` - a synchronous mirror of the active
+  `TenantConfig` for code that can't watch providers (models, device-pref
+  keys via `ActiveStore.scopedKey(base)` = `base.<CODE>`, `StoreTime`).
+- `store_switcher.dart`: `StoreSwitcher.switchStore({toCode})` and
+  `resetSession({keepStore})`; `appRestartProvider`;
+  `storeTempCleanerProvider`; `StoreSwitcher.pendingCodes` (a
+  `ValueNotifier`) carries a code to open across the restart.
+
+**Switch / sign-out (5.5).** Order as specified (tested with a recording fake
+in `test/core/tenant/store_switch_test.dart`); the only reordering is inside
+step 2-3: `push_last_registered_token.<OLD>` is deleted before the unregister
+call (as before M2, so a failed unregister is queued, not lost). Step 5 goes
+further than the contract: after clearing, **the app starts over in a new
+ProviderContainer** (`StoreOpsRoot` in `lib/app/bootstrap.dart` owns the
+container; `appRestartProvider` replaces it). Every provider - including
+plain `StateProvider` selections and kept-alive lists that don't watch
+`storeScopeProvider` - every tab's navigation stack and the Team poll timer
+are disposed. Plain sign-out (More > Sign Out) does the same but keeps the
+store. `ProviderCache.clearAll()` exists (`provider_cache.dart`) and is
+called too. `<temp>/store/<CODE>/` is real: every temp file the app writes
+(document viewer, PO PDF share, flyer share, invoice scans, voice notes) now
+goes there (`lib/core/storage/store_temp_dir.dart`). A 401 still only
+signs out (no restart), so its "session expired" message survives.
+
+**Clients and tokens.** `ApiClient(baseUrl:)` (was `env:`) with `close()`;
+`apiClientProvider` watches `(storeCode, apiBaseUrl)`, throws `StateError`
+with no store, and closes the old client when replaced. `AuthInterceptor`
+attaches the bearer token only when the request host == the tenant's API
+host (and removes a stray header otherwise); `LabelsAuthInterceptor` only
+for the labels host. `labelsApiClientProvider` is `null` without a labels
+site; `storeHasLabelsProvider` drives the Scan tab and the `/scan` route.
+Server moved (a refresh finds a new `api_base_url`): the token is forgotten
+locally, nothing is sent to the new host, "Your store moved to a new server.
+Please sign in again."
+
+**Per store on the device.** Besides 5.4's keys, these shared_preferences
+keys are now `<key>.<CODE>`: `recent_vendors_v1`, `cart_open_vendors`,
+`store_section`, `invoice_learned_vendors_v1`,
+`team_rules_accepted_version_<userId>`.
+
+**Screens.** `StoreCodeScreen` (`/store-code`, code field, Scan QR code via
+`storeQrScannerProvider` -> `StoreQrScanScreen`, recent stores, a
+development note with the directory URL), branded `LoginScreen`
+(`StoreBrandHeader`: store logo with an icon fallback, store name; offline
+and maintenance notices; maintenance disables Sign In; "Not <short name>?
+Change store"), `LoginFooter` ("For <store> staff", the store's privacy
+link), `SplashScreen` (store logo, or the product wordmark), More > Switch
+store (confirm "Sign out of <name> and switch store?") and a `switch_store`
+search entry, About (store, code, POS, the store's legal links). Router:
+unauthenticated with no store -> `/store-code`; `/s/<CODE>` app links set the
+pending code when no store is chosen. The update gate uses the higher of the
+directory's and the server's minimum and re-checks when the store changes.
+
+**Fixtures.** `test/fixtures/tenants.dart`: `testToastTenant`,
+`testCloverTenant`, `demoTenant` (section 7 values), `tenantOverrides()`,
+`FixedTenantNotifier`, and `legacyFixtureStore` (only for the old invoice /
+public-link fixtures, which were captured at the origin store).
+`test/fixtures/branding/<CODE>.branding.json` are copies of MT7's
+`backend/tests/fixtures/stores/<CODE>.branding.json` (taken from the MT7
+branch); `branding_fixtures_test.dart` builds each `TenantConfig` from them
+and requires it to equal the fixture, and checks the key set.
+
+**Tests (MT11):** `test/core/tenant/` (store_code 9, tenant_config 7,
+store_resolver 16, store_switch 5 incl. the StoreOpsRoot "no previous store
+data" widget test), `test/core/storage/per_store_keys_test.dart` (5),
+interceptor host tests (auth +2, labels +1),
+`test/features/authentication/store_code_screen_test.dart` (12, incl. a
+device matrix 320x568 / 375x667 / 390x844 / 320x1024 split / 1024x1366 at
+2x text), `test/features/account/switch_store_tile_test.dart` (7), update
+gate +2.
+
+**Deferred (MT11):** universal links / app links need the owner's
+Associated Domains + `FlutterDeepLinkingEnabled` (MT7a/owner); `/c/...`
+public checklist links are not opened in the app. A link for another store
+while a store is chosen just opens the app (no switch prompt).
+
+## As built - MT12 (app: store time, brand theme, gating, push store, names)
+
+**Store time (5.8).** `StoreTime` keeps its API; zone from
+`StoreTime.setTimezone()` (called on every tenant activation), tz database
+`package:timezone` `latest.dart` (full range, ~1.1 MB source), loaded in
+`bootstrap()` and lazily elsewhere. New: `offsetAt()`, `fromStoreWallClock()`,
+`timezone`. `endOfStoreDay` uses the offset at that midnight. Task create /
+schedule requests send `StoreTime.timezone`.
+
+**Theme.** `AppTheme.forBrand(primary, secondary, brightness)` (MT11 wiring
+in `app.dart`); `BrandColors` keeps text on brand colour and brand-coloured
+text on the surfaces at >= 4.5:1 (white/near-black, else the seed's
+`onPrimary`; accents lightened/darkened step-wise). `AppColors.primary` is
+now the product default teal `#0F766E`; FABs and the More avatar use the
+theme's primary.
+
+**Gating (6).** `lib/core/tenant/capability_gate.dart`:
+`featureRequirements` (open_orders, insights + every `insights_<screen>`,
+inventory_from_toast, upload_inventory, price_change_log, scan /
+print_labels / manual_lookup, ask_bot), `storeAllowsFeature(id, store)` (no
+store known = nothing hidden), `StoreParts` partial getters (`whatsapp`,
+`apInbox`, `liveTodaySales`, `receivingRecords`, `dayTotals`, `posLabel`),
+`NotAvailableScreen`, `StoreFeatureGate`. `FeatureEntry.visibleFor(user)`
+(grant AND store) replaces `access.allows` in search, Store sections and More
+> Setup; `canOpenInsights` and `InsightScreen.allows` check the store too.
+Push routes to open orders, inventory from POS, loss watch and insights are
+wrapped in `StoreFeatureGate` (`pushScreenContent()` unwraps for tests).
+"Also in <pos>" and "Inventory from <pos>" (`FeatureEntry.displayTitle`).
+The three hard-coded checklist search entries (`checklist_spice_town`, ...)
+are removed: a store's checklists are reached through Daily Checklists,
+which lists the server's schemas.
+
+**Push (5.6).** `PushTarget.store` (upper case). AppShell: another store's
+push -> dialog "This alert is for <saved name or code>. Switch store?"; Yes
+-> `switchStore(toCode:)` (lands on that store's sign-in, route not carried);
+No -> dismissed. The Team poller ignores another store's foreground push.
+
+**Names (9.2).** `test/identity/no_spicetown_names_test.dart` over `lib/`
+(pattern of 9.2; the package name `spicetown_app` and `_`-separated legacy
+checklist type ids are not hits); `test/identity/allowlist.txt` is empty.
+Changes: OS-permission hints use `appDisplayName`; Home title = store short
+name; PO share caption / scanned-PDF creator; invoice parser's own-store
+names come from the tenant (`ActiveStore`), not a literal; neutral glossary
+and help text; generic flyer default categories (`groceries`, `others`) and
+checklist-builder WhatsApp groups (`store`, `kitchen`); no staff names in
+public-link suggestions or search keywords; comments name "the backend" /
+"the labels app" instead of the old repos.
+
+**Tests (MT12):** store_time_zones 20 (NY/Chicago/LA: offsets, spring
+forward, fall back, local midnight, round trip, end of day across DST),
+capability_gate 12 (section 6 rows, visible sets per fake store, Store
+sections, insights, "Also in <pos>", partial gates, "Not available" for
+pushes), push_store_routing 5, app_theme_buttons 9 (each fake store's theme
+and arbitrary colours at 4.5:1), names 2.
+
+**Also (MT12):** public checklist links no longer prefill built-in names;
+with no server suggestion a new link starts on "Type their name".
+
+**Totals (both batches):** `flutter analyze` no issues;
+`flutter test --concurrency=2` (heavy queue, at `fb25016`): **5454 passed,
+6 skipped, 0 failed**; plus 4 in `branding_fixtures_test.dart` at
+`ba945b3`. No simulator run (Regression stage).
+
+**Deferred (MT12):** the partial gates of section 6 are available as
+`StoreParts` getters but not yet wired into the individual screens (Items
+Sold "Today", "received" evidence, Home's accuracy badge, AP inbox actions,
+WhatsApp send options); the server's 409 / its own channel switches remain
+the backstop. Glossary/help text still says "Toast" in POS explanations (the
+server's `/api/glossary` replaces the bundled copy; MT9 substitutes
+`pos_name` there). Chat bubble colour is the product teal, not the store's.
+
+## As built - MT7 (store settings, branding) and MT8 (store pack, identity)
+
+Branch `m2-mt7-mt8` (worktree `/Users/sundar/storeops/wt-mt7-mt8`), rebased on `main` after MT7a part 2 and MT9, merged fast-forward.
+
+### MT7 - store settings, de-hardcode, branding
+
+**Settings** (`backend/app/config.py`): every field of 1.1, with the validators
+of 1.2 (store code pattern + upper-casing, hex colours, IANA zone,
+`FIRST_SALES_DATE`, cutoff 0-23, and the refused legacy domain on
+`PLATFORM_DOMAIN` / `PUBLIC_HOST` / `PUBLIC_BASE_URL` / `LABELS_URL` /
+`SESSION_COOKIE_DOMAIN`). Defaults changed as marked in 1.1 (`./storeops.db`,
+`uploads/flyers`, blank AP inbox, blank public base URL, blank app-store URLs).
+**Interface addition:** `DOCUMENT_LOGO_FILE` (local image for the PO PDF
+letterhead; blank = the bundled StoreOps icon `assets/branding/logo-128.png`).
+`backend/.env.example` lists every setting (generated from `Settings`, secrets
+blank); `tests/test_store_settings.py` fails if one is missing.
+
+**Derived values** (`app/store/settings_view.py`): the functions of 1.2 plus
+`store_slug` (file-name prefix), `sales_floor` / `first_sales_date`,
+`business_day_cutoff_hour`, `store_timezone_name`, `ap_inbox_address`,
+`play_store_url` / `app_store_url`, `logo_url` / `icon_url`, `store_email`,
+`email_fallback_domain`.
+
+**Sites moved to settings** (the 1.6 settings rows, plus what a full grep of
+`backend/app` found):
+
+| Was | Now |
+|---|---|
+| PO PDF header/footer name, address, phone, icon (`po_export`) | `STORE_NAME` / `STORE_ADDRESS` / `STORE_PHONE` (blank lines left out), `DOCUMENT_LOGO_FILE`; text is XML-escaped |
+| PO email subject/body/signature, WhatsApp caption, From name, Message-ID domain, Reply-To (`po_send`) | same settings; `EMAIL_FROM_NAME`; `EMAIL_FALLBACK_DOMAIN`; Reply-To = `STORE_EMAIL` or (blank, today's behaviour) the sending address - **the contract said "no Reply-To" for blank; today's code always set it, so that is kept** |
+| SMTP host/port/TLS + Gmail names (`po_send`, `toast_email`) | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SSL` (STARTTLS when false), `SMTP_USERNAME` / `SMTP_PASSWORD` falling back to `GMAIL_*` |
+| Public checklist "not active" page brand (`routers/checklist_public`) | store name + `LOGO_URL` (CSP `img-src` adds the logo's origin when absolute) |
+| Old-app margin message (`routers/reports`), PDF producer (`toast_pdf`), FastAPI title | `PRODUCT_NAME` |
+| Transfer default vendor (`invoice_submission`), automatic-task actor `SYSTEM_NAME` (`team/tasks_service`, `auto_tasks`, `issue_leads`), removed-account task event (`team/bootstrap`) | effective store name |
+| Team rules text (`team/rules`) | store name; "call <STORE_PHONE>" only when set |
+| Ask bot + weekly digest prompts | `STORE_NAME` + `STORE_DESCRIPTION` (blank = "a retail store") |
+| Sales export file name `spicetown-sales-...` (`routers/sales`) | `<store_slug>-sales-...` |
+| `FIRST_REAL_SALES_DATE` (`pos/sync/accuracy`, `pos/sync/open_orders`, `insights_data`, `insights`) | `FIRST_SALES_DATE` via `sales_floor()`; blank = no floor. Open-checks full scan without a floor starts at the oldest stored business date (max 365 days back) |
+| `CLOSEOUT_HOUR` (`accuracy`, `insights_data`, `insights`), delivery-suggestion snapshot fallback time | `BUSINESS_DAY_CUTOFF_HOUR` |
+| Recurring-task default zone (`team/recurrence`, `team/tasks_models` column default) | effective store time zone |
+| WhatsApp role chat ids (`whatsapp_groups._env_chat_id`) | `whatsapp_role_chat_ids()` (`WHATSAPP_GROUP_CHAT_IDS` over the two legacy settings) |
+| `public_base_url` reads (`main` invoice login redirect, `invoice_submission`, `checklist_public`, `issue_leads`, `inventory_api_readiness`) | `effective_public_base_url()` |
+| `/api/app/config` `store_url` | blank `APP_STORE_URL` -> `null`; blank `PLAY_STORE_URL` -> Play listing of `APP_BUNDLE_ID` (shape unchanged) |
+| Push app name `spicetown-notifications` | `storeops-notifications` (internal Firebase app name) |
+
+The old module-level names stay readable for existing imports and tests
+through module `__getattr__` (PEP 562), always reading the current settings or
+pack: `accuracy/sales_accuracy/open_orders/insights_data.FIRST_REAL_SALES_DATE`
+and `CLOSEOUT_HOUR`, `invoice_submission.TRANSFER_DEFAULT_VENDOR`,
+`tasks_service.SYSTEM_NAME`, `recurrence.DEFAULT_TIMEZONE`, `rules.RULES_TEXT`,
+`reports.MARGIN_REMOVED_DETAIL`. `sales_accuracy` forwards the two names
+explicitly (they are no longer module globals).
+
+**Store features** (1.3): `settings_view.store_features()`;
+`gating.FEATURE_STORE_FEATURES = {"ask_bot": {"ai"}}` used by
+`features_for_store`; new `gating.require_store_feature("ai")` on `/api/ask`
+(409 "Not available for this store."). Weekly digest with `AI_ENABLED=false`:
+the numbers with a fixed headline and the additive key `"ai_off": true`, no
+Anthropic call.
+
+**Capabilities** (section 7): `CLOVER_CAPABILITIES`, `CSV_CAPABILITIES` in
+`app/pos/capabilities.py`; `gating.PROVIDERS` gains `clover` ("Clover") and
+`csv` ("CSV upload") fallback entries.
+
+**Branding** (section 2): `app/store/branding.py` (`branding_payload`,
+`compact_json`, `etag_for`) and `app/routers/branding.py` (`/api/app/branding`
+with ETag/304/`Vary`, no cookie; `/branding/logo.png` and `/branding/icon.png`
+serve MT7a's bundled `assets/branding/logo-512.png` and `app-icon-1024.png`).
+Legal page URLs are returned as written (the KloudC pages end with `/`);
+origins (`public_host`, `labels_url`) never end with `/`. `/api/auth/me` gains
+`store_code` and `store_features`; `push.send_to_tokens` adds `store` through
+`push.with_store` when `STORE_CODE` is set.
+
+**Fake stores** (section 7): `backend/tests/fixtures/stores/{STOREOPS_TEST_TOAST,STOREOPS_TEST_CLOVER,DEMO}.env`
+and `<code>.branding.json` (generated with `python -m app.store branding --env
+<file>`; the Toast body is byte-for-byte the section 2 example);
+`tests/store_fixtures.py` (`use_store`, `fake_store`, `use_legacy_pack`,
+`legacy_checklist_seeds`).
+
+### MT8 - store pack and store identity
+
+**Pack** (`app/store/pack.py`): pydantic models with `extra="forbid"`,
+readable `PackError` lines, section-level fallback to `generic.json`, compiled
+rule closures (regexes compiled once per pack), the precedence of 3.3
+(`STORE_PACK_FILE` > newest `setting_changes` `store_pack` row > generic; a
+stored pack that no longer validates logs an error and falls back to generic),
+`set_override` for tests. JSON Schema committed as
+`backend/packs/store_pack.v1.schema.json` (a test keeps it in sync).
+**Interface changes (additive):**
+- `menu.kitchen_menu_prefixes` (list) and `menu.kitchen_label` (string): the
+  Insights kitchen-menu rule (`insights_data.is_kitchen_path`, the legacy
+  `KITCHEN_MENU_PREFIX`) and its `kitchen_rule` text. Generic: none / "Kitchen".
+- `issue_leads.document_title`: the Leads page's document title (was a literal).
+- `po_sections.other_section` must be `"Other"` in pack version 1 (the PO code
+  treats that name as fixed).
+- An empty `grocery_menus` means every non-kitchen menu is grocery.
+- `similar_products` excludes `rules.json`'s groups (now `[]`) plus the pack's
+  `excluded_category_groups`.
+
+**Rule sites now read the pack:** `po_sections.section_for` / `BUILTIN_SECTIONS`
+(-> `builtin_sections()`; `po_section_rules` calls it), `fix_issues`
+(`excluded_groups()`), `store_vs_container`, `delivery_suggestions`
+(`kitchen_groups`), `insights` (`GROCERY_MENUS`, `channel_of`),
+`insights_data` (kitchen menus), `schedule_suggestions` (house vendors,
+compared after the same normalisation as `vendor_key`), `issue_leads`
+(`DOC_LEADS`, `DOC_FALLBACK`, `SECTION_PROPOSALS`, `SECTION_NOTES`, document
+title), `flyers` (`categories()`), `whatsapp_groups` (`builtin_groups()`),
+`checklist_schemas` (fallback registry = `store_seed_definitions()`, the
+pack's checklists) and `checklist_admin.ensure_seeded` / `seed_rows` /
+`rows_for_seeds`. Old constant names stay readable (module `__getattr__`).
+
+**Packs:** `generic.json`, `test_toast.json`, `test_clover.json` (no channels or
+checklists section: shows the generic fallback), `demo.json` (copy of generic,
+`pack_id` `demo`, for MT13 to fill).
+
+**Commands** (`python -m app.store`): `init`, `pack validate|load|show|schema`,
+`identity show`, and `branding [--env FILE]` (prints the branding body; used to
+generate the fixtures).
+
+**store-init** (3.5): as specified, one transaction, then the marker. Removal
+is narrowed so a second run is a true no-op even though the pack re-adds a
+`store` role: 0034's rule only when `created_by IS NULL`, 0044's roles only when
+`created_by = 'migration 0044'`. Inserts skip existing `checklist_type` / `key`
+/ `(match_type, match_value)`. The pack row is written only when it differs from
+the newest one. Pack checklists are written with note "From the store pack
+(<pack_id>)".
+
+**Identity** (1.5): migration `0062_store_identity`, `app/store/identity.py`
+(model `StoreIdentity`, the functions of 1.5), called first in `main.lifespan`.
+
+**Other batches' files touched (one-liners):** `docker-compose.yml`
+(`UPLOADS_ROOT: /data/uploads`, so the identity marker lives in the store's
+volume) and `.github/workflows/ci.yml` (the compose boot step runs
+`alembic upgrade head && python -m app.store init --code CI --pack
+packs/generic.json` first - without a stamp the server now refuses to start).
+`backend/app/assets/spice-town-icon.jpg` removed (nothing uses it; the parity
+env points `DOCUMENT_LOGO_FILE` at a private copy).
+
+**Name allowlist:** one entry left, `config.py`'s `REFUSED_DOMAIN =
+"spicetown.shop"` (the refusal of rule 0.3); every other backend line was moved
+to settings / the pack or reworded (MT9 cleared the website and glossary).
+
+### Legacy values (1.6)
+
+`backend/scripts/packs/extract_legacy_pack.py --from-commit 56e095c --out-dir
+$STOREOPS_PRIVATE_DIR [--catalog-db <scratch copy>]` writes, outside git:
+`spicetown.pack.json`, `spicetown.env` (also `APP_STORE_URL`, `PLAY_STORE_URL`,
+`DOCUMENT_LOGO_FILE`; no `LABELS_URL` - refused domain), `legacy_cases.json`
+(the legacy functions' answers: 15,972 `section_for` cases incl. every
+catalog item of the Oct 18 copy, the 48 built-in sections, 23 dining options,
+9 vendor names, 28 menu/group pairs, the menu sets and the leads),
+`forbidden_tokens.txt` (staff names) and the legacy letterhead image. The
+script reads constants from the unpacked commit; the `section_for` if-chain is
+restated as 19 pack rules and checked against the oracle.
+
+### Tests
+
+| Run | Result |
+|---|---|
+| Full backend suite, Python 3.9 (after the rebase on `main`) | **2566 passed, 19 skipped, 0 failed** |
+| Full backend suite, Python 3.12 (same tree) | **2566 passed, 19 skipped, 0 failed** |
+| Same modules with no private pack (what CI sees) | the `legacy_pack` tests (29 functions, 31 cases) and `test_store_pack_legacy.py` (8) skip with a reason |
+
+New test files (78 tests): `test_store_settings` (12), `test_branding` (13),
+`test_store_identity` (12), `test_store_pack` (17), `test_store_pack_legacy`
+(8), `test_fresh_store` (7: `alembic upgrade head` on a new file +
+`python -m app.store init` in child processes, every text column searched for
+the five legacy names plus the private staff-name list: 0 hits; stamp, marker,
+no-op second init, other code refused, unmigrated database refused, store data
+refused unless `--adopt`), `test_blank_store_names` (9: every parity endpoint
+except the glossary, public pages, PO PDF text, PO email and WhatsApp text,
+prompts, team rules, export file name, checklist seeding - no legacy name with
+default settings). Plus 2 in `test_po_send` (store settings in the PO text,
+SMTP/Reply-To/From/Message-ID), 1 in `test_pos_gating` (Clover / CSV
+fallbacks), 1 in `test_pos_sync_neutral` (full-scan start without a floor).
+
+GitHub Actions on `main` (run `39154243122`, commit `b60cc24`): backend 3.9
+and 3.12 **2525 passed, 60 skipped** each (the private-pack tests skip there),
+website job green, Docker job green - compose boot runs `store-init` first
+(`STORE_CODE=STOREOPS_CI`; the two-letter `CI` no longer passes the store-code
+pattern), `/api/health` 200, healthy, restart on the existing database, and the
+full suite inside the image 2525 passed / 60 skipped.
+
+How the older suite runs on product defaults (`tests/conftest.py`):
+- the checklist fallback serves the legacy built-in fixtures
+  (`checklist_builtin`) unless a test is marked `pack_checklists`;
+- 14 modules (12 whole, 2 per test) written around two WhatsApp roles, six
+  flyer categories and kitchen groups use `suite_pack` (`tests/fixtures/packs/suite.json`,
+  made-up names; their test data now says "KITCHEN" / "MainStore");
+- tests of the origin store's own rules (PO section map, Fix Issues lead
+  document, category corrections) are marked `legacy_pack`: the private pack +
+  settings, skipped where those files are absent;
+- `AI_ENABLED=true` in the test environment (the Ask bot / digest tests
+  predate the switch); fake-store tests switch it per store.
+
+
+### Parity
+
+`scripts/parity` on a fresh read-only copy of the production database (Oct 18
+12:56, migration 0059, 128,561 order lines), migrated once to 0061 with the
+import commit's migrations so both sides start from the same rows (the
+0060/0061 backfills stamp `created_at` with the time they run; recording both
+sides with `--migrate` from 0059 showed only those timestamp columns).
+Baseline = import commit `56e095c` (= `multistore-m1`) with its own defaults;
+new = this branch with `spicetown.env` exported, `STORE_PACK_FILE` = the
+private pack, `STORE_CODE` blank, `--migrate` (0061 -> 0062).
+
+| Python | Files | DIFFERENCES | Additions (allowed) |
+|---|---|---|---|
+| 3.9 | 114 | **0** | `auth.me` `store_code`, `store_features`; table `store_identity` (both fingerprints) |
+| 3.12 | 114 | **0** | the same 4 |
+
+All 110 endpoints 200 on both sides, 0 network attempts, 0 background threads;
+`--strict` lists exactly the 4 additions. After rebasing on `main`, a third
+recording (3.9) differs from the baseline only in 10 `/api/glossary` text
+fields - MT9's store-neutral help wording (`glossary.py`, owned by MT9), not
+these batches. The database copies and recordings were deleted afterwards.
+
+
+### Deferred
+
+- `checklist_builtin.py` stays (migration 0039 imports it) and so do the
+  legacy fixtures the older checklist tests use; new checklist tests should use
+  `pack_checklists` + a fake store.
+- `tests/data/prod_category_combos_2026-09-30.json` (category combinations of
+  the origin store's catalog, from the import) is still committed; a made-up
+  replacement would let `test_every_prod_catalog_combo_has_a_section` stay.
+- The `legacy_pack` tests and `test_store_pack_legacy` skip in CI. CI could
+  generate the private files on the fly (`extract_legacy_pack.py
+  --from-commit 56e095c`, no catalog) if the owner wants them there.
+- `app/data/similar_products` vocabulary (brands, synonyms) is South Asian
+  grocery vocabulary from the origin catalog; not names, left as product data.
+- Website and app read `labels_url` / `store_features` from branding (MT9,
+  MT11/MT12); the server side is done.
+- Docker deploys: a new store needs `python -m app.store init --code <CODE>
+  --pack <pack.json>` once before its first start (CI does it); README
+  wording is MT7a's.
 
 ## As built - MT13 prep (DEMO store, CSV-only connector, legal and AI notice)
 

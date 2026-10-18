@@ -93,7 +93,7 @@ export default function NotificationSettingsPage() {
       <div className="page-header">
         <h1>Notifications</h1>
         <p className="muted">
-          Which alerts reach your phone in the Spice Town app. Changes save straight away and show in the app too.
+          Which alerts reach your phone in the app. Changes save straight away and show in the app too.
         </p>
       </div>
 

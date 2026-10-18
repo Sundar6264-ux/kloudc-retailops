@@ -21,16 +21,28 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import HRFlowable, Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-# Cropped from the original ~9MB source (900x577, which also had the "Spice
-# Town" wordmark and tagline baked into the image) down to just the bowls
-# icon (497x334) - the wordmark is real text below instead (brand_name_style),
-# so its size can be tuned independently and the whole letterhead stays
-# compact instead of being however tall the source image happened to be.
-_ICON_PATH = Path(__file__).resolve().parent.parent / "assets" / "spice-town-icon.jpg"
-_ICON_ASPECT = 334 / 497  # height / width, from the cropped source
+# The letterhead icon: DOCUMENT_LOGO_FILE (a local image) when set, else the
+# bundled StoreOps icon; no icon when neither file exists. The store's name,
+# address and phone are real text next to it (store settings), so their size
+# can be tuned independently of the image.
+_BUNDLED_ICON = Path(__file__).resolve().parent.parent / "assets" / "branding" / "logo-128.png"
 
-_BUSINESS_ADDRESS = "378 Kelly Road, Vernon, CT 06066"
-_BUSINESS_PHONE = "(860) 237-4280"
+
+def _icon_file() -> Optional[Path]:
+    from app.config import get_settings
+
+    raw = (getattr(get_settings(), "document_logo_file", "") or "").strip()
+    path = Path(raw).expanduser() if raw else _BUNDLED_ICON
+    return path if path.is_file() else None
+
+
+def _letterhead():
+    """(name, address, phone) for the PO header and footer; blank parts are
+    left out."""
+    from app.store import settings_view as sv
+
+    return sv.store_display_name(), sv.store_address(), sv.store_phone()
+
 
 # A warm, light palette (pulled from the logo's own orange/red/tan tones)
 # instead of a dark header bar - this is a document meant to look inviting
@@ -99,19 +111,21 @@ def export_simple_po_pdf(
     # next to it (not baked into the logo image, so it can be sized to fit),
     # and the document title/supplier/date right-aligned on the far right -
     # all in one row so the entire header comfortably clears the 2-inch budget.
-    brand_block = [
-        Paragraph("Spice Town", brand_name_style),
-        Paragraph(_BUSINESS_ADDRESS, brand_detail_style),
-        Paragraph(_BUSINESS_PHONE, brand_detail_style),
-    ]
+    store_name, store_address, store_phone = _letterhead()
+    brand_block = [Paragraph(xml_escape(store_name), brand_name_style)]
+    brand_block += [Paragraph(xml_escape(line), brand_detail_style) for line in (store_address, store_phone) if line]
     doc_block = [
         Paragraph("PURCHASE ORDER", title_style_right),
         Paragraph(f"Supplier: <b>{supplier}</b>", subtitle_style_right),
         Paragraph(f"Prepared: {dt.date.today().isoformat()}", subtitle_style_right),
     ]
-    if _ICON_PATH.exists():
+    icon_path = _icon_file()
+    if icon_path is not None:
+        from reportlab.lib.utils import ImageReader
+
+        img_w, img_h = ImageReader(str(icon_path)).getSize()
         icon_width = 0.5 * inch
-        icon = Image(str(_ICON_PATH), width=icon_width, height=icon_width * _ICON_ASPECT)
+        icon = Image(str(icon_path), width=icon_width, height=icon_width * (img_h / img_w if img_w else 1))
         header_table = Table(
             [[icon, brand_block, doc_block]],
             colWidths=[icon_width + 0.2 * inch, 2.2 * inch, None],
@@ -217,7 +231,7 @@ def export_simple_po_pdf(
     story.append(HRFlowable(width="100%", thickness=0.6, color=_GRID, spaceAfter=0.12 * inch))
     story.append(
         Paragraph(
-            f"Spice Town &middot; {_BUSINESS_ADDRESS} &middot; {_BUSINESS_PHONE}",
+            " &middot; ".join(xml_escape(part) for part in (store_name, store_address, store_phone) if part),
             footer_style,
         )
     )

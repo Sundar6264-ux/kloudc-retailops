@@ -1,11 +1,11 @@
 """Marketing flyers library (docs/MARKETING_FLYERS_CONTRACT.md, sections 1-4).
 
 A flyer is an image or a PDF plus an optional WhatsApp caption, kept in a
-normal Finder folder on the Mac mini - FLYERS_DIR (default
-~/Spice Town Flyers), one sub-folder per category:
+normal folder - FLYERS_DIR (default uploads/flyers), one sub-folder per
+category (the store pack's flyer_categories, e.g. Groceries/ Offers/ Others/):
 
-    Spice Town Flyers/
-        Groceries/  Street Kitchen/  Flowers/  Halal Meat/  Spice Town/  Others/
+    <FLYERS_DIR>/
+        Groceries/  Offers/  Others/
         _Deleted/<Category>/   (soft-deleted flyers, never removed outright)
         .thumbs/               (hidden thumbnail cache)
 
@@ -68,17 +68,23 @@ logger = logging.getLogger(__name__)
 
 FEATURE = "marketing_flyers"
 
-# (key, label, folder) - the fixed list, in this order (contract section 2).
-CATEGORIES = (
-    ("groceries", "Groceries", "Groceries"),
-    ("street_kitchen", "Street Kitchen", "Street Kitchen"),
-    ("flowers", "Flowers", "Flowers"),
-    ("halal_meat", "Halal Meat", "Halal Meat"),
-    ("spice_town", "Spice Town (Generic)", "Spice Town"),
-    ("others", "Others", "Others"),
-)
-CATEGORY_LABELS = {key: label for key, label, _ in CATEGORIES}
-CATEGORY_FOLDERS = {key: folder for key, _, folder in CATEGORIES}
+# (key, label, folder), in order: the store pack's flyer_categories
+# (categories()). CATEGORIES / CATEGORY_LABELS / CATEGORY_FOLDERS still read
+# them (module __getattr__ at the end).
+
+
+def categories() -> tuple:
+    from app.store import pack as store_pack
+
+    return tuple((c.key, c.label, c.folder) for c in store_pack.flyer_categories())
+
+
+def category_labels() -> dict:
+    return {key: label for key, label, _ in categories()}
+
+
+def category_folders() -> dict:
+    return {key: folder for key, _, folder in categories()}
 
 MB = 1024 * 1024
 MAX_IMAGE_MB = 25
@@ -154,15 +160,14 @@ class FlyerError(Exception):
 
 
 def base_dir() -> pathlib.Path:
-    raw = (get_settings().flyers_dir or "").strip()
-    path = pathlib.Path(raw).expanduser() if raw else pathlib.Path.home() / "Spice Town Flyers"
-    return path.resolve()
+    raw = (get_settings().flyers_dir or "").strip() or "uploads/flyers"
+    return pathlib.Path(raw).expanduser().resolve()
 
 
 def ensure_dirs() -> pathlib.Path:
-    """The base folder and the six category folders (created on first use)."""
+    """The base folder and the category folders (created on first use)."""
     base = base_dir()
-    for _, _, folder in CATEGORIES:
+    for _, _, folder in categories():
         (base / folder).mkdir(parents=True, exist_ok=True)
     return base
 
@@ -192,7 +197,7 @@ def _find_by_id(base: pathlib.Path, flyer: Flyer) -> Optional[pathlib.Path]:
     if not flyer.id:
         return None
     ext = extension_for(flyer.mime)
-    parents = [base / DELETED_DIR / f for _, _, f in CATEGORIES] if flyer.deleted_at else [base / f for _, _, f in CATEGORIES]
+    parents = [base / DELETED_DIR / f for _, _, f in categories()] if flyer.deleted_at else [base / f for _, _, f in categories()]
     pattern = re.compile(rf" \({flyer.id}(-\d+)?\)\.{ext}$", re.IGNORECASE)
     found = []
     for parent in parents:
@@ -353,8 +358,8 @@ def clean_title(value) -> str:
 
 
 def clean_category(value) -> str:
-    if not isinstance(value, str) or value.strip() not in CATEGORY_LABELS:
-        raise FlyerError(400, "Choose a category: " + ", ".join(label for _, label, _ in CATEGORIES) + ".")
+    if not isinstance(value, str) or value.strip() not in category_labels():
+        raise FlyerError(400, "Choose a category: " + ", ".join(label for _, label, _ in categories()) + ".")
     return value.strip()
 
 
@@ -762,7 +767,7 @@ def create_flyer(db: Session, user: User, data: Optional[bytes], original_filena
     category = clean_category(category)
     caption = clean_caption(caption)
     processed = process_upload(data)
-    folder = ensure_dirs() / CATEGORY_FOLDERS[category]
+    folder = ensure_dirs() / category_folders()[category]
     now = utcnow()
     flyer = Flyer(
         title=title,
@@ -828,7 +833,7 @@ def list_flyers(
     """{items, next_before_id, counts} - newest first, deleted ones left out.
     counts (additive, for the library's category chips) ignores the category
     filter and paging but honours `q`."""
-    if category and category not in CATEGORY_LABELS:
+    if category and category not in category_labels():
         raise FlyerError(400, "Unknown category.")
     limit = max(1, min(int(limit or DEFAULT_LIMIT), MAX_LIMIT))
     search = _search_clause(q)
@@ -848,7 +853,7 @@ def list_flyers(
         count_stmt = count_stmt.where(search)
     per_category = dict(db.execute(count_stmt.group_by(Flyer.category)).all())
     counts = {"all": sum(per_category.values())}
-    counts.update({key: per_category.get(key, 0) for key, _, _ in CATEGORIES})
+    counts.update({key: per_category.get(key, 0) for key, _, _ in categories()})
 
     stats = _send_stats(db, [f.id for f in rows])
     return {
@@ -906,7 +911,7 @@ def flyer_out(flyer: Flyer, stats: Optional[dict] = None, sends: Optional[List[F
         "id": flyer.id,
         "title": flyer.title,
         "category": flyer.category,
-        "category_label": CATEGORY_LABELS.get(flyer.category, flyer.category),
+        "category_label": category_labels().get(flyer.category, flyer.category),
         "caption": flyer.caption,
         "file_name": display_file_name(flyer),
         "mime": flyer.mime,
@@ -950,7 +955,7 @@ def update_flyer(db: Session, user: User, flyer_id: int, payload: dict) -> Flyer
             if old_path is None:
                 logger.warning("Flyer %s: file %r is missing; renaming the record only", flyer.id, flyer.file_rel_path)
             else:
-                folder = ensure_dirs() / CATEGORY_FOLDERS[category]
+                folder = ensure_dirs() / category_folders()[category]
                 name = stored_file_name(flyer.id, title, flyer.created_at, flyer.mime)
                 if folder / name != old_path:
                     new_path = _move(old_path, folder, name)
@@ -977,7 +982,7 @@ def delete_flyer(db: Session, user: User, flyer_id: int) -> None:
         old_path = flyer_file(flyer)
         new_path = None
         if old_path is not None:
-            new_path = _move(old_path, base_dir() / DELETED_DIR / CATEGORY_FOLDERS[flyer.category], old_path.name)
+            new_path = _move(old_path, base_dir() / DELETED_DIR / category_folders()[flyer.category], old_path.name)
             flyer.file_rel_path = _rel(new_path)
         else:
             logger.warning("Flyer %s: file %r is missing; deleting the record only", flyer.id, flyer.file_rel_path)
@@ -1123,7 +1128,7 @@ def whatsapp_connected() -> bool:
 
 def meta(db: Session) -> dict:
     return {
-        "categories": [{"key": key, "label": label} for key, label, _ in CATEGORIES],
+        "categories": [{"key": key, "label": label} for key, label, _ in categories()],
         # Active groups an admin marked Marketing (and that have a chat to
         # send to), in label order - never their chat ids.
         "groups": [{"key": g["key"], "label": g["label"]} for g in whatsapp_groups.marketing_targets(db)],
@@ -1258,3 +1263,14 @@ def retry_send(db: Session, user: User, flyer_id: int, send_id: int) -> Tuple[di
     db.refresh(row)
     logger.info("Flyer %s: send %s (%s) queued again by %s", flyer.id, row.id, row.target_key, user.username)
     return send_out(row), [row.id]
+
+
+def __getattr__(name):
+    # The old constants, now the active store pack's (read at call time).
+    if name == "CATEGORIES":
+        return categories()
+    if name == "CATEGORY_LABELS":
+        return category_labels()
+    if name == "CATEGORY_FOLDERS":
+        return category_folders()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

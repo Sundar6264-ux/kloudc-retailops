@@ -39,6 +39,9 @@ os.environ.update(
         # the live store's Toast. Tests that need "configured" set fake values.
         "TOAST_CLIENT_ID": "",
         "TOAST_CLIENT_SECRET": "",
+        # The per-store AI switch (StoreOps M2) is off by default; the Ask bot
+        # and digest tests predate it. Fake-store tests switch it per store.
+        "AI_ENABLED": "true",
     }
 )
 
@@ -246,3 +249,47 @@ def _no_outside_network():
     socket.socket.connect = _real_connect
     socket.socket.connect_ex = _real_connect_ex
     socket.getaddrinfo = _real_getaddrinfo
+
+
+# --- Store pack (StoreOps M2) -------------------------------------------------
+# Every test starts with the default pack (packs/generic.json) and no pinned
+# pack. The suite's checklist tests were written against the legacy built-in
+# checklists (services/checklist_builtin.py, what migration 0039 seeds), so
+# the checklist fallback serves those here; a test marked `pack_checklists`
+# gets the active store pack's checklists instead (the product behaviour).
+# A module marked `suite_pack` gets tests/fixtures/packs/suite.json: made-up
+# rules in the shape those older modules were written for (two WhatsApp roles,
+# six flyer categories, kitchen groups). A test marked `legacy_pack` runs with
+# the private legacy pack and settings (docs/M2_CONTRACT.md 1.6) - the tests
+# that check the original store's own rules - and is skipped when they aren't
+# on this machine (CI).
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "pack_checklists: serve the store pack's checklists, not the legacy fixtures")
+    config.addinivalue_line("markers", "legacy_pack: needs the private legacy store pack (skipped without it)")
+    config.addinivalue_line(
+        "markers", "suite_pack: made-up rules in the older modules' shape (tests/fixtures/packs/suite.json)"
+    )
+
+
+@pytest.fixture(autouse=True)
+def _store_pack_state(request, monkeypatch):
+    from app.services import checklist_schemas
+    from app.store import pack as store_pack
+
+    from tests.store_fixtures import legacy_checklist_seeds, use_legacy_pack, use_suite_pack
+
+    store_pack.set_override(None)
+    store_pack.reload_pack()
+    if request.node.get_closest_marker("pack_checklists") is None:
+        monkeypatch.setattr(checklist_schemas, "store_seed_definitions", legacy_checklist_seeds)
+    if request.node.get_closest_marker("suite_pack") is not None:
+        use_suite_pack()
+    if request.node.get_closest_marker("legacy_pack") is not None:
+        use_legacy_pack(monkeypatch)
+    checklist_schemas.clear_cache()
+    yield
+    store_pack.set_override(None)
+    store_pack.reload_pack()
+    checklist_schemas.clear_cache()

@@ -14,6 +14,7 @@ import {
   shortDate,
   weekTitle,
 } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const WEEKS = [
   { value: 4, label: "4 weeks" },
@@ -45,7 +46,7 @@ export default function ChannelsPage() {
         body: (
           <>
             <p style={{ marginTop: 0 }}>
-              The channel is the order's dining option in Toast: In-store (the counter), Pick up (the kiosk), Online
+              The channel is the order's dining option in {currentPosName()}: In-store (the counter), Pick up (the kiosk), Online
               ordering, the delivery apps (DoorDash, Uber Eats) and Catering. Orders with no dining option are under
               Other, together with any channel beyond the five biggest.
             </p>

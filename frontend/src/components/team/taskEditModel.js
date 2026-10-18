@@ -4,6 +4,7 @@
 // fetch: node --test src/components/team/taskEditModel.test.mjs
 
 import { fixIssuesLeadPath } from "./taskLinks.js";
+import { storeDateTimeFormat } from "../../format.js";
 
 // --- Teams ------------------------------------------------------------------------
 
@@ -32,8 +33,7 @@ export function dueInputFromTask(task) {
   if (local && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(local)) return local.slice(0, 16);
   if (!task || !task.due_at) return "";
   const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/New_York",
+    storeDateTimeFormat("en-CA", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",

@@ -28,7 +28,6 @@ from sqlalchemy.orm import Session
 from app.demo import hide_demo_clause
 from app.features import user_has_feature
 from app.models import ChecklistDefinition, ChecklistDefinitionVersion, ChecklistSubmission, User
-from app.services import checklist_builtin
 from app.services import checklist_engine as engine
 from app.services import checklist_schemas
 from app.services import whatsapp_groups
@@ -84,13 +83,60 @@ class AdminError(Exception):
 
 # --- Seeding ------------------------------------------------------------------------------
 
+STORE_SEEDED_BY = "store pack"
+
+
+def seed_rows(now, created_by: str = STORE_SEEDED_BY) -> list:
+    """The store's built-in checklists (checklist_schemas.store_seed_definitions)
+    as table rows: [{"definition": {...}, "versions": [{...}]}] - the same
+    shape as checklist_builtin.seed_rows (migration 0039)."""
+    return rows_for_seeds(checklist_schemas.store_seed_definitions(), now, created_by)
+
+
+def rows_for_seeds(seeds: list, now, created_by: str = STORE_SEEDED_BY) -> list:
+    """Seed definitions (store_seed_definitions shape) -> table rows."""
+    rows = []
+    for seed in seeds:
+        latest = seed["versions"][-1]
+        by = seed.get("created_by") or created_by
+        rows.append(
+            {
+                "definition": {
+                    "checklist_type": seed["checklist_type"],
+                    "title": seed.get("title") or latest.get("title") or seed["checklist_type"],
+                    "short_name": seed.get("short_name"),
+                    "description": seed["description"] if "description" in seed else latest.get("description"),
+                    "active": True,
+                    "sort_order": seed.get("sort_order") or 0,
+                    "settings_json": json.dumps(seed.get("settings") or {}),
+                    "current_version": len(seed["versions"]),
+                    "draft_json": None,
+                    "created_at": now,
+                    "created_by": by,
+                    "updated_at": now,
+                    "updated_by": by,
+                },
+                "versions": [
+                    {
+                        "version": index + 1,
+                        "schema_json": json.dumps(schema),
+                        "note": seed.get("notes", {}).get(index + 1) if isinstance(seed.get("notes"), dict) else None,
+                        "created_at": now,
+                        "created_by": by,
+                    }
+                    for index, schema in enumerate(seed["versions"])
+                ],
+            }
+        )
+    return rows
+
 
 def ensure_seeded(db: Session) -> bool:
-    """Inserts the built-in checklists when the table is empty (a fresh test
-    database; production is seeded by migration 0039). Returns True if it did."""
+    """Inserts the store's built-in checklists (the store pack's) when the
+    table is empty (a new store's database, tests). Returns True if it did."""
     if db.execute(select(func.count(ChecklistDefinition.id))).scalar_one():
         return False
-    for row in checklist_builtin.seed_rows(utcnow()):
+    for row in seed_rows(utcnow()):
         definition = ChecklistDefinition(**row["definition"])
         db.add(definition)
         db.flush()

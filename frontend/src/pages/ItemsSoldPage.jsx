@@ -2,9 +2,12 @@ import ItemsSold from "../components/ItemsSold.jsx";
 import SalesDownload from "../components/SalesDownload.jsx";
 import SalesAccuracy from "../components/SalesAccuracy.jsx";
 import { useAuth } from "../AuthContext.jsx";
+import { useStoreAllows } from "../store/StoreContext.jsx";
 
 export default function ItemsSoldPage() {
   const { user, hasFeature } = useAuth();
+  // The accuracy check compares with the POS's own day totals (day_totals).
+  const accuracy = useStoreAllows("sales_accuracy_badge");
   return (
     <>
       <div className="page-header">
@@ -15,7 +18,7 @@ export default function ItemsSoldPage() {
           the sales page. Its API is still gated on inventory_reports, so it
           shows for whoever had it there. */}
       {hasFeature("inventory_reports") && <SalesDownload />}
-      {user?.is_admin && <SalesAccuracy />}
+      {user?.is_admin && accuracy && <SalesAccuracy />}
     </>
   );
 }

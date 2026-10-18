@@ -46,6 +46,7 @@ def _came_back(db, item_id):
     db.commit()
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_lead_progress_does_not_count_an_item_that_came_back_as_done(db, admin):
     from tests.test_issue_leads import at
 
@@ -64,6 +65,7 @@ def test_lead_progress_does_not_count_an_item_that_came_back_as_done(db, admin):
     assert (task.title, task.progress_done) == ("Fix Issues: 1 left of 2", 1)
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_a_lead_list_of_only_came_back_items_does_not_close_itself_at_once(db, admin):
     from tests.test_issue_leads import at
 
@@ -76,6 +78,7 @@ def test_a_lead_list_of_only_came_back_items_does_not_close_itself_at_once(db, a
     assert (task.status, task.title) == ("open", "Fix Issues: 1 left of 1")
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_a_reopened_lead_task_still_shows_its_live_count(db, admin):
     """Someone reopened it (so the system won't close it again) - its "N left
     of M" must still move, not freeze at the last number."""

@@ -43,6 +43,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.store import settings_view as sv
 from app.models import CartItem, User
 from app.po_send_models import PoSend, VendorContact
 from app.services import whapi_client
@@ -53,17 +54,15 @@ from app.timeutil import restaurant_today, utcnow
 
 logger = logging.getLogger(__name__)
 
-STORE_NAME = "Spice Town"
-STORE_ADDRESS = "378 Kelly Road, Vernon, CT 06066"
-STORE_PHONE = "(860) 237-4280"
+# The store's name, address and phone come from the store settings
+# (app/store/settings_view.py): STORE_NAME, STORE_ADDRESS, STORE_PHONE.
 
 NOTE_MARKER = "[[NOTE]]"
 MAX_NOTE = 1000
 MAX_RECIPIENTS = 10
 # Email CCs (W2, Oct 14): per contact (defaults) and per send.
 MAX_CC = 10
-SMTP_HOST = "smtp.gmail.com"
-SMTP_PORT = 465
+# SMTP host / port / TLS come from SMTP_HOST, SMTP_PORT, SMTP_SSL.
 SMTP_TIMEOUT = 30
 
 # A "sending" row older than this is treated as interrupted (uncertain).
@@ -180,8 +179,8 @@ def _plural(n: int, word: str) -> str:
 
 
 def email_configured() -> bool:
-    s = get_settings()
-    return bool(s.gmail_address and s.gmail_app_password)
+    cfg = sv.smtp_config()
+    return bool(cfg.username and cfg.password)
 
 
 def whatsapp_enabled() -> bool:
@@ -363,17 +362,17 @@ def compose(supplier: str, items: list, day: Optional[dt.date] = None) -> Tuple[
     paragraph; render_body puts the sender's note there (or drops it)."""
     day = day or restaurant_today()
     cases = sum(float(i.get("qty") or 0) for i in items)
-    subject = f"Purchase Order - {STORE_NAME} - {_clean_line(supplier, 200)} - {day:%b} {day.day}, {day.year}"
+    store_name = sv.store_display_name()
+    subject = f"Purchase Order - {store_name} - {_clean_line(supplier, 200)} - {day:%b} {day.day}, {day.year}"
+    signature = "\n".join(line for line in (store_name, sv.store_address(), sv.store_phone()) if line)
     body = (
         f"Hello {_clean_line(supplier, 200)} team,\n\n"
-        f"Please find attached {STORE_NAME}'s purchase order: {_plural(len(items), 'item')}, "
+        f"Please find attached {store_name}'s purchase order: {_plural(len(items), 'item')}, "
         f"{_fmt_qty(cases)} {'case' if cases == 1 else 'cases'} in total. Quantities are in cases.\n\n"
         f"{NOTE_MARKER}\n\n"
         "Please reply to this email to confirm the order, and let us know if anything is unavailable.\n\n"
         "Thank you,\n"
-        f"{STORE_NAME}\n"
-        f"{STORE_ADDRESS}\n"
-        f"{STORE_PHONE}"
+        f"{signature}"
     )
     return subject, body
 
@@ -388,15 +387,25 @@ def render_body(template: str, note: Optional[str]) -> str:
 
 def whatsapp_caption(supplier: str, items: list) -> str:
     cases = sum(float(i.get("qty") or 0) for i in items)
+    phone = sv.store_phone()
     return (
-        f"Purchase order from {STORE_NAME} - {_plural(len(items), 'item')}, {_fmt_qty(cases)} cases. "
-        f"Please confirm. {STORE_PHONE}"
+        f"Purchase order from {sv.store_display_name()} - {_plural(len(items), 'item')}, {_fmt_qty(cases)} cases. "
+        f"Please confirm." + (f" {phone}" if phone else "")
     )
 
 
 # --------------------------------------------------------------------------
 # Transports (tests replace these; nothing here runs without credentials)
 # --------------------------------------------------------------------------
+
+
+def _smtp_connect(cfg):
+    """An SMTP connection per SMTP_SSL: implicit TLS, or STARTTLS."""
+    if cfg.ssl:
+        return smtplib.SMTP_SSL(cfg.host, cfg.port, timeout=SMTP_TIMEOUT)
+    server = smtplib.SMTP(cfg.host, cfg.port, timeout=SMTP_TIMEOUT)
+    server.starttls()
+    return server
 
 
 def send_email(
@@ -406,19 +415,19 @@ def send_email(
     invoice emails' transport). Returns our Message-ID. Raises
     EmailNotConfigured or _ChannelError (maybe_sent when the connection broke
     after the message was handed over)."""
-    settings = get_settings()
-    if not settings.gmail_address or not settings.gmail_app_password:
-        raise EmailNotConfigured("Email isn't set up on the server (GMAIL_ADDRESS / GMAIL_APP_PASSWORD).")
-    sender = settings.gmail_address
-    domain = sender.rsplit("@", 1)[-1] or "spicetown.shop"
+    cfg = sv.smtp_config()
+    if not cfg.username or not cfg.password:
+        raise EmailNotConfigured("Email isn't set up on the server (SMTP_USERNAME / SMTP_PASSWORD).")
+    sender = cfg.username
+    domain = (sender.rsplit("@", 1)[-1] if "@" in sender else "") or sv.email_fallback_domain()
     message_id = make_msgid(domain=domain)
 
     msg = MIMEMultipart()
-    msg["From"] = formataddr((STORE_NAME, sender))
+    msg["From"] = formataddr((cfg.from_name, sender))
     msg["To"] = ", ".join(to_addrs)
     if cc_addrs:
         msg["Cc"] = ", ".join(cc_addrs)
-    msg["Reply-To"] = sender
+    msg["Reply-To"] = sv.store_email() or sender
     msg["Subject"] = subject
     msg["Date"] = formatdate(localtime=False)
     msg["Message-ID"] = message_id
@@ -430,9 +439,9 @@ def send_email(
     stage = "connect"
     server = None
     try:
-        server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT)
+        server = _smtp_connect(cfg)
         stage = "login"
-        server.login(sender, settings.gmail_app_password)
+        server.login(sender, cfg.password)
         stage = "send"
         refused = server.sendmail(sender, list(to_addrs) + list(cc_addrs or []), msg.as_string())
         stage = "done"
@@ -635,7 +644,7 @@ def preview(db: Session, supplier: str, user: User) -> dict:
         "note_marker": NOTE_MARKER,
         "max_note": MAX_NOTE,
         "pdf_filename": pdf_filename(supplier),
-        "from_address": settings.gmail_address or None,
+        "from_address": sv.smtp_config().username or None,
         "email_configured": email_configured(),
         "whatsapp": {
             "enabled": whatsapp_enabled(),

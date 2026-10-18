@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "store_code": "DEMO",
+  "name": "StoreOps Demo Market",
+  "short_name": "Demo",
+  "product": {
+    "name": "StoreOps",
+    "company": "KloudC LLC"
+  },
+  "logo_url": "https://demo.storeops.invalid/branding/logo.png",
+  "icon_url": "https://demo.storeops.invalid/branding/icon.png",
+  "primary_color": "#0F766E",
+  "secondary_color": "#334155",
+  "timezone": "America/New_York",
+  "currency": "USD",
+  "locale": "en-US",
+  "address": "300 Demo Rd, Hartford, CT 06101",
+  "phone": "(555) 010-0300",
+  "pos_name": "CSV upload",
+  "capabilities": [
+    "csv_catalog_import"
+  ],
+  "store_features": [],
+  "labels_url": null,
+  "public_host": "https://demo.storeops.invalid",
+  "legal": {
+    "company": "KloudC LLC",
+    "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
+    "terms_url": null,
+    "support_url": "https://kloudc.com/kloudc-support/"
+  },
+  "min_build": {
+    "ios": 0,
+    "android": 0
+  },
+  "store_url": {
+    "ios": null,
+    "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
+  },
+  "demo": true
+}

@@ -10,12 +10,20 @@
 // - Part of a code only counts for a long enough search: 3+ characters for a
 //   vendor SKU, 4+ for a barcode, and 6+ with a digit or a dash for the Toast
 //   id (a GUID is hex, so a word like "facade" never hits one).
+import { currentPosName } from "./store/gating.js";
 
 export const MIN_SUPPLIER_PART = 3;
 export const MIN_BARCODE_PART = 4;
 export const MIN_ITEM_ID_PART = 6;
 
-export const CODE_LABEL = { item_id: "Toast ID", supplier_item_id: "SKU", barcode: "Barcode" };
+// The POS item id's label follows the store's POS ("Toast ID", "Clover ID").
+export const CODE_LABEL = {
+  get item_id() {
+    return `${currentPosName()} ID`;
+  },
+  supplier_item_id: "SKU",
+  barcode: "Barcode",
+};
 
 export function normalizeCode(text) {
   return String(text ?? "").replace(/\s+/g, "").toLowerCase();

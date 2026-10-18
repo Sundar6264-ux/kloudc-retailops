@@ -428,7 +428,7 @@ def start_scheduler() -> Optional[BackgroundScheduler]:
     )
 
     # Multi-store MT6: a POS job is registered only when the store's POS has
-    # what it needs (app/pos/gating.py). Removes nothing for Spice Town.
+    # what it needs (app/pos/gating.py). Removes nothing for a Toast store.
     drop_unsupported_jobs(scheduler)
     scheduler.start()
     _scheduler = scheduler

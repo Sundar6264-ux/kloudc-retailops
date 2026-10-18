@@ -259,6 +259,7 @@ def _good_answers():
     return good_answers(FSA)
 
 
+@pytest.mark.suite_pack  # two WhatsApp roles (store, kitchen)
 def test_demo_checklist_is_saved_without_whatsapp(db, demo_client, no_real_sends):
     r = demo_client.post(f"/api/checklists/{FSA}/submit", json={"answers": _good_answers()})
     assert r.status_code == 200, r.text
@@ -560,7 +561,12 @@ def test_announcement_is_masked(db, admin_client, team):
 # --- 3. Team rules ---------------------------------------------------------------------------
 
 
-def test_rules_get_accept_and_version(db, staff, staff_client, anon_client):
+def test_rules_get_accept_and_version(db, staff, staff_client, anon_client, monkeypatch):
+    from app.config import get_settings
+
+    # The store's name and phone (StoreOps M2 store settings).
+    monkeypatch.setattr(get_settings(), "store_name", "Test Store")
+    monkeypatch.setattr(get_settings(), "store_phone", "555-010-0100")
     assert anon_client.get("/api/team/rules").status_code == 401
     r = staff_client.get("/api/team/rules").json()
     assert r["version"] == 1 and r["title"] == "Team rules"
@@ -568,7 +574,8 @@ def test_rules_get_accept_and_version(db, staff, staff_client, anon_client):
     text = r["text"]
     assert "\n\n" in text and "zero tolerance" in text.lower() and "24 hours" in text
     assert "report" in text.lower() and "block" in text.lower()
-    assert text.endswith("Questions or concerns: ask your manager or call 860-237-4280.")
+    assert text.startswith("Team (tasks, announcements and chat) is for Test Store staff to work together.")
+    assert text.endswith("Questions or concerns: ask your manager or call 555-010-0100.")
     assert staff_client.post("/api/team/rules/accept", json={"version": 2}).status_code == 400
     assert staff_client.post("/api/team/rules/accept", json={}).status_code == 422
     a = staff_client.post("/api/team/rules/accept", json={"version": 1}).json()

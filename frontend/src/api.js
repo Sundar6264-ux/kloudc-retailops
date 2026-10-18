@@ -90,6 +90,17 @@ export async function logout() {
   }
 }
 
+// The store's public branding (docs/M2_CONTRACT.md section 2): name, logo,
+// colours, time zone, POS name and capabilities. No login and no cookies
+// (it is the same for everyone), so a plain fetch, never the 401 bounce.
+// null when the server has no branding endpoint (older server).
+export async function getBranding() {
+  const res = await fetch(`${API_BASE}/api/app/branding`, { credentials: "omit" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`branding ${res.status}`);
+  return res.json();
+}
+
 export async function getMe() {
   const res = await request("/api/auth/me");
   return res.json();
@@ -878,7 +889,7 @@ async function downloadFile(path, fallbackFilename) {
 
 export async function downloadSales(start, end, format) {
   const params = new URLSearchParams({ start, end, format });
-  await downloadFile(`/api/sales/export?${params.toString()}`, `spicetown-sales.${format}`);
+  await downloadFile(`/api/sales/export?${params.toString()}`, `sales.${format}`);
 }
 
 export async function getMissingBarcodes() {

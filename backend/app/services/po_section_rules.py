@@ -39,8 +39,8 @@ from app.models import CartItem, PoSectionRule
 from app.services.item_vendors import vendors_of
 from app.services.product_match import snapshot_code_match
 from app.services.po_sections import (
-    BUILTIN_SECTIONS,
     OTHER,
+    builtin_sections,
     group_po_items,
     po_line_resolver,
     section_for,
@@ -309,7 +309,7 @@ def _all_sections(latest: dict, rules: SectionRules, counts: Optional[dict] = No
     """{section: items now} for every section in use or available: current
     ones, the automatic list (after renames) and those on active rules."""
     counts = dict(counts if counts is not None else _section_counts(latest, rules))
-    names = [rules.rename(b) for b in BUILTIN_SECTIONS]
+    names = [rules.rename(b) for b in builtin_sections()]
     names += [rules.rename(r.section) for r in rules.by_item.values()]
     names += [rules.rename(r.section) for r in rules.by_vendor.values()]
     for name in names:
@@ -323,7 +323,7 @@ def _spellings(latest: dict, rules: SectionRules) -> dict:
     out: dict = {}
     for name in _all_sections(latest, rules):
         out.setdefault(name.lower(), name)
-    for name in BUILTIN_SECTIONS:
+    for name in builtin_sections():
         out.setdefault(name.lower(), name)
     for rule in list(rules.renames.values()):
         out.setdefault(rule.match_value.strip().lower(), rule.match_value.strip())
@@ -502,7 +502,7 @@ def list_sections(db: Session, latest: Optional[dict] = None) -> List[dict]:
     rules = load_section_rules(db)
     counts = _section_counts(latest, rules)
     all_counts = _all_sections(latest, rules, counts)
-    automatic = {rules.rename(b) for b in BUILTIN_SECTIONS}
+    automatic = {rules.rename(b) for b in builtin_sections()}
     renamed_from: dict = {}
     for rule in rules.renames.values():
         target = rules.rename(rule.section)

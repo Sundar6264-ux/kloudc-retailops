@@ -2,7 +2,7 @@
 and creating the ones whose time has come.
 
 - `rrule` is an RFC 5545 subset describing when each occurrence is DUE,
-  evaluated in the template's timezone (America/New_York by default) with
+  evaluated in the template's timezone (the store's by default) with
   python-dateutil. The task appears `generate_ahead_minutes` before it's due.
 - DST: a local time that doesn't exist (2:30 AM on the spring-forward
   Sunday) moves forward to the next valid time (3:00 AM); an ambiguous one
@@ -36,7 +36,14 @@ from app.team.tasks_models import Task, TaskEvent, TaskItem, TaskTemplate
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TIMEZONE = "America/New_York"
+# A template without a timezone uses the store's (STORE_TIMEZONE):
+# default_timezone(). DEFAULT_TIMEZONE still reads it (module __getattr__).
+
+
+def default_timezone() -> str:
+    from app.store.settings_view import store_timezone_name
+
+    return store_timezone_name()
 CATCH_UP = dt.timedelta(hours=12)
 MAX_GENERATE_AHEAD_MINUTES = 7 * 24 * 60
 MAX_PER_DAY = 24
@@ -119,7 +126,7 @@ def normalize_rrule(text: str) -> str:
 
 def get_zone(name: Optional[str]) -> zoneinfo.ZoneInfo:
     try:
-        return zoneinfo.ZoneInfo(name or DEFAULT_TIMEZONE)
+        return zoneinfo.ZoneInfo(name or default_timezone())
     except (zoneinfo.ZoneInfoNotFoundError, ValueError):
         raise RRuleError(f"Unknown timezone: {name}")
 
@@ -243,7 +250,7 @@ def preview(
 def validate_template_fields(rule: str, tz_name: Optional[str], generate_ahead_minutes: int) -> Tuple[str, str]:
     """Returns (normalized rule, timezone name) or raises RRuleError."""
     normalized = normalize_rrule(rule)
-    tz = tz_name or DEFAULT_TIMEZONE
+    tz = tz_name or default_timezone()
     get_zone(tz)
     if not (0 <= generate_ahead_minutes <= MAX_GENERATE_AHEAD_MINUTES):
         raise RRuleError("generate_ahead_minutes must be between 0 and 10080 (7 days)")
@@ -448,3 +455,9 @@ def _on_generated(db: Session, task: Task) -> None:
     from app.team.tasks_service import record_task_change
 
     record_task_change(db, task, "created")
+
+
+def __getattr__(name):
+    if name == "DEFAULT_TIMEZONE":
+        return default_timezone()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -3,6 +3,7 @@ import { getStoreVsContainer, downloadStoreVsContainer } from "../api";
 import SortableTh from "./SortableTh.jsx";
 import { Term } from "../glossary.jsx";
 import { useTableControls } from "../useTableControls.js";
+import { currentPosName } from "../store/gating.js";
 
 // Store vs Container: only items that have both a store (shelf) row and a
 // Container row in the latest upload, with each one's stock. Same pairing as
@@ -82,7 +83,7 @@ export default function StoreVsContainer() {
         </button>
       </div>
       <p className="muted" style={{ marginTop: "0.25rem" }}>
-        Only products that have both a store (shelf) row and a Container row in Toast, with the stock in each
+        Only products that have both a store (shelf) row and a Container row in {currentPosName()}, with the stock in each
         {data?.snapshot_date ? ` (upload of ${data.snapshot_date})` : ""}. Items low on the shelf with stock in the
         Container are listed first.
       </p>

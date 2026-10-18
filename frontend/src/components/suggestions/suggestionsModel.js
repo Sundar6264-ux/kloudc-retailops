@@ -2,6 +2,8 @@
 // Delivery Review's "Suggested deliveries", the invoice page's "Looks closed
 // in Toast", and the Vendor Calendar's suggested schedules. No React, no
 // fetch - tested with `node --test src/components/suggestions/suggestionsModel.test.mjs`.
+import { inStoreZone } from "../../format.js";
+import { currentPosName } from "../../store/gating.js";
 
 export const WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export const DAY_CHOICES = [1, 3, 7];
@@ -43,7 +45,7 @@ export function confirmPayload(group, qtyById) {
 }
 
 export function evidenceLabel(evidence) {
-  return evidence === "toast_received" ? "Received in Toast" : "Stock rose";
+  return evidence === "toast_received" ? `Received in ${currentPosName()}` : "Stock rose";
 }
 
 export function formatIsoDay(iso) {
@@ -59,7 +61,7 @@ export function formatStoreDay(isoDateTime) {
   if (!isoDateTime) return "";
   const d = new Date(isoDateTime);
   if (Number.isNaN(d.getTime())) return String(isoDateTime);
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "America/New_York" });
+  return d.toLocaleDateString("en-US", inStoreZone({ weekday: "short", month: "short", day: "numeric" }));
 }
 
 export function formatUnits(n) {
@@ -100,5 +102,5 @@ export function latestOnly() {
 export function closeSummary(items) {
   const n = (items || []).filter((i) => i && i.close_suggestion).length;
   if (!n) return null;
-  return `${plural(n, "invoice")} look${n === 1 ? "s" : ""} closed in Toast already`;
+  return `${plural(n, "invoice")} look${n === 1 ? "s" : ""} closed in ${currentPosName()} already`;
 }

@@ -18,6 +18,7 @@ from app.services.csv_util import rows_to_csv
 from app.services.export import export_csv, export_pdf
 from app.services.items_sold import LiveSalesUnavailable, get_items_sold
 from app.services import sales_accuracy, toast_analytics
+from app.store.settings_view import store_slug
 from app.timeutil import restaurant_today
 from app.toast_client import ToastAPIError
 
@@ -121,7 +122,7 @@ def export_sales(
     if end < start:
         raise HTTPException(status_code=400, detail="`end` must be on or after `start`")
 
-    filename = f"spicetown-sales-{start.isoformat()}_to_{end.isoformat()}.{format}"
+    filename = f"{store_slug()}-sales-{start.isoformat()}_to_{end.isoformat()}.{format}"
 
     if format == "csv":
         content = export_csv(db, start, end)

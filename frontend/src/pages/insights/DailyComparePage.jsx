@@ -14,6 +14,7 @@ import {
   pctChange,
   shortDate,
 } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 // The day's figures; money ones are left out for "Hide sales numbers" users
 // (the server sends them as null / leaves them out too).
@@ -21,7 +22,9 @@ const METRICS = [
   { key: "net_sales", label: "Net sales", money: true, term: "insights_net_sales", fmt: (v) => fmtMoney(v) },
   { key: "orders", label: "Orders", term: "insights_orders", fmt: (v) => fmtCount(v) },
   { key: "avg_check", label: "Average check", money: true, term: "insights_avg_check", fmt: (v) => fmtMoney(v, { cents: true }), note: "Net sales per order" },
-  { key: "guests", label: "Guests", term: "insights_guests", fmt: (v) => fmtCount(v), note: "Toast's guest count" },
+  { key: "guests", label: "Guests", term: "insights_guests", fmt: (v) => fmtCount(v), get note() {
+    return `${currentPosName()}'s guest count`;
+  } },
 ];
 
 const COMPARISONS = [
@@ -80,11 +83,11 @@ export default function DailyComparePage() {
               "Same day last week" is the same weekday 7 days earlier (a Tuesday against a Tuesday), so a
               normally quiet day isn't compared with a busy one. The "4-week average" is the average of
               the same weekday over the 4 weeks before (days the store was closed are left out). Last year
-              shows once the store has a year of Toast history. Today can be picked too: it's compared with
+              shows once the store has a year of {currentPosName()} history. Today can be picked too: it's compared with
               the same hours of the earlier days.
             </p>
             <p style={{ marginBottom: 0 }}>
-              Numbers are Toast's own Analytics totals for the business day (the day closes at 4 AM), so
+              Numbers are {currentPosName()}'s own Analytics totals for the business day (the day closes at 4 AM), so
               they can differ by a few dollars from Items Sold, which counts by payment time.
             </p>
           </>
@@ -115,7 +118,7 @@ export default function DailyComparePage() {
             </h2>
             {data.partial && (
               <p className="muted ins-footnote ins-partial-note">
-                Today isn't over: it's compared with the same hours of the earlier days. Toast's numbers run a few hours
+                Today isn't over: it's compared with the same hours of the earlier days. {currentPosName()}'s numbers run a few hours
                 behind the registers.
               </p>
             )}
@@ -206,7 +209,7 @@ export default function DailyComparePage() {
                             <TermInfo k="insights_vs_last_year" label="Same day last year" />
                           </th>
                           <td colSpan={tableMetrics.length} className="muted">
-                            Not available yet - the store's Toast history starts in April 2026.
+                            Not available yet - the store's {currentPosName()} history doesn't go back that far.
                           </td>
                         </tr>
                       )}

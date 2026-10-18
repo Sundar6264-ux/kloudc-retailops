@@ -28,7 +28,7 @@ function detailsText(item) {
   return (item.details || []).map((d) => `${d.label}: ${d.value}`).join(" · ");
 }
 
-// Store-local (America/New_York), whatever the viewer's device timezone.
+// Store-local (the store's own time zone, format.js), whatever the viewer's device timezone.
 function formatDateTime(iso) {
   return formatRestaurantTime(iso) || "-";
 }

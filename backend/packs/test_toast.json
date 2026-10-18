@@ -1,0 +1,99 @@
+{
+  "pack_version": 1,
+  "pack_id": "storeops_test_toast",
+  "label": "Fake Toast store for tests (STOREOPS_TEST_TOAST)",
+
+  "menu": {
+    "excluded_category_groups": ["KITCHEN", "CATERING"],
+    "kitchen_groups": ["KITCHEN", "CATERING"],
+    "grocery_menus": ["retail", "produce"],
+    "kitchen_menu_prefixes": ["deli kitchen"],
+    "kitchen_label": "Deli Kitchen"
+  },
+
+  "po_sections": {
+    "other_section": "Other",
+    "extra_sections": ["Seasonal"],
+    "rules": [
+      {"when": {"group": ["KITCHEN", "CATERING"]}, "section": "Other"},
+      {"when": {"any": [{"category": ["Frozen Foods"]}, {"name_regex": "\\bfrozen\\b"}]},
+       "first_match": [
+         {"name_regex": "ice ?cream|gelato", "section": "Frozen - Ice Cream"},
+         {"name_regex": "pizza|dumpling", "section": "Frozen - Snacks"}
+       ]},
+      {"when": {"category": ["Frozen Foods"]}, "lookup": "subcategory",
+       "map": {"Frozen Vegetables": "Frozen - Vegetables"}},
+      {"when": {"any": [{"category": ["Frozen Foods"]}, {"name_regex": "\\bfrozen\\b"}]},
+       "section": "Frozen - Other"},
+      {"when": {"group": ["PRODUCE"]}, "section": "Produce"},
+      {"lookup": "category_subcategory", "map": {"Snacks|Chips": "Chips"}},
+      {"lookup": "category", "map": {"Beverages": "Drinks", "Snacks": "Snacks"}},
+      {"section_from": "category"}
+    ]
+  },
+
+  "house_vendors": {"prefixes": ["test toast market"]},
+
+  "channels": {
+    "empty": "Other",
+    "rules": [
+      {"equals": ["no dining option"], "channel": "Other"},
+      {"starts_with": ["in-store", "in store"], "channel": "In-store"},
+      {"equals": ["pick up", "pickup", "take out", "takeout"], "channel": "Pick up"}
+    ],
+    "split_on": " - ",
+    "rename": {"online ordering": "Online ordering"},
+    "default": "Other"
+  },
+
+  "issue_leads": {
+    "document_title": "Test Toast Market leads",
+    "leads": [
+      {"key": "lead_a", "name": "Lead A", "title": "Grocery",
+       "departments": "Dry goods and drinks.", "vendors": ["Acme Foods"]}
+    ],
+    "fallback": {"key": "admin", "name": "Store admin", "title": "Inventory & Purchase"},
+    "section_proposals": {
+      "drinks": {"lead": "lead_a", "basis": "document", "why": "Drinks"},
+      "snacks": {"lead": "lead_a", "basis": "guess", "why": "Not in the document - next to Drinks"}
+    },
+    "section_notes": {"other": "Kitchen items and anything without a section."}
+  },
+
+  "checklists": [
+    {
+      "checklist_type": "daily_closing",
+      "title": "Daily Closing Checklist",
+      "short_name": "Closing",
+      "description": "Complete before leaving.",
+      "sort_order": 0,
+      "settings": {"closing": true, "whatsapp_group": "store", "all_as_usual": false},
+      "schema": {
+        "format": "items",
+        "legacy_order": false,
+        "sections": [
+          {"id": "s1", "title": "Closing", "description": null, "items": [
+            {"id": "q_doors", "type": "multiple_choice", "title": "Front doors locked?",
+             "description": null, "required": true,
+             "options": [{"value": "Yes", "issue_tag": null}, {"value": "No", "issue_tag": "issue"}]},
+            {"id": "q_notes", "type": "paragraph", "title": "Anything unusual?",
+             "description": null, "required": false, "flag_if_answered": true}
+          ]}
+        ]
+      }
+    }
+  ],
+
+  "whatsapp_roles": [{"key": "store", "label": "Store staff group"}],
+
+  "flyer_categories": [
+    {"key": "groceries", "label": "Groceries", "folder": "Groceries"},
+    {"key": "offers", "label": "Offers", "folder": "Offers"},
+    {"key": "others", "label": "Others", "folder": "Others"}
+  ],
+
+  "category_rules": [
+    {"match_type": "supplier", "match_value": "Acme Foods", "category_group": "RETAIL",
+     "category": "Snacks", "subcategory": "Chips", "note": "Fake rule for tests"}
+  ]
+}

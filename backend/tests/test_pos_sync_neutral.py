@@ -299,6 +299,9 @@ def test_open_checks_cache_refresh_today(db, pos, monkeypatch):
 
 
 def test_full_scan_asks_every_date_with_retries(db, pos, monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "first_sales_date", "2026-05-26")  # FIRST_SALES_DATE (StoreOps M2)
     monkeypatch.setattr(open_orders, "restaurant_today", lambda: open_orders.FIRST_REAL_SALES_DATE + dt.timedelta(days=2))
     old_day = open_orders.FIRST_REAL_SALES_DATE
     pos.orders[old_day] = [_open("stuck", business_date=old_day)]
@@ -492,3 +495,18 @@ def test_items_sold_live_reads_the_connector(pos):
     assert [i["toast_selection_guid"] for i in items] == ["s1", "m1"]
     call = [c for c in pos.calls if c[0] == "fetch_orders"][0]
     assert call[2] == 1 and call[3] is items_sold._live_sleep
+
+
+def test_full_scan_without_a_first_sales_date_starts_at_the_oldest_sale(db, pos, monkeypatch):
+    """No FIRST_SALES_DATE (a new store): the sweep starts at the oldest stored
+    business date, at most FULL_SCAN_MAX_DAYS back; with no sales, today."""
+    from app.models import Order
+    from app.pos.sync import open_orders as sync_open_orders
+
+    today = dt.date(2026, 10, 18)
+    assert sync_open_orders.full_scan_start(db, today) == today
+    db.add(Order(toast_order_guid="o", toast_check_guid="c", toast_selection_guid="s",
+                 business_date=dt.date(2026, 10, 1), item_guid="i", item_name="x", quantity=1))
+    db.commit()
+    assert sync_open_orders.full_scan_start(db, today) == dt.date(2026, 10, 1)
+    assert sync_open_orders.full_scan_start(db, dt.date(2028, 1, 1)) == dt.date(2028, 1, 1) - dt.timedelta(days=365)

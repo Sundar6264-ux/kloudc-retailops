@@ -64,6 +64,7 @@ from app.services import checklist_schemas
 from app.team.media import PUBLIC_PENDING_OWNER_TYPE
 from app.team.models import TeamMedia
 from app.timeutil import utcnow
+from app.store.settings_view import effective_public_base_url
 
 NOT_ACTIVE = "This link is not active."
 
@@ -382,7 +383,7 @@ def link_key(link: ChecklistPublicLink) -> str:
 
 
 def link_url(link: ChecklistPublicLink) -> str:
-    base = (get_settings().public_base_url or "").rstrip("/")
+    base = effective_public_base_url()
     return f"{base}/c/{link_key(link)}"
 
 

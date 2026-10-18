@@ -25,4 +25,8 @@ from app.services import toast_analytics  # noqa: F401 - the Analytics client, a
 
 # Everything the moved module holds (functions, constants, the run lock, the
 # _sleep / utcnow test seams, and imported helpers such as get_settings).
-install_forwarding(__name__, forwards_for(_accuracy, defined_names(_accuracy)))
+# FIRST_REAL_SALES_DATE / CLOSEOUT_HOUR are store settings now (M2), served
+# by the moved module's __getattr__.
+install_forwarding(
+    __name__, forwards_for(_accuracy, defined_names(_accuracy) + ["FIRST_REAL_SALES_DATE", "CLOSEOUT_HOUR"])
+)

@@ -11,21 +11,15 @@ import {
   pickVoiceMime,
   seenSummary,
 } from "./teamAdvancedModel";
-import { STORE_TZ } from "./taskUtils";
 import useDialogA11y from "./useDialogA11y";
+import { lazyStoreFormat } from "../../format.js";
 
 // W5 chat pieces: voice notes and PDFs in a bubble, the voice recorder,
 // pinned messages, "Seen by" and message search. Media is auth-checked
 // (GET /api/team/media/{token}), so it's fetched with the session into an
 // object URL - never a bare src.
 
-const whenFmt = new Intl.DateTimeFormat("en-US", {
-  timeZone: STORE_TZ,
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});
+const whenFmt = lazyStoreFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 // Fetched once per mount, revoked on unmount.
 function useMediaBlobUrl(url, load) {

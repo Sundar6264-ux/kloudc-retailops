@@ -28,10 +28,13 @@ import {
   scheduleSummary,
   visibleMissing,
 } from "./scheduleSuggestionsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const SOURCE_SHORT = {
   invoices: "invoice",
-  toast_receipts: "Toast",
+  get toast_receipts() {
+    return currentPosName();
+  },
   purchase_log: "logged",
   stock_rise: "stock rise",
 };
@@ -121,7 +124,7 @@ export default function ScheduleSuggestions({ version, onAccepted, readOnly }) {
         )}
       </div>
       <p className="muted sugg-schedules-intro">
-        Read off the last {weeks} weeks of invoice uploads, Toast receiving records and logged deliveries,{" "}
+        Read off the last {weeks} weeks of invoice uploads, {currentPosName()} receiving records and logged deliveries,{" "}
         <Term k="schedule_confidence">most confident first</Term>.
         {data?.counts && <span className="sugg-counts"> {countsLine(data.counts)}.</span>}
       </p>
@@ -252,7 +255,7 @@ function SuggestionRow({ s, onCreate, onDismiss, readOnly }) {
         </div>
         <div className="sugg-reason">
           {orderDayText(s)}
-          {s.in_inventory === false && " Not listed as a supplier on any item in Toast."}
+          {s.in_inventory === false && ` Not listed as a supplier on any item in ${currentPosName()}.`}
         </div>
         {cadenceWarning(s) && <div className="sugg-cadence">{cadenceWarning(s)}</div>}
         <DeliveryDates s={s} />
@@ -349,7 +352,7 @@ function MissingRow({ row, onCreate, onUndo, readOnly }) {
         <div className="sugg-reason">
           {row.reason}
           {row.sources_text ? ` From ${row.sources_text}.` : ""}
-          {row.in_inventory === false && " Not listed as a supplier on any item in Toast."}
+          {row.in_inventory === false && ` Not listed as a supplier on any item in ${currentPosName()}.`}
         </div>
       </div>
       <div className="sugg-schedule-actions">

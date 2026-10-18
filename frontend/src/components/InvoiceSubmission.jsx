@@ -22,17 +22,22 @@ import InfoBlock from "./InfoBlock.jsx";
 import { INVOICE_STATUS_TERMS, Term, TermInfo } from "../glossary.jsx";
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
-import { formatRestaurantTime } from "../format.js";
+import { formatRestaurantTime, storeDateTimeFormat } from "../format.js";
+import { usePosName, useStoreAllows } from "../store/StoreContext.jsx";
+
+// Which send channels this store has (store/gating.js): WhatsApp (store
+// feature `whatsapp`) and the email to the POS's AP inbox (`ap_inbox`). A
+// channel that's off is neither shown nor waited on nor resent.
+const ALL_CHANNELS = { wa: true, ap: true };
+function useInvoiceChannels() {
+  const wa = useStoreAllows("whatsapp");
+  const ap = useStoreAllows("invoice_ap_inbox");
+  return useMemo(() => ({ wa, ap }), [wa, ap]);
+}
 
 // Store-local calendar date for a timestamp (e.g. "Sep 30, 2026").
-const storeDateFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-});
 function formatStoreDate(iso) {
-  return iso ? storeDateFormatter.format(new Date(iso)) : "-";
+  return iso ? storeDateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(iso)) : "-";
 }
 
 // Every type the backend can return, for labels in the history tables.
@@ -86,10 +91,10 @@ function channelDone(sent, error) {
 // at all (see backend's NO_TOAST_TYPES) - without this, isResolved() would
 // wait forever on a Toast channel that will never resolve, polling until
 // the window times out on every single one of them.
-function isResolved(entry) {
-  const toastApplicable = !skipsToast(entry);
+function isResolved(entry, ch = ALL_CHANNELS) {
+  const toastApplicable = ch.ap && !skipsToast(entry);
   return (
-    channelDone(entry.whatsapp_sent, entry.whatsapp_error) &&
+    (!ch.wa || channelDone(entry.whatsapp_sent, entry.whatsapp_error)) &&
     (!toastApplicable || channelDone(entry.toast_email_sent, entry.toast_email_error))
   );
 }
@@ -99,7 +104,7 @@ function isResolved(entry) {
 // whapi_client.py - so this covers a bit more than that). If it gives up
 // early, the real outcome is still saved server-side and shows up on the
 // next page load/refresh either way - this is just for live feedback.
-async function pollInvoiceUntilResolved(id, onUpdate, { intervalMs = 3000, maxAttempts = 45 } = {}) {
+async function pollInvoiceUntilResolved(id, onUpdate, { intervalMs = 3000, maxAttempts = 45, ch = ALL_CHANNELS } = {}) {
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
     let entry;
@@ -109,7 +114,7 @@ async function pollInvoiceUntilResolved(id, onUpdate, { intervalMs = 3000, maxAt
       return;
     }
     onUpdate(entry);
-    if (isResolved(entry)) return;
+    if (isResolved(entry, ch)) return;
   }
 }
 
@@ -221,7 +226,7 @@ function OverrideSelect({ channelLabel, busy, onChoose }) {
         if (status) onChoose(status);
       }}
       className="invoice-override-select"
-      title={`Manually override ${channelLabel === "WA" ? "WhatsApp" : "Toast email"} status`}
+      title={`Manually override ${channelLabel === "WA" ? "WhatsApp" : `${channelLabel} email`} status`}
     >
       <option value="">{channelLabel}</option>
       {OVERRIDE_OPTIONS.map((opt) => (
@@ -251,8 +256,22 @@ function ProcessingStatusBadge({ status }) {
   );
 }
 
+// The form's one-line summary for this store's channels.
+function invoiceBrief(ch, pos) {
+  const parts = [];
+  if (ch.wa) parts.push("sends a WhatsApp message with a link to the file");
+  if (ch.ap) parts.push(`emails ${pos} so it can draft the bill automatically`);
+  return parts.length ? `Submitting ${parts.join(", and ")}.` : "Submitting saves the file and its details for the team.";
+}
+
+function sendsText(ch, pos) {
+  return [ch.wa && "WhatsApp", ch.ap && `the ${pos} email`].filter(Boolean).join(" and ").replace(/^./, (c) => c.toUpperCase());
+}
+
 function SubmissionForm({ suppliers, onSubmitted }) {
-  const { user } = useAuth();
+  const { user, store } = useAuth();
+  const ch = useInvoiceChannels();
+  const pos = usePosName();
   const [vendor, setVendor] = useState("");
   const [vendorFocused, setVendorFocused] = useState(false);
   const [submissionType, setSubmissionType] = useState("invoice");
@@ -284,7 +303,7 @@ function SubmissionForm({ suppliers, onSubmitted }) {
   const showVendorDropdown = vendorFocused && vendorMatches.length > 0;
 
   // A transfer needs a direction instead of a vendor (vendor is optional and
-  // the backend fills in "Spice Town" when it's left blank).
+  // the backend fills in the store's own name when it's left blank).
   const canSubmit = !!file && !submitting && (isTransfer ? !!transferDirection : !!vendor.trim());
 
   async function handleSubmit(e) {
@@ -318,7 +337,7 @@ function SubmissionForm({ suppliers, onSubmitted }) {
       setFile(null);
       e.target.reset();
       onSubmitted?.();
-      if (!isResolved(data)) {
+      if (!isResolved(data, ch)) {
         pollInvoiceUntilResolved(data.id, (updated) => {
           setResult(updated);
           onSubmitted?.();
@@ -335,15 +354,21 @@ function SubmissionForm({ suppliers, onSubmitted }) {
   return (
     <section className="card">
       <h2>Submit an invoice</h2>
-      <InfoBlock brief="Replaces the old Google Form. Submitting sends a WhatsApp message with a link to the file, and emails Toast so it can draft the bill automatically.">
-        The record is saved instantly - WhatsApp and the Toast email send in the background right
-        after, since either can take a while, so Submit doesn't sit and wait on them. You'll see
-        "Sending…" for a few seconds until each one resolves, live, with no need to refresh. The
-        record is always saved even if a send ultimately fails - a failed send shows up in the
-        list below with a "Resend" button, so nothing has to be resubmitted from scratch.
+      <InfoBlock brief={invoiceBrief(ch, pos)}>
+        The record is saved instantly.
+        {(ch.wa || ch.ap) && (
+          <>
+            {" "}
+            {sendsText(ch, pos)} send in the background right after, since either can take a while, so Submit
+            doesn't sit and wait on them. You'll see "Sending…" for a few seconds until each one resolves, live,
+            with no need to refresh. The record is always saved even if a send ultimately fails - a failed send
+            shows up in the list below with a "Resend" button, so nothing has to be resubmitted from scratch.
+          </>
+        )}{" "}
         Choosing <strong>Transfer</strong> (stock moved Store {"\u2192"} Container or Container {"\u2192"} Store)
-        skips the Toast email entirely - the team hears about it over WhatsApp only, it needs a
-        direction, the vendor is optional, and it never counts as a vendor delivery.
+        {ch.ap ? ` skips the ${pos} email entirely -` : ""}
+        {ch.wa ? " the team hears about it over WhatsApp only, it" : " it"} needs a direction, the vendor is
+        optional, and it never counts as a vendor delivery.
       </InfoBlock>
       <form onSubmit={handleSubmit} className="recon-form">
         <label className="recon-form-field recon-form-field-wide item-picker">
@@ -354,7 +379,7 @@ function SubmissionForm({ suppliers, onSubmitted }) {
             onChange={(e) => setVendor(e.target.value)}
             onFocus={() => setVendorFocused(true)}
             onBlur={() => setVendorFocused(false)}
-            placeholder={isTransfer ? "Leave blank for Spice Town" : "Start typing a vendor name…"}
+            placeholder={isTransfer ? `Leave blank for ${store.name}` : "Start typing a vendor name…"}
             autoComplete="off"
             required={!isTransfer}
           />
@@ -469,12 +494,13 @@ function SubmissionForm({ suppliers, onSubmitted }) {
       )}
       {result && (
         <div className="invoice-submit-result">
-          <p className="success">{isResolved(result) ? "Submitted." : "Submitted - sending WhatsApp/email now…"}</p>
+          <p className="success">{isResolved(result, ch) ? "Submitted." : "Submitted - sending now…"}</p>
           <p>
             <span className="muted">{typeLabel(result)}</span>{" "}
             <ProcessingStatusBadge status={result.processing_status} />
           </p>
           <ul>
+            {ch.wa && (
             <li>
               WhatsApp:{" "}
               <StatusPill
@@ -486,8 +512,10 @@ function SubmissionForm({ suppliers, onSubmitted }) {
                 <span className="muted"> - {result.whatsapp_error}</span>
               )}
             </li>
+            )}
+            {ch.ap && (
             <li>
-              Toast email:{" "}
+              {pos} email:{" "}
               {skipsToast(result) ? (
                 <span className="muted">Not applicable ({noToastLabel(result)})</span>
               ) : (
@@ -499,6 +527,7 @@ function SubmissionForm({ suppliers, onSubmitted }) {
                 </>
               )}
             </li>
+            )}
           </ul>
         </div>
       )}
@@ -697,6 +726,8 @@ function InvoiceTrash({ refreshKey, onChanged }) {
 }
 
 function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
+  const ch = useInvoiceChannels();
+  const pos = usePosName();
   const { search, setSearch, sortKey, sortDir, toggleSort, rows } = useTableControls(items, {
     searchKeys: ["vendor", "type_label", "submitted_by_name", "notes"],
     defaultSortKey: "created_at",
@@ -750,7 +781,7 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
     <section className="card">
       <h2>Past submissions</h2>
       <p className="muted invoice-legend">
-        WA / Toast columns: <Term k="invoice_sent">✓ Sent</Term> <Term k="invoice_sending">… Sending</Term>{" "}
+        {[ch.wa && "WA", ch.ap && pos].filter(Boolean).join(" / ") || "Status"} columns: <Term k="invoice_sent">✓ Sent</Term> <Term k="invoice_sending">… Sending</Term>{" "}
         <Term k="invoice_uncertain">? Uncertain</Term> <Term k="invoice_failed">Failed</Term>{" "}
         <Term k="invoice_transfer">N/A = Transfer</Term> <Term k="invoice_untracked">or Untracked</Term>
       </p>
@@ -777,16 +808,22 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
               </SortableTh>
               <th>Submitted by</th>
               <th>Status</th>
-              <th className="invoice-col-narrow" title="Marked closed in Toast">
-                <Term k="invoice_closed_in_toast">Closed</Term>
-              </th>
+              {ch.ap && (
+                <th className="invoice-col-narrow" title={`Marked closed in ${pos}`}>
+                  <Term k="invoice_closed_in_toast">Closed</Term>
+                </th>
+              )}
               <th>File</th>
-              <th className="invoice-col-narrow" title="WhatsApp">
-                WA
-              </th>
-              <th className="invoice-col-narrow" title="Toast email">
-                Toast
-              </th>
+              {ch.wa && (
+                <th className="invoice-col-narrow" title="WhatsApp">
+                  WA
+                </th>
+              )}
+              {ch.ap && (
+                <th className="invoice-col-narrow" title={`${pos} email`}>
+                  {pos}
+                </th>
+              )}
               <th>Resend</th>
               {isAdmin && (
                 <th className="invoice-col-narrow" title="Admin-only: manually override a channel's status">
@@ -799,8 +836,8 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
           <tbody>
             {rows.map((item) => {
               const failedChannels = [
-                !item.whatsapp_sent && item.whatsapp_error && "whatsapp",
-                !skipsToast(item) && !item.toast_email_sent && item.toast_email_error && "toast_email",
+                ch.wa && !item.whatsapp_sent && item.whatsapp_error && "whatsapp",
+                ch.ap && !skipsToast(item) && !item.toast_email_sent && item.toast_email_error && "toast_email",
               ].filter(Boolean);
               return (
                 <tr key={item.id}>
@@ -814,6 +851,7 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
                   <td>
                     <ProcessingStatusBadge status={item.processing_status} />
                   </td>
+                  {ch.ap && (
                   <td className="invoice-col-narrow">
                     {item.toast_closed_at ? (
                       <button
@@ -834,8 +872,8 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
                           onClick={() => handleMarkClosed(item.id)}
                           title={
                             item.close_suggestion
-                              ? `${item.close_suggestion.reason} Click to mark closed in Toast.`
-                              : "Click to mark closed in Toast"
+                              ? `${item.close_suggestion.reason} Click to mark closed in ${pos}.`
+                              : `Click to mark closed in ${pos}`
                           }
                         >
                           {closureBusyId === item.id ? "…" : "○"}
@@ -847,18 +885,20 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
                         )}
                       </>
                     ) : skipsToast(item) ? (
-                      <span className="muted" title={`${noToastLabel(item)} submissions are never emailed to Toast`}>
+                      <span className="muted" title={`${noToastLabel(item)} submissions are never emailed to ${pos}`}>
                         N/A
                       </span>
                     ) : (
                       <span className="muted">-</span>
                     )}
                   </td>
+                  )}
                   <td>
                     <a href={item.file_url} target="_blank" rel="noopener noreferrer">
                       View
                     </a>
                   </td>
+                  {ch.wa && (
                   <td className="invoice-col-narrow">
                     <StatusPill
                       compact
@@ -868,9 +908,11 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
                       overriddenBy={item.whatsapp_status_overridden_by}
                     />
                   </td>
+                  )}
+                  {ch.ap && (
                   <td className="invoice-col-narrow">
                     {skipsToast(item) ? (
-                      <span className="muted" title={`${noToastLabel(item)} submissions never get a Toast email`}>
+                      <span className="muted" title={`${noToastLabel(item)} submissions never get a ${pos} email`}>
                         N/A
                       </span>
                     ) : (
@@ -882,6 +924,7 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
                       />
                     )}
                   </td>
+                  )}
                   <td>
                     {failedChannels.length > 0 && (
                       <button
@@ -897,14 +940,16 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
                   {isAdmin && (
                     <td className="invoice-col-narrow">
                       <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                        <OverrideSelect
-                          channelLabel="WA"
-                          busy={overrideBusyKey === `${item.id}:whatsapp`}
-                          onChoose={(status) => handleOverride(item.id, "whatsapp", status)}
-                        />
-                        {!skipsToast(item) && (
+                        {ch.wa && (
                           <OverrideSelect
-                            channelLabel="Toast"
+                            channelLabel="WA"
+                            busy={overrideBusyKey === `${item.id}:whatsapp`}
+                            onChoose={(status) => handleOverride(item.id, "whatsapp", status)}
+                          />
+                        )}
+                        {ch.ap && !skipsToast(item) && (
+                          <OverrideSelect
+                            channelLabel={pos}
                             busy={overrideBusyKey === `${item.id}:toast_email`}
                             onChoose={(status) => handleOverride(item.id, "toast_email", status)}
                           />
@@ -934,6 +979,7 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
 
 export default function InvoiceSubmission() {
   const { user } = useAuth();
+  const ch = useInvoiceChannels();
   const [items, setItems] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -959,8 +1005,8 @@ export default function InvoiceSubmission() {
   async function handleResend(id, channels) {
     const data = await resendInvoiceSubmission(id, channels);
     await loadItems();
-    if (!isResolved(data)) {
-      await pollInvoiceUntilResolved(id, loadItems);
+    if (!isResolved(data, ch)) {
+      await pollInvoiceUntilResolved(id, loadItems, { ch });
     }
   }
 
@@ -977,7 +1023,10 @@ export default function InvoiceSubmission() {
       <SubmissionForm suppliers={suppliers} onSubmitted={loadItems} />
       {loading && <p className="muted">Loading…</p>}
       {error && <p className="error">{error}</p>}
-      {!loading && !error && <InvoiceCloseSuggestions items={items} onChanged={refreshAll} readOnly={!!user?.demo} />}
+      {/* "Looks closed in <pos>" only matters with the AP inbox channel. */}
+      {!loading && !error && ch.ap && (
+        <InvoiceCloseSuggestions items={items} onChanged={refreshAll} readOnly={!!user?.demo} />
+      )}
       {!loading && !error && (
         <SubmissionsTable items={items} onResend={handleResend} isAdmin={!!user?.is_admin} onDataChanged={refreshAll} />
       )}

@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getPlacedOrders, orderAgain } from "../api";
-import { formatRestaurantTime } from "../format";
+import { formatRestaurantTime, storeDateStr as storeZoneDateStr, storeZoneCity } from "../format";
 import InfoBlock from "./InfoBlock.jsx";
 import { PLACED_STATUS_TERMS, Term, TermInfo } from "../glossary.jsx";
 import SortableTh from "./SortableTh.jsx";
@@ -21,16 +21,10 @@ const RANGE_OPTIONS = [
 
 const STATUS_LABELS = { placed: "Placed", pdf: "PDF only" };
 
-// Dates are the store's (America/New_York), same as the backend filter.
-const storeDateFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/New_York",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
+// Dates are the store's (its own time zone, format.js), same as the backend filter.
 
 function storeDateStr(date) {
-  return storeDateFormatter.format(date);
+  return storeZoneDateStr(date);
 }
 
 function storeDaysAgoStr(days) {
@@ -169,7 +163,7 @@ export default function PlacedOrders() {
           <strong>PDF only</strong> means a PO PDF was made (downloaded, or opened in the app to share on
           WhatsApp) but the order was never marked placed. Making the PDF again updates the same entry, and
           marking the order placed within 2 days turns it into the Placed order, so one order is never listed
-          twice. Dates are store time (New York). <strong>Order again</strong> puts an order's items back into
+          twice. Dates are store time ({storeZoneCity()}). <strong>Order again</strong> puts an order's items back into
           that vendor's cart with the same quantities.
         </p>
       </InfoBlock>

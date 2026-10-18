@@ -1,15 +1,123 @@
-import pathlib
+import datetime as dt
+import re
+import zoneinfo
 from functools import lru_cache
 from typing import Optional
+from urllib.parse import urlsplit
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+STORE_CODE_RE = re.compile(r"^[A-Z0-9][A-Z0-9_]{2,23}$")
+HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+# StoreOps never serves from this domain or below it (docs/M2_CONTRACT.md
+# rule 0.3): the legacy single-store site shares its login cookie across it.
+REFUSED_DOMAIN = "spicetown.shop"
+
+
+def refused_host(value: str) -> bool:
+    """True when `value` (a URL, a host, or a cookie domain like ".x.y") is
+    REFUSED_DOMAIN or ends with "." + REFUSED_DOMAIN."""
+    raw = (value or "").strip().lower()
+    if not raw:
+        return False
+    host = urlsplit(raw).hostname if "://" in raw else raw.split("/", 1)[0].split(":", 1)[0]
+    host = (host or "").strip(".")
+    return host == REFUSED_DOMAIN or host.endswith("." + REFUSED_DOMAIN)
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "sqlite:///./spicetown.db"
+    database_url: str = "sqlite:///./storeops.db"
+
+    # --- Store identity and branding (StoreOps M2, docs/M2_CONTRACT.md 1.1) ---
+    # One process serves one store. Every default is a product value or blank;
+    # a store's own values live in its .env. Derived values (display name,
+    # public host, store features...) are computed in app/store/settings_view.py.
+    # The store's code, e.g. "XYZ_GROCERY": ^[A-Z0-9][A-Z0-9_]{2,23}$, stored
+    # upper case. Blank only in dev / tests (the identity check is skipped).
+    store_code: str = ""
+    store_name: str = ""  # blank -> product_name
+    store_short_name: str = ""  # blank -> the effective store name
+    store_address: str = ""  # one line, printed as is (PO PDF, PO email)
+    store_phone: str = ""
+    store_email: str = ""  # Reply-To on PO emails; blank -> the sending address
+    # One phrase for the Ask bot / weekly digest prompts ("a ... store in ...").
+    store_description: str = ""
+    product_name: str = "StoreOps"
+    company_name: str = "KloudC LLC"
+    # The product's domain; store hosts are <host-label>.<platform_domain>.
+    # ".invalid" never resolves: a placeholder until the owner picks one.
+    platform_domain: str = "storeops.invalid"
+    # This store's public origin (https://..., no trailing slash). Blank ->
+    # https://<store code, lower case, "_" -> "-">.<platform_domain>.
+    public_host: str = ""
+    # Absolute https:// URL or a path on this server. Blank -> the bundled
+    # StoreOps images (/branding/logo.png, /branding/icon.png).
+    logo_url: str = ""
+    icon_url: str = ""
+    # A local image printed on documents (the PO PDF letterhead). Blank -> the
+    # bundled StoreOps icon.
+    document_logo_file: str = ""
+    brand_color: str = "#0F766E"
+    brand_secondary_color: str = "#334155"
+    currency: str = "USD"
+    store_locale: str = "en-US"
+    # The DEMO store (plan 3.1a): every user is a demo user (nothing is sent
+    # out) and the nightly reset runs.
+    demo_mode: bool = False
+
+    # --- Store rules that are settings (not pack) ---
+    # The business day ends at this hour (store time): sales before it belong
+    # to the previous day (Toast's closeoutHour).
+    business_day_cutoff_hour: int = 4
+    # YYYY-MM-DD: sales before this date are ignored (onboarding test orders).
+    # Blank = no floor.
+    first_sales_date: str = ""
+
+    # --- Outside channels ---
+    # Labels site origin. Blank = this store has no labels (Scan tab, Print
+    # Label History and the website's Label Scanner link are hidden).
+    labels_url: str = ""
+    # Per-store AI switch: off -> the Ask bot is not offered and the weekly
+    # digest has no written summary. ANTHROPIC_API_KEY is still needed for
+    # real calls.
+    ai_enabled: bool = False
+    # JSON object: WhatsApp role key -> Whapi chat id, e.g.
+    # {"store": "120363000000000000@g.us"}. Wins over the two old
+    # WHAPI_*_CHECKLIST_GROUP_ID settings below; rows set on the WhatsApp
+    # groups page win over both.
+    whatsapp_group_chat_ids: str = ""
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 465
+    smtp_ssl: bool = True  # True = implicit TLS (465); False = STARTTLS (587)
+    smtp_username: str = ""  # blank -> GMAIL_ADDRESS
+    smtp_password: str = ""  # blank -> GMAIL_APP_PASSWORD
+    email_from_name: str = ""  # blank -> the effective store name
+    email_fallback_domain: str = ""  # Message-ID domain when the sender has none; blank -> platform_domain
+
+    # --- Files, links, app release ---
+    # Parent of the upload folders; holds the store identity marker.
+    uploads_root: str = "uploads"
+    # Read-only store pack override (app/store/pack.py) - parity runs and dev.
+    store_pack_file: str = ""
+    # One-off: stamp an existing, unstamped database / upload folder with
+    # STORE_CODE at startup (app/store/identity.py).
+    store_identity_adopt: bool = False
+    app_bundle_id: str = "com.kloudc.storeops"
+    apple_team_id: str = ""
+    android_cert_sha256: str = ""  # comma-separated SHA-256 fingerprints
+    privacy_url: str = "https://kloudc.com/kloudc-privacy-policy/"
+    terms_url: str = ""
+    support_url: str = "https://kloudc.com/kloudc-support/"
+
+    # --- Store directory service only (app/directory, MT10) ---
+    directory_stores_file: str = "directory/stores.json"
+    directory_rate_per_minute: int = 10
+    directory_rate_per_hour: int = 100
+    directory_client_ip_header: str = ""  # "CF-Connecting-IP" behind Cloudflare
+    directory_extra_api_hosts: str = ""  # comma list of extra allowed api_base_url hosts
 
     # Which POS this server talks to (app/pos/registry.py, multi-store plan
     # 4.2). "toast" is the only one in M1; blank means toast.
@@ -156,12 +264,10 @@ class Settings(BaseSettings):
     # HTTPS); flip to False only for local dev over plain http://localhost.
     session_cookie_secure: bool = True
     session_lifetime_days: int = 14
-    # Blank (default) scopes the cookie to the exact host that set it, same
-    # as before. Set to ".spicetown.shop" in production so the SAME cookie
-    # is sent to every subdomain (labels.spicetown.shop included) - this is
-    # what lets spicetown-labels gate itself on "already logged into the
-    # dashboard" without its own separate login. Must start with a dot and
-    # match the real parent domain, or browsers reject it as invalid.
+    # Blank (default) scopes the cookie to the exact host that set it. Set to
+    # the store's own parent domain (".<store>.<platform domain>") to share the
+    # login with the store's labels site. Must start with a dot and match the
+    # real parent domain, or browsers reject it as invalid.
     session_cookie_domain: str = ""
 
     # Invoice Submission (app/services/invoice_submission.py) - replaces the
@@ -177,11 +283,8 @@ class Settings(BaseSettings):
     # token, so it lives here as its own setting rather than being guessed.
     whapi_chat_id: str = ""
 
-    # Daily Closing Checklists (app/services/checklist_submission.py) - two
-    # different real staff WhatsApp groups, distinct from whapi_chat_id
-    # above (which is Invoice Submission's own group, untouched by this
-    # feature). Same Whapi account/token as everything else - only the
-    # destination chat differs per checklist type.
+    # Legacy names (still read) for the chat ids of the WhatsApp roles "store"
+    # and "kitchen"; WHATSAPP_GROUP_CHAT_IDS above wins over them.
     whapi_spice_town_checklist_group_id: str = ""
     whapi_street_kitchen_checklist_group_id: str = ""
 
@@ -191,7 +294,7 @@ class Settings(BaseSettings):
     # automatically from it.
     gmail_address: str = ""
     gmail_app_password: str = ""
-    toast_invoice_email: str = "spicetown@invoices.toasttab.com"
+    toast_invoice_email: str = ""
     # Neutral name for the accounts-payable inbox the invoice PDF is emailed
     # to (multi-store MT6). Unset = TOAST_INVOICE_EMAIL above (the old name,
     # still read). Set but blank = the email channel is off. When set, both
@@ -204,19 +307,17 @@ class Settings(BaseSettings):
 
     # Public base URL used to build the WhatsApp file link - must be
     # reachable with no login, since WhatsApp group members don't have
-    # dashboard accounts. Tailscale Funnel (not just tailnet-only serve) is
-    # what makes this actually public - see the skill file's "Network
-    # exposure" note before changing this casually.
-    public_base_url: str = "https://spicetown-server.tailcc1217.ts.net"
+    # dashboard accounts. Blank -> the store's public host
+    # (app/store/settings_view.effective_public_base_url).
+    public_base_url: str = ""
     # Relative to the backend process's working directory, same convention
-    # as database_url's "./spicetown.db".
+    # as database_url's "./storeops.db".
     invoice_uploads_dir: str = "uploads/invoices"
 
-    # Marketing flyers library (app/services/flyers.py): a normal Finder
-    # folder with one sub-folder per flyer category. The LaunchDaemon runs as
-    # `sundar`, so the default is /Users/sundar/Spice Town Flyers. Blank =
-    # that default too.
-    flyers_dir: str = str(pathlib.Path.home() / "Spice Town Flyers")
+    # Marketing flyers library (app/services/flyers.py): a normal folder with
+    # one sub-folder per flyer category (the store pack's flyer_categories).
+    # Blank = uploads/flyers too.
+    flyers_dir: str = "uploads/flyers"
 
     # Push notifications to the mobile app (app/services/push.py +
     # notifications.py) via Firebase Cloud Messaging. Path to the Firebase
@@ -298,9 +399,57 @@ class Settings(BaseSettings):
     min_supported_build_ios: int = 0
     min_supported_build_android: int = 0
     # Set APP_STORE_URL to the real listing (https://apps.apple.com/app/id<N>)
-    # in .env; the default only searches the store.
-    app_store_url: str = "https://apps.apple.com/us/search?term=Spice%20Town"
-    play_store_url: str = "https://play.google.com/store/apps/details?id=com.spicetown.app"
+    # in .env; blank = null in JSON. PLAY_STORE_URL blank = the Play listing
+    # of APP_BUNDLE_ID.
+    app_store_url: str = ""
+    play_store_url: str = ""
+
+    @field_validator("store_code")
+    @classmethod
+    def _store_code(cls, value: str) -> str:
+        value = (value or "").strip().upper()
+        if value and not STORE_CODE_RE.match(value):
+            raise ValueError(
+                f"STORE_CODE {value!r} is not valid: 3-24 characters, letters, digits and _ (starting with a letter or digit)"
+            )
+        return value
+
+    @field_validator("brand_color", "brand_secondary_color")
+    @classmethod
+    def _color(cls, value: str) -> str:
+        value = (value or "").strip()
+        if not HEX_COLOR_RE.match(value):
+            raise ValueError(f"{value!r} is not a colour like #0F766E")
+        return value.upper()
+
+    @field_validator("first_sales_date")
+    @classmethod
+    def _first_sales_date(cls, value: str) -> str:
+        value = (value or "").strip()
+        if value:
+            try:
+                dt.date.fromisoformat(value)
+            except ValueError:
+                raise ValueError(f"FIRST_SALES_DATE {value!r} is not a YYYY-MM-DD date") from None
+        return value
+
+    @field_validator("business_day_cutoff_hour")
+    @classmethod
+    def _cutoff(cls, value: int) -> int:
+        if not 0 <= int(value) <= 23:
+            raise ValueError("BUSINESS_DAY_CUTOFF_HOUR must be 0-23")
+        return int(value)
+
+    @field_validator("platform_domain", "public_host", "public_base_url", "labels_url", "session_cookie_domain")
+    @classmethod
+    def _never_legacy_domain(cls, value: str, info) -> str:
+        value = (value or "").strip()
+        if value and refused_host(value):
+            raise ValueError(
+                f"{info.field_name.upper()} {value!r} is under a domain StoreOps never serves from "
+                f"(docs/M2_CONTRACT.md rule 0.3)"
+            )
+        return value.rstrip("/") if info.field_name != "session_cookie_domain" else value
 
     @model_validator(mode="after")
     def _neutral_names(self) -> "Settings":
@@ -313,6 +462,10 @@ class Settings(BaseSettings):
         if self.ap_inbox_email is not None:
             self.toast_invoice_email = self.ap_inbox_email.strip()
         self.ap_inbox_email = self.toast_invoice_email
+        try:
+            zoneinfo.ZoneInfo(self.toast_timezone)
+        except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+            raise ValueError(f"STORE_TIMEZONE {self.toast_timezone!r} is not a known time zone") from None
         return self
 
     @property
