@@ -38,6 +38,9 @@ services:
   litestream:
     image: litestream/litestream:0.3.13
     profiles: ["backup"]
+    # The store's own uid (Dockerfile): files Litestream creates next to the
+    # database (-wal / -shm when it opens it first) stay writable by the store.
+    user: "10001:10001"
     command: ["replicate", "-config", "/etc/litestream.yml"]
     env_file:
       - .env

@@ -66,3 +66,11 @@ def test_image_keeps_all_store_state_in_the_volume():
     root = image["UPLOADS_ROOT"]
     for key in ("INVOICE_UPLOADS_DIR", "TEAM_UPLOADS_DIR", "FLYERS_DIR"):
         assert image[key].startswith(root + "/"), (key, image[key], root)
+
+
+def test_backup_sidecar_runs_as_the_store_user():
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
+    uid = re.search(r"useradd [^\n]*--uid (\d+) --gid", dockerfile).group(1)
+    compose = (REPO / "docker-compose.yml").read_text(encoding="utf-8")
+    block = compose.split("\n  litestream:\n", 1)[1].split("\nvolumes:", 1)[0]
+    assert re.search(r'^\s+user: "%s:%s"\s*$' % (uid, uid), block, re.M), block
