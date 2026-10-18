@@ -15,7 +15,7 @@ PORT = int(os.environ.get("SUITE_B_WHAPI_PORT", "8838"))
 LOG = W / "whapi_log.jsonl"
 FAIL = W / "whapi_fail.txt"
 GROUPS = [
-    {"id": "120363000000000101@g.us", "name": "Suite B Customers Vernon"},
+    {"id": "120363000000000101@g.us", "name": "Suite B Customers East"},
     {"id": "120363000000000102@g.us", "name": "Suite B Customers Manchester"},
     {"id": "120363000000000103@g.us", "name": "Suite B Kitchen staff"},
 ]

@@ -1,6 +1,6 @@
 // Suite B - Daily checklists + Checklist builder: WhatsApp groups panel (available on WhatsApp via the MOCK, add, use
 // for flyers, delete), new checklist, Settings WhatsApp group dropdown, publish, Public link tab, staff fill + history
-// (summary posted to the mock group), the public /c/<slug>-<code> page with the Spice Town header, demo never posts.
+// (summary posted to the mock group), the public /c/<slug>-<code> page with the store's header, demo never posts.
 // node checklists.mjs [width ...]
 import { chromium, as, go, settle, hscroll, check, note, done, shot, api, mainText, sleep, USERS, W, BASE } from "./lib.mjs";
 import fs from "node:fs";
@@ -29,8 +29,10 @@ for (const width of WIDTHS) {
   await panel.waitFor();
   await settle(page);
   let pt = await panel.innerText();
-  check(/Spice Town staff group/.test(pt) && /Built-in/i.test(pt) && /Use for flyers/.test(pt), `panel lists groups with Built-in + Use for flyers @${width}`);
-  check(/Suite B Customers Vernon/.test(pt), `Available on WhatsApp lists the (mock) groups @${width}`);
+  // The store's own built-in group (its label comes from the store pack).
+  const builtinLabel = ((await api(page, "GET", "/api/checklists/admin/whatsapp-groups")).body?.items || []).find((g) => g.builtin && g.active)?.label || "";
+  check(builtinLabel && pt.includes(builtinLabel) && /Built-in/i.test(pt) && /Use for flyers/.test(pt), `panel lists groups with Built-in + Use for flyers @${width}`);
+  check(/Suite B Customers East/.test(pt), `Available on WhatsApp lists the (mock) groups @${width}`);
   check(!/120363\d{6,}/.test(pt), `no full chat ids in the panel @${width}`);
   await shot(page, `ck-groups-panel-${width}`);
   const label = `SB group ${tag}`;
@@ -62,7 +64,7 @@ for (const width of WIDTHS) {
   await sleep(1500);
   fm = (await api(page, "GET", "/api/flyers/meta")).body;
   check(!(fm?.groups || []).some((g) => g.label === label), `unticking takes it out of the flyers list @${width}`);
-  const builtinRow = panel.locator("li.wag-row", { hasText: "Spice Town staff group" });
+  const builtinRow = panel.locator("li.wag-row", { hasText: builtinLabel });
   check(await builtinRow.getByRole("button", { name: "Delete" }).count() === 0, `built-in groups can't be deleted @${width}`);
   await panel.getByRole("button", { name: "Close" }).first().click();
 
@@ -98,7 +100,7 @@ for (const width of WIDTHS) {
   await page.getByRole("tab", { name: "Settings" }).click();
   const sel = page.locator("label.clb-setting", { hasText: "WhatsApp group" }).locator("select");
   const opts = await sel.locator("option").allInnerTexts();
-  check(opts[0] === "None (no WhatsApp message)" && opts.includes("Spice Town staff group") && opts.includes(label), `group dropdown: None + every active group (${opts.length}) @${width}`);
+  check(opts[0] === "None (no WhatsApp message)" && opts.includes(builtinLabel) && opts.includes(label), `group dropdown: None + every active group (${opts.length}) @${width}`);
   await sel.selectOption({ label });
   await page.getByRole("button", { name: "Save settings" }).click();
   await sleep(1500);
@@ -163,7 +165,8 @@ for (const width of WIDTHS) {
     check(resp.status() === 200, `public page 200 (${resp.status()}) @${width}`);
     await p.locator(".clp-brand").waitFor({ timeout: 10000 }).catch(() => {});
     const brand = await p.locator(".clp-brand").innerText().catch(() => "");
-    check(/Spice Town/.test(brand) && await p.locator(".clp-brand img").count() === 1, `public page has the Spice Town header + logo @${width}`);
+    const storeName = (await (await fetch(`${BASE}/api/app/branding`)).json().catch(() => ({}))).name || "";
+    check(storeName && brand.includes(storeName) && await p.locator(".clp-brand img").count() === 1, `public page has the store's header (${storeName}) + logo @${width}`);
     const logoOk = await p.locator(".clp-brand img").evaluate((i) => i.complete && i.naturalWidth > 0).catch(() => false);
     check(logoOk, `header logo loads @${width}`);
     check(/SB check/.test(await p.locator("body").innerText()), `public page shows the checklist @${width}`);

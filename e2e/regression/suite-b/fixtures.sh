@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 im = Image.new("RGB", (1600, 1200), (250, 236, 210))
 d = ImageDraw.Draw(im)
 d.rectangle([80, 80, 1520, 1120], outline=(200, 30, 40), width=24)
-for i, t in enumerate(["SUITE B TEST FLYER", "Diwali sale - not real", "Spice Town regression"]):
+for i, t in enumerate(["SUITE B TEST FLYER", "Diwali sale - not real", "Store regression"]):
     d.text((160, 200 + i * 160), t, fill=(30, 30, 30))
 im.save("flyer.jpg", quality=90)
 Image.new("RGB", (900, 700), (40, 120, 200)).save("photo.jpg", quality=85)
