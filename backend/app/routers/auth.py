@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional, Tuple
 
-from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ from app.auth import (
     verify_password,
     SESSION_COOKIE_NAME,
 )
-from app.db import get_db
+from app.db import SessionLocal, get_db
 from app.demo import DEMO_CANT_DELETE, is_demo_user
 from app.features import FEATURE_KEYS, FEATURES, get_allowed_features
 from app.models import User, UserSession
@@ -35,6 +35,16 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 class LoginRequest(BaseModel):
     username: str
     password: str
+    # Platform contract 4.5: the Store ID. Optional on a single-store server
+    # (old clients send none); required on the shared service. "PLATFORM"
+    # signs a master in.
+    store_code: Optional[str] = None
+    # A master's 6-digit code when two-step sign-in is on.
+    totp: Optional[str] = None
+
+
+class SupportLoginRequest(BaseModel):
+    token: str
 
 
 class ChangePasswordRequest(BaseModel):
@@ -124,21 +134,34 @@ def _clean_features(keys: List[str]) -> str:
     return json.dumps([f["key"] for f in FEATURES if f["key"] in keep])
 
 
-@router.post("/login")
-def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    user = db.execute(
-        select(User).where(func.lower(User.username) == body.username.strip().lower())
-    ).scalar_one_or_none()
-    if user is None or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+def _login(body: LoginRequest, request: Request):
+    from app.platform.login import login as platform_login
+    from app.platform.throttle import client_ip
 
-    token, expires_at = create_session(db, user.id)
-    set_session_cookie(response, token, expires_at)
-    return _me_out(user)
+    return platform_login(
+        store_code=body.store_code,
+        username=body.username,
+        password=body.password,
+        totp=body.totp,
+        client_ip=client_ip(request),
+        me_out=_me_out,
+    )
+
+
+@router.post("/login")
+def login(body: LoginRequest, request: Request, response: Response):
+    """Web login (cookie). Body ``{store_code, username, password}``
+    (platform contract 4.5): the same check for store users and masters
+    (Store ID ``PLATFORM``). Errors: 401 one message for every bad
+    credential; 403 ``store_suspended`` / ``store_not_ready``; 409
+    ``store_moved`` (with ``api_base_url``); 429 ``locked``."""
+    result = _login(body, request)
+    set_session_cookie(response, result.token, result.expires_at)
+    return result.body
 
 
 @router.post("/mobile-login")
-def mobile_login(body: LoginRequest, db: Session = Depends(get_db)):
+def mobile_login(body: LoginRequest, request: Request):
     """Same credential check as /login, but for the mobile app: no cookie is
     set (a Capacitor WebView doesn't carry it reliably, and biometric re-auth
     needs an explicit value to store in Keychain/Keystore anyway) - the raw
@@ -149,33 +172,90 @@ def mobile_login(body: LoginRequest, db: Session = Depends(get_db)):
     an httpOnly cookie exists, a real regression to the web app's security
     model for no benefit to it.
     """
-    user = db.execute(
-        select(User).where(func.lower(User.username) == body.username.strip().lower())
-    ).scalar_one_or_none()
-    if user is None or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    result = _login(body, request)
+    return {"token": result.token, "expires_at": result.expires_at.isoformat(), **result.body}
 
-    token, expires_at = create_session(db, user.id)
-    return {"token": token, "expires_at": expires_at.isoformat(), **_me_out(user)}
+
+@router.post("/support-login")
+def support_login(body: SupportLoginRequest, request: Request, response: Response):
+    """A master's support session (``POST /api/platform/stores/{code}/support-session``)
+    as the website's cookie, so the console can open the store's dashboard.
+    Time-limited and audited on the platform side."""
+    from app.platform.login import support_login as do_support_login
+    from app.platform.throttle import check_rate, client_ip
+
+    if check_rate("support_login", client_ip(request), per_minute=10) is not None:
+        raise HTTPException(status_code=429, detail="Too many requests. Try again in a minute.")
+    result = do_support_login(body.token, _me_out)
+    set_session_cookie(response, result.token, result.expires_at)
+    return result.body
 
 
 @router.post("/logout")
 def logout(
     response: Response,
-    db: Session = Depends(get_db),
     session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
     authorization: Optional[str] = Header(default=None),
 ):
+    """Ends a store session (in the token's store) or a master's platform
+    session. Never 401: logging out twice is fine."""
+    from app.platform.config import is_multi, login_code
+    from app.platform.masters import token_prefix
+
     token = session_token or extract_bearer_token(authorization)
     if token:
-        delete_session(db, token)
+        if is_multi() and token_prefix(token) == login_code():
+            from app.platform.db import platform_session
+            from app.platform.masters import delete_platform_session
+
+            with platform_session() as pdb:
+                delete_platform_session(pdb, token)
+        else:
+            _delete_store_session(token)
     clear_session_cookie(response)
     return {"status": "ok"}
 
 
+def _delete_store_session(token: str) -> None:
+    from app.platform.bridge import current_store_code, is_multi_tenant
+
+    if is_multi_tenant() and not current_store_code():
+        return  # unknown / inactive store: nothing this server can end
+    db = SessionLocal()
+    try:
+        delete_session(db, token)
+    finally:
+        db.close()
+
+
 @router.get("/me")
-def me(user: User = Depends(get_current_user)):
-    return _me_out(user)
+def me(
+    session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+    authorization: Optional[str] = Header(default=None),
+):
+    """The signed-in user. Store session: the M2 body + ``"scope": "store"``.
+    Master: ``{"scope": "platform", "user": {...}}``."""
+    from app.platform.config import is_multi, login_code
+    from app.platform.masters import token_prefix
+
+    token = session_token or extract_bearer_token(authorization)
+    if token and is_multi() and token_prefix(token) == login_code():
+        from app.platform.db import platform_session
+        from app.platform.masters import session_user, user_view
+
+        with platform_session() as pdb:
+            master = session_user(pdb, token)
+            if master is None:
+                raise HTTPException(status_code=401, detail="Session expired or invalid")
+            return {"scope": "platform", "user": user_view(master)}
+    gen = get_db()
+    db = next(gen)
+    try:
+        user = get_current_user(session_token=session_token, authorization=authorization, db=db)
+        out = {"scope": "store", **_me_out(user)}  # scope first: the M2 key order is unchanged
+    finally:
+        gen.close()
+    return out
 
 
 @router.post("/change-password")

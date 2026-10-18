@@ -24,7 +24,7 @@ from starlette.datastructures import UploadFile
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import frontend_dist_dir
-from app.db import get_db
+from app.db import SessionLocal, get_db
 from app.services import checklist_public as svc
 from app.store import settings_view as sv
 from app.services.checklist_submission import (
@@ -279,8 +279,35 @@ def not_active_page() -> HTMLResponse:
     return _message_page(404, "This link is not active", "Ask your manager for the current checklist link.")
 
 
+def _find_page_link(path: str):
+    """Single mode: /c/{slug}-{code}. Shared service (platform contract
+    4.4): /c/{STORE_CODE}/{slug}-{code}, looked up in that store's database
+    (an unknown or inactive store is the same 404 as a wrong link)."""
+    from app.tenancy import is_multi_tenant
+
+    if not is_multi_tenant():
+        if "/" in path:
+            return None
+        db = SessionLocal()
+        try:
+            return svc.find_page_link(db, path)
+        finally:
+            db.close()
+    from app.tenancy import UnknownStore, normalize_store_code, tenant_session
+    from app.tenancy.errors import StoreMoved, StoreNotActive
+
+    code, sep, key = path.partition("/")
+    if not sep or not key or "/" in key:
+        return None
+    try:
+        with tenant_session(normalize_store_code(code)) as db:
+            return svc.find_page_link(db, key)
+    except (UnknownStore, StoreNotActive, StoreMoved):
+        return None
+
+
 @page_router.get("/c/{path:path}", include_in_schema=False)
-def public_page(path: str, request: Request, db: Session = Depends(get_db)) -> Response:
+def public_page(path: str, request: Request) -> Response:
     """The public page: the website's own index.html (it shows only the
     checklist form for /c/... paths - see frontend PublicChecklistPage), or
     a small "not active" page with a 404. Takes any /c/... path (so /c/,
@@ -295,7 +322,7 @@ def public_page(path: str, request: Request, db: Session = Depends(get_db)) -> R
     if path.endswith("/"):
         path = path[:-1]
     try:
-        link = svc.find_page_link(db, path) if "/" not in path else None
+        link = _find_page_link(path)
     except Exception:  # noqa: BLE001
         logger.exception("Public checklist page lookup failed")
         link = None

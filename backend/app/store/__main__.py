@@ -206,24 +206,39 @@ def insert_pack_rows(db, pack, author: str) -> Dict[str, int]:
     return inserted
 
 
-def store_init(code: str, pack_path: str, adopt: bool = False, db=None, settings=None) -> dict:
-    """The six store-init steps in one transaction (contract 3.5)."""
+def init_store(
+    db,
+    code: str,
+    pack_path: str,
+    *,
+    adopt: bool = False,
+    uploads_root=None,
+    settings=None,
+    reload_caches: bool = True,
+) -> dict:
+    """The six store-init steps on an open session, in one transaction
+    (contract 3.5; platform contract 10 step 4 calls this for a new store).
+
+    ``uploads_root`` is the store's own upload folder (it gets the identity
+    marker); default: UPLOADS_ROOT from ``settings`` (single mode). Raises
+    InitError / StoreIdentityError / PackError; on any error the session is
+    rolled back and nothing is written."""
     from app.config import STORE_CODE_RE, get_settings
     from app.store import identity
     from app.store import pack as store_pack
 
-    s = settings if settings is not None else get_settings()
     code = (code or "").strip().upper()
     if not STORE_CODE_RE.match(code):
         raise InitError(f"{code!r} is not a valid store code (3-24 letters, digits and _).")
     pack = store_pack.load_pack_file(pack_path)
     author = f"store-init ({pack.pack_id})"
+    if uploads_root is not None:
+        import pathlib
 
-    own = db is None
-    if own:
-        from app.db import SessionLocal
+        root = pathlib.Path(uploads_root).expanduser().resolve()
+    else:
+        root = identity.uploads_root(settings if settings is not None else get_settings())
 
-        db = SessionLocal()
     try:
         # 1. At Alembic head.
         current = _db_revision(db)
@@ -234,7 +249,6 @@ def store_init(code: str, pack_path: str, adopt: bool = False, db=None, settings
         stamp = identity.read_stamp(db)
         if stamp is not None and stamp["store_code"] != code:
             raise InitError(f"This database belongs to {stamp['store_code']}, not {code}.")
-        root = identity.uploads_root(s)
         marker = identity.read_marker(root)
         if marker is not None and marker.get("store_code") != code:
             raise InitError(f"The upload folder {root} belongs to {marker.get('store_code')}, not {code}.")
@@ -261,17 +275,15 @@ def store_init(code: str, pack_path: str, adopt: bool = False, db=None, settings
     except Exception:
         db.rollback()
         raise
-    finally:
-        if own:
-            db.close()
     identity.write_uploads_marker(root, code, instance_id)
-    store_pack.reload_pack()
-    try:
-        from app.services import checklist_schemas
+    if reload_caches:
+        store_pack.reload_pack()
+        try:
+            from app.services import checklist_schemas
 
-        checklist_schemas.clear_cache()
-    except Exception:  # noqa: BLE001 - only a cache
-        pass
+            checklist_schemas.clear_cache()
+        except Exception:  # noqa: BLE001 - only a cache
+            pass
     # 6. Summary.
     return {
         "store_code": code,
@@ -281,6 +293,21 @@ def store_init(code: str, pack_path: str, adopt: bool = False, db=None, settings
         "inserted": inserted,
         "instance_id": instance_id,
     }
+
+
+def store_init(code: str, pack_path: str, adopt: bool = False, db=None, settings=None) -> dict:
+    """The six store-init steps in one transaction (contract 3.5): the CLI
+    form, on this server's database (SessionLocal) unless ``db`` is given."""
+    own = db is None
+    if own:
+        from app.db import SessionLocal
+
+        db = SessionLocal()
+    try:
+        return init_store(db, code, pack_path, adopt=adopt, settings=settings)
+    finally:
+        if own:
+            db.close()
 
 
 # ---------------------------------------------------------------------------

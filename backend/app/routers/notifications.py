@@ -47,6 +47,9 @@ class DeviceRegisterRequest(BaseModel):
 
 class DeviceUnregisterRequest(BaseModel):
     token: str
+    # Platform contract 4.4: which store the phone was signed in to
+    # (required on the shared service; ignored on a single-store server).
+    store_code: Optional[str] = None
 
 
 class NotificationPrefRequest(BaseModel):
@@ -80,15 +83,33 @@ def unregister(token: str = Query(...), _: User = Depends(get_current_user), db:
 
 
 @router.post("/unregister")
-def unregister_without_session(body: DeviceUnregisterRequest, db: Session = Depends(get_db)):
+def unregister_without_session(body: DeviceUnregisterRequest):
     """Logout's "this phone stops getting alerts", even when the session has
     already expired (so the authenticated DELETE above can't be used).
     Needs no login on purpose: holding the FCM token is the proof, and the
     only thing it can do is detach that one token. Always 200, so it reveals
-    nothing about which tokens exist."""
+    nothing about which tokens exist - on the shared service also for an
+    unknown or inactive store code (the body's ``store_code`` picks the
+    store's database; nothing else does)."""
+    from app.db import SessionLocal
+    from app.tenancy import is_multi_tenant, normalize_store_code, tenant_session
+
     token = body.token.strip()
-    if token:
-        unregister_device(db, token)
+    if not token:
+        return {"ok": True}
+    if not is_multi_tenant():
+        db = SessionLocal()
+        try:
+            unregister_device(db, token)
+        finally:
+            db.close()
+        return {"ok": True}
+    code = normalize_store_code(body.store_code or "")
+    try:
+        with tenant_session(code, allow_inactive=True) as db:
+            unregister_device(db, token)
+    except Exception:  # noqa: BLE001 - unknown / moved / unavailable store: same answer
+        pass
     return {"ok": True}
 
 
