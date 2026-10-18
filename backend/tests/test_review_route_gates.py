@@ -41,6 +41,10 @@ PUBLIC = {
     # and the bundled placeholder images.
     ("GET", "/api/app/branding"),
     ("GET", "/branding/{name}"),
+    # App-link association files (routers/well_known.py, M2 MT10): static
+    # JSON built from settings, no store data.
+    ("GET", "/.well-known/apple-app-site-association"),
+    ("GET", "/.well-known/assetlinks.json"),
 }
 # Any logged-in user, no feature grant (small lookups, own account/devices,
 # team hub basics - see the notes in each router).

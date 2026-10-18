@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "stores": [
+    {
+      "code": "STOREOPS_TEST_TOAST",
+      "name": "Test Toast Market",
+      "api_base_url": "https://storeops-test-toast.storeops.invalid",
+      "status": "active",
+      "message": null,
+      "branding": {
+        "short_name": "Toast Test",
+        "logo_url": "https://storeops-test-toast.storeops.invalid/branding/logo.png",
+        "icon_url": "https://storeops-test-toast.storeops.invalid/branding/icon.png",
+        "primary_color": "#1D4ED8",
+        "secondary_color": "#93C5FD",
+        "timezone": "America/Chicago",
+        "pos_name": "Toast"
+      },
+      "min_build": {"ios": 0, "android": 0}
+    },
+    {
+      "code": "STOREOPS_TEST_CLOVER",
+      "name": "Test Clover Grocery",
+      "api_base_url": "https://storeops-test-clover.storeops.invalid",
+      "status": "active",
+      "message": null,
+      "branding": {
+        "short_name": "Clover Test",
+        "logo_url": "https://storeops-test-clover.storeops.invalid/branding/logo.png",
+        "icon_url": "https://storeops-test-clover.storeops.invalid/branding/icon.png",
+        "primary_color": "#15803D",
+        "secondary_color": "#86EFAC",
+        "timezone": "America/Los_Angeles",
+        "pos_name": "Clover"
+      },
+      "min_build": {"ios": 0, "android": 0}
+    },
+    {
+      "code": "DEMO",
+      "name": "StoreOps Demo Market",
+      "api_base_url": "https://demo.storeops.invalid",
+      "status": "active",
+      "message": null,
+      "branding": {
+        "short_name": "Demo",
+        "logo_url": "https://demo.storeops.invalid/branding/logo.png",
+        "icon_url": "https://demo.storeops.invalid/branding/icon.png",
+        "primary_color": "#0F766E",
+        "secondary_color": "#334155",
+        "timezone": "America/New_York",
+        "pos_name": "CSV upload"
+      },
+      "min_build": {"ios": 0, "android": 0}
+    }
+  ]
+}
