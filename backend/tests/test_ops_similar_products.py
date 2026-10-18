@@ -17,7 +17,7 @@ import pytest
 from app.models import InventorySnapshot, Order
 from app.services import similar_products as sp
 from tests.conftest import client_for, make_user
-from tests.similar_products_eval import evaluate, load_fixture, load_labels, split
+from tests.similar_products_eval import FIXTURE_PATH, LABELS_PATH, evaluate, load_fixture, load_labels, split
 
 TODAY = dt.date.today()
 
@@ -93,11 +93,22 @@ def test_vendor_refs_split_and_align_codes():
 # --- quality on real item names ---------------------------------------------------
 
 
+# The labelled catalog fixture was a real store's catalog export, so it is
+# not part of the StoreOps repository. These tests run when a catalog fixture
+# is present at tests/data/ (see tests/similar_products_eval.py) and skip
+# otherwise. TODO(M2): replace with a synthetic catalog + labels.
+requires_catalog_fixture = pytest.mark.skipif(
+    not (FIXTURE_PATH.exists() and LABELS_PATH.exists()),
+    reason="labelled catalog fixture not present (store data is not kept in the repo)",
+)
+
+
 @pytest.fixture(scope="module")
 def fixture_index():
     return sp.SimilarIndex(load_fixture())
 
 
+@requires_catalog_fixture
 def test_deep_coconut_finds_other_brands(fixture_index):
     deep = next(i for i in fixture_index.items if i.name == "Deep Shredded Coconut 24oz")
     matches = fixture_index.similar(deep.item_id)
@@ -111,6 +122,7 @@ def test_deep_coconut_finds_other_brands(fixture_index):
     assert daily.reason == "Same product, other brand"
 
 
+@requires_catalog_fixture
 def test_matches_exclude_self_container_and_kitchen(fixture_index):
     for q in load_labels()["queries"][:30]:
         for m in fixture_index.similar(q["item_id"]):
@@ -119,6 +131,7 @@ def test_matches_exclude_self_container_and_kitchen(fixture_index):
             assert (m.item.category_group or "").upper() not in {"STREET KITCHEN", "CATERING MENU"}
 
 
+@requires_catalog_fixture
 def test_quality_floor_on_labelled_set(fixture_index):
     """Measured when frozen (fixture): all P@5 0.94, recall@8 0.86; held-out
     half P@5 0.92, recall@8 0.77. After the verifier's rules (one-off words
@@ -136,6 +149,7 @@ def test_quality_floor_on_labelled_set(fixture_index):
     assert held_out["recall_at_8_grade2"] >= 0.70
 
 
+@requires_catalog_fixture
 def test_index_builds_fast_and_lookups_are_instant():
     items = load_fixture()
     started = time.perf_counter()

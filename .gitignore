@@ -1,0 +1,24 @@
+# StoreOps repository-wide guards (secrets and store data never go in git).
+.env
+.env.*
+!.env.example
+!frontend/.env.mobile
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.p12
+*.p8
+*.pem
+*.key
+*.mobileprovision
+GoogleService-Info.plist
+google-services.json
+firebase-service-account*.json
+# node_modules may be a symlink in local checkouts (a "dir/" pattern misses symlinks).
+node_modules
+# Store catalog exports used by the similar-products eval are a store's own data.
+backend/tests/data/similar_products_catalog.tsv
+backend/tests/data/similar_products_labels.json
+.DS_Store
