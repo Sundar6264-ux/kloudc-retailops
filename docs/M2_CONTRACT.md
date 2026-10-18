@@ -1917,6 +1917,13 @@ default settings). Plus 2 in `test_po_send` (store settings in the PO text,
 SMTP/Reply-To/From/Message-ID), 1 in `test_pos_gating` (Clover / CSV
 fallbacks), 1 in `test_pos_sync_neutral` (full-scan start without a floor).
 
+GitHub Actions on `main` (run `39154243122`, commit `b60cc24`): backend 3.9
+and 3.12 **2525 passed, 60 skipped** each (the private-pack tests skip there),
+website job green, Docker job green - compose boot runs `store-init` first
+(`STORE_CODE=STOREOPS_CI`; the two-letter `CI` no longer passes the store-code
+pattern), `/api/health` 200, healthy, restart on the existing database, and the
+full suite inside the image 2525 passed / 60 skipped.
+
 How the older suite runs on product defaults (`tests/conftest.py`):
 - the checklist fallback serves the legacy built-in fixtures
   (`checklist_builtin`) unless a test is marked `pack_checklists`;
