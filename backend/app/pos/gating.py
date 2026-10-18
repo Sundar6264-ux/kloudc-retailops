@@ -143,8 +143,24 @@ def store_capabilities() -> FrozenSet[Capability]:
     return entry[1] if entry else frozenset()
 
 
-def has_capability(*caps: Capability) -> bool:
+# Capabilities the server can use without talking to the POS (a file upload).
+OFFLINE_CAPABILITIES: FrozenSet[Capability] = frozenset({Capability.CSV_CATALOG_IMPORT})
+
+
+def usable_capabilities() -> FrozenSet[Capability]:
+    """What this server itself can do: the store's capabilities when its POS
+    has an adapter, else only OFFLINE_CAPABILITIES. A provider with only a
+    fallback entry (Clover in M2: no adapter until M3) advertises its set to
+    the website and app (store_capabilities), but the server's own gates -
+    routes, jobs, has_capability - must not call a POS it can't talk to."""
     have = store_capabilities()
+    if _connector(pos_provider()) is not None:
+        return have
+    return have & OFFLINE_CAPABILITIES
+
+
+def has_capability(*caps: Capability) -> bool:
+    have = usable_capabilities()
     return all(c in have for c in caps)
 
 
@@ -177,6 +193,12 @@ def require_capability(*caps: Capability):
         missing = missing_capabilities(required)
         if missing:
             raise HTTPException(status_code=409, detail=not_supported_detail(missing))
+        usable = usable_capabilities()
+        if any(c not in usable for c in required):
+            raise HTTPException(
+                status_code=409,
+                detail=f"Not available for this store yet: its point of sale ({pos_name()}) isn't connected.",
+            )
 
     return _dep
 
@@ -218,7 +240,7 @@ def job_func_name(job) -> str:
 
 def job_supported(job) -> bool:
     need = JOB_CAPABILITIES.get(job_func_name(job), frozenset())
-    return need <= store_capabilities()
+    return need <= usable_capabilities()
 
 
 def drop_unsupported_jobs(scheduler) -> List[str]:
