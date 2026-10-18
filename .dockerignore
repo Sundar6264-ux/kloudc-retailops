@@ -27,6 +27,11 @@
 **/firebase-service-account*.json
 **/GoogleService-Info.plist
 **/google-services.json
+# A real store's pack and the legacy parity files (docs/M2_CONTRACT.md 1.6).
+backend/packs/private
+**/*.pack.json
+**/legacy_cases.json
+**/forbidden_tokens.txt
 backend/uploads
 backend/logs
 backend/tests
