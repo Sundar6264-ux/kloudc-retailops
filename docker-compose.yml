@@ -18,6 +18,8 @@ services:
       # Container paths win over anything in .env: the database and uploads
       # always live in the store's volume.
       DATABASE_URL: sqlite:////data/storeops.db
+      # Holds the store identity marker (backend/app/store/identity.py).
+      UPLOADS_ROOT: /data/uploads
       INVOICE_UPLOADS_DIR: /data/uploads/invoices
       TEAM_UPLOADS_DIR: /data/uploads/team
       FLYERS_DIR: /data/uploads/flyers
