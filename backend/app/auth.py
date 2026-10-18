@@ -1,7 +1,10 @@
 """Password hashing, server-side sessions, and FastAPI auth dependencies.
 
 Sessions are cookie-based (an opaque random token, looked up against the
-`user_sessions` table) rather than JWTs - simpler for this scale, and lets an
+`user_sessions` table) rather than JWTs. Platform milestone (contract 4.2):
+the token is bound to its store - ``"<STORE_CODE>.<secret>"`` - and only its
+sha256 is stored, so a token works only in the database of the store it
+names and a leaked database row is not a usable token - simpler for this scale, and lets an
 admin instantly revoke a session (e.g. when resetting someone's password)
 just by deleting the row, with no token-blacklist bookkeeping needed.
 
@@ -11,7 +14,6 @@ own password by providing their current one.
 """
 
 import datetime as dt
-import secrets
 from typing import Optional
 
 import bcrypt
@@ -22,6 +24,10 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_db
 from app.models import User, UserSession
+from app.tenancy.context import current_store_code
+from app.tenancy.mode import is_multi_tenant
+from app.tenancy.registry import BLANK_STORE_CODE
+from app.tenancy.tokens import make_token, token_hash, token_scope_code
 from app.timeutil import utcnow
 
 SESSION_COOKIE_NAME = "session_token"
@@ -38,16 +44,47 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
+def _session_store_code() -> str:
+    """The store whose database this session lives in: the current store
+    (multi), or this server's STORE_CODE ("_" when blank: dev / tests)."""
+    code = current_store_code()
+    if not code:
+        from app.tenancy.errors import NoStoreContext
+
+        raise NoStoreContext()
+    return code
+
+
 def create_session(db: Session, user_id: int) -> tuple[str, dt.datetime]:
-    token = secrets.token_urlsafe(32)
+    """A new session for `user_id` in this store's database. Returns the
+    token ("<STORE_CODE>.<secret>"; only its hash is stored) and expiry."""
+    token = make_token(_session_store_code())
     expires_at = utcnow() + dt.timedelta(days=get_settings().session_lifetime_days)
-    db.add(UserSession(token=token, user_id=user_id, expires_at=expires_at))
+    db.add(UserSession(token=token_hash(token), user_id=user_id, expires_at=expires_at))
     db.commit()
     return token, expires_at
 
 
+def lookup_session(db: Session, token: Optional[str]) -> Optional[UserSession]:
+    """The live UserSession row of `token`, or None: unknown, expired, or a
+    token whose store prefix is not this store (contract 4.2)."""
+    if not token:
+        return None
+    prefix = token_scope_code(token)
+    if prefix != current_store_code():
+        # Single mode also accepts the dev / test placeholder "_" (a session
+        # made while STORE_CODE was blank); the hash lookup below is the real
+        # check either way. Multi mode: the prefix must be this store.
+        if is_multi_tenant() or prefix != BLANK_STORE_CODE:
+            return None
+    session = db.get(UserSession, token_hash(token))
+    if session is None or session.expires_at < utcnow():
+        return None
+    return session
+
+
 def delete_session(db: Session, token: str) -> None:
-    db.execute(delete(UserSession).where(UserSession.token == token))
+    db.execute(delete(UserSession).where(UserSession.token == token_hash(token)))
     db.commit()
 
 
@@ -103,8 +140,8 @@ def get_current_user(
     if not token:
         raise HTTPException(status_code=401, detail="Not logged in")
 
-    session = db.get(UserSession, token)
-    if session is None or session.expires_at < utcnow():
+    session = lookup_session(db, token)
+    if session is None:
         raise HTTPException(status_code=401, detail="Session expired or invalid")
 
     user = db.get(User, session.user_id)

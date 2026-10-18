@@ -56,6 +56,7 @@ from app.models import Flyer, FlyerSend, User
 from app.services import whatsapp_groups
 from app.team.media import MAX_PIXELS
 from app.timeutil import to_restaurant_date, utcnow
+from app.tenancy import advisory_lock, tenant_lock
 
 try:
     import pillow_heif
@@ -145,8 +146,8 @@ TOO_MANY_PIXELS = "That image is too large (too many pixels). Resize it and try 
 _PROCESSING_SLOTS = threading.BoundedSemaphore(1)
 # File moves (rename / category change / delete) and send-batch creation
 # (idempotency check + insert) are serialized within the process.
-_FILE_LOCK = threading.Lock()
-_SEND_LOCK = threading.Lock()
+_FILE_LOCK = tenant_lock("flyers._FILE_LOCK")
+_SEND_LOCK = tenant_lock("flyers._SEND_LOCK")
 _CHUNK = 256 * 1024
 
 
@@ -1192,7 +1193,7 @@ def create_send_batch(db: Session, user: User, flyer_id: int, payload) -> Tuple[
     if not isinstance(group_keys, list) or not all(isinstance(k, str) for k in group_keys):
         raise FlyerError(400, "Choose the WhatsApp groups to send to.")
     keys = list(dict.fromkeys(k.strip() for k in group_keys if k.strip()))
-    with _SEND_LOCK:
+    with _SEND_LOCK, advisory_lock(db, "flyers.send"):
         existing = _existing_batch(db, flyer.id, user.id, key)
         if existing:
             return _batch_out(existing), []
@@ -1244,7 +1245,7 @@ def retry_send(db: Session, user: User, flyer_id: int, send_id: int) -> Tuple[di
     row = db.get(FlyerSend, send_id) if _valid_row_id(send_id) else None
     if row is None or row.flyer_id != flyer.id:
         raise FlyerError(404, "Send not found")
-    with _SEND_LOCK:
+    with _SEND_LOCK, advisory_lock(db, "flyers.send"):
         db.refresh(row)
         if row.status != FAILED:
             raise FlyerError(409, "Only a failed send can be retried.")

@@ -1,5 +1,4 @@
 import datetime as dt
-import threading
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -24,6 +23,7 @@ from app.services.open_orders import (
     refresh_today_in_background,
 )
 from app.timeutil import restaurant_timezone, restaurant_today
+from app.tenancy import tenant_lock
 
 router = APIRouter(
     prefix="/api/orders",
@@ -191,7 +191,7 @@ def open_orders_export(
     )
 
 
-_rescan_lock = threading.Lock()
+_rescan_lock = tenant_lock("routers.orders._rescan_lock")
 
 
 @router.post("/open/all-time/rescan")

@@ -33,7 +33,6 @@ after the response (BackgroundTasks), never inside it.
 import datetime as dt
 import json
 import logging
-import threading
 import uuid
 from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
@@ -64,6 +63,7 @@ from app.team.jobs import register_team_job, with_session
 from app.team.models import Team, TeamMedia
 from app.team.tasks_models import Task, TaskEvent, TaskItem, TaskTemplate
 from app.timeutil import utcnow
+from app.tenancy import tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ OVERDUE_WINDOW = dt.timedelta(days=2)
 # check-send-log isn't atomic, so the two could both send the same push;
 # one process-wide lock around the send makes the second see the log row.
 # (The app runs as a single uvicorn process.)
-_ASSIGN_PUSH_LOCK = threading.Lock()
+_ASSIGN_PUSH_LOCK = tenant_lock("tasks_service._ASSIGN_PUSH_LOCK")
 
 
 def store_zone():

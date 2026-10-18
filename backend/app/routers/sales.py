@@ -1,6 +1,5 @@
 import datetime as dt
 import logging
-import threading
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,6 +20,7 @@ from app.services import sales_accuracy, toast_analytics
 from app.store.settings_view import store_slug
 from app.timeutil import restaurant_today
 from app.toast_client import ToastAPIError
+from app.tenancy import spawn_in_store
 
 router = APIRouter(prefix="/api/sales", tags=["sales"], dependencies=[Depends(get_current_user)])
 
@@ -170,5 +170,6 @@ def sales_accuracy_run(days: Optional[int] = Query(None, ge=1, le=sales_accuracy
         raise HTTPException(status_code=409, detail="Toast Analytics is not set up on this server.")
     if sales_accuracy.is_running():
         raise HTTPException(status_code=409, detail="A sales accuracy check is already running.")
-    threading.Thread(target=_run_repull_in_background, args=(days,), name="sales-repull", daemon=True).start()
+    # spawn_in_store: the thread keeps this request's store (PLATFORM_CONTRACT 6.6).
+    spawn_in_store(_run_repull_in_background, days, name="sales-repull")
     return {"started": True}

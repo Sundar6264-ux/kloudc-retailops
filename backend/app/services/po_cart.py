@@ -5,7 +5,6 @@ member can add to or check any supplier's section.
 
 import datetime as dt
 import math
-import threading
 from typing import Optional
 
 from sqlalchemy import select
@@ -13,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.models import CartItem, InventorySnapshot, User
 from app.services.supplier_projection import _container_qty_by_name, _split_suppliers, _supplier_item_id_for
+from app.tenancy import advisory_lock, tenant_lock
 
 # The biggest qty (cases) or Case of a cart line may hold. Far above any real
 # order, but it stops a typo, a pasted barcode or "1e308" from reaching the
@@ -34,7 +34,7 @@ def bad_cart_number(value: Optional[float]) -> bool:
 # the phone and the website) would both insert. One process serves the app,
 # so a lock makes the check-and-insert one step (re-entrant, so a caller that
 # already holds it can't deadlock).
-_add_lock = threading.RLock()
+_add_lock = tenant_lock("po_cart._add_lock", reentrant=True)
 
 
 def _lookup_supplier_item_id(db: Session, item_id: Optional[str], supplier: str) -> Optional[str]:
@@ -116,7 +116,7 @@ def add_items(db: Session, supplier: str, items: list[dict], added_by_user_id: O
     re-add of that item failed (Oct 7). Returns one row per entry in
     `items`, in order (a repeated item_id gets the same row again).
     """
-    with _add_lock:
+    with _add_lock, advisory_lock(db, "po_cart"):
         added = []
         by_item_id: dict = {}
         for item in items:

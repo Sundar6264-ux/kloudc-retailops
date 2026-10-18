@@ -34,7 +34,6 @@ docs/AUTOMATION_BATCH_CONTRACT.md "As built - B2"):
 
 import datetime as dt
 import logging
-import threading
 import time
 from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
@@ -49,6 +48,7 @@ from app.pos import registry
 from app.pos.barcodes import _codes, merged_barcode
 from app.pos.models import CatalogSnapshot, Item, StockLevel, StockStatus, to_float
 from app.timeutil import restaurant_today
+from app.tenancy import tenant_local, tenant_lock
 
 # Same logger name as before the move (log lines and filters unchanged).
 logger = logging.getLogger("app.services.inventory_api")
@@ -658,9 +658,9 @@ def effective_quantity(snap) -> Optional[float]:
 
 # _live_lock only guards the `_live` dict (never held while the POS is asked);
 # _live_fetch_lock makes it one POS fetch at a time.
-_live_lock = threading.Lock()
-_live_fetch_lock = threading.Lock()
-_live: dict = {}
+_live_lock = tenant_lock("catalog._live_lock")
+_live_fetch_lock = tenant_lock("catalog._live_fetch_lock")
+_live: dict = tenant_local("catalog._live", dict)
 LIVE_FAILURE_BACKOFF_SECONDS = 60
 # A request waits this long for another request's fetch, then uses the
 # snapshot counts.

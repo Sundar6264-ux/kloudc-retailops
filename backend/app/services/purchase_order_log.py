@@ -15,7 +15,6 @@ Two kinds of row (`PlacedOrder.status`):
 
 import datetime as dt
 import json
-import threading
 from typing import Optional
 
 from sqlalchemy import func, select
@@ -26,6 +25,7 @@ from app.services.item_vendors import vendors_of
 from app.services.po_cart import add_items, clear_supplier, list_cart
 from app.services.reorder import latest_inventory_by_item
 from app.timeutil import restaurant_timezone, utcnow
+from app.tenancy import advisory_lock, tenant_lock
 
 STATUS_PDF = "pdf"
 STATUS_PLACED = "placed"
@@ -40,7 +40,7 @@ DUPLICATE_WINDOW = dt.timedelta(minutes=2)
 
 # Makes "check for an existing row, then write" one step within this process
 # (FastAPI runs these sync routes on a thread pool, so two taps can overlap).
-_write_lock = threading.Lock()
+_write_lock = tenant_lock("purchase_order_log._write_lock")
 
 
 def order_items(row: PlacedOrder) -> list:
@@ -94,7 +94,7 @@ def _fill(row: PlacedOrder, items: list, user: User, status: str) -> None:
 def record_pdf_export(db: Session, supplier: str, items: list, user: User) -> PlacedOrder:
     """Log a PO PDF export as the supplier's one "pdf" row (updated in place
     when there's already one from the last 24h)."""
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "purchase_order_log"):
         row = _latest(db, supplier, STATUS_PDF, utcnow() - PDF_REUSE_WINDOW)
         if row is None:
             row = PlacedOrder(supplier=supplier)
@@ -113,7 +113,7 @@ def mark_supplier_placed(db: Session, supplier: str, user: User) -> tuple:
     answers 400, as before). `duplicate` is True when an identical order had
     just been recorded - that row is returned and no new one is created.
     """
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "purchase_order_log"):
         now = utcnow()
         cart_rows = [r for r in list_cart(db) if r.supplier == supplier]
         just_placed = _latest(db, supplier, STATUS_PLACED, now - DUPLICATE_WINDOW)
@@ -155,7 +155,7 @@ def place_sent_order(db: Session, supplier: str, user: User, snapshot: list, car
     (`cart_item_ids`). A line added to the cart while the email was being sent
     wasn't in the PO, so it stays in the cart. Returns (row, duplicate).
     """
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "purchase_order_log"):
         now = utcnow()
         just_placed = _latest(db, supplier, STATUS_PLACED, now - DUPLICATE_WINDOW)
         if just_placed is not None and _lines_key(order_items(just_placed)) == _lines_key(snapshot):

@@ -32,7 +32,7 @@ def refused_host(value: str) -> bool:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", protected_namespaces=("model_",))
 
     database_url: str = "sqlite:///./storeops.db"
 
@@ -412,6 +412,58 @@ class Settings(BaseSettings):
     app_store_url: str = ""
     play_store_url: str = ""
 
+    # --- Platform / tenancy (docs/PLATFORM_CONTRACT.md section 17) ---
+    # "single" (default): one store from DATABASE_URL + STORE_CODE, exactly
+    # the M2 behaviour. "multi": the shared service - one PostgreSQL database
+    # per store, the store picked per request from the session token
+    # (app/tenancy).
+    tenancy_mode: str = "single"
+    # "development" lets the platform generate a dev key ring (8.4).
+    app_env: str = "production"
+    # The control-plane database (registry, sign-ups, masters...). Required in
+    # multi mode.
+    platform_database_url: str = ""
+    # Store databases on the shared cluster, e.g.
+    # postgresql+psycopg://storeops@127.0.0.1:5433/{db_name}. Required in multi.
+    store_database_url_template: str = ""
+    # Dedicated store hosts: JSON object {"ref": "postgresql+psycopg://user:pass@host:5432/{db_name}"}.
+    # Passwords live only here (env), never in the platform database.
+    store_db_hosts: str = ""
+    store_db_prefix: str = "so_"
+    # CREATE DATABASE runs through this URL; blank -> the template with db_name=postgres.
+    pg_admin_url: str = ""
+    # One engine per store database, opened lazily (app/tenancy/engines.py).
+    tenant_pool_size: int = 2
+    tenant_max_overflow: int = 3
+    tenant_pool_timeout: int = 10
+    tenant_max_engines: int = 40
+    tenant_engine_idle_seconds: int = 600
+    statement_timeout_ms: int = 60000
+    # A store's merged settings are re-checked against its settings_version
+    # at most this often.
+    settings_refresh_seconds: int = 10
+    scheduler_max_workers: int = 4
+    # The shared service's public origin. Blank -> https://app.<platform_domain>.
+    platform_public_url: str = ""
+    # The Store ID masters type on the login page.
+    platform_login_code: str = "PLATFORM"
+    # Credential encryption key ring (secret; app/platform/crypto.py).
+    storeops_secret_keys: str = ""
+    storeops_secret_key: str = ""
+    storeops_secret_key_file: str = ".secrets/storeops_keyring"
+    signup_enabled: bool = True
+    signup_rate_per_hour: int = 5
+    login_lockout_failures: int = 5
+    login_lockout_minutes: int = 15
+    login_ip_lockout_failures: int = 30
+    platform_require_totp: bool = False
+    # --- DEDICATED HOSTING (owner approval required; DEDICATED_HOSTING_ENABLED) ---
+    # See docs/DEDICATED_HOSTING_RUNBOOK.md. Off by default.
+    dedicated_hosting_enabled: bool = False
+    # Set only on a dedicated server: the store code(s) it serves (comma list).
+    dedicated_store_codes: str = ""
+    private_packs_dir: str = ""
+
     @field_validator("store_code")
     @classmethod
     def _store_code(cls, value: str) -> str:
@@ -448,7 +500,25 @@ class Settings(BaseSettings):
             raise ValueError("BUSINESS_DAY_CUTOFF_HOUR must be 0-23")
         return int(value)
 
-    @field_validator("platform_domain", "public_host", "public_base_url", "labels_url", "session_cookie_domain")
+    @field_validator("tenancy_mode")
+    @classmethod
+    def _tenancy_mode(cls, value: str) -> str:
+        value = (value or "single").strip().lower() or "single"
+        if value not in ("single", "multi"):
+            raise ValueError(f"TENANCY_MODE {value!r} must be single or multi")
+        return value
+
+    @field_validator("platform_login_code")
+    @classmethod
+    def _platform_login_code(cls, value: str) -> str:
+        value = (value or "").strip().upper() or "PLATFORM"
+        if not STORE_CODE_RE.match(value):
+            raise ValueError(f"PLATFORM_LOGIN_CODE {value!r} is not a valid code")
+        return value
+
+    @field_validator(
+        "platform_domain", "public_host", "public_base_url", "labels_url", "session_cookie_domain", "platform_public_url"
+    )
     @classmethod
     def _never_legacy_domain(cls, value: str, info) -> str:
         value = (value or "").strip()
@@ -482,8 +552,50 @@ class Settings(BaseSettings):
 
 
 @lru_cache
-def get_settings() -> Settings:
+def process_settings() -> Settings:
+    """The process-level settings (env / .env). In single mode this is the
+    store's Settings; in multi mode it is the platform level, the base every
+    store's merged Settings starts from (docs/PLATFORM_CONTRACT.md 8.1)."""
     return Settings()
+
+
+_tenancy_settings = None  # app.tenancy.settings, imported on first multi-mode call
+
+
+def get_settings() -> Settings:
+    """The settings of the CURRENT store. Single mode (default): the process
+    settings, exactly as before. Multi mode: inside a store context, that
+    store's merged Settings (env < store_settings < credentials < derived);
+    without one, the process (platform-level) settings."""
+    base = process_settings()
+    if base.tenancy_mode != "multi":
+        return base
+    global _tenancy_settings
+    if _tenancy_settings is None:
+        from app.tenancy import settings as _ts
+
+        _tenancy_settings = _ts
+    return _tenancy_settings.current_store_settings(base)
+
+
+def _clear_settings_cache() -> None:
+    process_settings.cache_clear()
+    if _tenancy_settings is not None:
+        _tenancy_settings.invalidate_store_settings()
+
+
+# Callers (and tests) used get_settings.cache_clear() when it was an lru_cache.
+get_settings.cache_clear = _clear_settings_cache  # type: ignore[attr-defined]
+
+
+def platform_public_url(s: Optional[Settings] = None) -> str:
+    """PLATFORM_PUBLIC_URL, else https://app.<platform_domain> (no trailing slash)."""
+    s = s if s is not None else process_settings()
+    own = (s.platform_public_url or "").strip().rstrip("/")
+    if own:
+        return own
+    domain = (s.platform_domain or "storeops.invalid").strip(".").lower() or "storeops.invalid"
+    return f"https://app.{domain}"
 
 
 def frontend_dist_dir():

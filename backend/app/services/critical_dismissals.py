@@ -30,7 +30,6 @@ looks next:
 import datetime as dt
 import json
 import logging
-import threading
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from sqlalchemy import select
@@ -41,6 +40,7 @@ from app.services import report_cache
 from app.services.reorder import cached_report, compute_reorder_candidates, group_candidates_by_vendor, report_key
 from app.services.supplier_projection import list_suppliers
 from app.timeutil import restaurant_timezone, restaurant_today, utcnow
+from app.tenancy import advisory_lock, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ NOT_CRITICAL_CLOSE_WARNING = (
 # two admins' POSTs can finish their ~2 s report at the same moment) - so a
 # vendor never ends up with two active dismissals. Same as
 # purchase_order_log._write_lock.
-_write_lock = threading.Lock()
+_write_lock = tenant_lock("critical_dismissals._write_lock")
 
 _DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 _MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -590,7 +590,7 @@ def create_dismissal(
                 raise DismissalError(404, f"Unknown vendor: {name}")
             name = same[0]["vendor"]
 
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "critical_dismissals"):
         # Settle first (an ended one is recorded as expired / came back, not
         # as replaced), then this vendor's active ones are superseded.
         for row in _settle(db, now, groups):
@@ -628,7 +628,7 @@ def show_again(db: Session, user: User, dismissal_id: int, now: Optional[dt.date
     if row is None:
         return False
     now = _now(now)
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "critical_dismissals"):
         active = _settle(db, now)
         if row not in active:
             return True

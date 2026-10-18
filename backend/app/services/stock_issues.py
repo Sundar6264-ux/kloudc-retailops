@@ -28,7 +28,6 @@ result is kept per upload and refreshed in the background every few minutes
 
 import datetime as dt
 import logging
-import threading
 import time
 from typing import Optional
 
@@ -50,6 +49,7 @@ from app.services.supplier_projection import (
     store_container_pairs,
 )
 from app.timeutil import to_restaurant_date
+from app.tenancy import spawn_in_store, tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -95,19 +95,26 @@ FLAG_LABELS = {
     "differs_from_history": "Very different from simple average",
 }
 
-_cache: dict = {}
-_cache_lock = threading.Lock()
+_cache: dict = tenant_local("stock_issues._cache", dict)
+_cache_lock = tenant_lock("stock_issues._cache_lock")
 # Bumped by every clear (a category edit, a forced re-warm). A background
 # refresh started before a clear must not write its result over an entry
 # made after it: that data was computed with the old category rules.
-_generation = 0
+# Per store (docs/PLATFORM_CONTRACT.md 6.5); read as the module attribute
+# `_generation` (module __getattr__ below) by older callers and tests.
+_gen_state: dict = tenant_local("stock_issues._generation", lambda: {"n": 0})
+
+
+def __getattr__(name: str):
+    if name == "_generation":
+        return _gen_state["n"]
+    raise AttributeError(name)
 
 
 def clear_forecast_cache() -> None:
-    global _generation
     with _cache_lock:
         _cache.clear()
-        _generation += 1
+        _gen_state["n"] += 1
 
 
 def is_container_row(snap: InventorySnapshot) -> bool:
@@ -198,11 +205,16 @@ def forecasts_by_item(db: Session, latest: dict, excluded_groups: set) -> dict:
             if hit["expires"] <= time.monotonic() and not hit["refreshing"]:
                 hit["refreshing"] = True
                 try:
-                    threading.Thread(
-                        target=_refresh_in_background,
-                        args=(db.get_bind(), key, set(excluded_groups), as_of, _generation),
-                        daemon=True,
-                    ).start()
+                    # spawn_in_store: the thread keeps this store's context.
+                    spawn_in_store(
+                        _refresh_in_background,
+                        db.get_bind(),
+                        key,
+                        set(excluded_groups),
+                        as_of,
+                        _gen_state["n"],
+                        name="fix-issues-forecast-refresh",
+                    )
                 except Exception:  # e.g. no threads left - keep serving the old result
                     hit["refreshing"] = False
                     logger.exception("Could not start the Fix Issues forecast refresh")
@@ -242,7 +254,7 @@ def _refresh_in_background(bind, key: tuple, excluded_groups: set, as_of: dt.dat
         entry = _cache.get(key)
         # A clear since this refresh started: the entry (if any) is newer
         # than our data - leave it alone.
-        if entry is not None and generation == _generation:
+        if entry is not None and generation == _gen_state["n"]:
             if data is not None:
                 entry["data"] = data
             entry["expires"] = time.monotonic() + FORECAST_CACHE_SECONDS

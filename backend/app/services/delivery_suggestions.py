@@ -60,7 +60,6 @@ fingerprint of the snapshots, purchase log, invoices and dismissals.
 import datetime as dt
 import logging
 import re
-import threading
 import time
 from collections import Counter, defaultdict
 from functools import lru_cache
@@ -85,6 +84,7 @@ from app.services.suggestion_dismissals import dismissed_keys
 from app.services.supplier_projection import _split_suppliers, _supplier_item_id_for, store_container_pairs
 from app.store import settings_view as sv
 from app.timeutil import restaurant_timezone, to_restaurant_date, utcnow
+from app.tenancy import tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -707,8 +707,8 @@ def compute_suggestions(
 
 # --- Cached entry point --------------------------------------------------------------------------
 
-_cache_lock = threading.Lock()
-_cache: Dict[tuple, Tuple[float, dict]] = {}
+_cache_lock = tenant_lock("delivery_suggestions._cache_lock")
+_cache: Dict[tuple, Tuple[float, dict]] = tenant_local("delivery_suggestions._cache", dict)
 
 
 def _fingerprint(db: Session) -> tuple:

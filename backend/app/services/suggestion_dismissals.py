@@ -6,7 +6,6 @@ remembers which ones a person dismissed, so they stop showing. Undo deletes
 the row and the suggestion shows again (if it still applies).
 """
 
-import threading
 from typing import Optional, Set
 
 from sqlalchemy import select
@@ -15,10 +14,11 @@ from sqlalchemy.orm import Session
 
 from app.models import SuggestionDismissal, User
 from app.timeutil import utcnow
+from app.tenancy import tenant_lock
 
 KINDS = ("delivery", "invoice_close", "vendor_schedule")
 
-_lock = threading.Lock()
+_lock = tenant_lock("suggestion_dismissals._lock")
 
 
 def dismissed_keys(db: Session, kind: str) -> Set[str]:

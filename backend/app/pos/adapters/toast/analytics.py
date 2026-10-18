@@ -34,13 +34,13 @@ changes nothing in Toast).
 import collections
 import datetime as dt
 import logging
-import threading
 import time
 from typing import Callable, Optional
 
 import httpx
 
 from app.config import get_settings
+from app.tenancy import tenant_local, tenant_lock
 
 # Same logger name as before the move, so log lines stay identical.
 logger = logging.getLogger("app.services.toast_analytics")
@@ -81,13 +81,21 @@ _LIMITS: dict[str, list[tuple[int, float]]] = {
 }
 _DAILY_KINDS = ("check", "payout/payments", "guest/payments")
 
-_lock = threading.Lock()
-_calls: dict[str, collections.deque] = collections.defaultdict(collections.deque)
+# Per store (docs/PLATFORM_CONTRACT.md 6.5): each store has its own
+# Analytics credentials, so its own token and call budget.
+_lock = tenant_lock("toast_analytics.calls")
+_calls: dict[str, collections.deque] = tenant_local(
+    "toast_analytics.calls", lambda: collections.defaultdict(collections.deque)
+)
 # Earliest time (epoch) the next call to an endpoint may go out, from Toast's
 # own x-toast-ratelimit-* headers or a 429.
-_blocked_until: dict[str, float] = {}
-_token: Optional[tuple[str, float]] = None  # (access token, expires at epoch)
-_token_lock = threading.Lock()
+_blocked_until: dict[str, float] = tenant_local("toast_analytics.blocked_until", dict)
+# {"token": (access token, expires at epoch) or None}
+_token_state: dict = tenant_local("toast_analytics.token", lambda: {"token": None})
+# Kept only so the old module path still lists the name (app.pos.compat); the
+# live token is per store in _token_state above.
+_token: Optional[tuple[str, float]] = None
+_token_lock = tenant_lock("toast_analytics.token")
 
 # Seams for tests (never sleep / never read the clock for real in unit tests).
 _sleep: Callable[[float], None] = time.sleep
@@ -105,12 +113,11 @@ def _base() -> str:
 
 def reset_state() -> None:
     """Forget the token and the call budget (tests; a settings change)."""
-    global _token
     with _lock:
         _calls.clear()
         _blocked_until.clear()
     with _token_lock:
-        _token = None
+        _token_state["token"] = None
 
 
 def _family(method: str, path: str) -> str:
@@ -194,11 +201,11 @@ def _retry_after(resp: httpx.Response, attempt: int) -> float:
 
 
 def _login(client: httpx.Client) -> str:
-    global _token
     s = get_settings()
     with _token_lock:
-        if _token and _token[1] > _now() + 120:
-            return _token[0]
+        token = _token_state["token"]
+        if token and token[1] > _now() + 120:
+            return token[0]
         _wait_for_budget("POST", "/authentication/v1/authentication/login", max_wait=60)
         resp = client.post(
             _base() + "/authentication/v1/authentication/login",
@@ -217,7 +224,7 @@ def _login(client: httpx.Client) -> str:
         if not access:
             raise AnalyticsError("Toast Analytics login answered without a token")
         expires_in = float(tok.get("expiresIn") or 3600)
-        _token = (access, _now() + expires_in)
+        _token_state["token"] = (access, _now() + expires_in)
         return access
 
 
@@ -233,7 +240,6 @@ def _request(
 ) -> httpx.Response:
     """One authenticated call with budget, header and 429 handling. Returns
     the response for every status other than 401 (re-login once) and 429."""
-    global _token
     relogged = False
     attempt = 0
     while True:
@@ -250,7 +256,7 @@ def _request(
         _note_headers(method, path, resp)
         if resp.status_code == 401 and not relogged:
             with _token_lock:
-                _token = None
+                _token_state["token"] = None
             relogged = True
             continue
         if resp.status_code == 429:

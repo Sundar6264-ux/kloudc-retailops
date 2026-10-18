@@ -58,17 +58,18 @@ from app.models import Order
 from app.pos.sync.sales import fetch_orders, line_rows
 from app.services.sales_sync import _extract_line_items, fetch_orders_with_retry  # noqa: F401 - old names
 from app.timeutil import restaurant_timezone, restaurant_today, to_restaurant_date
+from app.tenancy import tenant_local, tenant_lock
 
 # business date -> (fetched at epoch, line items). Concurrent requests for the
 # same date share one Toast pull (a per-date lock); _LIVE_LOCK only guards the
 # dicts and is never held while Toast is being asked.
-_LIVE_CACHE: dict = {}
-_LIVE_LOCK = threading.Lock()
+_LIVE_CACHE: dict = tenant_local("items_sold._LIVE_CACHE", dict)
+_LIVE_LOCK = tenant_lock("items_sold._LIVE_LOCK")
 # business date -> (failed at epoch, short reason): after a failed pull every
 # request fails fast for LIVE_FAILURE_BACKOFF_SECONDS instead of queueing up
 # behind another slow Toast call (a hung Toast must never tie up the server).
-_LIVE_FAILED: dict = {}
-_DATE_LOCKS: dict = {}
+_LIVE_FAILED: dict = tenant_local("items_sold._LIVE_FAILED", dict)
+_DATE_LOCKS: dict = tenant_local("items_sold._DATE_LOCKS", dict)
 LIVE_FAILURE_BACKOFF_SECONDS = 15
 # How long a request waits for someone else's pull of the same date.
 LIVE_LOCK_WAIT_SECONDS = 20

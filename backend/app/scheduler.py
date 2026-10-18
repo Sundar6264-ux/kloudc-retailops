@@ -565,3 +565,252 @@ def shutdown_notification_scheduler() -> None:
     if _notification_scheduler is not None:
         _notification_scheduler.shutdown(wait=False)
         _notification_scheduler = None
+
+
+# =====================================================================================
+# Multi mode (TENANCY_MODE=multi; docs/PLATFORM_CONTRACT.md 6.2)
+# =====================================================================================
+# The same jobs as above, but for every store: time-of-day jobs are declared
+# once per store (job id "<job>:<CODE>", each store's own timezone and
+# settings, a 0-120 s per-store offset), interval jobs are registered once
+# and run for every store on each tick, the startup catch-ups run per store
+# when the scheduler first sees it. Only the leader process (advisory lock,
+# app/tenancy/leader.py) starts these schedulers. Single mode above is
+# unchanged.
+
+_platform_scheduler: Optional[BackgroundScheduler] = None
+
+
+def _store_tz():
+    return zoneinfo.ZoneInfo(get_settings().store_timezone)
+
+
+def _cron(hour, minute):
+    """A trigger factory: hour:minute in the current store's timezone,
+    hour/minute read from the store's settings when given as callables."""
+
+    def make(_ref):
+        s = get_settings()
+        h = hour(s) if callable(hour) else hour
+        m = minute(s) if callable(minute) else minute
+        return CronTrigger(hour=h, minute=m, timezone=_store_tz())
+
+    return make
+
+
+def _alert_job(key: str):
+    """run_alert_job(key) as a no-argument job that keeps the name
+    run_alert_job (POS gating reads job function names)."""
+    import functools
+
+    @functools.wraps(run_alert_job)
+    def job() -> None:
+        run_alert_job(key)
+
+    return job
+
+
+def _sales_repull_trigger(_ref):
+    s = get_settings()
+    if not s.sales_repull_enabled:
+        return None
+    times = _repull_times(s.sales_repull_times)
+    if not times:
+        return None
+    from apscheduler.triggers.combining import OrTrigger
+
+    tz = _store_tz()
+    triggers = [CronTrigger(hour=h, minute=m, timezone=tz) for h, m in times]
+    return triggers[0] if len(triggers) == 1 else OrTrigger(triggers)
+
+
+def _insights_trigger(_ref):
+    s = get_settings()
+    if not s.insights_nightly_enabled:
+        return None
+    return CronTrigger(hour=s.insights_nightly_hour, minute=s.insights_nightly_minute, timezone=_store_tz())
+
+
+def _insights_catchup_trigger(_ref):
+    if not get_settings().insights_nightly_enabled:
+        return None
+    from app.services.insights_data import CATCHUP_HOURS, CATCHUP_MINUTE
+
+    return CronTrigger(hour=",".join(str(h) for h in CATCHUP_HOURS), minute=CATCHUP_MINUTE, timezone=_store_tz())
+
+
+def declare_main_store_jobs() -> None:
+    from app.tenancy import register_store_job, register_store_startup_job
+
+    register_store_job(
+        "daily_sales_sync",
+        run_daily_sales_sync,
+        _cron(lambda s: s.sales_sync_hour, lambda s: s.sales_sync_minute),
+        misfire_grace_time=3600,
+    )
+    register_store_job(
+        "open_orders_full_scan",
+        run_open_orders_full_scan,
+        _cron(lambda s: s.open_orders_full_scan_hour, lambda s: s.open_orders_full_scan_minute),
+        misfire_grace_time=3600,
+    )
+    register_store_job("sales_repull", run_sales_repull_job, _sales_repull_trigger, misfire_grace_time=1800)
+    register_store_job("insights_nightly", run_insights_nightly, _insights_trigger, misfire_grace_time=3600)
+    register_store_job("insights_catchup", run_insights_catchup, _insights_catchup_trigger, misfire_grace_time=1800)
+    register_store_job(
+        "inventory_api_snapshot",
+        run_inventory_api_snapshot,
+        _cron(lambda s: s.inventory_api_snapshot_hour, lambda s: s.inventory_api_snapshot_minute),
+        misfire_grace_time=3600,
+    )
+    register_store_startup_job("startup_catchup_sync", run_daily_sales_sync, 10)
+    register_store_startup_job("startup_open_orders_today", run_open_orders_today_refresh, 15)
+    register_store_startup_job("startup_fix_issues_warmup", warm_fix_issues_cache, 20)
+    register_store_startup_job("startup_open_orders_full_scan", run_open_orders_full_scan, 30)
+
+
+def declare_notification_store_jobs() -> None:
+    from app.tenancy import register_store_job
+
+    register_store_job(
+        "notify_closing_checklist",
+        _alert_job("closing_checklist"),
+        _cron(21, 30),
+        scheduler="notifications",
+        misfire_grace_time=1200,
+        max_instances=1,
+    )
+    register_store_job(
+        "notify_morning_summary", run_morning_summary, _cron(9, 0), scheduler="notifications", misfire_grace_time=3600
+    )
+    for hour, minute in OPEN_ORDER_SUMMARY_TIMES:
+        if (hour, minute) == (9, 0):
+            continue
+        register_store_job(
+            f"notify_open_orders_{hour:02d}{minute:02d}",
+            run_open_orders_summary,
+            _cron(hour, minute),
+            scheduler="notifications",
+            misfire_grace_time=1800,
+        )
+
+
+def declare_team_store_jobs() -> None:
+    from app.team.jobs import TEAM_JOBS
+    from app.tenancy import register_store_job
+
+    for job in TEAM_JOBS:
+        register_store_job(
+            f"team_{job.id}",
+            job.func,
+            (lambda _ref, job=job: job.trigger(_store_tz())),
+            scheduler="team",
+            misfire_grace_time=job.misfire_grace_time,
+        )
+
+
+def _new_multi_scheduler() -> BackgroundScheduler:
+    from apscheduler.executors.pool import ThreadPoolExecutor
+
+    workers = max(1, int(get_settings().scheduler_max_workers))
+    return BackgroundScheduler(
+        timezone=dt.timezone.utc,
+        executors={"default": ThreadPoolExecutor(max_workers=workers)},
+        job_defaults={"coalesce": True, "max_instances": 1},
+    )
+
+
+def start_multi_tenant_schedulers() -> dict:
+    """Multi mode, on the leader: build and start the schedulers with every
+    store's jobs. Returns {name: scheduler} of the ones started."""
+    global _scheduler, _notification_scheduler, _team_scheduler, _platform_scheduler
+    from app.tenancy import each_store_job, reconcile_store_jobs, sweep_idle_engines
+    from app.tenancy.jobs import RECONCILE_EVERY_MINUTES, attach_scheduler, unregister_store_jobs
+
+    shutdown_multi_tenant_schedulers()
+    settings = get_settings()  # platform level: no store selected here
+    unregister_store_jobs()
+    started = {}
+    if settings.scheduler_enabled:
+        main = _new_multi_scheduler()
+        declare_main_store_jobs()
+        main.add_job(
+            each_store_job(run_open_orders_today_refresh),
+            trigger=IntervalTrigger(minutes=settings.open_orders_today_refresh_minutes),
+            id="open_orders_today_refresh",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=60,
+        )
+        if settings.menu_barcode_recheck_minutes > 0:
+            main.add_job(
+                each_store_job(run_menu_barcode_recheck),
+                trigger=IntervalTrigger(minutes=settings.menu_barcode_recheck_minutes),
+                id="menu_barcode_recheck",
+                replace_existing=True,
+                misfire_grace_time=600,
+                coalesce=True,
+                max_instances=1,
+            )
+        attach_scheduler("main", main)
+        _scheduler = started["main"] = main
+    else:
+        logger.info("Scheduler disabled (SCHEDULER_ENABLED=false) - no scheduled store jobs will run")
+    if settings.notifications_enabled:
+        notif = _new_multi_scheduler()
+        declare_notification_store_jobs()
+        for key, minutes in (("invoice_failed", 10), ("cart_removal_request", CART_REMOVAL_CHECK_MINUTES)):
+            notif.add_job(
+                each_store_job(_alert_job(key)),
+                trigger=IntervalTrigger(minutes=minutes),
+                id=f"notify_{key}",
+                replace_existing=True,
+                misfire_grace_time=300,
+                coalesce=True,
+                max_instances=1,
+            )
+        attach_scheduler("notifications", notif)
+        _notification_scheduler = started["notifications"] = notif
+    if settings.team_jobs_enabled:
+        team = _new_multi_scheduler()
+        declare_team_store_jobs()
+        attach_scheduler("team", team)
+        _team_scheduler = started["team"] = team
+    platform = BackgroundScheduler(timezone=dt.timezone.utc)
+    platform.add_job(
+        reconcile_store_jobs,
+        trigger=IntervalTrigger(minutes=RECONCILE_EVERY_MINUTES),
+        id="tenancy_reconcile_store_jobs",
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1,
+    )
+    platform.add_job(
+        sweep_idle_engines,
+        trigger=IntervalTrigger(minutes=1),
+        id="tenancy_sweep_idle_engines",
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1,
+    )
+    _platform_scheduler = started["platform"] = platform
+    try:
+        stats = reconcile_store_jobs()
+        logger.info("Store jobs: %s", stats)
+    except Exception:  # noqa: BLE001 - the 5-minute reconcile retries
+        logger.exception("Store jobs: first reconcile failed")
+    for sched in started.values():
+        sched.start()
+    return started
+
+
+def shutdown_multi_tenant_schedulers() -> None:
+    global _scheduler, _notification_scheduler, _team_scheduler, _platform_scheduler
+    from app.tenancy.jobs import detach_scheduler
+
+    detach_scheduler()
+    for sched in (_scheduler, _notification_scheduler, _team_scheduler, _platform_scheduler):
+        if sched is not None and getattr(sched, "running", False):
+            sched.shutdown(wait=False)
+    _scheduler = _notification_scheduler = _team_scheduler = _platform_scheduler = None

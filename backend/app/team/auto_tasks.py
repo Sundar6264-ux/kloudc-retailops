@@ -84,6 +84,7 @@ from app.team.tasks_service import (
     system_name,
 )
 from app.timeutil import restaurant_timezone, utcnow
+from app.tenancy import tenant_local
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +106,8 @@ PROTECTED_TASK_IDS = frozenset({11, 12, 47})
 
 # The Vendor Calendar is expensive to compute, so the order rule scans it
 # once per store day (per process - a restart just rescans, harmlessly).
-_order_scan_day: Optional[dt.date] = None
+# Per store: {"day": the store day of the last full scan, or None}.
+_order_scan: dict = tenant_local("auto_tasks._order_scan", lambda: {"day": None})
 
 
 def _local(now: dt.datetime) -> dt.datetime:
@@ -579,14 +581,13 @@ def sync_order_tasks(db: Session, now: dt.datetime) -> int:
 
 
 def run_order_rule(db: Session, now: dt.datetime) -> int:
-    global _order_scan_day
     settings = get_settings()
     local = _local(now)
     today = local.date()
 
     sync_order_tasks(db, now)
 
-    if not settings.team_autotask_order_enabled or local.time() < ORDER_AFTER or _order_scan_day == today:
+    if not settings.team_autotask_order_enabled or local.time() < ORDER_AFTER or _order_scan["day"] == today:
         return 0
     team = _team(db, settings.team_autotask_order_team)
     if team is None:
@@ -618,7 +619,7 @@ def run_order_rule(db: Session, now: dt.datetime) -> int:
         created += task is not None
     # Only once every vendor was handled: a failure above means the next
     # tick scans again (creation is idempotent).
-    _order_scan_day = today
+    _order_scan["day"] = today
     return created
 
 

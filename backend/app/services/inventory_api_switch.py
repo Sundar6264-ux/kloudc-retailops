@@ -20,7 +20,6 @@ is used and the error logged.
 
 import json
 import logging
-import threading
 from typing import List, Optional
 
 from sqlalchemy import select
@@ -30,6 +29,7 @@ from app.config import get_settings
 from app.models import User
 from app.setting_models import SettingChange
 from app.timeutil import utcnow
+from app.tenancy import tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ HISTORY_LIMIT = 50
 # One change at a time (the backend is one process): two admins pressing at
 # once must each record the value really in force before them, never a
 # "turned on, was on" row.
-_change_lock = threading.Lock()
+_change_lock = tenant_lock("inventory_api_switch._change_lock")
 
 
 def env_default() -> bool:

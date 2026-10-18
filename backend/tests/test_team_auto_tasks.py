@@ -41,7 +41,7 @@ def _defaults(monkeypatch):
     monkeypatch.setattr(s, "team_autotask_invoice_enabled", False)
     monkeypatch.setattr(s, "team_autotask_order_enabled", False)
     monkeypatch.setattr(s, "team_whatsapp_fallback", False)
-    monkeypatch.setattr(auto_tasks, "_order_scan_day", None)
+    monkeypatch.setitem(auto_tasks._order_scan, "day", None)  # per store (platform B)
     monkeypatch.setattr(svc, "_quiet", lambda now: False)
 
 

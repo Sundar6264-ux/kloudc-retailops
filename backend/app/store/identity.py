@@ -53,8 +53,10 @@ class StoreIdentity(Base):
     created_by: Mapped[str] = mapped_column(String)
 
 
-class StoreIdentityError(RuntimeError):
-    """The server must not start (or the command must not run)."""
+# The server must not start (or the command must not run). Defined in
+# app.tenancy.errors so the engine registry can raise it too (platform
+# milestone: the check runs per store, on the first open of its engine).
+from app.tenancy.errors import StoreIdentityError  # noqa: E402,F401
 
 
 def read_stamp(db: Session) -> Optional[dict]:
@@ -134,6 +136,27 @@ def _has_files(folder: pathlib.Path) -> bool:
     if not folder.is_dir():
         return False
     return any(p.name != MARKER_NAME for p in folder.iterdir())
+
+
+def check_store_marker(root, store_code: str, instance_id: str) -> None:
+    """Multi mode, first open of a store's engine (app/tenancy/engines.py):
+    the store's upload folder marker must match its database stamp. Missing
+    marker and an empty / missing folder -> written; missing marker and
+    files -> refused; another code or instance -> refused."""
+    root = pathlib.Path(root)
+    marker = read_marker(root)
+    if marker is None:
+        if _has_files(root):
+            raise StoreIdentityError(
+                f"The upload folder {root} has files but no store identity marker (store {store_code})."
+            )
+        write_uploads_marker(root, store_code, instance_id)
+        return
+    if marker.get("store_code") != store_code or marker.get("instance_id") != instance_id:
+        raise StoreIdentityError(
+            f"The upload folder {root} belongs to {marker.get('store_code')} "
+            f"(instance {marker.get('instance_id')}), not {store_code} (instance {instance_id})."
+        )
 
 
 def check_store_identity(settings=None, db: Optional[Session] = None) -> None:

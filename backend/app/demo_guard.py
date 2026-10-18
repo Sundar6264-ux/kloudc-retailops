@@ -26,11 +26,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from app.auth import SESSION_COOKIE_NAME, extract_bearer_token
-from app.db import get_db
+from app.auth import SESSION_COOKIE_NAME, extract_bearer_token, lookup_session
+from app.db import get_optional_db
 from app.demo import is_demo_user
-from app.models import InvoiceSubmission, User, UserSession
-from app.timeutil import utcnow
+from app.models import InvoiceSubmission, User
 
 DEMO_READ_ONLY = "The demo account can look around but can't change the store's real data."
 
@@ -235,8 +234,8 @@ def _session_user(request: Request, db: Session) -> Optional[User]:
     token = request.cookies.get(SESSION_COOKIE_NAME) or extract_bearer_token(request.headers.get("authorization"))
     if not token:
         return None
-    session = db.get(UserSession, token)
-    if session is None or session.expires_at < utcnow():
+    session = lookup_session(db, token)  # store-bound, hashed tokens (PLATFORM_CONTRACT 4.2; B)
+    if session is None:
         return None
     return db.get(User, session.user_id)
 
@@ -264,13 +263,13 @@ def _decide(request: Request, db: Session):
     return _PASS if check(request, db, user) else _REFUSE
 
 
-async def demo_write_guard(request: Request, db: Session = Depends(get_db)) -> None:
+async def demo_write_guard(request: Request, db: Optional[Session] = Depends(get_optional_db)) -> None:
     """App-wide dependency. A no-op for reads and for every non-demo caller
     (including logged-out ones - the route's own auth still applies). The
     DB work runs in the threadpool, as it did when this was a sync
     dependency; the body is only read for a demo session on a needs_body
     route."""
-    if request.method.upper() in SAFE_METHODS:
+    if request.method.upper() in SAFE_METHODS or db is None:  # db None: no store (multi mode; B)
         return
     outcome = await run_in_threadpool(_decide, request, db)
     if outcome is _PASS:

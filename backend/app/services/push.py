@@ -102,7 +102,8 @@ def _is_invalid_token_error(exc: Exception) -> bool:
 
 
 def with_store(data: Dict[str, str]) -> Dict[str, str]:
-    """`data` plus "store": STORE_CODE (StoreOps M2, contract 5.6), so an app
+    """`data` plus "store": STORE_CODE (StoreOps M2, contract 5.6; in multi
+    mode the current store's code, from its settings overlay), so an app
     signed in to another store can tell the alert isn't for it. Nothing is
     added while STORE_CODE is blank (dev, tests). Every other key unchanged."""
     from app.store.settings_view import store_code

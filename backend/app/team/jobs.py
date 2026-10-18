@@ -2,7 +2,10 @@
 own (recurring-task generation, reminders, chat retention) without editing
 app/scheduler.py: call register_team_job at import time of the module that
 owns the job. app/scheduler.py::start_team_scheduler runs everything
-registered, in America/New_York, when TEAM_JOBS_ENABLED is on.
+registered, in the store's timezone, when TEAM_JOBS_ENABLED is on. Multi
+mode (PLATFORM_CONTRACT 6.2): each job is registered once PER STORE
+(declare_team_store_jobs) and runs inside that store's context, so
+``with_session`` opens that store's database.
 """
 
 from typing import Callable, List, NamedTuple
@@ -19,7 +22,7 @@ class TeamJob(NamedTuple):
     misfire_grace_time: int
 
 
-TEAM_JOBS: List[TeamJob] = []
+TEAM_JOBS: List[TeamJob] = []  # a code registry (global): which jobs exist
 
 
 def register_team_job(job_id: str, func: Callable[[], None], trigger, misfire_grace_time: int = 300) -> None:

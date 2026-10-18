@@ -41,6 +41,7 @@ from app.services.checklist_engine import (  # noqa: F401 - re-exported
     ISSUE_TAG_ORDER,
     NOTHING_TO_REPORT,
 )
+from app.tenancy import tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -230,8 +231,8 @@ def _load(db, stamp: Optional[tuple]) -> Registry:
     return Registry("db", definitions, stamp)
 
 
-_state = {"registry": None, "checked_at": 0.0, "generation": 0}
-_state_lock = threading.Lock()
+_state = tenant_local("checklist_schemas._state", lambda: {"registry": None, "checked_at": 0.0, "generation": 0})
+_state_lock = tenant_lock("checklist_schemas._state_lock")
 
 
 def clear_cache() -> None:
