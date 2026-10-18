@@ -1421,3 +1421,147 @@ Owner actions (placeholders, never faked):
    needs it) and `PLATFORM_REQUIRE_TOTP` (recommended for production).
 
 ---
+
+## As built - D (clients)
+
+Branches: server repo `plat/clients` (worktree `wt-clients`), app repo
+`plat/clients`. Built against this contract's API; the backend tracks (B, C)
+were not merged yet, so the website was checked against an in-memory mock of
+the contract's routes and the app against fakes. No Postgres database was
+used by this track (clients only).
+
+### Website (`frontend/src`)
+
+- **One login page** (`pages/LoginPage.jsx`, `login/loginModel.js`): Store ID,
+  Username, Password, Sign in, "New store? Request access". Store ID starts
+  from `?store=`, then localStorage `storeops_last_store` (try/catch), then
+  a single-store server's own branding code. On blur the Store ID is
+  normalised and `GET /api/public/stores/{code}` shows the store's name.
+  Body `{"store_code","username","password"}` (`store_code` left out when
+  blank). Errors: 401 -> server message (default "Incorrect store ID,
+  username or password"); 403 `store_suspended` / `store_not_ready`; 409
+  `store_moved` -> `<api_base_url>/#/login?store=<CODE>` (https origins only,
+  http only for localhost); 409 `store_mismatch`; 429 -> "Wait N
+  minutes". Error bodies are read top level or inside FastAPI `detail`.
+  `?next=` only follows a same-site path.
+- **Platform scope**: a reply/`/me` with `scope:"platform"` is flattened to
+  `{scope, username, display_name, role}`; such a user gets only
+  `/#/platform` (everything else redirects there); `hasFeature` is false.
+- **Branding per store**: after sign-in AuthContext fires `store:changed`;
+  StoreProvider refetches `GET /api/app/branding?store=<CODE>` when the
+  showing branding is another store's (product branding again after
+  sign-out). Public checklist links accept `/c/<CODE>/<token>` and send
+  `?store=CODE` (the old `/c/<token>` keeps working).
+- **Sign-up** `/#/signup` (`pages/SignupPage.jsx`, `signup/signupModel.js`):
+  the 13.3 form, Store ID suggested from the name, live
+  `code-available` (400 ms debounce), reserved codes, password >= 10 and
+  confirmed, terms checkbox (branding `legal.terms_url`), hidden `website`
+  honeypot. Success -> `/#/signup/pending?id=&t=` (also kept in localStorage
+  `storeops_signup_request`).
+- **Pending** `/#/signup/pending`: polls `GET /api/signup/status` every 30 s
+  while visible, max 1 hour, "Check now"; approved -> "Sign in with Store ID
+  X" (`/#/login?store=X`); rejected shows the note.
+- **Master console** `/#/platform` (`pages/PlatformConsolePage.jsx`,
+  `platform/platformModel.js`): tile tabs Requests / Stores / Hosting / Audit
+  (last tab in localStorage `storeops_platform_tab`, pending count on
+  Requests), slim sticky header (search, status filter or audit action,
+  info icon). Requests: approve inline (Store ID override, pack from
+  `/packs`, timezone, note; only real overrides are sent), reject with a
+  note. Stores: status chips, Suspend (reason), Resume, Retry set-up,
+  Settings (key/value editor of `/stores/{code}/settings`, changed keys
+  only), Own server request, Archive (type the code). Hosting: list and
+  approve/reject/complete/rollback (rollback within 7 days); 409
+  `dedicated_hosting_disabled` shows an "off" state. Audit: newest first,
+  filter by store and action. Masters' user management (`/users`) has no
+  page yet (CLI `create-master` covers the first one).
+- **Settings -> Integrations** `/#/settings/integrations` (Setup menu,
+  admins; `pages/IntegrationsPage.jsx`, `settings/integrationsModel.js`):
+  tiles with status chips (Connected / Test failed / Saved - not tested /
+  Not set up) and "saved •••• 1234"; one form below (last tile in
+  localStorage `storeops_integrations_open`). Only the store's own POS
+  connector shows (a Clover store never sees Toast; CSV has neither; unknown
+  POS shows both; a saved one always shows). Secret inputs are write-only:
+  blank = keep, "Remove the saved one" sends `clear`. Save (PUT), Test
+  connection (POST `/test` with the unsaved values when changed, else the
+  saved ones), Remove (DELETE, confirmed). Clover: "Connect" -> the 501
+  message "Clover connection arrives with M3" (an `authorize_url` reply is
+  followed, ready for M3). 409 `platform_mode_required` (single mode) says
+  connections are in the server's settings file. A reply that would echo a
+  typed secret is never shown.
+- **Notifications page removed**: `NotificationSettingsPage.*`,
+  `components/notifications/*` and their api.js wrappers are gone;
+  `/#/notifications` -> `<Navigate to="/" replace />`; footer link, Help
+  section and the Help chat-mentions link now point to the app (More ->
+  Notifications). The server API is unchanged.
+- `backend/app/glossary.py`: no change needed (it had no Notifications-page
+  text).
+
+### App (`storeops-app`, branch `plat/clients`)
+
+- **One login screen** (`features/authentication/screens/login_screen.dart`;
+  `store_code_screen.dart` deleted, `/store-code` redirects to `/login`):
+  Store ID (QR icon fills it, clear button), quick-pick chips of known
+  stores (up to 4), Username, Password, Sign In, "Unlock with Face ID" when
+  the active store has Face ID on and a kept session. The Store ID starts as
+  the active store, else the last known store; a push "Switch store?" or a
+  `/s/<CODE>` link fills it (taken after the frame, so the restarted app's
+  new screen gets it).
+- **`AuthController.signIn({storeCode, username, password})`**: invalid /
+  `PLATFORM` (website only) refused on the phone; a Store ID other than the
+  active store is resolved first, then `StoreSwitcher.leaveStoreForSignIn()`
+  (old store's Face ID token, clients, caches; no restart) and activation;
+  then `login()` sends `store_code`. 409 `store_moved` -> resolve again (the
+  409's own address is never used) and retry once. Error lines as on the
+  website (401 / 403 suspended, not ready / 409 / 429 with retry_after).
+  `ApiException` now keeps the body on 401/403 (`errorCode`, `bodyField`)
+  and `ApiClient.detailFrom` reads `{"error","message"}` and `detail.message`
+  (one-line change outside D's list: `lib/core/errors/api_exception.dart`).
+- **Lookup order** (`core/tenant/store_resolver.dart`): `GET
+  <PLATFORM_API_URL>/api/public/stores/<CODE>` (new define, default
+  `https://app.<PLATFORM_DOMAIN>`) -> on 404/5xx/no answer the M2 directory
+  and static copy -> the saved record; 429 from either -> "Too many tries";
+  a 404 from the shared service with no directory answer -> "No store with
+  that Store ID". Branding and app config are fetched with `?store=<CODE>`.
+  Host policy (M2 5.2) unchanged.
+- **Push unregister** sends `store_code` (active store's, or a queued entry's
+  own) on both the session client and the cross-store path (one-line change
+  in `features/notifications/data/notifications_repository.dart`).
+- Switch store / sign-out keep the M2 sequence (5.5) and storage keys (5.4);
+  they now land on the one login screen.
+- Docs: `README.md`, `docs/OWNER_SETUP.md` (PLATFORM_API_URL);
+  `integration_test/m2_live_stores_test.dart` updated to the one screen (not
+  run: simulator runs belong to the Regression stage).
+
+### Tests
+
+- Website `node --test`: 260 pass (231 before; +29 in `login/`, `signup/`,
+  `settings/`, `platform/` models; the removed notifications model's tests
+  went with it). `vite build` clean.
+- Website Playwright, platform (`frontend/e2e/platform/run.sh`, in-memory
+  mock `mock_server.mjs` with fake stores and random passwords): 107 checks,
+  0 failures at 1280 and 375 (login errors, suspended, moved redirect,
+  lockout, remembered Store ID, no Notifications link + redirect,
+  integrations save/test/remove with the secret never on the page or in a
+  response, Clover placeholder, Clover store has no Toast tile, sign-up ->
+  master approve -> pending approved -> new owner signs in, console tabs,
+  hosting off state, audit, last tab remembered, no sideways scroll).
+- Website Playwright, per store (`frontend/e2e/store/run.sh`, M2 single-mode
+  server, WITH_DEMO=0): 646 checks, 0 failures (18 notes: the fake stores'
+  5xx/409 from POS calls without credentials, unchanged).
+- App: `flutter analyze` clean; full `flutter test --concurrency=2`: 5517
+  pass, 6 skipped, 0 failures; new `single_login_test.dart` (32: signIn
+  lookup/activation/errors/store_moved retry, screen fields, QR, chips,
+  pending code, clear, double tap, Face ID, maintenance, StoreOpsRoot
+  switch-store and links, device matrix x10), resolver tests +7.
+
+### Not done / for merge
+
+- Wire-up to the real B/C endpoints is untested (mock only): re-run
+  `frontend/e2e/platform/platform.mjs` against the merged server (it only
+  needs `MOCK_PORT` pointed at it and real logins) and the app against a
+  multi-mode server.
+- No masters' user-management page; no TOTP field on the login page (add
+  when C ships `PLATFORM_REQUIRE_TOTP`; the 401 path already shows the
+  server's message).
+- Optional C routes (`/api/settings/store`, `/api/settings/hosting/request`)
+  have no website page yet.
