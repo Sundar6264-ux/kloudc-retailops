@@ -1,13 +1,14 @@
 """Which POS this server talks to (multi-store plan 4.2).
 
 ``get_connector()`` reads the ``POS_PROVIDER`` setting (default ``toast``, so
-a Toast store needs no change) and returns that POS's connector. Step 1 runs one
-server copy per store, so one setting is enough; Step 2 will look it up per
-store.
+a Toast store needs no change) and returns that POS's connector. In multi
+mode (docs/PLATFORM_CONTRACT.md 9.1) the setting is the current store's, and
+the instance cache is keyed (store code, provider); connectors read their
+credentials from ``get_settings()`` at call time, i.e. the store's own.
 """
 
 import threading
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Tuple
 
 from app.config import get_settings
 from app.pos.base import PosConnector
@@ -33,8 +34,8 @@ def _csv() -> PosConnector:
 # "csv" = the CSV-only connector, M2 batch MT13).
 PROVIDERS: Dict[str, Callable[[], PosConnector]] = {"toast": _toast, "csv": _csv}
 
-_cache: Dict[str, PosConnector] = {}
-_lock = threading.Lock()
+_cache: Dict[Tuple[Optional[str], str], PosConnector] = {}
+_lock = threading.Lock()  # global: guards the map (whose keys carry the store)
 
 
 def provider_name(provider: Optional[str] = None) -> str:
@@ -50,14 +51,23 @@ def get_connector(provider: Optional[str] = None) -> PosConnector:
     factory = PROVIDERS.get(name)
     if factory is None:
         raise UnknownPosProvider(f"Unknown POS_PROVIDER {name!r}; known: {', '.join(sorted(PROVIDERS))}")
+    from app.tenancy.context import current_store_code
+
+    key = (current_store_code(), name)
     with _lock:
-        conn = _cache.get(name)
+        conn = _cache.get(key)
         if conn is None:
-            conn = _cache[name] = factory()
+            conn = _cache[key] = factory()
         return conn
 
 
-def reset_cache() -> None:
-    """Forget the cached connectors (tests; a settings change)."""
+def reset_cache(store_code: Optional[str] = None) -> None:
+    """Forget the cached connectors (tests; a settings change) - of one
+    store, or of every store when None."""
     with _lock:
-        _cache.clear()
+        if store_code is None:
+            _cache.clear()
+        else:
+            code = store_code.strip().upper()
+            for key in [k for k in _cache if k[0] == code]:
+                del _cache[key]
