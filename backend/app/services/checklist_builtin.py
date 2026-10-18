@@ -32,10 +32,8 @@ generically, rather than each hand-duplicating ~90 rows independently.
 
 The exact question text, section grouping, and answer choices below were
 extracted directly from the real, live Google Forms' own embedded data
-(not retyped by hand, to avoid transcription drift across ~90 rows) -
-verified against:
-  Spice Town: https://docs.google.com/forms/d/e/1FAIpQLSfIKvYFuQ_tkTbDXg2gJwmgBVBNjFrReOcgn5h2FgljvmRl7w/viewform
-  Street Kitchen: https://docs.google.com/forms/d/e/1FAIpQLSe11qpH-bOKX2rb99q244nqIQrKONoqk_6hfSadmisEq7P-aA/viewform
+(not retyped by hand, to avoid transcription drift across ~90 rows). The
+origin store's form links are not kept in StoreOps.
 
 Deliberately dropped from both: the original "Employee Name"/"Chef Name"
 dropdown question. A logged-in Spice Town account already provides that
@@ -861,9 +859,8 @@ STREET_KITCHEN_CLOSING = {
 }
 
 # Third checklist (Sep 29): the Street Kitchen Food Service Associate's
-# closing, from the owner's Google Form
-# (https://docs.google.com/forms/d/e/1FAIpQLSdy1VbjUmyVokJ7D09E15Fb8VwBNvgc4IV7ae5UrcDWsPVnLQ/viewform,
-# verbatim copy in docs/FSA_CHECKLIST_FORM.md). Same shape as the two above,
+# closing, from the origin store's Google Form (link not kept in StoreOps).
+# Same shape as the two above,
 # plus two things they don't have:
 #   - `checkbox_groups` (a section key): Google Forms "checkboxes" questions.
 #     Each ticked box is stored as its own answer, `{item_id: "Done"}`, so
