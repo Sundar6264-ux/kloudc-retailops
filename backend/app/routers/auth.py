@@ -252,10 +252,9 @@ def me(
     db = next(gen)
     try:
         user = get_current_user(session_token=session_token, authorization=authorization, db=db)
-        out = _me_out(user)
+        out = {"scope": "store", **_me_out(user)}  # scope first: the M2 key order is unchanged
     finally:
         gen.close()
-    out["scope"] = "store"
     return out
 
 
