@@ -16,14 +16,6 @@ backend/app/config.py:play_store_url: str = "https://play.google.com/store/apps/
 backend/app/config.py:public_base_url: str = "https://spicetown-server.tailcc1217.ts.net"
 backend/app/config.py:toast_invoice_email: str = "spicetown@invoices.toasttab.com"
 backend/app/data/similar_products/rules.json:"STREET KITCHEN", "CATERING MENU", "EVENT MENU"
-backend/app/glossary.py:"How many of each Street Kitchen item to expect on a day (tomo
-backend/app/glossary.py:"Street Kitchen items only.",
-backend/app/glossary.py:"Street Kitchen menu items (both Street Kitch
-backend/app/glossary.py:"Street Kitchen menu items that didn't sell at all in the period.",
-backend/app/glossary.py:"Street Kitchen, Catering, Event Menu and Container rows are never listed.",
-backend/app/glossary.py:The store's own house items (SpiceTown) aren't listed.",
-backend/app/glossary.py:["street kitchen"],
-backend/app/glossary.py:e kept on the Mac mini in the Spice Town Flyers folder, one folder per
 backend/app/item_vendor_models.py:0061 migration backfilled it. Nothing reads it for a Spice Town page in M1 -
 backend/app/item_vendor_models.py:For Spice Town the table is a mirror of each item's newest CSV row (the CSV
 backend/app/models.py:"""A completed Daily Closing Checklist (Spice Town or Street Kitchen) -
@@ -92,52 +84,3 @@ backend/app/team/bootstrap.py:user_name="Spice Town",
 backend/app/team/rules.py:nnouncements and chat) is for Spice Town staff to work together. By us
 backend/app/team/tasks_service.py:# but still a name, so "Done by Spice Town" reads right.
 backend/app/team/tasks_service.py:SYSTEM_NAME = "Spice Town"
-frontend/src/api.js:await downloadFile(`/api/sales/export?${params.toString()}`, `spicetown-sales.${format}`);
-frontend/src/components/FixIssues.jsx:the latest inventory upload. Street Kitchen and Catering Menu items are l
-frontend/src/components/InvoiceSubmission.jsx:// the backend fills in "Spice Town" when it's left blank).
-frontend/src/components/InvoiceSubmission.jsx:placeholder={isTransfer ? "Leave blank for Spice Town" : "Start typing a vendor name…"}
-frontend/src/components/Sidebar.jsx:const COLLAPSE_STORAGE_KEY = "spicetown_sidebar_collapsed";
-frontend/src/components/cartAdd/cartVendorPanels.js:export const OPEN_VENDORS_KEY = "spicetown_cart_open_vendors";
-frontend/src/components/checklists/ChecklistAdminList.jsx:placeholder="e.g. Street Kitchen - Opening Checklist"
-frontend/src/components/checklists/ChecklistEditor.jsx:{ key: "kitchen", label: "Street Kitchen staff group" },
-frontend/src/components/checklists/ChecklistEditor.jsx:{ key: "store", label: "Spice Town staff group" },
-frontend/src/components/checklists/PublicLinkPanel.jsx:// "https://ops.spicetown.shop/c/kitchen-4821" -> "ops.
-frontend/src/components/flyers/FlyerDrawer.jsx:_Deleted folder in Spice Town Flyers on the Mac mini.
-frontend/src/components/flyers/FlyerLibrary.jsx:e - it's kept here and in the Spice Town Flyers folder on the Mac mini
-frontend/src/components/flyers/FlyerUploadCard.jsx:Files it in that folder of Spice Town Flyers on the Mac mini.
-frontend/src/components/flyers/SendFlyerModal.jsx:You can close this. Sending carries on, and the Spice Town phone app tells you when it's done.
-frontend/src/components/flyers/flyerModel.js:{ key: "spice_town", label: "Spice Town (Generic)" },
-frontend/src/components/flyers/flyerModel.js:{ key: "street_kitchen", label: "Street Kitchen" },
-frontend/src/components/insights/insightsModel.js:{ key: "kitchen", label: "Street Kitchen" },
-frontend/src/components/poSend/SendPoDialog.jsx:From {preview.from_address ? `Spice Town <${preview.from_address}>` : "the store's Gmail"} ·{" "}
-frontend/src/components/poSend/SendPoDialog.jsx:placeholder={cc.length ? "Add another email" : "Add an email to copy, e.g. owner@spicetown.shop"}
-frontend/src/components/poSend/VendorContacts.jsx:placeholder="owner@spicetown.shop, accounts@vendor.com"
-frontend/src/components/poSend/poSendModel.test.mjs:assert.equal(gmailSearch("<abc@spicetown.test>"), "rfc822msgid:abc@spicetown.test");
-frontend/src/featureRoutes.js:export const LABELS_APP_URL = "https://labels.spicetown.shop/";
-frontend/src/index.css:gotcha in this app - see the spicetown skill's gotcha #18) since the
-frontend/src/mobileAuth.js:const TOKEN_KEY = "spicetown_mobile_token";
-frontend/src/pages/FlyersPage.jsx:// flyer (stored on the Mac mini in ~/Spice Town Flyers/<Type>/). Needs the
-frontend/src/pages/FlyersPage.jsx:type in the Spice Town Flyers folder on the Mac mini.
-frontend/src/pages/HelpPage.jsx:: sending carries on, and the Spice Town
-frontend/src/pages/HelpPage.jsx:<strong>Street Kitchen - Chef Closing</strong> and <strong>Street Kitchen - Food Service
-frontend/src/pages/HelpPage.jsx:Groceries, Street Kitchen, Flowers, Halal Meat, Spice Town (Generic) or Others.
-frontend/src/pages/HelpPage.jsx:How many of each Street Kitchen item to expect on a chosen day (tomorrow by default, up to 14 days
-frontend/src/pages/HelpPage.jsx:It opens with the real Spice Town letterhead - logo, address, and phone number - then
-frontend/src/pages/HelpPage.jsx:Street Kitchen / Catering items and Container rows are never listed.
-frontend/src/pages/HelpPage.jsx:The checklists staff fill in every night: <strong>Spice Town - Daily Closing</strong>,{" "}
-frontend/src/pages/HelpPage.jsx:missing tonight. On Overview, the Kitchen closing tile covers both Street Kitchen checklists.
-frontend/src/pages/HelpPage.jsx:optional (left blank it shows as Spice Town). A transfer goes to WhatsApp only, never to
-frontend/src/pages/HelpPage.jsx:period (Not sold). Filter to Street Kitchen (both kitchen menus, without
-frontend/src/pages/HelpPage.jsx:slow and dead items). Street Kitchen and Catering Menu items are left out, since they're
-frontend/src/pages/HelpPage.jsx:sold at least 3 then), and Street Kitchen items still on the menu that didn't sell at all in the
-frontend/src/pages/HelpPage.jsx:the Mac mini, in the <strong>Spice Town Flyers</strong> folder in the
-frontend/src/pages/HelpPage.jsx:the same Street Kitchen / Grocery filter as Menu trends.
-frontend/src/pages/NotificationSettingsPage.jsx:lerts reach your phone in the Spice Town app. Changes save straight aw
-frontend/src/pages/TeamTasksPage.jsx:const LAYOUT_KEY = "spicetown_tasks_layout";
-frontend/src/pages/insights/MenuPerformancePage.jsx:<TermInfo k="insights_menu_kitchen" label="Street Kitchen" />
-frontend/src/pages/insights/MenuPerformancePage.jsx:<strong>Not sold</strong> lists Street Kitchen items that are still on the menu in Toast but didn't
-frontend/src/pages/insights/MenuPerformancePage.jsx:not_sold: "Street Kitchen items on the menu with no sales in this period, longest unsold first.",
-frontend/src/pages/insights/MenuPerformancePage.jsx:their item, discounts are taken off). <strong>Street Kitchen</strong> is the prepared-food menu
-frontend/src/pages/insights/MenuPerformancePage.jsx:{group === "kitchen" ? "Street Kitchen" : "Grocery"} items only
-frontend/src/pages/insights/PrepForecastPage.jsx:For each Street Kitchen item we take its sales on the
-frontend/src/pages/insights/PrepForecastPage.jsx:brief="How many of each Street Kitchen item to expect on a day, to plan prep."
