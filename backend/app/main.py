@@ -15,6 +15,7 @@ from app.demo_guard import demo_write_guard
 from app.routers import (
     ask,
     auth,
+    branding,
     category_overrides,
     checklist_admin,
     checklist_public,
@@ -43,6 +44,8 @@ from app.routers import insights as insights_router  # Insights from Toast Analy
 from app.routers import issue_leads as issue_leads_router  # Fix Issues category & vendor leads (W4)
 from app.routers import order_actions as order_actions_router  # Today-tab order actions (BATCH_OCT14 W1)
 from app.services import flyer_sender
+from app.store.identity import check_store_identity
+from app.store.settings_view import effective_public_base_url
 from app.team import router_core as team_router_core
 from app.team import router_chat as team_router_chat
 from app.team import router_tasks as team_router_tasks
@@ -61,6 +64,9 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # StoreOps M2: refuse to start against another store's database or upload
+    # folder (app/store/identity.py) - before any job can write anything.
+    check_store_identity()
     start_scheduler()
     start_notification_scheduler()
     start_team_scheduler()
@@ -118,6 +124,10 @@ app.include_router(flyers.router)
 # registered before the StaticFiles mount at "/" below.
 app.include_router(checklist_public.public_router)
 app.include_router(checklist_public.page_router)
+# Public store branding (StoreOps M2): /api/app/branding and the bundled
+# /branding/*.png images, also before the static mount.
+app.include_router(branding.router)
+app.include_router(branding.assets_router)
 app.include_router(checklists.router)
 app.include_router(notifications.router)
 app.include_router(team_router_core.router)
@@ -144,7 +154,7 @@ def health():
 async def _public_invoice_auth_redirect(request: Request, exc: HTTPException):
     if request.url.path.startswith("/public/invoices/") and exc.status_code in (401, 403):
         next_param = quote(request.url.path, safe="")
-        login_url = f"{get_settings().public_base_url}/#/login?next={next_param}"
+        login_url = f"{effective_public_base_url()}/#/login?next={next_param}"
         return RedirectResponse(login_url, status_code=302)
     return await http_exception_handler(request, exc)
 

@@ -105,13 +105,16 @@ def dead_stock_export(db: Session = Depends(get_db), user: User = Depends(get_cu
 # The margin report was removed (owner's call, ops fixes B). App Store
 # builds up to 4 still open it from More > Reports: answer with a message
 # the app shows as-is (it displays `detail`) instead of a bare "Not Found".
-MARGIN_REMOVED_DETAIL = "The margin report has been removed. Update the Spice Town app to the latest version."
+def _margin_removed_detail() -> str:
+    from app.store.settings_view import product_name
+
+    return f"The margin report has been removed. Update the {product_name()} app to the latest version."
 
 
 @router.get("/margin", include_in_schema=False)
 @router.get("/margin/export", include_in_schema=False)
 def margin_report_removed():
-    raise HTTPException(status_code=410, detail=MARGIN_REMOVED_DETAIL)
+    raise HTTPException(status_code=410, detail=_margin_removed_detail())
 
 
 @router.get("/negative-inventory")
@@ -177,3 +180,10 @@ def store_vs_container_export(search: Optional[str] = None, vendor: Optional[str
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="store-vs-container.csv"'},
     )
+
+
+def __getattr__(name):
+    # The old constant (tests read it): the message for this product.
+    if name == "MARGIN_REMOVED_DETAIL":
+        return _margin_removed_detail()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

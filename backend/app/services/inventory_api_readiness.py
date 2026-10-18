@@ -48,6 +48,7 @@ from app.models import JobRun, NotificationLog
 from app.services import inventory_api_switch
 from app.services.inventory_api import JOB_SNAPSHOT
 from app.timeutil import utcnow
+from app.store.settings_view import effective_public_base_url
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ def thresholds() -> dict:
 
 
 def page_url() -> str:
-    return get_settings().public_base_url.rstrip("/") + PAGE_PATH
+    return effective_public_base_url() + PAGE_PATH
 
 
 def _field(comparison: dict, name: str) -> Optional[dict]:

@@ -15,7 +15,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.services.csv_util import rows_to_csv
-from app.services.fix_issues import EXCLUDED_CATEGORY_GROUPS
+from app.services.fix_issues import excluded_groups
 from app.services.reorder import latest_inventory_by_item
 from app.services.stock_issues import REFILL_STORE_MAX_QTY
 from app.services.supplier_projection import _split_suppliers, store_container_pairs
@@ -79,8 +79,9 @@ def get_store_vs_container(db: Session, search: Optional[str] = None, vendor: Op
 
     items = []
     vendors = set()
+    excluded = excluded_groups()
     for store_id, snap, container_id, container_qty in store_container_pairs(latest):
-        if (snap.category_group or "").upper() in EXCLUDED_CATEGORY_GROUPS:
+        if (snap.category_group or "").upper() in excluded:
             continue
         suppliers = _split_suppliers(snap.supplier)
         vendors.update(suppliers)

@@ -38,7 +38,7 @@ confirmed lines):
    read as +5 delivered), an item with no count (untracked) on either side,
    an API snapshot row Toast reports as out of stock (its real count is
    unknown), a weighed item whose rise is under WEIGHED_RISE_SHARE of its
-   previous weight, kitchen-made groups (Street Kitchen, Catering, Event),
+   previous weight, kitchen-made groups (the store pack's kitchen_groups),
    and a multi-vendor item when no one vendor has more evidence that day.
 
 Quantity: count now - count before + units sold between the two snapshots.
@@ -82,6 +82,7 @@ from app.services.delivery_review import QTY_SWING_THRESHOLD
 from app.services.sales_sync import JOB_NAME as SALES_SYNC_JOB
 from app.services.suggestion_dismissals import dismissed_keys
 from app.services.supplier_projection import _split_suppliers, _supplier_item_id_for, store_container_pairs
+from app.store import settings_view as sv
 from app.timeutil import restaurant_timezone, to_restaurant_date, utcnow
 
 logger = logging.getLogger(__name__)
@@ -111,11 +112,11 @@ TIE_BREAK_SLACK = dt.timedelta(hours=3)
 # Default / maximum look-back, in snapshot pairs ending on the latest snapshot.
 DEFAULT_DAYS = 3
 MAX_DAYS = 31
-# Kitchen-made groups: their counts are production, not deliveries.
-KITCHEN_GROUPS = {"STREET KITCHEN", "CATERING MENU", "EVENT MENU"}
+# Kitchen-made groups (their counts are production, not deliveries): the
+# store pack's menu.kitchen_groups.
 # A snapshot whose upload time isn't on its own date (backfills, odd uploads)
-# is taken to be at this store time - Toast's closeout hour.
-SNAPSHOT_FALLBACK_TIME = dt.time(4, 0)
+# is taken to be at this store time - the POS closeout hour (store setting
+# BUSINESS_DAY_CUTOFF_HOUR).
 CACHE_SECONDS = 60
 
 DELIVERY_REVIEW_NOTE_PREFIX = "Confirmed via Delivery Review"
@@ -220,7 +221,7 @@ def snapshot_time(day: dt.date, rows: Dict[str, object]) -> dt.datetime:
     """When the snapshot was taken (UTC): its upload time when that is on the
     snapshot's own store date and it isn't a backfill, else the closeout hour."""
     tz = restaurant_timezone()
-    fallback = dt.datetime.combine(day, SNAPSHOT_FALLBACK_TIME, tz).astimezone(dt.timezone.utc)
+    fallback = dt.datetime.combine(day, dt.time(sv.business_day_cutoff_hour()), tz).astimezone(dt.timezone.utc)
     times = [
         r.uploaded_at
         for r in rows.values()
@@ -375,11 +376,14 @@ def _rise_lines(pair: Pair, received_ids: Set[str]) -> Tuple[List[dict], Counter
     skipped: Counter = Counter()
     # Shelf row -> its Container twin (paired by name, see store_container_pairs).
     container_of = {store_id: cont_id for store_id, _, cont_id, _ in store_container_pairs(pair.cur)}
+    from app.store import pack as store_pack
+
+    kitchen_groups = store_pack.kitchen_groups()
     lines = []
     for item_id, row in pair.cur.items():
         if item_id in received_ids:
             continue
-        if (row.category_group or "").strip().upper() in KITCHEN_GROUPS:
+        if (row.category_group or "").strip().upper() in kitchen_groups:
             continue
         if not _split_suppliers(row.supplier):
             continue  # no vendor (Container rows, kitchen items): nothing to suggest
@@ -821,3 +825,12 @@ def toast_receipts(db: Session, since: dt.date, received_after: Optional[dt.date
         )
     out.sort(key=lambda r: r["received_at"])
     return out
+
+
+def __getattr__(name):
+    # The old constant: the store pack's kitchen_groups (read at call time).
+    if name == "KITCHEN_GROUPS":
+        from app.store import pack as _pack
+
+        return set(_pack.kitchen_groups())
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

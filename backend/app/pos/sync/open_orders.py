@@ -45,12 +45,12 @@ JOB_NAME = "open_orders_scan"
 _EMPLOYEE_CACHE: dict = {"at": 0.0, "by_guid": {}}
 _EMPLOYEE_CACHE_TTL_SECONDS = 600
 
-# Real order volume (actual line items, not empty onboarding test orders)
-# starts here - confirmed in an earlier session by checking for real
-# non-voided selections, not just order objects existing. Scanning further
-# back than this for an "all time" open-orders sweep would only spend Toast
-# API calls on dates that can't contain anything real to find.
-FIRST_REAL_SALES_DATE = dt.date(2026, 5, 26)
+# Real order volume starts at the store's FIRST_SALES_DATE (store setting;
+# earlier dates are onboarding test orders). Scanning further back for an
+# "all time" open-orders sweep would only spend POS API calls on dates that
+# can't contain anything real. Without a FIRST_SALES_DATE the sweep starts at
+# the oldest stored sale, at most FULL_SCAN_MAX_DAYS back (full_scan_start).
+FULL_SCAN_MAX_DAYS = 365
 
 
 def get_employees(force_refresh: bool = False) -> list[dict]:
@@ -310,8 +310,8 @@ def refresh_open_orders_cache(db: Session, full: bool = False, max_retries: int 
 
     try:
         if full:
-            start = FIRST_REAL_SALES_DATE
             end = restaurant_today()
+            start = full_scan_start(db, end)
             orders = _scan_open_orders(start, end)
             _replace_cache_rows(db, orders, business_dates=None)
             job.detail = f"full scan {start}..{end}: {len(orders)} open check(s)"
@@ -497,3 +497,35 @@ def get_cached_open_orders(db: Session, employee_guid: Optional[str] = None) -> 
         "last_job_status": last_job.status if last_job else None,
         "orders": orders,
     }
+
+
+def __getattr__(name):
+    # The old constants, now store settings (FIRST_SALES_DATE,
+    # BUSINESS_DAY_CUTOFF_HOUR), read at call time. FIRST_REAL_SALES_DATE is
+    # date.min when the store has no floor.
+    from app.store import settings_view as _sv
+
+    if name == "FIRST_REAL_SALES_DATE":
+        return _sv.sales_floor()
+    if name == "CLOSEOUT_HOUR":
+        return _sv.business_day_cutoff_hour()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def full_scan_start(db: Session, today: dt.date) -> dt.date:
+    """Where the "all time" sweep starts: FIRST_SALES_DATE when set, else the
+    oldest stored business date (at most FULL_SCAN_MAX_DAYS back), else today."""
+    from sqlalchemy import func
+
+    from app.models import Order
+    from app.store import settings_view as _sv
+
+    floor = _sv.first_sales_date()
+    if floor is not None:
+        return floor
+    oldest = db.execute(select(func.min(Order.business_date))).scalar()
+    if oldest is None:
+        return today
+    if isinstance(oldest, str):
+        oldest = dt.date.fromisoformat(oldest[:10])
+    return max(oldest, today - dt.timedelta(days=FULL_SCAN_MAX_DAYS))

@@ -7,12 +7,18 @@ from app.features import require_feature
 from app.db import get_db
 from app.demo import DEMO_ASK_ANSWER, is_demo_user
 from app.models import User
+from app.pos.gating import require_store_feature
 from app.sales_access import can_see_sales
 from app.schemas import AskRequest
 from app.services.anthropic_client import AnthropicNotConfigured
 from app.services.ask_bot import ask
 
-router = APIRouter(prefix="/api/ask", tags=["ask"], dependencies=[Depends(require_feature("ask_bot"))])
+# AI_ENABLED=false (per-store AI switch): 409 for everyone, like a POS gate.
+router = APIRouter(
+    prefix="/api/ask",
+    tags=["ask"],
+    dependencies=[Depends(require_feature("ask_bot")), Depends(require_store_feature("ai"))],
+)
 
 
 @router.post("")

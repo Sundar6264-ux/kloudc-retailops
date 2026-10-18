@@ -32,7 +32,7 @@ written a moment before.
 
 An automatic task is recognisable by its creator: created_by_user_id is
 SYSTEM_USER_ID (0, never a real user - the column is NOT NULL and the task
-code treats the creator as a user id) and created_by_name "Spice Town".
+code treats the creator as a user id) and created_by_name = the store's name.
 (source_type, source_id) is unique among automatic tasks - checked before
 creating, and the rules run inside tasks_tick (one job, never concurrent) -
 so every run is idempotent, and a task someone completed or cancelled is
@@ -77,11 +77,11 @@ from app.team.changes import team_member_user_ids
 from app.team.models import Team, TeamMember
 from app.team.tasks_models import Task, TaskEvent
 from app.team.tasks_service import (
-    SYSTEM_NAME,
     SYSTEM_USER_ID,
     add_event,
     notify_assigned,
     record_task_change,
+    system_name,
 )
 from app.timeutil import restaurant_timezone, utcnow
 
@@ -206,13 +206,13 @@ def _create(
         source_type=source_type,
         source_id=source_id,
         created_by_user_id=SYSTEM_USER_ID,
-        created_by_name=SYSTEM_NAME,
+        created_by_name=system_name(),
         created_at=stamp,
         updated_at=stamp,
     )
     db.add(task)
     db.flush()
-    add_event(db, task, None, "created", {"auto": source_type}, system_name=SYSTEM_NAME)
+    add_event(db, task, None, "created", {"auto": source_type}, system_name=system_name())
     record_task_change(db, task, "created")
     db.commit()
     logger.info("Auto-task %s:%s -> %s (task %s)", source_type, source_id, team.name, task.id)
@@ -244,7 +244,7 @@ def _close(db: Session, task: Task, status: str, note: str) -> bool:
     values = {
         "status": status,
         "completed_by_user_id": None,
-        "completed_by_name": SYSTEM_NAME,
+        "completed_by_name": system_name(),
         "completed_at": stamp,
         "completion_note": note,
         "updated_at": stamp,
@@ -259,7 +259,7 @@ def _close(db: Session, task: Task, status: str, note: str) -> bool:
         return False
     for key, value in values.items():
         setattr(task, key, value)
-    add_event(db, task, None, status, {"auto": note}, system_name=SYSTEM_NAME)
+    add_event(db, task, None, status, {"auto": note}, system_name=system_name())
     record_task_change(db, task, "updated")
     return True
 
@@ -285,14 +285,13 @@ def _submitted_checklists(db: Session, day: dt.date) -> Dict[str, str]:
 
 
 def short_checklist_name(checklist_type: str) -> str:
-    """"Spice Town - Daily Closing Checklist" -> "Spice Town" (same idea as
-    the app's shortChecklistName); a schema's own short_name wins
-    ("Street Kitchen FSA", so it can't read the same as the chef's)."""
+    """"Main Store - Daily Closing Checklist" -> "Main Store" (same idea as
+    the app's shortChecklistName); a schema's own short_name wins."""
     return checklist_short_name(checklist_type)
 
 
 def checklist_task_title(checklist_type: str) -> str:
-    """"Submit the Spice Town closing checklist"; a short name that already
+    """"Submit the Main Store closing checklist"; a short name that already
     says "closing" ("Store Closing") isn't doubled up."""
     name = short_checklist_name(checklist_type)
     if "closing" in name.lower():

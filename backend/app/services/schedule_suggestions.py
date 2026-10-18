@@ -134,9 +134,9 @@ _KIND_SOURCE = {
 _ANCHORS = {"invoice", "manual_log"}
 CONFIDENCE_ORDER = {"high": 0, "medium": 1, "low": 2}
 
-# The store itself (Toast lists "SpiceTown" / "SpiceTown - Street Kitchen" as
-# a supplier for house-made items) - never a delivering vendor.
-HOUSE_VENDOR_PREFIXES = ("spicetown",)
+# The store itself (the POS lists the store's own name as the supplier of
+# house-made items) - never a delivering vendor: the store pack's
+# house_vendors.prefixes.
 
 _SUFFIXES = {"inc", "llc", "co", "corp", "corporation", "ltd", "company", "incorporated"}
 _NON_WORD = re.compile(r"[^a-z0-9]+")
@@ -162,7 +162,9 @@ def _names(weekdays: Iterable[int]) -> str:
 
 
 def _is_house(key: str) -> bool:
-    return key.replace(" ", "").startswith(HOUSE_VENDOR_PREFIXES)
+    from app.store import pack as store_pack
+
+    return store_pack.is_house_vendor_key(key)
 
 
 def _store_day(value: dt.datetime) -> dt.date:
@@ -708,3 +710,12 @@ def accept_all(db: Session, keys: List[str], user: Optional[User] = None) -> dic
             row = create_vendor_schedule(db, s["vendor"], s["delivery_weekdays"], s["lead_days"])
             created.append({**schedule_out(row), "key": key, "lead_days_source": s["lead_days_source"]})
     return {"created": created, "skipped": skipped, "created_count": len(created), "skipped_count": len(skipped)}
+
+
+def __getattr__(name):
+    # The old constant: the store pack's house vendor prefixes.
+    if name == "HOUSE_VENDOR_PREFIXES":
+        from app.store import pack as store_pack
+
+        return tuple(store_pack.current_pack().house_vendors.prefixes)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

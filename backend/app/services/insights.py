@@ -26,7 +26,9 @@ from app.config import get_settings
 from app.insights_models import GuestVisit, LossWatchFlag
 from app.models import NotificationLog, Order, User
 from app.services import insights_data as data
-from app.services.insights_data import FIRST_REAL_SALES_DATE, r2
+from app.services.insights_data import r2
+from app.store import pack as store_pack
+from app.store import settings_view as sv
 from app.timeutil import restaurant_timezone, utcnow
 
 DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -65,7 +67,8 @@ ALERT_NAMES_SHOWN = 3
 
 LOSS_REASONS = ("full_comp", "large_discount", "large_refund", "large_void", "above_employee_median")
 ODD_REASONS = ("open_long", "modified_after_paid", "large_refund")
-GROCERY_MENUS = {"retail", "produce", "halal meat", "fresh flowers", "fish market"}
+# Which menus count as grocery: the store pack's menu.grocery_menus (empty =
+# every menu that isn't the kitchen's).
 # The glossary term (app/glossary.py) for each reason code the API returns.
 REASON_GLOSSARY_KEYS = {
     "loss": {r: ("insights_loss_above_median" if r == "above_employee_median" else f"insights_loss_{r}") for r in LOSS_REASONS},
@@ -452,22 +455,10 @@ def hourly_heatmap(db: Session, weeks: int, hide_sales: bool) -> dict:
 
 
 def channel_of(dining_option: Optional[str]) -> str:
-    """Toast dining option -> sales channel. On this store: In-Store Purchase
-    (counter), Pick Up (the kiosk), Online Ordering - Takeout, DoorDash /
-    Uber Eats - Delivery / Takeout, Catering - Delivery / Pick Up, and No
-    Dining Option."""
-    s = (dining_option or "").strip()
-    low = s.lower()
-    if not s or low == "no dining option":
-        return "Other"
-    if low.startswith("in-store") or low.startswith("in store"):
-        return "In-store"
-    if low in ("pick up", "pickup", "take out", "takeout"):
-        return "Pick up"
-    prefix = s.split(" - ", 1)[0].strip()
-    if prefix.lower() == "online ordering":
-        return "Online ordering"
-    return prefix or "Other"
+    """POS dining option -> sales channel, by the store pack's channel rules
+    (e.g. "In-Store Purchase" -> "In-store", "Online Ordering - Takeout" ->
+    "Online ordering", "DoorDash - Delivery" -> "DoorDash")."""
+    return store_pack.channel_of(dining_option)
 
 
 def channels(db: Session, weeks: int) -> dict:
@@ -555,7 +546,7 @@ def _day_totals(entry) -> Optional[dict]:
 def _business_hour_pos(hour: int) -> int:
     """Where a clock hour falls in the business day, which runs from the
     04:00 closeout to 03:59 the next morning (04:00 -> 0, 03:00 -> 23)."""
-    return (hour - data.CLOSEOUT_HOUR) % 24
+    return (hour - sv.business_day_cutoff_hour()) % 24
 
 
 def _hours_through(db: Session, entry, now_local: dt.datetime) -> Optional[dict]:
@@ -595,8 +586,8 @@ def compare(db: Session, day: Optional[dt.date] = None, now: Optional[dt.datetim
     last_week = day - dt.timedelta(days=7)
     four = [day - dt.timedelta(days=7 * k) for k in range(1, 5)]
     last_year = day - dt.timedelta(days=364)
-    base_dates = sorted(set(four + ([last_year] if last_year >= FIRST_REAL_SALES_DATE else [])))
-    base_dates = [d for d in base_dates if d >= FIRST_REAL_SALES_DATE]
+    base_dates = sorted(set(four + ([last_year] if last_year >= sv.sales_floor() else [])))
+    base_dates = [d for d in base_dates if d >= sv.sales_floor()]
     base = _load(db, "metrics_day", base_dates)
     totals = _day_totals(cur.entries.get(day))
     partial = day >= today_bd
@@ -638,7 +629,7 @@ def compare(db: Session, day: Optional[dt.date] = None, now: Optional[dt.datetim
         "orders_pct": _pct(cur_orders, avg_orders),
     }
     vs_last_year = None
-    if last_year >= FIRST_REAL_SALES_DATE:
+    if last_year >= sv.sales_floor():
         ly = base_totals(last_year)
         if ly:
             vs_last_year = {"date": last_year.isoformat(), "net_sales": ly["net_sales"], "pct": _pct(cur_net, ly["net_sales"])}
@@ -703,7 +694,7 @@ def week_compare(db: Session, end: dt.date) -> Optional[dict]:
     def total(a: dt.date) -> Optional[dict]:
         dates = data.daterange(a, a + dt.timedelta(days=6))
         have = data.cached(db, "metrics_day", dates)
-        if len(have) < len([d for d in dates if d >= FIRST_REAL_SALES_DATE]) or not have:
+        if len(have) < len([d for d in dates if d >= sv.sales_floor()]) or not have:
             return None
         t = data.sum_rows([r for e in have.values() for r in e.rows])
         return {"net_sales": r2(t["netSalesAmount"]), "orders": int(t["ordersCount"])}
@@ -924,7 +915,7 @@ def odd_reasons(checks: List[dict]) -> Dict[str, Tuple[List[str], Optional[int],
                 c["dining_option"] or ""
             ).strip().lower() in FULFILMENT_DINING_OPTIONS
             # Same-day edits after payment are routine here (the kitchen
-            # bumping a Street Kitchen order a while later updates the check;
+            # bumping a kitchen order a while later updates the check;
             # real data Oct 8-12: 5 such checks, none with a refund or a
             # change in total). What's worth a look is a check edited after
             # its business day was closed out.
@@ -1244,7 +1235,7 @@ def _in_group(guid: str, group: str, mm: Optional[dict]) -> bool:
     if group == "kitchen":
         return bool(info.get("kitchen"))
     menus = {m.strip().lower() for m in info.get("menus") or [info.get("menu") or ""]}
-    return not info.get("kitchen") and bool(menus & GROCERY_MENUS)
+    return not info.get("kitchen") and store_pack.is_grocery_menu_set(menus)
 
 
 def _menu_map_or_fill(db: Session) -> Optional[dict]:
@@ -1440,7 +1431,7 @@ def prep_forecast(db: Session, day: Optional[dt.date] = None) -> dict:
     day = day or today_bd + dt.timedelta(days=1)
     last_closed = today_bd - dt.timedelta(days=1)
     samples = [day - dt.timedelta(days=7 * k) for k in range(1, PREP_WEEKS + 1)]
-    samples = [d for d in samples if FIRST_REAL_SALES_DATE <= d <= last_closed]
+    samples = [d for d in samples if sv.sales_floor() <= d <= last_closed]
     anchor = min(day, today_bd)
     recent = data.expected_dates(anchor - dt.timedelta(days=PREP_TREND_DAYS), anchor - dt.timedelta(days=1))
     older = data.expected_dates(
@@ -1667,3 +1658,10 @@ def loss_watch_alert_text(flags: List[LossWatchFlag]) -> Tuple[str, str]:
             shown += f" + {len(names) - ALERT_NAMES_SHOWN} more"
         body += f" ({shown})"
     return title, body
+
+
+def __getattr__(name):
+    # The old constant: the store pack's grocery menus (read at call time).
+    if name == "GROCERY_MENUS":
+        return set(store_pack.grocery_menus())
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

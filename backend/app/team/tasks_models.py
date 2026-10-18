@@ -27,6 +27,14 @@ from app.timeutil import utcnow
 _ONE_ASSIGNEE = "(assignee_user_id IS NULL) != (assignee_team_id IS NULL)"
 
 
+
+def _store_timezone() -> str:
+    """Column default: the store's time zone (STORE_TIMEZONE)."""
+    from app.store.settings_view import store_timezone_name
+
+    return store_timezone_name()
+
+
 class TaskTemplate(Base):
     """A recurring task rule. `rrule` says when each occurrence is DUE, in
     `timezone` (e.g. 'FREQ=WEEKLY;BYDAY=MO;BYHOUR=15;BYMINUTE=0' = Mondays
@@ -51,7 +59,7 @@ class TaskTemplate(Base):
     assignee_user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     assignee_team_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("teams.id"), nullable=True)
     rrule: Mapped[str] = mapped_column(String)
-    timezone: Mapped[str] = mapped_column(String, default="America/New_York")
+    timezone: Mapped[str] = mapped_column(String, default=_store_timezone)
     generate_ahead_minutes: Mapped[int] = mapped_column(Integer, default=420)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by_user_id: Mapped[int] = mapped_column(Integer)

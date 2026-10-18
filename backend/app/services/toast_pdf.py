@@ -408,7 +408,9 @@ def _assemble(pages: List[PageParts], mode: str, quality: int, dpi: int) -> byte
             dy = (LETTER_PX[1] - top - h) * pt
             img_page.merge_transformed_page(text_page, Transformation().translate(dx, dy))
         writer.add_page(img_page)
-    writer.add_metadata({"/Producer": "Spice Town (Tesseract OCR for Toast)"})
+    from app.store.settings_view import product_name
+
+    writer.add_metadata({"/Producer": f"{product_name()} (Tesseract OCR for the AP inbox)"})
     buf = io.BytesIO()
     writer.write(buf)
     return buf.getvalue()

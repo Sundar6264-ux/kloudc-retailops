@@ -22,7 +22,7 @@ from app.timeutil import utcnow
 
 RULES_VERSION = 1
 RULES_TITLE = "Team rules"
-RULES_TEXT = """Team (tasks, announcements and chat) is for Spice Town staff to work together. By using it you agree to these rules.
+RULES_TEXT_TEMPLATE = """Team (tasks, announcements and chat) is for {store} staff to work together. By using it you agree to these rules.
 
 Zero tolerance: there is no place here for objectionable content or abusive behaviour. Do not post anything offensive, hateful, threatening, harassing, sexual or discriminatory, and do not bully or abuse anyone - in messages, task comments, notes or photos. Offensive words are hidden automatically.
 
@@ -32,7 +32,22 @@ How reports are handled: managers review every report within 24 hours. Content t
 
 Violations: anyone who breaks these rules loses access to Team and may lose their account.
 
-Questions or concerns: ask your manager or call 860-237-4280."""
+Questions or concerns: {contact}"""
+
+
+def rules_text() -> str:
+    """The rules for this store (STORE_NAME, STORE_PHONE)."""
+    from app.store import settings_view as sv
+
+    phone = sv.store_phone()
+    contact = f"ask your manager or call {phone}." if phone else "ask your manager."
+    return RULES_TEXT_TEMPLATE.format(store=sv.store_display_name(), contact=contact)
+
+
+def __getattr__(name):
+    if name == "RULES_TEXT":
+        return rules_text()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _iso(value: Optional[dt.datetime]) -> Optional[str]:
@@ -48,7 +63,7 @@ def rules_out(db: Session, user: User) -> dict:
     return {
         "version": RULES_VERSION,
         "title": RULES_TITLE,
-        "text": RULES_TEXT,
+        "text": rules_text(),
         "accepted": row is not None,
         "accepted_at": _iso(row.accepted_at) if row else None,
     }

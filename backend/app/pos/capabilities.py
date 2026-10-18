@@ -36,7 +36,7 @@ class Capability(str, Enum):
     MODIFIER_PRICE_IN_PARENT = "modifier_price_in_parent"  # semantics flag: modifier price already in the parent line
 
 
-# What Spice Town (Toast) uses today. Left out on purpose:
+# What a Toast store uses today. Left out on purpose:
 # - ORDERS_INCREMENTAL: Toast may support it, but it is unverified and today's
 #   sync pulls by business date only, so turning it on would change behaviour.
 # - STOCK_NEGATIVE_COUNTS, ITEM_VENDORS, ITEM_COST: Toast's API does not give them
@@ -58,3 +58,24 @@ TOAST_CAPABILITIES: FrozenSet[Capability] = frozenset(
         Capability.MODIFIER_PRICE_IN_PARENT,
     }
 )
+
+# Clover (multi-store plan 4.5, Clover column; M2 contract section 7). There is
+# no Clover adapter until M3: this set is the fallback entry in
+# app.pos.gating.PROVIDERS, so a Clover store already hides every page and job
+# its POS can't support. Items the plan marks unverified are left out.
+CLOVER_CAPABILITIES: FrozenSet[Capability] = frozenset(
+    {
+        Capability.ORDERS_INCREMENTAL,
+        Capability.OPEN_ORDERS,
+        Capability.LIVE_TODAY_SALES,
+        Capability.CATALOG,
+        Capability.STOCK_LEVELS,
+        Capability.STOCK_NEGATIVE_COUNTS,
+        Capability.ITEM_COST,
+        Capability.EMPLOYEES,
+    }
+)
+
+# A store with no POS connection: inventory comes from CSV uploads only (the
+# DEMO store; MT13 registers the csv-only adapter).
+CSV_CAPABILITIES: FrozenSet[Capability] = frozenset({Capability.CSV_CATALOG_IMPORT})

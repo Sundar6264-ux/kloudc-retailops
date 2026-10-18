@@ -62,6 +62,7 @@ from app.pos import registry
 from app.pos.base import DayTotalsUnavailable
 from app.pos.models import SalesDay
 from app.pos.sync.sales import JOB_NAME as SALES_SYNC_JOB, sync_sales_for_date
+from app.store import settings_view as sv
 from app.timeutil import restaurant_timezone, restaurant_today, utcnow
 
 # Same logger name as before the move (log lines and filters unchanged).
@@ -70,8 +71,9 @@ logger = logging.getLogger("app.services.sales_accuracy")
 RUN_JOB = "sales_repull"
 CHECK_JOB = "sales_accuracy"
 
-# Real line items start here (gotcha #10); earlier dates are onboarding tests.
-FIRST_REAL_SALES_DATE = dt.date(2026, 5, 26)
+# Real line items start at the store's FIRST_SALES_DATE (earlier dates are
+# onboarding tests); no floor when it is blank. Read at call time:
+# settings_view.sales_floor().
 MAX_DAYS = 60
 MONEY_TOLERANCE = 0.015
 QTY_TOLERANCE = 0.005
@@ -79,11 +81,10 @@ UNPAID_RESYNC_HOURS = 6
 KEEP_CHECK_DAYS = 120
 RESYNC_PAUSE_SECONDS = 0.5
 
-# Toast's closeoutHour: a business date stays open until 04:00 store time the
-# next morning, so a run between midnight and 4 AM must not treat the
-# still-open business date as "yesterday" (it would compare, and re-sync, a
-# day that is still taking orders).
-CLOSEOUT_HOUR = 4
+# The POS closeout hour (BUSINESS_DAY_CUTOFF_HOUR, default 04:00): a business
+# date stays open until then the next morning, so a run between midnight and
+# the cutoff must not treat the still-open business date as "yesterday" (it
+# would compare, and re-sync, a day that is still taking orders).
 
 _RUN_LOCK = threading.Lock()
 _sleep: Callable[[float], None] = time.sleep
@@ -94,7 +95,7 @@ def closed_business_today(now: Optional[dt.datetime] = None) -> dt.date:
     "yesterday" of the result is always a closed business date."""
     local = (now or utcnow()).astimezone(restaurant_timezone())
     day = local.date()
-    return day - dt.timedelta(days=1) if local.hour < CLOSEOUT_HOUR else day
+    return day - dt.timedelta(days=1) if local.hour < sv.business_day_cutoff_hour() else day
 
 
 def is_running() -> bool:
@@ -234,7 +235,7 @@ def _window(days: Optional[int], today: dt.date) -> tuple:
     n = days or get_settings().sales_repull_days
     n = max(1, min(int(n), MAX_DAYS))
     end = today - dt.timedelta(days=1)
-    start = max(FIRST_REAL_SALES_DATE, end - dt.timedelta(days=n - 1))
+    start = max(sv.sales_floor(), end - dt.timedelta(days=n - 1))
     return start, end
 
 
@@ -448,3 +449,16 @@ def accuracy_report(db: Session, days: int = 30) -> dict:
         ],
         "days": rows,
     }
+
+
+def __getattr__(name):
+    # The old constants, now store settings (FIRST_SALES_DATE,
+    # BUSINESS_DAY_CUTOFF_HOUR), read at call time. FIRST_REAL_SALES_DATE is
+    # date.min when the store has no floor.
+    from app.store import settings_view as _sv
+
+    if name == "FIRST_REAL_SALES_DATE":
+        return _sv.sales_floor()
+    if name == "CLOSEOUT_HOUR":
+        return _sv.business_day_cutoff_hour()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

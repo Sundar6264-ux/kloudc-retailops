@@ -285,7 +285,7 @@ def group_id_for_group(group: Optional[str]) -> str:
 
 def _group_id_for(checklist_type: str) -> str:
     """The staff group a checklist's summary goes to, from its settings
-    (Spice Town -> "store", both Street Kitchen checklists -> "kitchen")."""
+    (e.g. the store's closing checklist -> "store", kitchen checklists -> "kitchen")."""
     return group_id_for_group(whatsapp_group(checklist_type))
 
 

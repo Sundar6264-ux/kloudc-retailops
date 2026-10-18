@@ -170,7 +170,7 @@ def _load_vocab_cached(data_dir: str) -> Vocab:
         vendor_prefixes=set(rules["vendor_prefixes"]),
         non_brand_leading=set(rules["non_brand_leading_words"]) | known,
         plural_exceptions=set(rules["plural_exceptions"]),
-        excluded_groups={g.upper() for g in rules["excluded_category_groups"]},
+        excluded_groups={g.upper() for g in rules.get("excluded_category_groups", [])},
         scoring=rules["scoring"],
         auto_brand=rules["brand_auto_detect"],
         known_tokens=known,
@@ -428,7 +428,7 @@ def split_multi(raw: Optional[str]) -> List[str]:
 # A bad Toast export (seen in the Sep 20 2026 upload) put item codes and a
 # placeholder into the Supplier column: "ACT_SUP_UPDT", "30128", "5RR2",
 # "8908016489500". Real vendor names have letters and, when they have a
-# digit, a space ("Singh & Singh", "SpiceTown - Street Kitchen").
+# digit, a space ("Singh & Singh", "Main Store - Kitchen").
 _JUNK_VENDOR_RE = re.compile(r"^(?=\S*\d)\S+$|^[A-Z0-9]+(?:_[A-Z0-9]+)+$")
 
 
@@ -535,10 +535,14 @@ class SimilarIndex:
             name: (rows[0].item_id, rows[0].qty) for name, rows in bare.items() if len(rows) == 1
         }
 
+        # rules.json's groups plus the store pack's kitchen-made groups.
+        from app.store import pack as store_pack
+
+        excluded = set(self.vocab.excluded_groups) | set(store_pack.excluded_category_groups())
         self.items: List[CatalogItem] = [
             it
             for it in all_items
-            if not it.is_container_row and _department(it) not in self.vocab.excluded_groups
+            if not it.is_container_row and _department(it) not in excluded
         ]
         self.auto_brands = self._detect_auto_brands(self.items)
         self.typo_map = self._build_typo_map(self.items)
