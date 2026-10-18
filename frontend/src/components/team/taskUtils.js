@@ -1,34 +1,34 @@
 // Shared helpers for the Team hub task pages. All task times are shown in
-// store time (America/New_York), whatever the viewer's own clock says - the
-// same rule the backend uses for due times and recurring schedules.
+// store time (the store's own zone, format.js), whatever the viewer's own
+// clock says - the same rule the backend uses for due times and recurring
+// schedules.
+import { getStoreTimeZone, storeDateStr, storeDateTimeFormat } from "../../format.js";
 
-export const STORE_TZ = "America/New_York";
-
-const dayKey = new Intl.DateTimeFormat("en-CA", {
-  timeZone: STORE_TZ,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
+// The store's IANA zone right now (set at boot from branding).
+export function storeTz() {
+  return getStoreTimeZone();
+}
 
 // "2026-09-28" for an instant, in store time.
 export function storeDay(date) {
-  return dayKey.format(date);
+  return storeDateStr(date);
 }
 
 export function todayStoreDay() {
   return storeDay(new Date());
 }
 
-const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, hour: "numeric", minute: "2-digit" });
-const dateTimeFmt = new Intl.DateTimeFormat("en-US", {
-  timeZone: STORE_TZ,
+const timeFmt = { format: (d) => storeDateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(d) };
+const dateTimeFmt = {
+  format: (d) => storeDateTimeFormat("en-US", DATE_TIME_OPTS).format(d),
+};
+const DATE_TIME_OPTS = {
   weekday: "short",
   month: "short",
   day: "numeric",
   hour: "numeric",
   minute: "2-digit",
-});
+};
 
 // "3:00 PM" for today, "Tue, Sep 29, 3:00 PM" otherwise.
 export function formatDue(iso) {
@@ -42,7 +42,7 @@ export function formatWhen(iso) {
 }
 
 // A `<input type="datetime-local">` value is store wall time here; the
-// backend reads an offset-less due_at as New York time, so it's sent as is.
+// backend reads an offset-less due_at as store time, so it's sent as is.
 export function dueInputToApi(value) {
   if (!value) return null;
   return value.length === 16 ? `${value}:00` : value;

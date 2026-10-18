@@ -1,0 +1,129 @@
+{
+  "pack_version": 1,
+  "pack_id": "test_suite",
+  "label": "Made-up rules in the shape the older test modules were written for (tests only)",
+  "menu": {
+    "excluded_category_groups": [
+      "KITCHEN",
+      "CATERING MENU",
+      "EVENT MENU"
+    ],
+    "kitchen_groups": [
+      "KITCHEN",
+      "CATERING MENU",
+      "EVENT MENU"
+    ],
+    "grocery_menus": [
+      "retail",
+      "produce",
+      "halal meat",
+      "fresh flowers",
+      "fish market"
+    ],
+    "kitchen_menu_prefixes": [
+      "kitchen"
+    ],
+    "kitchen_label": "Kitchen"
+  },
+  "po_sections": {
+    "other_section": "Other",
+    "extra_sections": [],
+    "rules": [
+      {
+        "section_from": "category"
+      }
+    ]
+  },
+  "house_vendors": {
+    "prefixes": [
+      "mainstore"
+    ]
+  },
+  "channels": {
+    "empty": "Other",
+    "rules": [
+      {
+        "equals": [
+          "no dining option"
+        ],
+        "channel": "Other"
+      },
+      {
+        "starts_with": [
+          "in-store",
+          "in store"
+        ],
+        "channel": "In-store"
+      },
+      {
+        "equals": [
+          "pick up",
+          "pickup",
+          "take out",
+          "takeout"
+        ],
+        "channel": "Pick up"
+      }
+    ],
+    "split_on": " - ",
+    "rename": {
+      "online ordering": "Online ordering"
+    },
+    "default": "Other"
+  },
+  "issue_leads": {
+    "document_title": "Suggested leads",
+    "leads": [],
+    "fallback": {
+      "key": "admin",
+      "name": "Store admin",
+      "title": "Inventory & Purchase"
+    },
+    "section_proposals": {},
+    "section_notes": {}
+  },
+  "checklists": [],
+  "whatsapp_roles": [
+    {
+      "key": "store",
+      "label": "Store staff group"
+    },
+    {
+      "key": "kitchen",
+      "label": "Kitchen staff group"
+    }
+  ],
+  "flyer_categories": [
+    {
+      "key": "groceries",
+      "label": "Groceries",
+      "folder": "Groceries"
+    },
+    {
+      "key": "kitchen",
+      "label": "Kitchen",
+      "folder": "Kitchen"
+    },
+    {
+      "key": "flowers",
+      "label": "Flowers",
+      "folder": "Flowers"
+    },
+    {
+      "key": "halal_meat",
+      "label": "Halal Meat",
+      "folder": "Halal Meat"
+    },
+    {
+      "key": "store",
+      "label": "Store (Generic)",
+      "folder": "Store"
+    },
+    {
+      "key": "others",
+      "label": "Others",
+      "folder": "Others"
+    }
+  ],
+  "category_rules": []
+}

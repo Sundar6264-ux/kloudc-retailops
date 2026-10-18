@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import PublicChecklistPage from "./pages/PublicChecklistPage.jsx";
+import { StoreProvider } from "./store/StoreContext.jsx";
 import "./index.css";
 
 // /c/{slug}-{token} is the logged-out public checklist page (served by the
@@ -10,5 +11,13 @@ import "./index.css";
 const isPublicChecklist = window.location.pathname.startsWith("/c/");
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>{isPublicChecklist ? <PublicChecklistPage /> : <App />}</React.StrictMode>
+  <React.StrictMode>
+    {isPublicChecklist ? (
+      <StoreProvider>
+        <PublicChecklistPage />
+      </StoreProvider>
+    ) : (
+      <App />
+    )}
+  </React.StrictMode>
 );

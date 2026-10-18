@@ -15,6 +15,7 @@ import ChecklistForm from "./ChecklistForm.jsx";
 import ItemEditor from "./ItemEditor.jsx";
 import PublicLinkPanel from "./PublicLinkPanel.jsx";
 import WhatsAppGroupsPanel from "./WhatsAppGroupsPanel.jsx";
+import { useStoreAllows } from "../../store/StoreContext.jsx";
 import {
   allIds,
   blankItem,
@@ -118,11 +119,13 @@ function PreviewPane({ schema, onReset }) {
 
 // Before the groups table (old servers / meta failed to load): the two built-ins.
 const DEFAULT_WHATSAPP_GROUPS = [
-  { key: "store", label: "Spice Town staff group" },
-  { key: "kitchen", label: "Street Kitchen staff group" },
+  { key: "store", label: "Store staff group" },
+  { key: "kitchen", label: "Kitchen staff group" },
 ];
 
 function SettingsPanel({ definition, settings, onSaved, groups, canManageGroups, onGroupsChanged }) {
+  // The group picker is for a store with WhatsApp (store feature).
+  const whatsapp = useStoreAllows("whatsapp");
   const [managing, setManaging] = useState(false);
   const [form, setForm] = useState({
     active: definition.active !== false,
@@ -194,6 +197,7 @@ function SettingsPanel({ definition, settings, onSaved, groups, canManageGroups,
           onChange={(e) => set({ all_as_usual: e.target.checked })}
         />
       </div>
+      {whatsapp && (
       <label className="clb-setting">
         <div>
           <strong>WhatsApp group</strong>
@@ -211,7 +215,8 @@ function SettingsPanel({ definition, settings, onSaved, groups, canManageGroups,
           )}
         </select>
       </label>
-      {canManageGroups && (
+      )}
+      {whatsapp && canManageGroups && (
         <p className="clb-setting-link">
           <button type="button" className="link-button" onClick={() => setManaging(true)}>
             Manage WhatsApp groups

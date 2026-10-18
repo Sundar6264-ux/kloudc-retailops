@@ -250,6 +250,7 @@ def test_price_history_shows_new_category(store):
     assert rows["shaz-toast"]["category"] == "Snacks & Savories"
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_po_sections_biscuits_cookies_rusk(store):
     assert section_for(*TARGET, "KCB Plain Tea Rusk 7oz") == "Biscuits, Cookies & Rusk"
     # Toast's own Biscuits & Cookies subcategory prints in the same section.

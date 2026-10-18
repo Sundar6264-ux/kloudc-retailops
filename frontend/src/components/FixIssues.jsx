@@ -14,7 +14,7 @@ import { CAME_BACK_TERMS, FLAG_TERMS, ISSUE_TERMS, Term, TermInfo, useGlossary }
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
 import { groupByCategory } from "../groupByCategory.js";
-import { formatRestaurantTime, storeDateOffsetStr, storeTodayStr } from "../format.js";
+import { formatRestaurantTime, inStoreZone, storeDateOffsetStr, storeDateStr, storeTodayStr } from "../format.js";
 import { ItemWeeklySales } from "./weeklySales/WeeklySalesTable.jsx";
 import { LiveStockNote, MenuCheckNote } from "./DataSourceNote.jsx";
 import { useLocation } from "react-router-dom";
@@ -29,6 +29,8 @@ import {
   leadFromSearch,
   leadLine,
 } from "./issueLeads/issueLeadsModel.js";
+import { currentPosName } from "../store/gating.js";
+import { useStoreAllows } from "../store/StoreContext.jsx";
 
 const money = (v) => (v != null ? `$${Number(v).toFixed(2)}` : "-");
 const whole = (v) => (v != null ? Math.round(v).toLocaleString() : "-");
@@ -43,10 +45,10 @@ const soldLine = (units, dollars) =>
 const shortDate = (v) =>
   v ? new Date(`${String(v).slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "-";
 
-// A timestamp as its store-local (New York) day, e.g. a 9:45 PM reopen is
+// A timestamp as its store-local day, e.g. a 9:45 PM reopen is
 // that day, not the next UTC day.
 const localDate = (v) =>
-  v ? new Date(v).toLocaleDateString(undefined, { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" }) : "-";
+  v ? new Date(v).toLocaleDateString(undefined, inStoreZone({ month: "short", day: "numeric", year: "numeric" })) : "-";
 
 const TYPES = [
   {
@@ -104,7 +106,7 @@ const TYPES = [
     ],
     facts: (r) => [
       ["On hand", qty(r.on_hand_qty)],
-      ["Rule", "The latest upload shows less than zero on hand - the count in Toast is wrong."],
+      ["Rule", `The latest upload shows less than zero on hand - the count in ${currentPosName()} is wrong.`],
     ],
   },
   {
@@ -194,7 +196,7 @@ const TYPES = [
       ["Days in stock", r.available_days != null ? `${whole(r.available_days)} of ${r.window_days}` : "-"],
       ["On hand", `${qty(r.on_hand_qty)}${r.container_qty != null ? ` (incl. ${qty(r.container_qty)} in container)` : ""}`],
       ["First in uploads", r.first_seen_date ? shortDate(r.first_seen_date) : "-"],
-      ["Rule", "Not selling and nothing left on the shelf or in the container. Stop reordering, deactivate it in Toast, or reorder on purpose if it should sell."],
+      ["Rule", `Not selling and nothing left on the shelf or in the container. Stop reordering, deactivate it in ${currentPosName()}, or reorder on purpose if it should sell.`],
     ],
   },
   {
@@ -214,7 +216,7 @@ const TYPES = [
     ],
     facts: (r) => [
       ["Arrived", `${shortDate(r.arrived_date)} - ${r.days_since_arrival} days before the latest upload`],
-      ["Arrival from", r.arrived_via === "first_upload" ? "First showed up in the inventory upload" : "Toast's last received date"],
+      ["Arrival from", r.arrived_via === "first_upload" ? "First showed up in the inventory upload" : `${currentPosName()}'s last received date`],
       ["Rule", "A brand-new product (never sold) that arrived 5-30 days ago and hasn't sold since. Restocks of items that sold before are left out."],
       ["On hand", `${qty(r.on_hand_qty)}${r.container_qty != null ? ` (incl. ${qty(r.container_qty)} in container)` : ""}`],
     ],
@@ -407,6 +409,8 @@ function DetailRow({ label, children }) {
 }
 
 function ProductDetails({ product: p }) {
+  // "Last received" comes from the POS's receiving records (receiving_records).
+  const received = useStoreAllows("received_evidence");
   if (!p) return <p className="muted">No product details - this item is no longer in the latest upload.</p>;
   const margin = p.gross_margin != null ? `${Number(p.gross_margin).toFixed(1)}%` : "-";
   return (
@@ -422,10 +426,12 @@ function ProductDetails({ product: p }) {
         <DetailRow label="On hand">{qty(p.on_hand_qty)}</DetailRow>
         <DetailRow label="Stock value">{money(p.inventory_value)}</DetailRow>
         <DetailRow label="Days on hand">{p.days_on_hand != null ? whole(p.days_on_hand) : "-"}</DetailRow>
-        <DetailRow label="Last received">
-          {p.last_received ? shortDate(p.last_received) : "-"}
-          {p.last_received_from ? ` (${p.last_received_from})` : ""}
-        </DetailRow>
+        {received && (
+          <DetailRow label="Last received">
+            {p.last_received ? shortDate(p.last_received) : "-"}
+            {p.last_received_from ? ` (${p.last_received_from})` : ""}
+          </DetailRow>
+        )}
       </dl>
       <h4>Sales</h4>
       <dl className="issue-detail-list">
@@ -876,7 +882,7 @@ function IssueTable({ type, reasons, onChanged, lead, onLeadChange, savedLeads }
           </button>
         </div>
         {data?.[view]?.length > 0 && (
-          <input type="text" className="table-search" placeholder="Search name, SKU or barcode…" aria-label="Search name, SKU, barcode or Toast item ID" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input type="text" className="table-search" placeholder="Search name, SKU or barcode…" aria-label={`Search name, SKU, barcode or ${currentPosName()} item ID`} value={search} onChange={(e) => setSearch(e.target.value)} />
         )}
         {view === "open" && data && (cameBackCount > 0 || cameBackOnly) && (
           <span className="sp-filter-item">
@@ -1035,7 +1041,7 @@ function IssueTable({ type, reasons, onChanged, lead, onLeadChange, savedLeads }
 function isoDaysAgo(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  return storeDateStr(d);
 }
 
 const RANGES = [
@@ -1147,7 +1153,7 @@ function ClosedReport() {
                           <ReasonCell row={it} />
                         </td>
                         <td>{it.closed_by || "-"}</td>
-                        <td>{new Date(it.closed_at).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" })}</td>
+                        <td>{new Date(it.closed_at).toLocaleTimeString("en-US", inStoreZone({ hour: "numeric", minute: "2-digit" }))}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1206,10 +1212,10 @@ export default function FixIssues() {
   return (
     <>
       <InfoBlock brief="Work through each list and close items with a reason. Closed items move to the Closed list, and the Closed report shows what was closed each day.">
-        The lists come from the latest inventory upload. Street Kitchen and Catering Menu items are left out, since
+        The lists come from the latest inventory upload. Kitchen and catering menu items are left out, since
         they're made in the store and don't need barcodes or shelf stock. To close an item, click Close → on its row
         (or tick several and use Close selected), then pick a reason. "Not an issue" hides the item from that list for
-        good. "Fixed in Toast" is checked again: if the next inventory upload still shows the same problem, the item
+        good. "Fixed in {currentPosName()}" is checked again: if the next inventory upload still shows the same problem, the item
         comes back to the open list marked "Came back". "New item - giving it more time" closes it for one week: after
         that, if it still hasn't sold, it comes back to the open list marked "Came back - more time ended" (the
         Closed list shows "Back on" with the date). Use "Came back only" to see just those. Anything closed by

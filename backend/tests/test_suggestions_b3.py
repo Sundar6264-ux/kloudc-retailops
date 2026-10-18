@@ -42,6 +42,9 @@ from app.services.delivery_review import confirm_delivery
 from app.services.sales_sync import JOB_NAME as SALES_JOB
 from tests.conftest import client_for, make_user
 
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 NY = zoneinfo.ZoneInfo("America/New_York")
 UTC = dt.timezone.utc
@@ -302,8 +305,8 @@ def _api_day(db):
     snap(db, P, "goat", 100.5, supplier="Babco")
     snap(db, C, "goat", 106.5, supplier="Babco", source=api)
     # Kitchen-made counts are production.
-    snap(db, P, "samosa", 0, supplier="Babco", group="STREET KITCHEN")
-    snap(db, C, "samosa", 40, supplier="Babco", group="STREET KITCHEN", source=api)
+    snap(db, P, "samosa", 0, supplier="Babco", group="KITCHEN")
+    snap(db, C, "samosa", 40, supplier="Babco", group="KITCHEN", source=api)
     # API out of stock: real count unknown.
     snap(db, P, "oos", -20, supplier="Babco")
     snap(db, C, "oos", 0, supplier="Babco", source=api, api_oos=True)

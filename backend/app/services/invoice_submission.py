@@ -38,6 +38,7 @@ from app.services.whapi_client import (
     send_whatsapp_message,
 )
 from app.timeutil import restaurant_today, to_restaurant_date, utcnow
+from app.store.settings_view import effective_public_base_url
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,8 @@ TRANSFER_DIRECTIONS = {
     "store_to_container": "Store \u2192 Container",
     "container_to_store": "Container \u2192 Store",
 }
-TRANSFER_DEFAULT_VENDOR = "Spice Town"
+# TRANSFER_DEFAULT_VENDOR is the store's own name (STORE_NAME): see
+# transfer_default_vendor() and the module __getattr__ at the end.
 # Types that never get a Toast email attempt. "untracked" is no longer
 # offered for new submissions in the app/website pickers, but the backend
 # still accepts it (build 5 of the app sends it) and old rows keep it.
@@ -106,7 +108,7 @@ def build_invoice_file_url(entry: InvoiceSubmission) -> str:
     # elsewhere in this API (e.g. GET /api/invoices/{id} is already a plain
     # int). get_public_invoice_file still accepts the old long token too, so
     # links already sent out over WhatsApp before this change keep working.
-    return f"{get_settings().public_base_url}/public/invoices/{entry.id}"
+    return f"{effective_public_base_url()}/public/invoices/{entry.id}"
 
 
 def hash_file_bytes(file_bytes: bytes) -> str:
@@ -154,7 +156,7 @@ def _whatsapp_text(entry: InvoiceSubmission) -> str:
         # line is dropped unless staff typed a real one.
         direction = TRANSFER_DIRECTIONS.get(entry.transfer_direction or "", "Unknown direction")
         who_line = f"*Transfer:* {direction}\n"
-        if entry.vendor and entry.vendor != TRANSFER_DEFAULT_VENDOR:
+        if entry.vendor and entry.vendor != transfer_default_vendor():
             who_line += f"*Vendor:* {entry.vendor}\n"
     else:
         who_line = f"*Vendor:* {entry.vendor}\n"
@@ -323,7 +325,7 @@ def create_invoice_submission(
             raise ValueError(
                 f"transfer_direction is required for a transfer: one of {sorted(TRANSFER_DIRECTIONS)}"
             )
-        vendor = (vendor or "").strip() or TRANSFER_DEFAULT_VENDOR
+        vendor = (vendor or "").strip() or transfer_default_vendor()
     elif transfer_direction is not None:
         raise ValueError("transfer_direction is only allowed when submission_type is 'transfer'")
     if not (vendor or "").strip():
@@ -591,7 +593,7 @@ def _processing_status(entry: InvoiceSubmission) -> str:
     a submission to "in_progress" - "completed" additionally requires
     `toast_closed_at`, a human's manual confirmation that Toast actually
     finished processing this into a real closed bill. There is no Toast PO/
-    Purchasing API access and no webhook (see the spicetown skill's gotcha
+    Purchasing API access and no webhook (see the StoreOps skill notes, gotcha
     #15), so that event is genuinely unobservable automatically; guessing
     "completed" the moment the two sends succeed would be a real, honest
     claim this app can't back up (a real user report: "let me update the
@@ -788,3 +790,17 @@ def get_vendors_submitted_today(db: Session) -> List[str]:
         )
     }
     return sorted(v for v in candidates if v.strip().lower() not in confirmed_vendors)
+
+
+def transfer_default_vendor() -> str:
+    """A transfer's vendor when staff leave it blank: the store itself."""
+    from app.store.settings_view import store_display_name
+
+    return store_display_name()
+
+
+def __getattr__(name):
+    # The old constant, now the store's own name (read at call time).
+    if name == "TRANSFER_DEFAULT_VENDOR":
+        return transfer_default_vendor()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -50,9 +50,8 @@ SONNET_MODEL = "claude-sonnet-5"
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 100
 
-SYSTEM_PROMPT_TEMPLATE = """You are the Ask Inventory Bot for Spice Town, a real South Asian
-grocery + halal meat + prepared-food store in Vernon, CT. You answer questions about the
-store's real inventory, sales, ordering, and reconciliation data using the tools provided -
+SYSTEM_PROMPT_TEMPLATE = """You are the Ask Inventory Bot for {store_name}, {store_description}. You answer
+questions about the store's real inventory, sales, ordering, and reconciliation data using the tools provided -
 never guess or estimate a number yourself when a tool can give you the real one.
 
 You are strictly read-only: you cannot log purchases, confirm deliveries, or change any data.
@@ -66,6 +65,17 @@ instead of requesting a huge unfiltered list. If a tool result's `total_matches`
 
 Dates are ISO format (YYYY-MM-DD). Today's date is {today}. Be concise and direct - this is
 answering a real question for someone running the store day-to-day, not writing a report."""
+
+def system_prompt() -> str:
+    """The prompt for this store (STORE_NAME, STORE_DESCRIPTION) and today."""
+    from app.store import settings_view as sv
+
+    return SYSTEM_PROMPT_TEMPLATE.format(
+        store_name=sv.store_display_name(),
+        store_description=sv.store_description(),
+        today=restaurant_today().isoformat(),
+    )
+
 
 # Added for a user whose admin ticked "Hide sales numbers" (app/sales_access.py).
 NO_SALES_PROMPT = """
@@ -322,7 +332,7 @@ def ask(db: Session, question: str, history: Optional[list[dict]] = None, includ
     runner = client.beta.messages.tool_runner(
         model=model,
         max_tokens=2048,
-        system=SYSTEM_PROMPT_TEMPLATE.format(today=restaurant_today().isoformat())
+        system=system_prompt()
         + ("" if include_sales else NO_SALES_PROMPT),
         tools=tools,
         messages=messages,

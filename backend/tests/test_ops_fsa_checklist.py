@@ -36,6 +36,9 @@ from app.services.notification_triggers import closing_checklist_alerts
 
 from tests.conftest import client_for, make_user
 
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 FSA = "street_kitchen_fsa"
 NY = zoneinfo.ZoneInfo("America/New_York")
 

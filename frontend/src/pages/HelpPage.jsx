@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import GlossaryPage from "./GlossaryPage.jsx";
 import { ReconciliationWorkedExample } from "../components/Reconciliation.jsx";
+import { storeZoneCity } from "../format.js";
+import { posText } from "../store/gating.js";
 
 const SECTIONS = [
   { id: "overview", title: "Overview" },
@@ -26,7 +28,7 @@ const SECTIONS = [
   { id: "ask", title: "Ask Inventory Bot" },
   { id: "notifications", title: "Notifications" },
   { id: "users", title: "Users (admin)" },
-  { id: "inventory-api", title: "Inventory from Toast (admin)" },
+  { id: "inventory-api", title: "Inventory from {pos} (admin)" },
   { id: "live-data", title: "What's live and what's on a schedule" },
   { id: "limitations", title: "What this doesn't do (yet)" },
 ];
@@ -34,7 +36,9 @@ const SECTIONS = [
 // Two tabs: Help (this guide, needs the `help` grant) and Glossary
 // (/glossary, for everyone - the whole page for anyone without Help).
 export default function HelpPage({ tab = "help" }) {
-  const { hasFeature } = useAuth();
+  const { hasFeature, store } = useAuth();
+  // "{pos}" in the text below is this store's POS name ("Toast", "Clover").
+  const pos = store.posName || "the POS";
   const navigate = useNavigate();
   const canHelp = hasFeature("help");
 
@@ -107,7 +111,7 @@ export default function HelpPage({ tab = "help" }) {
         <div className="help-toc">
           {SECTIONS.map((s) => (
             <button key={s.id} type="button" onClick={() => jumpTo(s.id)}>
-              {s.title}
+              {posText(s.title, pos)}
             </button>
           ))}
         </div>
@@ -123,7 +127,7 @@ export default function HelpPage({ tab = "help" }) {
           <h4>Job status</h4>
           <p>
             Shows the last run of the two automatic/manual background jobs: <strong>Sales sync
-            (Toast)</strong> - pulls the prior day's orders from Toast automatically every night,
+            ({pos})</strong> - pulls the prior day's orders from {pos} automatically every night,
             and self-heals a missed night on the next run or the next service restart - and
             <strong> Inventory upload</strong> - the last time you uploaded a file below. A green
             pill means it finished successfully, yellow means it's currently running, red means it
@@ -131,7 +135,7 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <h4>Upload today's inventory</h4>
           <p>
-            Upload Toast Retail's daily "retail items" export (CSV or XLSX), unchanged - don't
+            Upload {pos}'s daily "retail items" export (CSV or XLSX), unchanged - don't
             re-save or edit it first, since columns are matched by their exact header text. It gets
             tagged with today's date automatically. You'll see a real upload progress bar, then a
             "Processing…" state while the server parses and saves potentially thousands of rows.
@@ -173,10 +177,10 @@ export default function HelpPage({ tab = "help" }) {
           <p>
             <strong>Delivery Review</strong> (Ordering menu) now finds deliveries by itself and lists them under{" "}
             <strong>Suggested deliveries</strong>, one per vendor and upload - no need to tick a box on the upload first.
-            Most come from Toast: when a delivery is received in Toast, the next inventory upload carries the receive time
-            and Toast's receiving number (like IN378) on each item, and we group those items under the vendor most of them
-            list (an item Toast lists under another vendor still lands with the vendor that delivered it). On a day with
-            only the nightly Toast snapshot and no upload, a delivery shows instead as 3 or more of one vendor's items
+            Most come from {pos}: when a delivery is received in {pos}, the next inventory upload carries the receive time
+            and {pos}'s receiving number (like IN378) on each item, and we group those items under the vendor most of them
+            list (an item {pos} lists under another vendor still lands with the vendor that delivered it). On a day with
+            only the nightly {pos} snapshot and no upload, a delivery shows instead as 3 or more of one vendor's items
             rising by more than sales explain (moves from the Container row, recounts up from below zero and small weighed
             changes are left out). The quantity is count now - count before + units sold in between. Check the lines and
             quantities, then <strong>Confirm &amp; log</strong> - it writes exactly what a manual review writes. A vendor
@@ -226,13 +230,13 @@ export default function HelpPage({ tab = "help" }) {
             </li>
             <li>
               <strong>Sales &amp; Insights</strong> (just <strong>Sales</strong> without Insights access): Items Sold
-              (with the sales download), Open Checks and the Insights pages, with <strong>Also in Toast</strong> folded
+              (with the sales download), Open Checks and the Insights pages, with <strong>Also in {pos}</strong> folded
               away at the end.
             </li>
             <li>
               <strong>Setup</strong>: pages you set once and rarely change - Users, Teams, Recurring tasks, Reported
               messages, Checklist builder, PO sections, Vendor contacts, Category &amp; vendor leads and Inventory from
-              Toast (most are for admins).
+              {pos} (most are for admins).
             </li>
             <li>
               Below the groups, for everyone: <strong>Label Scanner</strong> (opens the label app),{" "}
@@ -257,38 +261,38 @@ export default function HelpPage({ tab = "help" }) {
           <p>
             <strong>Transfer</strong> is for stock moved between the store and the container. Pick
             the direction (Store {"\u2192"} Container or Container {"\u2192"} Store); the vendor is
-            optional (left blank it shows as Spice Town). A transfer goes to WhatsApp only, never to
-            Toast, is Completed once WhatsApp is sent, and never counts as a vendor delivery.
+            optional (left blank it shows as {store.name}). A transfer goes to WhatsApp only, never to
+            {pos}, is Completed once WhatsApp is sent, and never counts as a vendor delivery.
             (Untracked is no longer offered; older Untracked uploads still show as before.)
           </p>
           <p>
             <strong>Two things happen automatically after you submit:</strong> a WhatsApp message
-            goes to the staff group with a link to the file, and an email goes to Toast's invoicing
+            goes to the staff group with a link to the file, and an email goes to {pos}'s invoicing
             inbox with the file attached as a PDF (a photo is converted to PDF automatically if you
             didn't upload one directly) - for every type except a transfer, including "something
-            else." Toast turns
+            else." {pos} turns
             that email into a draft bill on its own.
           </p>
           <p>
             <strong>Submit itself is instant</strong> - it only has to save the record and file.
-            WhatsApp and the Toast email happen right after, in the background, since either can
+            WhatsApp and the {pos} email happen right after, in the background, since either can
             take a while (WhatsApp especially, occasionally close to a couple of minutes). You'll
             see "Sending…" for each one until it resolves, updating live with no need to refresh -
             this is what actually fixes Submit feeling like it hangs.
           </p>
           <p>
-            <strong>Looks closed in Toast.</strong> Once an invoice has gone to Toast, someone still has to enter it there
-            and mark it closed here. When the next inventory upload shows Toast received a delivery from that vendor after
+            <strong>Looks closed in {pos}.</strong> Once an invoice has gone to {pos}, someone still has to enter it there
+            and mark it closed here. When the next inventory upload shows {pos} received a delivery from that vendor after
             the invoice was uploaded (or, on a nightly-snapshot day, several of its items rose like a delivery), the invoice
-            is listed under <strong>Looks closed in Toast</strong> with the reason, and its row gets a{" "}
-            <strong>Looks closed</strong> tag. <strong>Mark closed in Toast</strong> is the same one tap as the circle in
+            is listed under <strong>Looks closed in {pos}</strong> with the reason, and its row gets a{" "}
+            <strong>Looks closed</strong> tag. <strong>Mark closed in {pos}</strong> is the same one tap as the circle in
             the Closed column; <strong>Not closed yet</strong> hides the suggestion. When a vendor has several open invoices,
             the oldest one is suggested first. Nothing is ever closed automatically.
           </p>
           <p style={{ marginBottom: 0 }}>
             <strong>The submission itself is always saved, even if a send fails</strong> (no
             internet blip, wrong credentials, etc. ever loses your submission) - each row in the
-            list below shows "Sending…", "Sent", or "Failed" for WhatsApp and Toast email
+            list below shows "Sending…", "Sent", or "Failed" for WhatsApp and {pos} email
             independently, and a failed one gets a <strong>Resend</strong> button so it can be
             retried without filling the form out again.
           </p>
@@ -299,19 +303,19 @@ export default function HelpPage({ tab = "help" }) {
         <summary>Open Checks</summary>
         <div className="help-section-body">
           <p>
-            (This page used to be called Open Orders.) Checks Toast currently has on file for a chosen date (defaults to today) that haven't
+            (This page used to be called Open Orders.) Checks {pos} currently has on file for a chosen date (defaults to today) that haven't
             been closed on the POS yet - a live look at what's still open right now, not a stored
             report.
           </p>
           <p>
-            <strong>Tab</strong> is the name typed on the check's tab in Toast - usually the
+            <strong>Tab</strong> is the name typed on the check's tab in {pos} - usually the
             customer's name - so you can tell whose check it is at a glance. An order split into
             several checks lists each different tab name once; it's blank when nobody named the tab.
             The search box matches tab names too, and the CSV has a Tab column.
           </p>
           <p>
             <strong>Nothing here is saved by this app.</strong> Every time you load this page or
-            hit <em>Refresh</em>, it asks Toast directly for that date's checks and shows whichever
+            hit <em>Refresh</em>, it asks {pos} directly for that date's checks and shows whichever
             ones don't have a closed timestamp yet (and aren't voided or deleted). There's no button
             to close a check here - once it's actually closed on the POS, the next refresh simply
             stops showing it.
@@ -320,29 +324,29 @@ export default function HelpPage({ tab = "help" }) {
             <strong>Date and employee filters:</strong> picking a past date will normally show zero
             results, since every check from a finished day has already been closed by the time you'd
             look. The employee filter matches whoever the POS recorded as running that order
-            (Toast's own "server" on the order) - it's who opened/owns the ticket, not necessarily
+            ({pos}'s own "server" on the order) - it's who opened/owns the ticket, not necessarily
             who's about to close it.
           </p>
           <p>
             <strong>All-time</strong> shows every open check regardless of date - useful for catching
             a check that got left open for days or weeks and would never show up in the normal
             single-date view unless you happened to pick that exact date. This mode reads instantly
-            from a cache this app keeps fresh, not a full live Toast pull: today's checks are
+            from a cache this app keeps fresh, not a full live {pos} pull: today's checks are
             re-checked when you open the list and the last check is more than 2 minutes old (and every
             15 minutes in the background anyway), and the full order history (the only way to
             notice something stuck open on an older date) is fully re-swept once a day. If you need
             certainty right this second, <strong>Rescan now</strong> forces a real full re-scan on
-            demand - genuinely slow (a minute or more, one Toast request per historical date), which
+            demand - genuinely slow (a minute or more, one {pos} request per historical date), which
             is exactly why it isn't what happens automatically on every page load.
           </p>
           <p>
             <strong>Order total and items</strong> shown per row come straight from that order's
-            checks and line items on Toast, same underlying data the rest of this app's sales
+            checks and line items on {pos}, same underlying data the rest of this app's sales
             reporting uses - each item on its own line, so a full order is readable at a glance.
           </p>
           <p>
             <strong>Two sections: "Needs a look" and "Scheduled for later."</strong> A check that's
-            fully paid but still open isn't automatically a problem - Toast charges an online/pickup
+            fully paid but still open isn't automatically a problem - {pos} charges an online/pickup
             order on placement and only closes it once someone marks it fulfilled, and a guest can
             pay tonight for a pickup scheduled tomorrow. A check only lands in "Scheduled for later"
             if it's paid AND its promised time hasn't arrived yet; the moment that promised time
@@ -367,38 +371,38 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <p>
             <strong>How the total is computed, precisely:</strong> an item counts toward a date if
-            it was actually <em>paid for</em> on that date - not whichever date Toast internally
+            it was actually <em>paid for</em> on that date - not whichever date {pos} internally
             files the order under. Revenue is the sum of each counted item's own price (after any
             per-item discount, before tax). Add-ons such as a spice level or extra cheese are already
-            part of their item's price in Toast, so they are not listed or counted again.
+            part of their item's price in {pos}, so they are not listed or counted again.
           </p>
           <p>
             <strong>Pay today for tomorrow's order = counts as today.</strong> A guest paying
             tonight for a pickup scheduled tomorrow shows up under <em>today</em>, since that's
-            when the money actually came in - even though Toast internally files that whole order
+            when the money actually came in - even though {pos} internally files that whole order
             under tomorrow's business date. An order that hasn't actually been paid yet doesn't
             count toward any date until it is.
           </p>
           <p>
             <strong>This is this app's own logic, and it will not always match the number on
-            Toast's own dashboard - on purpose.</strong> Toast's dashboard instead groups by the
+            {pos}'s own dashboard - on purpose.</strong> {pos}'s dashboard instead groups by the
             calendar day it filed the order under (not payment date) and uses each check's official
             total (which nets out a check-level discount that isn't reflected in the sum of
             individual item prices). Both approaches were checked directly against real data on
             2026-09-01 and both are internally consistent - they just answer a genuinely different
-            question ("what did we actually get paid for on this date" vs. "what's Toast's own
+            question ("what did we actually get paid for on this date" vs. "what's {pos}'s own
             headline total for this business date"). A small, expected gap between the two is not
             a sign of a sync problem.
           </p>
           <p>
-            <strong>Today's date is pulled live from Toast</strong> when you open the page (a pull
+            <strong>Today's date is pulled live from {pos}</strong> when you open the page (a pull
             less than a minute old is reused; Refresh pulls again), since the overnight sync only
             ever covers yesterday and earlier - any past date is served from the already-synced
-            database instead, which is faster and doesn't re-hit Toast's API.
+            database instead, which is faster and doesn't re-hit {pos}'s API.
           </p>
           <p>
-            <strong>Past days stay correct when Toast changes them.</strong> A few times a day the
-            app compares the last 14 days with Toast's own item totals (Toast Analytics) and re-syncs
+            <strong>Past days stay correct when {pos} changes them.</strong> A few times a day the
+            app compares the last 14 days with {pos}'s own item totals ({pos} Analytics) and re-syncs
             any day that differs - a check voided or discounted the next morning, an item removed,
             a late payment. Admins see each day's comparison in the Sales accuracy card at the
             bottom of this page.
@@ -419,26 +423,26 @@ export default function HelpPage({ tab = "help" }) {
         <summary>Insights</summary>
         <div className="help-section-body">
           <p>
-            Reports under <strong>Sales &amp; Insights</strong> in the menu, built from Toast's own Analytics (a separate
-            Toast reporting service, not the order sync the rest of the dashboard uses). An admin grants them with
+            Reports under <strong>Sales &amp; Insights</strong> in the menu, built from {pos}'s own Analytics (a separate
+            {pos} reporting service, not the order sync the rest of the dashboard uses). An admin grants them with
             the <strong>Sales insights</strong> access on the Users page; Loss watch and Odd checks show names of
             employees and are for admins only. Users whose sales numbers are hidden get only the pages without
             dollar amounts: Prep forecast, Returning customers and Busy hours (as order counts).
           </p>
           <p>
             The main pages (Daily compare, Loss watch, Odd checks, Prep forecast, Menu trends, Add-ons and
-            Returning customers) are things Toast's own reports don't give you. Four more sit at the end, in a
-            group called <strong>Also in Toast</strong>: Sales channels, Check size &amp; guests, Busy hours and
-            Best &amp; worst sellers. They show the same numbers as Toast's own reports and are kept here for
-            convenience, so you don't have to switch to Toast to see them.
+            Returning customers) are things {pos}'s own reports don't give you. Four more sit at the end, in a
+            group called <strong>Also in {pos}</strong>: Sales channels, Check size &amp; guests, Busy hours and
+            Best &amp; worst sellers. They show the same numbers as {pos}'s own reports and are kept here for
+            convenience, so you don't have to switch to {pos} to see them.
           </p>
           <p>
-            <strong>Where the numbers come from:</strong> each page says "From Toast Analytics, updated ..." at the
-            top. A past day is read from Toast once and saved; the last 14 days are read again each night (about
-            4:30 AM) because Toast keeps changing days after they close (a void or discount the next morning).
-            Today's numbers are read live and reused for a minute or two. If Toast doesn't answer, the page shows
-            the last saved copy with a yellow note saying so. Toast's Analytics run 2-4 hours behind the
-            registers, and they count by Toast's business day (which ends at 4 AM), so totals can differ by a few
+            <strong>Where the numbers come from:</strong> each page says "From {pos} Analytics, updated ..." at the
+            top. A past day is read from {pos} once and saved; the last 14 days are read again each night (about
+            4:30 AM) because {pos} keeps changing days after they close (a void or discount the next morning).
+            Today's numbers are read live and reused for a minute or two. If {pos} doesn't answer, the page shows
+            the last saved copy with a yellow note saying so. {pos}'s Analytics run 2-4 hours behind the
+            registers, and they count by {pos}'s business day (which ends at 4 AM), so totals can differ by a few
             dollars from Items Sold, which counts by payment time.
           </p>
           <h4>Daily compare</h4>
@@ -461,12 +465,12 @@ export default function HelpPage({ tab = "help" }) {
           <p>
             Checks open for more than 3 hours, changed more than an hour after they were paid (not online or
             delivery orders, which change when they're handed over), or with a refund of $25 or more. They're
-            included in the same 9 AM alert and can be acknowledged the same way. Look a check up in Toast by its
+            included in the same 9 AM alert and can be acknowledged the same way. Look a check up in {pos} by its
             number and date.
           </p>
           <h4>Prep forecast</h4>
           <p>
-            How many of each Street Kitchen item to expect on a chosen day (tomorrow by default, up to 14 days
+            How many of each kitchen item to expect on a chosen day (tomorrow by default, up to 14 days
             ahead): the same weekday over the last 8 weeks with the highest and lowest day left out, nudged by the
             last 4 weeks' trend (at most 20%), plus a low-high range (the middle half of those days) and the store's
             usual busiest hours that weekday. <strong>Print</strong> gives a clean prep sheet with a tick box per item;
@@ -476,9 +480,9 @@ export default function HelpPage({ tab = "help" }) {
           <h4>Menu trends</h4>
           <p>
             The biggest risers and fallers in units against the same number of days just before (only items that
-            sold at least 3 then), and Street Kitchen items still on the menu that didn't sell at all in the
-            period (Not sold). Filter to Street Kitchen (both kitchen menus, without the bottled and canned drinks)
-            or Grocery (the retail, produce, halal meat, fish market and flower menus). This used to be part of
+            sold at least 3 then), and kitchen items still on the menu that didn't sell at all in the
+            period (Not sold). Filter to Kitchen (the prepared-food menus) or Grocery (the store's other
+            menus). This used to be part of
             Menu performance, together with the top and bottom sellers, which are now under Best &amp; worst
             sellers.
           </p>
@@ -495,11 +499,11 @@ export default function HelpPage({ tab = "help" }) {
             of each card is kept (at most 400 days) - never the card number or a name. Cash customers aren't
             counted, and one person with two cards counts twice, so read it as a trend.
           </p>
-          <h4>Also in Toast</h4>
-          <p>Same numbers as Toast's own reports - kept here for convenience.</p>
+          <h4>Also in {pos}</h4>
+          <p>Same numbers as {pos}'s own reports - kept here for convenience.</p>
           <ul style={{ marginBottom: 0 }}>
             <li>
-              <strong>Sales channels:</strong> weekly net sales split by how the order came in, from Toast's
+              <strong>Sales channels:</strong> weekly net sales split by how the order came in, from {pos}'s
               dining option: In-store (the counter), Pick up (the kiosk), Online ordering, DoorDash, Uber Eats and
               Catering; the rest, and anything past the five biggest, is Other. "Share" shows each channel's
               percentage of the week. The current week runs to yesterday and is marked *.
@@ -516,7 +520,7 @@ export default function HelpPage({ tab = "help" }) {
             </li>
             <li style={{ marginBottom: 0 }}>
               <strong>Best &amp; worst sellers:</strong> the top and bottom items by net sales in the period, with
-              the same Street Kitchen / Grocery filter as Menu trends.
+              the same Kitchen / Grocery filter as Menu trends.
             </li>
           </ul>
         </div>
@@ -547,8 +551,8 @@ export default function HelpPage({ tab = "help" }) {
             </li>
             <li>
               <strong>Check count</strong> - shows 0 or less on hand but still sold in the last 7
-              days, so the Toast count is wrong (you can't sell what isn't there). Fix the count in
-              Toast before deciding how much to order.
+              days, so the {pos} count is wrong (you can't sell what isn't there). Fix the count in
+              {pos} before deciding how much to order.
             </li>
             <li>
               <strong>Can wait</strong> - runs out between the lead time and twice the lead time;
@@ -569,7 +573,7 @@ export default function HelpPage({ tab = "help" }) {
           <p>
             With Purchase Order Cart access, each vendor's list has tick boxes and Add buttons, the same
             as the vendor screen in the app. Items always go into the cart of the vendor they're listed
-            under here. An item Toast lists under several vendors appears under just one of them
+            under here. An item {pos} lists under several vendors appears under just one of them
             (normally the one it was last received from) and goes into that vendor's cart only.
           </p>
           <ul>
@@ -609,7 +613,7 @@ export default function HelpPage({ tab = "help" }) {
               seconds.
             </li>
             <li>
-              Items under <strong>Unassigned</strong> have no vendor in Toast, so they can't be added from
+              Items under <strong>Unassigned</strong> have no vendor in {pos}, so they can't be added from
               here. Add them on the Purchase Order Cart under the vendor you order them from.
             </li>
             <li>The demo account can look around but can't add anything to the cart.</li>
@@ -642,7 +646,7 @@ export default function HelpPage({ tab = "help" }) {
             </li>
             <li>
               <strong>Skip this week</strong>: it comes back when the next store week starts, Monday
-              at midnight (New York time). On a Sunday, that's the next day.
+              at midnight ({storeZoneCity()} time). On a Sunday, that's the next day.
             </li>
             <li>
               <strong>Remind me later</strong>:
@@ -677,7 +681,7 @@ export default function HelpPage({ tab = "help" }) {
             <li>
               <strong>Forecast (lead time)</strong> - Avg/day × the "Vendor lead time (days)" you
               type in (how long it typically takes that item to arrive once ordered - this is a
-              manual estimate, not looked up automatically, since Toast's vendor data isn't
+              manual estimate, not looked up automatically, since {pos}'s vendor data isn't
               accessible with the current account credentials).
             </li>
             <li>
@@ -894,8 +898,8 @@ export default function HelpPage({ tab = "help" }) {
           <h4>Also at and Similar</h4>
           <ul>
             <li>
-              <strong>Also at</strong> (under an item's name) - the other vendors Toast lists for
-              that item, with each vendor's own item code when Toast has it. Handy when this vendor
+              <strong>Also at</strong> (under an item's name) - the other vendors {pos} lists for
+              that item, with each vendor's own item code when {pos} has it. Handy when this vendor
               is out or another one is cheaper.
             </li>
             <li>
@@ -912,17 +916,17 @@ export default function HelpPage({ tab = "help" }) {
               size and brand are taken off, spellings and Indian names are made the same (toor / tuvar
               / arhar, jeera / cumin, rava / sooji...), and the rest is compared. About 9 in 10 of the
               first five suggestions are right; it can miss a product whose name shares no product
-              word (e.g. a brand-only name), and it can't fix an item Toast has in the wrong category.
-              Street Kitchen / Catering items and Container rows are never listed.
+              word (e.g. a brand-only name), and it can't fix an item {pos} has in the wrong category.
+              Kitchen / catering items and Container rows are never listed.
             </li>
           </ul>
           <h4>About the exported PDF</h4>
           <p>
-            It opens with the real Spice Town letterhead - logo, address, and phone number - then
+            It opens with the store's letterhead - logo, address, and phone number - then
             a table with just four columns: a serial number, the supplier code, the item name, and
             the quantity you entered.{" "}
-            <strong>It is not a real Toast purchase order</strong> - Toast's Purchasing API isn't
-            accessible with the current account credentials, so nothing goes to Toast. You can send it
+            <strong>It is not a real {pos} purchase order</strong> - {pos}'s Purchasing API isn't
+            accessible with the current account credentials, so nothing goes to {pos}. You can send it
             to the vendor yourself (email, print, WhatsApp), or email it from here with{" "}
             <strong>Send PO</strong> (below).
           </p>
@@ -970,14 +974,14 @@ export default function HelpPage({ tab = "help" }) {
             <li>
               <strong>Search by code</strong>: every product search (cart Add items, Reorder, Supplier Projection,
               Fix Issues, Items Sold, PO sections, Store vs Container...) also finds an item by its vendor item code
-              (SKU), barcode or Toast item ID - the whole code, or part of it (3+ characters of a SKU, 4+ of a
+              (SKU), barcode or {pos} item ID - the whole code, or part of it (3+ characters of a SKU, 4+ of a
               barcode). A result found by a code says so, e.g. "Matches SKU 2659M".
             </li>
           </ul>
           <p>
             <strong>Supplier code</strong> is the vendor's own SKU, sourced straight from your
-            daily inventory upload when Toast has it on file for that item/vendor - it's left
-            blank on the PDF for items where Toast itself doesn't have it recorded.
+            daily inventory upload when {pos} has it on file for that item/vendor - it's left
+            blank on the PDF for items where {pos} itself doesn't have it recorded.
           </p>
         </div>
       </details>
@@ -1039,7 +1043,7 @@ export default function HelpPage({ tab = "help" }) {
           <h4>Suggested schedules</h4>
           <p style={{ marginBottom: 0 }}>
             For a vendor with no schedule yet, the page reads the delivery days off the last 12 weeks of everything that
-            records a delivery: invoice uploads and deliveries logged by hand (the delivery day itself), Toast's receiving
+            records a delivery: invoice uploads and deliveries logged by hand (the delivery day itself), {pos}'s receiving
             records in the daily inventory files, Delivery Review confirms and stock rises (the day before). Pieces of one
             delivery (an invoice and its receiving the next day) count once. It suggests the weekday(s) most deliveries
             fall on, with the evidence ("Delivered Tue x6, Fri x5 in the last 12 weeks") and a confidence - High, Medium
@@ -1051,7 +1055,7 @@ export default function HelpPage({ tab = "help" }) {
             want). A schedule repeats every week, so a vendor that delivers only every 2-4 weeks (or rarer) is marked
             "weekly isn't right" and starts unticked too. A vendor that already has a schedule is never
             changed - by Add, Edit or Add all - and if its recent deliveries fall on other days you only see a "Check"
-            line. Below, <strong>Vendors without a schedule</strong> lists every other vendor Toast has on an item (or
+            line. Below, <strong>Vendors without a schedule</strong> lists every other vendor {pos} has on an item (or
             that delivered lately) and why there's no suggestion (too few deliveries, scattered days, or dismissed), each
             with <strong>Set schedule</strong>.
           </p>
@@ -1087,7 +1091,7 @@ export default function HelpPage({ tab = "help" }) {
           <p>
             Lists of inventory records that need attention, all from the latest inventory upload:
             barcode problems, duplicates, and stock problems (negative counts, shelves to refill,
-            slow and dead items). Street Kitchen and Catering Menu items are left out, since they're
+            slow and dead items). Kitchen and catering menu items are left out, since they're
             made in the store and don't need barcodes or shelf stock. The count on each tile is how
             many are still open. Click an item's name for its details (price, cost, stock, sales, last
             sold, vendor and supplier code). Every list has a <strong>Download CSV</strong> button.
@@ -1123,8 +1127,8 @@ export default function HelpPage({ tab = "help" }) {
               that list again.
             </li>
             <li>
-              <strong>"Fixed" reasons</strong> (Barcode added in Toast, Count corrected in Toast,
-              Merged / removed in Toast, Moved stock to the shelf...): checked again on the next
+              <strong>"Fixed" reasons</strong> (Barcode added in {pos}, Count corrected in {pos},
+              Merged / removed in {pos}, Moved stock to the shelf...): checked again on the next
               inventory upload. If the same problem is still there, the item <strong>comes
               back</strong> to the open list marked "Still showing after fix".
             </li>
@@ -1164,8 +1168,8 @@ export default function HelpPage({ tab = "help" }) {
           <h4>Missing barcodes</h4>
           <p>
             Items with no barcode on file at all. Between uploads, this list and Invalid barcodes are
-            re-checked every hour against Toast's menu, so an item fixed in Toast drops off without
-            waiting for the next upload (see Inventory from Toast).
+            re-checked every hour against {pos}'s menu, so an item fixed in {pos} drops off without
+            waiting for the next upload (see Inventory from {pos}).
           </p>
           <h4>Invalid barcodes</h4>
           <p>
@@ -1178,17 +1182,17 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <h4>Duplicates</h4>
           <p>
-            Two or more priced items in Toast with exactly the same name. The usual Container-location
+            Two or more priced items in {pos} with exactly the same name. The usual Container-location
             pair (one priced row plus one bare stock row) isn't counted - that's expected. Each name is
             one row here, with how many copies and their prices.
           </p>
           <h4>Negative inventory</h4>
           <p>
             Items whose on-hand count in the latest upload is below zero - not physically possible, so
-            the Toast count is wrong (items sold before the delivery was received in Toast, a sale rung
+            the {pos} count is wrong (items sold before the delivery was received in {pos}, a sale rung
             up under the wrong item, a miscount...). "Sold (30 days)" is units sold. Close with the reason
-            that explains it, e.g. "Count corrected in Toast" or "Sold before the delivery was received
-            in Toast". This used to be a report under Inventory Reports; it lives here now.
+            that explains it, e.g. "Count corrected in {pos}" or "Sold before the delivery was received
+            in {pos}". This used to be a report under Inventory Reports; it lives here now.
           </p>
           <h4>Refill from container</h4>
           <p>
@@ -1214,7 +1218,7 @@ export default function HelpPage({ tab = "help" }) {
             stock) that still have stock on hand (shelf + container above 0). Sorted by value tied up.
             It uses our own sales data and knows the days an item was out of stock, so an item that was
             simply sold out isn't called dead. This replaces the older "Dead inventory" list (from
-            Toast's own 90-day sales figure).
+            {pos}'s own 90-day sales figure).
           </p>
           <h4>Dead - zero stock</h4>
           <p>
@@ -1225,17 +1229,17 @@ export default function HelpPage({ tab = "help" }) {
             days in stock to be called Dead. Brand-new items still waiting for their first delivery are
             left out: an item counts as old if it has ever sold, or if it first showed up in the
             uploads (or was last received) at least 60 days before the latest upload. Decide what
-            happens next: "Discontinued - won't reorder", "Deactivated in Toast", "Seasonal - will
-            restock" or "Reorder - it should sell" (these stay closed), or "Count corrected in Toast"
+            happens next: "Discontinued - won't reorder", "Deactivated in {pos}", "Seasonal - will
+            restock" or "Reorder - it should sell" (these stay closed), or "Count corrected in {pos}"
             if there really is stock (checked again on the next upload). An item is never on this list
             and another one: Dead with stock, Dead - newly arrived and Slow moving - Review never list
             an item at 0, and a count below 0 (shelf or container) is on Negative inventory first.
-            Items with no count in Toast at all aren't listed.
+            Items with no count in {pos} at all aren't listed.
           </p>
           <h4>Dead - newly arrived</h4>
           <p>
             <strong>Brand-new products only</strong>: an item that has never sold, arrived 5 to 30
-            days before the latest upload, and has stock on hand. Arrival is the later of Toast's "last
+            days before the latest upload, and has stock on hand. Arrival is the later of {pos}'s "last
             received" date and the day the item first showed up in the uploads. A restock of something
             that has sold before is never listed here, even if it hasn't sold since the delivery. After
             30 days it drops off this list; a new item still unsold by then normally shows up in Dead
@@ -1292,7 +1296,7 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <h4>Store vs Container</h4>
           <p>
-            Only the products that have both a store (shelf) row and a Container row in Toast, with
+            Only the products that have both a store (shelf) row and a Container row in {pos}, with
             Store, Container and Total stock side by side, plus a totals row. Rows are paired by exact
             name - the same pairing Supplier Projection's "+N container" and Fix Issues' Refill from
             container use, so the numbers match. Items <strong>Low on shelf</strong> (store 5 or less
@@ -1313,9 +1317,9 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <h4>Why you have to log purchases by hand</h4>
           <p>
-            Toast's Purchasing &amp; Receiving API isn't accessible with this account's current
+            {pos}'s Purchasing &amp; Receiving API isn't accessible with this account's current
             credentials, so there's no automatic feed of what was actually bought/received - "sold"
-            (from Toast orders) and "counted" (from your inventory uploads) are both automatic, but
+            (from {pos} orders) and "counted" (from your inventory uploads) are both automatic, but
             "purchased" only exists if you log it yourself below. The fastest way to do that is the{" "}
             <strong>"we received a delivery today"</strong> flow on the inventory upload (see
             Overview's help section) - it suggests quantities for you to confirm instead of typing
@@ -1324,7 +1328,7 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <h4>Worked example</h4>
           <p>
-            The worked example below isn't a canned one - it pulls one real item and its real opening count, real Toast
+            The worked example below isn't a canned one - it pulls one real item and its real opening count, real {pos}
             sales, and real next-count closing figure, over the most recent window your upload history actually
             supports, then walks through the exact formula with those real numbers. A "try it" field lets you type a
             hypothetical purchased quantity and see the expected closing and variance recalculate live, so you can see
@@ -1443,9 +1447,8 @@ export default function HelpPage({ tab = "help" }) {
         <summary>Daily Checklists</summary>
         <div className="help-section-body">
           <p>
-            The checklists staff fill in every night: <strong>Spice Town - Daily Closing</strong>,{" "}
-            <strong>Street Kitchen - Chef Closing</strong> and <strong>Street Kitchen - Food Service
-            Associate Closing</strong>, plus any new ones an admin builds. Each submission is saved under
+            The checklists staff fill in every night (for example a store closing checklist and the kitchen
+            closing checklists), plus any new ones an admin builds. Each submission is saved under
             your login (you're never asked for your name) and a WhatsApp summary goes to the group set for
             that checklist.
           </p>
@@ -1469,7 +1472,7 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <p>
             At 9:30 PM one "Closing checklist not done" alert lists whichever closing checklists are still
-            missing tonight. On Overview, the Kitchen closing tile covers both Street Kitchen checklists.
+            missing tonight. On Overview, the Kitchen closing tile covers the kitchen closing checklists.
           </p>
           <h4>Checklist builder (admins)</h4>
           <p>
@@ -1622,7 +1625,7 @@ export default function HelpPage({ tab = "help" }) {
             </li>
             <li>
               The title is filled in from the file name. Change it to something you'll recognise later. Then pick the type:
-              Groceries, Street Kitchen, Flowers, Halal Meat, Spice Town (Generic) or Others.
+              one of the store's flyer types (for example Groceries or Others).
             </li>
             <li>
               The message is optional and goes with the flyer in WhatsApp (up to 1,000 characters). <code>*bold*</code>,{" "}
@@ -1635,7 +1638,7 @@ export default function HelpPage({ tab = "help" }) {
             <li>
               It goes to one group at a time, a few seconds apart, so WhatsApp doesn't treat the store's number as spam.
               Each group shows <strong>Waiting</strong>, <strong>Sending…</strong>, <strong>Sent</strong> or{" "}
-              <strong>Failed</strong> as it happens. You can close the window: sending carries on, and the Spice Town
+              <strong>Failed</strong> as it happens. You can close the window: sending carries on, and the
               phone app sends you a notification when it's done (not during your quiet hours).
             </li>
             <li>
@@ -1659,7 +1662,7 @@ export default function HelpPage({ tab = "help" }) {
           </p>
           <h4>Where the files are kept</h4>
           <p>
-            On the Mac mini, in the <strong>Spice Town Flyers</strong> folder in the home folder, with one folder per type.
+            On the store's server, in its <strong>flyers folder</strong>, with one folder per type.
             Pictures are saved as JPEG, sized for WhatsApp; PDFs are kept as they are. Each file is named with the date,
             the title and the flyer's number, for example "2026-10-04 Diwali Garlands (12).jpg". Changing a flyer's type
             moves its file to that type's folder. Deleting takes it out of the library and moves the file to a{" "}
@@ -1791,15 +1794,15 @@ export default function HelpPage({ tab = "help" }) {
       </details>
 
       <details className="help-section" id="inventory-api">
-        <summary>Inventory from Toast (admin only)</summary>
+        <summary>Inventory from {pos} (admin only)</summary>
         <div className="help-section-body">
           <p>
-            The daily inventory file (CSV) can be replaced by an inventory snapshot pulled from Toast itself each night
-            at 4:05 AM: stock counts, prices, barcodes and categories come from Toast, and the 7/30/90-day sales are
-            counted from our own synced sales (through yesterday - Toast's own figures in the file run about two days
-            behind). Toast has no cost, vendor code or last-received date, so those are carried from the latest file.
-            It is switched off until an admin turns it on with <strong>Use Toast for inventory</strong> on the{" "}
-            <strong>Inventory from Toast</strong> page (it applies at once, no restart; every change is listed there with
+            The daily inventory file (CSV) can be replaced by an inventory snapshot pulled from {pos} itself each night
+            at 4:05 AM: stock counts, prices, barcodes and categories come from {pos}, and the 7/30/90-day sales are
+            counted from our own synced sales (through yesterday - {pos}'s own figures in the file run about two days
+            behind). {pos} has no cost, vendor code or last-received date, so those are carried from the latest file.
+            It is switched off until an admin turns it on with <strong>Use {pos} for inventory</strong> on the{" "}
+            <strong>Inventory from {pos}</strong> page (it applies at once, no restart; every change is listed there with
             who and when). Until then the nightly run only compares what it built with that day's file.
           </p>
           <p>
@@ -1812,27 +1815,27 @@ export default function HelpPage({ tab = "help" }) {
             the switch's starting value.
           </p>
           <p>
-            <strong>The file still wins.</strong> A file uploaded for a day always replaces Toast's snapshot of that day,
+            <strong>The file still wins.</strong> A file uploaded for a day always replaces {pos}'s snapshot of that day,
             and the snapshot is never made for a day that already has a file. Upload a file now and then to refresh
             costs and vendor codes - the <strong>Inventory upload due</strong> alert reminds you once the last file is 7
             days old.
           </p>
           <p>
-            <strong>Out of stock and negative counts.</strong> Toast only says "out of stock" for anything at 0 or
+            <strong>Out of stock and negative counts.</strong> {pos} only says "out of stock" for anything at 0 or
             below, so those items show 0 - except on Negative inventory, which keeps the last file's negative count
             until the next file.
           </p>
           <p>
             <strong>Live stock</strong> (only with the switch on): Supplier Projection, Reorder Candidates (and the 9 AM
             critical vendors alert, Vendor Calendar order counts and the weekly digest built on them) and Fix Issues'
-            Negative inventory and Refill from container use Toast's current count, at most 5 minutes old. If Toast
+            Negative inventory and Refill from container use {pos}'s current count, at most 5 minutes old. If {pos}
             doesn't answer, they use the latest snapshot as before.
           </p>
           <p style={{ marginBottom: 0 }}>
-            <strong>Barcodes between uploads.</strong> Every hour the app asks Toast whether the menu changed and, if it
-            did, re-reads the barcodes. Missing and invalid barcodes on Fix Issues then use them: an item fixed in Toast
+            <strong>Barcodes between uploads.</strong> Every hour the app asks {pos} whether the menu changed and, if it
+            did, re-reads the barcodes. Missing and invalid barcodes on Fix Issues then use them: an item fixed in {pos}
             leaves the list without waiting for the next file, and an item closed as fixed that still shows after
-            Toast's next menu change comes back. Toast's menu only holds an item's first barcode; any extra barcodes
+            {pos}'s next menu change comes back. {pos}'s menu only holds an item's first barcode; any extra barcodes
             come from the last file.
           </p>
         </div>
@@ -1842,8 +1845,8 @@ export default function HelpPage({ tab = "help" }) {
         <summary>What's live and what's on a schedule</summary>
         <div className="help-section-body">
           <p>
-            Where Toast lets the app ask quickly, a page asks Toast when you open it (with a short
-            cache so many people opening it at once don't flood Toast). The scheduled jobs still run
+            Where {pos} lets the app ask quickly, a page asks {pos} when you open it (with a short
+            cache so many people opening it at once don't flood {pos}). The scheduled jobs still run
             as a safety net.
           </p>
           <ul>
@@ -1851,27 +1854,27 @@ export default function HelpPage({ tab = "help" }) {
               <strong>Live when you open it:</strong> today's Items Sold and the Overview sales tile
               (shared for 1 minute; Refresh asks again), today's part of Open Checks (re-checked when
               the last check is over 2 minutes old), and the suggested deliveries, "Looks closed in
-              Toast" and suggested schedules (worked out on request, 1-minute cache, and at once after
+              {pos}" and suggested schedules (worked out on request, 1-minute cache, and at once after
               an upload or a confirm).
             </li>
             <li>
-              <strong>Live once an admin turns on Inventory from Toast:</strong> on-hand counts on
+              <strong>Live once an admin turns on Inventory from {pos}:</strong> on-hand counts on
               Reorder Candidates, Supplier Projection, Negative inventory and Refill from container
-              (Toast's count, at most 5 minutes old).
+              ({pos}'s count, at most 5 minutes old).
             </li>
             <li>
               <strong>On a schedule:</strong> past days of sales (synced each night at 4 AM, then
-              compared with Toast and corrected at 6:30 AM, 12:30 PM, 5:30 PM and 10:30 PM once Toast
+              compared with {pos} and corrected at 6:30 AM, 12:30 PM, 5:30 PM and 10:30 PM once {pos}
               Analytics is set up), the barcode re-check (hourly), the nightly inventory snapshot from
-              Toast (4:05 AM, when turned on), the full Open Checks history sweep (once a day) and the
+              {pos} (4:05 AM, when turned on), the full Open Checks history sweep (once a day) and the
               alerts.
             </li>
             <li>
               <strong>Not live, and why:</strong> past days of sales come from the stored copy (a live
-              pull would cost one Toast request per day of the range); Toast's own Analytics run 2-4
+              pull would cost one {pos} request per day of the range); {pos}'s own Analytics run 2-4
               hours behind, so they are only used to check past days, never for today; deliveries
-              received in Toast only show up with the next inventory upload (Toast's live stock has no
-              receiving numbers); cost, vendor codes and last-received dates have no Toast API at all.
+              received in {pos} only show up with the next inventory upload ({pos}'s live stock has no
+              receiving numbers); cost, vendor codes and last-received dates have no {pos} API at all.
             </li>
           </ul>
         </div>
@@ -1885,12 +1888,12 @@ export default function HelpPage({ tab = "help" }) {
               <strong>No automatic ordering.</strong> Nothing in this dashboard places an order on
               its own - Reorder Candidates (All Suppliers) and Supplier Projection are decision
               support. Send PO on the cart emails a vendor's PO only when someone presses Send, and
-              the suggested deliveries, "Looks closed in Toast" and suggested schedules all wait for a
+              the suggested deliveries, "Looks closed in {pos}" and suggested schedules all wait for a
               person to confirm.
             </li>
             <li>
               <strong>No real vendor cost or lead time.</strong> "Vendor lead time" on Reorder
-              Candidates is a number you type in, not looked up - Toast's Purchasing API isn't
+              Candidates is a number you type in, not looked up - {pos}'s Purchasing API isn't
               accessible with the current account credentials.
             </li>
             <li>
@@ -1900,9 +1903,9 @@ export default function HelpPage({ tab = "help" }) {
             </li>
             <li>
               <strong>Inventory is only as fresh as the latest snapshot</strong> - your last upload,
-              or Toast's nightly snapshot once an admin turns on Inventory from Toast. With that switch
+              or {pos}'s nightly snapshot once an admin turns on Inventory from {pos}. With that switch
               on, Reorder, Supplier Projection, Negative inventory and Refill from container read
-              Toast's live count instead (at most 5 minutes old). Cost, vendor codes and last-received
+              {pos}'s live count instead (at most 5 minutes old). Cost, vendor codes and last-received
               dates still only come from an uploaded file.
             </li>
           </ul>

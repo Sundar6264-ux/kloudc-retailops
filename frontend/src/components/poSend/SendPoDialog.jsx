@@ -5,6 +5,7 @@ import { fetchPoSendPdfUrl, getPoSendPreview, sendPurchaseOrder } from "../../ap
 import { formatRestaurantTime } from "../../format";
 import { PO_SEND_TERMS, Term } from "../../glossary.jsx";
 import useDialog from "../flyers/useDialog.js";
+import { useStore, useStoreAllows } from "../../store/StoreContext.jsx";
 import {
   MAX_CC,
   addCc,
@@ -40,6 +41,7 @@ export function SendStatusPill({ status }) {
 // retried with the SAME key (the server never emails twice for one key); a
 // definite answer (failed / not confirmed) gets a new key for the next try.
 export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSent, onMarkPlaced }) {
+  const store = useStore();
   const [preview, setPreview] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [recipients, setRecipients] = useState([]);
@@ -104,7 +106,9 @@ export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSen
   const blocker = preview ? sendBlocker(preview, recipients, note, { demo: isDemo, cc: sendCc }) : null;
   const needsCheck = stage === "uncertain" || stage === "check_previous";
   const canSend = !!preview && !blocker && !sending && !marking && (!needsCheck || checkedSent);
-  const waEnabled = !!preview?.whatsapp?.enabled;
+  // A store without WhatsApp (store feature) never shows the option.
+  const storeWhatsapp = useStoreAllows("whatsapp");
+  const waEnabled = storeWhatsapp && !!preview?.whatsapp?.enabled;
   const waContacts = preview?.whatsapp?.contacts || [];
 
   async function togglePdf() {
@@ -332,7 +336,7 @@ export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSen
                   </ul>
                 )}
                 <p className="pos-muted-small">
-                  From {preview.from_address ? `Spice Town <${preview.from_address}>` : "the store's Gmail"} ·{" "}
+                  From {preview.from_address ? `${store.name} <${preview.from_address}>` : "the store's email"} ·{" "}
                   <Link to={contactsLinkFor(supplier)} onClick={onClose}>
                     {isAdmin ? "Edit contacts" : "Vendor contacts"}
                   </Link>
@@ -375,7 +379,7 @@ export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSen
                       inputMode="email"
                       autoComplete="off"
                       value={ccDraft}
-                      placeholder={cc.length ? "Add another email" : "Add an email to copy, e.g. owner@spicetown.shop"}
+                      placeholder={cc.length ? "Add another email" : "Add an email to copy, e.g. owner@example.com"}
                       aria-label="Add a CC email"
                       aria-invalid={ccError ? true : undefined}
                       aria-describedby={ccError ? "pos-cc-error" : undefined}
@@ -416,6 +420,7 @@ export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSen
                 </fieldset>
               )}
 
+              {storeWhatsapp && (
               <div className="pos-field pos-whatsapp">
                 <label className={`pos-check${waEnabled ? "" : " is-disabled"}`}>
                   <input
@@ -449,6 +454,7 @@ export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSen
                       : `To ${waContacts.find((c) => c.id === whatsappContactId)?.label || waContacts[0].label}.`}
                 </p>
               </div>
+              )}
 
               <div className="pos-field">
                 <span className="pos-label">Subject</span>

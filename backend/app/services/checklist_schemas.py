@@ -10,9 +10,11 @@ closing alert, the nightly auto-tasks and the Overview.
 - The cache is rebuilt after any admin change in this process
   (clear_cache) and, for other processes, when the definitions table's
   change stamp moves (checked at most every STAMP_CHECK_SECONDS).
-- If the tables are missing (a database not yet migrated) or empty (tests),
-  the three built-in checklists (services/checklist_builtin.py) are served
-  instead - exactly what migration 0039 seeds.
+- If the tables are missing (a database not yet migrated) or empty (a new
+  store before `python -m app.store init`, tests), the store pack's
+  checklists are served instead (store_seed_definitions) - what store-init
+  and checklist_admin.ensure_seeded write. (services/checklist_builtin.py is
+  only the frozen data migration 0039 imports.)
 - A submission renders with the version it was submitted against
   (checklist_submissions.definition_version; NULL = version 1).
 
@@ -32,7 +34,6 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from app.db import SessionLocal
 from app.models import ChecklistDefinition, ChecklistDefinitionVersion
-from app.services import checklist_builtin
 from app.services import checklist_engine as engine
 from app.services.checklist_engine import (  # noqa: F401 - re-exported
     CHECKBOX_DONE_VALUE,
@@ -138,16 +139,27 @@ class Registry:
         return cached
 
 
+def store_seed_definitions() -> List[dict]:
+    """The store's built-in checklists (the active store pack's), in seed
+    shape: checklist_type, title, short_name, description, sort_order,
+    settings, versions (stored schemas, oldest first). One place, so the
+    fallback registry, checklist_admin.ensure_seeded and store-init agree;
+    tests replace it to serve other fixtures."""
+    from app.store import pack as store_pack
+
+    return store_pack.checklist_seed_definitions()
+
+
 def _builtin_registry() -> Registry:
     definitions = []
-    for seed in checklist_builtin.SEED_DEFINITIONS:
+    for seed in store_seed_definitions():
         latest = seed["versions"][-1]
         definitions.append(
             Definition(
                 checklist_type=seed["checklist_type"],
-                title=latest["title"],
-                short_name=seed["short_name"],
-                description=latest.get("description"),
+                title=seed.get("title") or latest.get("title") or seed["checklist_type"],
+                short_name=seed.get("short_name"),
+                description=seed["description"] if "description" in seed else latest.get("description"),
                 active=True,
                 sort_order=seed["sort_order"],
                 settings=seed["settings"],
@@ -374,7 +386,7 @@ def checklist_title(checklist_type: str) -> str:
 
 
 def short_name(checklist_type: str) -> str:
-    """A checklist's short name ("Spice Town", "Street Kitchen FSA"): its own
+    """A checklist's short name ("Main Store", "Kitchen FSA"): its own
     short_name if it has one, else the title up to its first " - " / " – "."""
     definition = get_definition(checklist_type)
     if definition is None:

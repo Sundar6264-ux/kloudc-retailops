@@ -8,6 +8,7 @@ import SortableTh from "../../components/SortableTh.jsx";
 import { useTableControls } from "../../useTableControls.js";
 import { Choice, InsightBody, InsightsPage, useInsight } from "../../components/insights/InsightsCommon.jsx";
 import { fmtCount, fmtMoney, isNum, minutesText, shortDate, storeTime } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const DAYS = [
   { value: 7, label: "7 days" },
@@ -64,10 +65,10 @@ export default function OddChecksPage() {
               more than an hour after it was paid (an item removed, a discount added), or when it had a refund of
               {isNum(thresholds?.large_refund) ? ` ${fmtMoney(thresholds.large_refund)}` : " a large amount"} or more.
               Online and delivery orders are changed when they're handed over, so those only count with a refund, and
-              Toast's own overnight batch updates are left out. Most have an ordinary reason - a tab left open, a
+              {currentPosName()}'s own overnight batch updates are left out. Most have an ordinary reason - a tab left open, a
               correction at closing - but a pattern is worth asking about.
             </p>
-            <p style={{ marginBottom: 0 }}>Times are in store time. Look a check up in Toast by its number and date.</p>
+            <p style={{ marginBottom: 0 }}>Times are in store time. Look a check up in {currentPosName()} by its number and date.</p>
           </>
         ),
       }}

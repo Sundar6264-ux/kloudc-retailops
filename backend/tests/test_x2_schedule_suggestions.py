@@ -18,6 +18,9 @@ from app.services import delivery_suggestions as ds
 from app.services import schedule_suggestions as ss
 from tests.conftest import client_for, make_user
 
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 NY = zoneinfo.ZoneInfo("America/New_York")
 UTC = dt.timezone.utc
 TODAY = dt.date(2026, 10, 14)  # Wednesday
@@ -337,8 +340,8 @@ def test_lead_days_from_placed_and_outside_orders(db):
 def test_every_active_vendor_is_scheduled_suggested_or_without(db, admin_client):
     supplier_row(db, "Raja Foods;Chetak;Raja Foods")
     supplier_row(db, "KP Produce")
-    supplier_row(db, "Jyena Enterprises;SpiceTown")
-    supplier_row(db, "SpiceTown - Street Kitchen")
+    supplier_row(db, "Jyena Enterprises;MainStore")
+    supplier_row(db, "MainStore - Kitchen")
     supplier_row(db, "Old Vendor", day=TODAY - dt.timedelta(days=30))  # not in the latest snapshot
     for day in weekly(3, 5):
         invoice(db, "Raja Foods", day)

@@ -4,6 +4,7 @@ import { TermInfo } from "../../glossary.jsx";
 import { Choice, InsightBody, InsightsPage, useInsight } from "../../components/insights/InsightsCommon.jsx";
 import { ChartTable, LineChart } from "../../components/insights/charts.jsx";
 import { fmtCount, fmtShare, isNum, longDate, SERIES_COLORS, shortDate } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const WEEKS = [
   { value: 4, label: "4 weeks" },
@@ -27,7 +28,7 @@ export default function ReturningCustomersPage() {
         body: (
           <>
             <p style={{ marginTop: 0 }}>
-              Toast gives each card a fingerprint. We scramble it again with a secret key, keep only that scrambled code
+              {currentPosName()} gives each card a fingerprint. We scramble it again with a secret key, keep only that scrambled code
               (for at most {data?.retention_days ?? 400} days) and count how many different cards paid each week, and how many of those
               came back: paid on two or more days that week, or had paid before it. Card numbers, names and emails are never stored.
             </p>

@@ -14,6 +14,7 @@ import {
   SERIES_DASHES,
   shortDate,
 } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 const WEEKS = [
   { value: 4, label: "4 weeks" },
@@ -81,7 +82,7 @@ export default function CheckTrendsPage() {
           <>
             <p style={{ marginTop: 0 }}>
               Average check is net sales divided by the number of checks (after discounts, before tax and
-              tips). Guests is Toast's guest count: the number entered on a dine-in check, or 1 per order
+              tips). Guests is {currentPosName()}'s guest count: the number entered on a dine-in check, or 1 per order
               when nobody entered one, so for a grocery it mostly follows orders.
             </p>
             <p style={{ marginBottom: 0 }}>

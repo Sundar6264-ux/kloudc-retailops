@@ -1,10 +1,12 @@
 // Shared pieces of the Insights pages: the loader hook, the page frame, the
-// "From Toast Analytics, updated ..." line and the loading / empty / stale /
+// "From <pos> Analytics, updated ..." line and the loading / empty / stale /
 // error states.
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../AuthContext.jsx";
-import { ALSO_IN_TOAST } from "../../featureRoutes.js";
+import { ALSO_IN_POS } from "../../featureRoutes.js";
+import { usePosName } from "../../store/StoreContext.jsx";
+import { posText } from "../../store/gating.js";
 import { formatRestaurantTime } from "../../format.js";
 import { TermInfo } from "../../glossary.jsx";
 import InfoBlock from "../InfoBlock.jsx";
@@ -34,10 +36,11 @@ export function useInsight(load, deps) {
   return { ...state, reload };
 }
 
-// `alsoInToast`: one of the pages that repeat Toast's own reports - says so
-// under the title (they sit in the sidebar's "Also in Toast" group).
+// `alsoInToast`: one of the pages that repeat the POS's own reports - says
+// so under the title (they sit in the sidebar's "Also in <pos>" group).
 export function InsightsPage({ title, brief, info, controls, children, alsoInToast = false, className = "" }) {
   const { hasFeature } = useAuth();
+  const pos = usePosName();
   return (
     <div className={`ins-page ${className}`}>
       <div className="page-header">
@@ -45,8 +48,8 @@ export function InsightsPage({ title, brief, info, controls, children, alsoInToa
         <p className="muted">{brief}</p>
         {alsoInToast && (
           <p className="ins-also-toast">
-            <span className="ins-also-toast-tag">{ALSO_IN_TOAST.label}</span>
-            <span>{ALSO_IN_TOAST.note}</span>
+            <span className="ins-also-toast-tag">{posText(ALSO_IN_POS.label, pos)}</span>
+            <span>{posText(ALSO_IN_POS.note, pos)}</span>
           </p>
         )}
       </div>
@@ -111,17 +114,18 @@ export function Choice({ label, options, value, onChange, disabled }) {
 }
 
 // "From Toast Analytics, updated Oct 13, 9:42 AM EDT." plus the stale note.
-// `updated_at` is when the newest number on the page was read from Toast;
+// `updated_at` is when the newest number on the page was read from the POS;
 // `generated_at` (when this answer was put together) is the fallback.
 export function SourceLine({ data, extra }) {
+  const pos = usePosName();
   if (!data) return null;
   const when = formatRestaurantTime(data.updated_at || data.generated_at);
   const note = staleText(data);
   return (
     <div className="ins-source">
       <p className="muted ins-source-line">
-        From Toast Analytics{when ? `, updated ${when}` : ""}.{extra ? ` ${extra}` : ""}{" "}
-        <TermInfo k="insights_source" label="Toast Analytics" />
+        From {pos} Analytics{when ? `, updated ${when}` : ""}.{extra ? ` ${extra}` : ""}{" "}
+        <TermInfo k="insights_source" label={`${pos} Analytics`} />
       </p>
       {note && (
         <p className="ins-stale" role="status">
@@ -135,7 +139,7 @@ export function SourceLine({ data, extra }) {
   );
 }
 
-function errorText(err, { adminOnly }) {
+function errorText(err, { adminOnly, pos }) {
   const kind = errorKind(err);
   if (kind === "forbidden") {
     if (adminOnly) return "This page is for admins only.";
@@ -143,7 +147,7 @@ function errorText(err, { adminOnly }) {
       ? err.message
       : "Your account can't see this report. Ask an admin if you need it.";
   }
-  if (kind === "busy") return "Toast is limiting how often we can ask right now. Try again in a minute.";
+  if (kind === "busy") return `${pos} is limiting how often we can ask right now. Try again in a minute.`;
   if (kind === "bad_request") return String(err?.message || "That choice isn't available.").replace(/\.*$/, ".");
   if (kind === "network") return "Couldn't reach the server. Check the connection and try again.";
   return `Couldn't load this report: ${err?.message || "unknown error"}.`;
@@ -152,6 +156,7 @@ function errorText(err, { adminOnly }) {
 // Loading / error / empty / stale frame around a report's content.
 export function InsightBody({ state, isEmpty, empty, adminOnly = false, children }) {
   const { data, error, loading, reload } = state;
+  const pos = usePosName();
   if (error) {
     const forbidden = errorKind(error) === "forbidden";
     return (
@@ -159,7 +164,7 @@ export function InsightBody({ state, isEmpty, empty, adminOnly = false, children
         <p className="ins-state-title">
           {forbidden ? "Not available" : errorKind(error) === "bad_request" ? "Can't show that" : "Something went wrong"}
         </p>
-        <p className="muted">{errorText(error, { adminOnly })}</p>
+        <p className="muted">{errorText(error, { adminOnly, pos })}</p>
         {!forbidden && errorKind(error) !== "bad_request" && (
           <button type="button" className="btn-secondary" onClick={reload}>
             Try again
@@ -177,7 +182,7 @@ export function InsightBody({ state, isEmpty, empty, adminOnly = false, children
           <span />
         </div>
         <p className="muted" role="status">
-          Loading from Toast Analytics… The first load of a period can take up to a minute.
+          Loading from {pos} Analytics… The first load of a period can take up to a minute.
         </p>
       </section>
     );

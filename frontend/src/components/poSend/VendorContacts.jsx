@@ -247,7 +247,7 @@ export default function VendorContacts({ isAdmin }) {
                   onChange={(e) => setField("cc", e.target.value)}
                   maxLength={2600}
                   autoComplete="off"
-                  placeholder="owner@spicetown.shop, accounts@vendor.com"
+                  placeholder="owner@example.com, accounts@vendor.com"
                   aria-describedby="vc-cc-help"
                 />
                 <span id="vc-cc-help" className="pos-muted-small">

@@ -28,6 +28,10 @@ from app.team.tasks_models import Task
 
 from tests.conftest import client_for, make_user
 
+# Made-up rules in the shape these tests were written for (two built-in
+# WhatsApp roles, store and kitchen): tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 API = "/api/checklists/admin/whatsapp-groups"
 DEFS = "/api/checklists/admin/definitions"
@@ -120,8 +124,8 @@ def _items(admin_client):
 def test_list_starts_with_the_two_builtins(admin_client, env_groups):
     items = admin_client.get(API).json()["items"]
     assert [(g["key"], g["label"], g["builtin"], g["active"]) for g in items] == [
-        ("store", "Spice Town staff group", True, True),
-        ("kitchen", "Street Kitchen staff group", True, True),
+        ("store", "Store staff group", True, True),
+        ("kitchen", "Kitchen staff group", True, True),
     ]
     by_key = {g["key"]: g for g in items}
     # The env chat id, masked to its last 6 characters; kitchen isn't configured.
@@ -179,7 +183,7 @@ def test_create_validation(admin_client, env_groups):
     assert r.status_code == 409 and "Deli team" in r.json()["detail"]
     # A built-in's env chat id counts as added.
     r = admin_client.post(API, json={"chat_id": "120363099999999991@g.us", "label": "Store again"})
-    assert r.status_code == 409 and "Spice Town staff group" in r.json()["detail"]
+    assert r.status_code == 409 and "Store staff group" in r.json()["detail"]
     # A label slugging to a built-in key is taken too.
     assert admin_client.post(API, json={"chat_id": GROUP_B, "label": "Store"}).status_code == 409
 
@@ -221,7 +225,7 @@ def test_admin_only(db, admin_client, staff_client, anon_client):
         assert client.post(API, json={"chat_id": GROUP_A, "label": "X"}).status_code == code
         assert client.patch(f"{API}/store", json={"label": "X"}).status_code == code
         assert client.delete(f"{API}/store").status_code == code
-    assert _items(admin_client)["store"]["label"] == "Spice Town staff group"
+    assert _items(admin_client)["store"]["label"] == "Store staff group"
 
 
 # --- Meta -----------------------------------------------------------------------------------
@@ -230,8 +234,8 @@ def test_admin_only(db, admin_client, staff_client, anon_client):
 def test_meta_shape(admin_client):
     meta = admin_client.get("/api/checklists/admin/meta").json()
     assert meta["whatsapp_groups"] == [
-        {"key": "store", "label": "Spice Town staff group", "builtin": True},
-        {"key": "kitchen", "label": "Street Kitchen staff group", "builtin": True},
+        {"key": "store", "label": "Store staff group", "builtin": True},
+        {"key": "kitchen", "label": "Kitchen staff group", "builtin": True},
     ]
     _add(admin_client, "Deli team")
     _add(admin_client, "Old team", GROUP_B)

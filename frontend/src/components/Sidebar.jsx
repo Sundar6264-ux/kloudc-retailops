@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
-import { ROUTES_BY_KEY, buildSidebar, footerLinks, groupsToOpen } from "../featureRoutes.js";
+import { ROUTES_BY_KEY, buildSidebar, footerLinks, groupsToOpen, routeLabel } from "../featureRoutes.js";
 import useTeamBadges from "./team/useTeamBadges.js";
+import StoreLogo from "./StoreLogo.jsx";
 
-const COLLAPSE_STORAGE_KEY = "spicetown_sidebar_collapsed";
+const COLLAPSE_STORAGE_KEY = "storeops_sidebar_collapsed";
 
 // Team hub counts shown next to a sidebar link (route key -> badge key).
 const ROUTE_BADGES = { team_chat: "unread", team_announcements: "announcements_unacked" };
@@ -29,20 +30,26 @@ function ChevronIcon({ open }) {
 }
 
 export default function Sidebar() {
-  const { user, logout, hasFeature, canSeeSales } = useAuth();
+  const { user, logout, hasFeature, canSeeSales, store } = useAuth();
   const badges = useTeamBadges(!!user);
   const location = useLocation();
   const [open, setOpen] = useState(false);
   // Desktop-only collapse, independent of the mobile drawer above - remembered
   // across visits since it's a standing layout preference, not per-session.
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1");
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const [expandedGroups, setExpandedGroups] = useState(() => new Set());
   // What this user gets, in order (featureRoutes.js buildSidebar): empty
   // groups left out, a group with one link shown as that link.
   const entries = useMemo(
-    () => buildSidebar({ user, hasFeature, canSeeSales }),
-    // hasFeature is a new function each render but only reads `user`.
-    [user, canSeeSales],
+    () => buildSidebar({ user, hasFeature, canSeeSales, store }),
+    // hasFeature is a new function each render but only reads `user` and `store`.
+    [user, canSeeSales, store],
   );
 
   // Auto-open whichever group contains the current page, so navigating
@@ -63,7 +70,11 @@ export default function Sidebar() {
   function toggleCollapsed() {
     setCollapsed((prev) => {
       const next = !prev;
-      localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
+      try {
+        localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
+      } catch {
+        // private mode / storage off: the layout just isn't remembered
+      }
       return next;
     });
   }
@@ -91,7 +102,7 @@ export default function Sidebar() {
   const badgeFor = (route) => badges[ROUTE_BADGES[route.key || route.feature]] || 0;
   const renderLink = (route) => (
     <NavLink key={route.path} to={route.path} end={route.end} onClick={closeMobileNav} className={navLinkClass}>
-      {route.label}
+      {routeLabel(route, store.posName)}
       <CountBadge count={badgeFor(route)} />
     </NavLink>
   );
@@ -116,9 +127,15 @@ export default function Sidebar() {
         <div className="sidebar-brand">
           {/* Logo + name go to the dashboard (Overview; App sends anyone
               without it to their first page). */}
-          <NavLink to="/" end className="sidebar-brand-link" onClick={closeMobileNav} aria-label="StoreOps - go to the dashboard">
-            <img src="/logo-header.png" alt="" />
-            <span>StoreOps</span>
+          <NavLink
+            to="/"
+            end
+            className="sidebar-brand-link"
+            onClick={closeMobileNav}
+            aria-label={`${store.name} - go to the dashboard`}
+          >
+            <StoreLogo store={store} />
+            <span data-testid="store-name">{store.shortName}</span>
           </NavLink>
           <button className="sidebar-collapse-btn" aria-label="Collapse menu" onClick={toggleCollapsed}>
             «
@@ -147,8 +164,8 @@ export default function Sidebar() {
                   <div className="sidebar-subnav">
                     {items.map(renderLink)}
                     {/* A quieter, collapsed group inside this one (Sales &
-                        Insights > Also in Toast: pages that repeat Toast's
-                        own reports). */}
+                        Insights > Also in <pos>: pages that repeat the
+                        POS's own reports). */}
                     {subgroups.map((sub) => {
                       const subOpen = expandedGroups.has(sub.key);
                       const noteId = `sidebar-note-${sub.key}`;
@@ -183,7 +200,7 @@ export default function Sidebar() {
           {/* For everyone, below the groups: the label printer (an external
               tool with its own login, not part of the feature grants), Help
               (or just its Glossary tab), Notifications, Change password. */}
-          {footerLinks({ hasFeature }).map((l, i) =>
+          {footerLinks({ hasFeature, store }).map((l, i) =>
             l.external ? (
               <a
                 key={l.key}

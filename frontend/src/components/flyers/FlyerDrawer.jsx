@@ -90,7 +90,7 @@ function EditForm({ flyer, categories, titleMax, captionMax, onCancel, onSaved }
             </option>
           ))}
         </select>
-        {moved && movedTo && <p className="fly-hint">The file moves to the {movedTo} folder on the Mac mini.</p>}
+        {moved && movedTo && <p className="fly-hint">The file moves to the {movedTo} folder on the server.</p>}
       </div>
       <div className="fly-field">
         <div className="fly-label-row">
@@ -387,7 +387,7 @@ export default function FlyerDrawer({ flyerId, meta, isAdmin, onClose, onUpdated
               >
                 <p id="fly-delete-q">
                   <strong>Delete "{flyer.title}"?</strong> It leaves the library. The file isn't erased: it moves to the
-                  _Deleted folder in Spice Town Flyers on the Mac mini.
+                  _Deleted folder in the store's flyers folder on the server.
                 </p>
                 <div className="fly-row-actions">
                   <button
@@ -453,6 +453,7 @@ export default function FlyerDrawer({ flyerId, meta, isAdmin, onClose, onUpdated
               </>
             )}
 
+            {meta.whatsapp_enabled !== false && (
             <section className="fly-drawer-section" aria-labelledby="fly-more-title">
               <h4 id="fly-more-title">Send to more groups</h4>
               {!meta.whatsapp_connected && (
@@ -481,6 +482,7 @@ export default function FlyerDrawer({ flyerId, meta, isAdmin, onClose, onUpdated
                 </div>
               )}
             </section>
+            )}
 
             <section className="fly-drawer-section" aria-labelledby="fly-history-title">
               <div className="fly-history-head">

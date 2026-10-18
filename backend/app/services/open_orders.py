@@ -55,6 +55,7 @@ install_forwarding(
             _open_orders,
             [
                 "FIRST_REAL_SALES_DATE", "JOB_NAME", "LIVE_MAX_AGE_SECONDS", "_EMPLOYEE_CACHE",
+                "FULL_SCAN_MAX_DAYS", "full_scan_start",
                 "_EMPLOYEE_CACHE_TTL_SECONDS", "_cached_tab_names", "_is_scheduled", "_live_last_failure",
                 "_live_refresh_lock", "_refresh_today", "_replace_cache_rows", "_scan_open_orders",
                 "_today_is_stale", "ensure_today_fresh", "get_cached_open_orders", "get_employees",

@@ -13,21 +13,30 @@ import {
   firstAccessiblePath,
   footerLinks,
   groupsToOpen,
+  routeLabel,
   routeVisible,
 } from "./featureRoutes.js";
+import { BRANDING } from "./test/fixtures/branding.js";
+import { normalizeBranding, storeView } from "./store/branding.js";
+import { featureAvailable } from "./store/gating.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (rel) => readFileSync(join(here, rel), "utf8");
 
+// The fake Toast store (every capability and store feature): the menu is the
+// pre-M2 one. Per-store differences are in store/gating.test.mjs.
+const TOAST_STORE = storeView(normalizeBranding(BRANDING.STOREOPS_TEST_TOAST), null);
+
 // The same rules as AuthContext.hasFeature / canSeeSales.
-function ctxFor(user) {
+function ctxFor(user, store = TOAST_STORE) {
   const hasFeature = (key) => {
     if (!user) return false;
+    if (!featureAvailable(key, store)) return false;
     if (user.is_admin) return true;
     if (key === "items_sold" && user.hide_sales) return false;
     return (user.allowed_features || []).includes(key);
   };
-  return { user, hasFeature, canSeeSales: !!user && (user.is_admin || !user.hide_sales) };
+  return { user, hasFeature, canSeeSales: !!user && (user.is_admin || !user.hide_sales), store };
 }
 
 const ADMIN = { username: "sundar", is_admin: true, allowed_features: [] };
@@ -49,8 +58,8 @@ const FLYERS_ONLY = { username: "spc_muse", is_admin: false, allowed_features: [
 const shape = (entries) =>
   entries.map((e) =>
     e.type === "link"
-      ? e.route.label
-      : { [e.label]: [...e.items.map((r) => r.label), ...e.subgroups.map((s) => ({ [s.label]: s.items.map((r) => r.label) }))] },
+      ? e.label
+      : { [e.label]: [...e.items.map((r) => routeLabel(r, "Toast")), ...e.subgroups.map((s) => ({ [s.label]: s.items.map((r) => routeLabel(r, "Toast")) }))] },
   );
 
 test("admin menu: 3 top links, Team, Ordering, Stock, Sales & Insights, Setup", () => {

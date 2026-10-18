@@ -27,6 +27,9 @@ from app.services import insights, insights_data, notifications, push
 from app.services.notification_triggers import TRIGGERS, run_alert_job
 from tests.conftest import client_for, make_user
 
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 TODAY = dt.date(2026, 10, 12)  # a Monday; yesterday = Sunday Oct 11
 YESTERDAY = TODAY - dt.timedelta(days=1)
 REST = "b52f24c9-9201-4902-8cea-1db5d9fd8f9d"
@@ -314,7 +317,7 @@ MENUS = {
     "lastUpdated": "2026-10-11T15:41:42.977+0000",
     "menus": [
         {
-            "name": "STREET KITCHEN",
+            "name": "KITCHEN",
             "menuGroups": [
                 {"name": "Chaat Bar", "menuItems": [{"guid": "k1", "name": "Samosa Chaat", "modifierGroupReferences": [1, 3]}], "menuGroups": []},
                 {"name": "Dum Biryani", "menuItems": [{"guid": "k2", "name": "Chicken 65 Dum Biryani", "modifierGroupReferences": [3]}]},
@@ -334,7 +337,7 @@ MENUS = {
                 {"name": "Beverages (Non-Alcoholic)", "menuItems": [{"guid": "g2", "name": "Coke Classic Can 12oz"}, {"guid": "k4", "name": "Mango Lassi"}]},
             ],
         },
-        {"name": "STREET KITCHEN (GH)", "menuGroups": [{"name": "Curry Boxes & Combos", "menuItems": [{"guid": "k5", "name": "Curry Box"}]}]},
+        {"name": "KITCHEN (GH)", "menuGroups": [{"name": "Curry Boxes & Combos", "menuItems": [{"guid": "k5", "name": "Curry Box"}]}]},
         {"name": "Test Menu", "menuGroups": [{"name": "Tests", "menuItems": [{"guid": "t1", "name": "Test item"}]}]},
     ],
     "modifierGroupReferences": {

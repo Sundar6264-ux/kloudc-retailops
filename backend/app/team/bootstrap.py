@@ -12,6 +12,7 @@ from app.config import get_settings
 from app.features import user_has_feature
 from app.models import User
 from app.pos.gating import capability_values, pos_name
+from app.store.settings_view import app_store_url, play_store_url, store_display_name
 from app.team.changes import badges, current_cursor, everyone_user_ids, record_change, user_team_ids
 from app.team.models import Team, TeamMedia, TeamMember, TeamRulesAcceptance
 from app.timeutil import utcnow
@@ -23,9 +24,11 @@ def app_config() -> dict:
     s = get_settings()
     return {
         "min_supported_build": {"ios": s.min_supported_build_ios, "android": s.min_supported_build_android},
-        "store_url": {"ios": s.app_store_url, "android": s.play_store_url},
+        # Blank APP_STORE_URL -> null; blank PLAY_STORE_URL -> the Play
+        # listing of APP_BUNDLE_ID (StoreOps M2, settings_view).
+        "store_url": {"ios": app_store_url(s), "android": play_store_url(s)},
         # Multi-store MT6 (additive): which POS this store runs and what it
-        # can do (app/pos/gating.py). Spice Town: "Toast" and its full set.
+        # can do (app/pos/gating.py). A Toast store: "Toast" and its full set.
         "pos_name": pos_name(),
         "capabilities": capability_values(),
     }
@@ -242,7 +245,7 @@ def delete_user_team_data(db: Session, user_id: int) -> None:
             TaskEvent(
                 task_id=task.id,
                 user_id=None,
-                user_name="Spice Town",
+                user_name=store_display_name(),
                 kind="cancelled",
                 detail_json=json.dumps({"reason": "The assignee's account was removed"}),
                 created_at=now,

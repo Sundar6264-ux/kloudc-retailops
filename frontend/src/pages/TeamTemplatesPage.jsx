@@ -10,6 +10,7 @@ import {
   createTaskFromTemplate,
 } from "../api";
 import { dayAssigneesFromApi, dayAssigneesToApi, stepsFromText } from "../components/team/teamAdvancedModel";
+import { storeZoneCity } from "../format.js";
 import { emptyTeamWarning, isEmptyTeam, teamOptionLabel } from "../components/team/taskEditModel";
 import {
   buildRrule,
@@ -576,7 +577,7 @@ export default function TeamTemplatesPage() {
         <p className="muted">
           Reusable tasks with steps (e.g. "Open store"). On a schedule they create tasks automatically ("due every Monday 3 PM,
           appears 8 AM"), optionally for someone else on some weekdays; any template can also be used with "Create task now".
-          Times are store time (New York). Edits apply to future tasks only.
+          Times are store time ({storeZoneCity()}). Edits apply to future tasks only.
         </p>
       </div>
 

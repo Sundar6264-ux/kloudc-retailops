@@ -14,6 +14,7 @@ import {
   prepForecastText,
   rangeText,
 } from "../../components/insights/insightsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 // The hourly split summed over every item (the store's shape for the day).
 function sumByHour(items) {
@@ -53,19 +54,19 @@ export default function PrepForecastPage() {
     <InsightsPage
       className="ins-printable"
       title="Prep forecast"
-      brief="How many of each Street Kitchen item to expect on a day, to plan prep."
+      brief="How many of each kitchen item to expect on a day, to plan prep."
       info={{
         brief: "Based on the same weekday in recent weeks. Use the range, not just the middle number, when deciding how much to make.",
         body: (
           <>
             <p style={{ marginTop: 0 }}>
-              For each Street Kitchen item we take its sales on the same weekday over the last 8 weeks, leave out the
+              For each kitchen item we take its sales on the same weekday over the last 8 weeks, leave out the
               highest and lowest day (so one catering order or one slow holiday doesn't skew it) and average the rest.
               That's nudged by the last 4 weeks' trend against the 4 before (at most 20% either way). The range is the
               middle half of those days: most weeks sold between the low and the high number.
             </p>
             <p style={{ marginBottom: 0 }}>
-              Busiest hours are the store's usual hourly pattern on that weekday (Toast doesn't report items by hour).
+              Busiest hours are the store's usual hourly pattern on that weekday ({currentPosName()} doesn't report items by hour).
               It doesn't know about holidays, weather or catering orders you've taken.
             </p>
           </>

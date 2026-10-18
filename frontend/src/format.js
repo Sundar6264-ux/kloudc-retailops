@@ -1,41 +1,104 @@
-// The restaurant operates in America/New_York, and the dashboard may be
-// viewed from a device set to a different timezone (e.g. checking in from
-// out of town) - so timestamps are always shown in the restaurant's own
-// timezone explicitly, rather than whatever the viewer's device happens to
-// be set to. `timeZoneName: "short"` gives the correct EST/EDT label for the
-// date in question, not just a fixed "ET".
+// Times and "today" are always shown in the STORE's own time zone, whatever
+// the viewer's device is set to (checking in from out of town). The zone
+// comes from GET /api/app/branding (`timezone`, the store's STORE_TIMEZONE
+// setting); StoreContext calls setStoreTimeZone() once at boot, before any
+// page renders. `timeZoneName: "short"` gives the right standard/daylight
+// label for the date in question.
 //
 // Note: combining dateStyle/timeStyle with timeZoneName isn't supported in
 // all Intl implementations, so this spells out the fields explicitly instead.
-const RESTAURANT_TIME_ZONE = "America/New_York";
 
-const formatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: RESTAURANT_TIME_ZONE,
+// Only used until branding answers (and by old servers without it): the
+// server's own default (TOAST_TIMEZONE), so nothing shifts when it is unset.
+export const DEFAULT_STORE_TIME_ZONE = "America/New_York";
+
+let storeTimeZone = DEFAULT_STORE_TIME_ZONE;
+const formatterCache = new Map();
+
+export function isValidTimeZone(tz) {
+  if (!tz || typeof tz !== "string") return false;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Set the store's IANA zone (e.g. "America/Chicago"). An empty or unknown
+// zone is ignored (keeps the previous one). Returns the zone in force.
+export function setStoreTimeZone(tz) {
+  if (isValidTimeZone(tz) && tz !== storeTimeZone) {
+    storeTimeZone = tz;
+    formatterCache.clear();
+  }
+  return storeTimeZone;
+}
+
+export function getStoreTimeZone() {
+  return storeTimeZone;
+}
+
+// The zone as people say it: "America/New_York" -> "New York",
+// "America/Indiana/Indianapolis" -> "Indianapolis". For "store time (...)".
+export function storeZoneCity() {
+  const last = storeTimeZone.split("/").pop() || storeTimeZone;
+  return last.replace(/_/g, " ");
+}
+
+// A cached Intl.DateTimeFormat in the store's zone. `options` must not set
+// timeZone (it is always the store's). Callers keep their own locale.
+export function storeDateTimeFormat(locale, options = {}) {
+  const key = `${storeTimeZone}|${locale || ""}|${JSON.stringify(options)}`;
+  let f = formatterCache.get(key);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, { ...options, timeZone: storeTimeZone });
+    formatterCache.set(key, f);
+  }
+  return f;
+}
+
+// A formatter-like object for module-level constants: it reads the store's
+// zone on every call, so a constant made before branding loads (or before a
+// store switch) still formats in the zone in force.
+export function lazyStoreFormat(locale, options = {}) {
+  return {
+    format: (d) => storeDateTimeFormat(locale, options).format(d),
+    formatToParts: (d) => storeDateTimeFormat(locale, options).formatToParts(d),
+  };
+}
+
+// `{ ...opts, timeZone: <store zone> }` for toLocaleDateString / toLocaleTimeString.
+export function inStoreZone(options = {}) {
+  return { ...options, timeZone: storeTimeZone };
+}
+
+const FULL_TIME = {
   year: "numeric",
   month: "short",
   day: "numeric",
   hour: "numeric",
   minute: "2-digit",
   timeZoneName: "short",
-});
+};
 
 export function formatRestaurantTime(isoString) {
   if (!isoString) return null;
-  return formatter.format(new Date(isoString));
+  return storeDateTimeFormat("en-US", FULL_TIME).format(new Date(isoString));
 }
 
-// Store-local calendar dates ("YYYY-MM-DD" in America/New_York). A plain
+// Store-local calendar dates ("YYYY-MM-DD" in the store's zone). A plain
 // `new Date().toISOString().slice(0, 10)` is the UTC date, which is already
-// tomorrow after 8 PM in New York - so "today" defaults went a day ahead.
-const storeDateFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: RESTAURANT_TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
+// tomorrow in the evening in US zones - so "today" defaults went a day ahead.
+const DATE_PARTS = { year: "numeric", month: "2-digit", day: "2-digit" };
+
+// The store-local calendar date of a moment (Date, ISO string or ms).
+export function storeDateStr(moment) {
+  return storeDateTimeFormat("en-CA", DATE_PARTS).format(moment instanceof Date ? moment : new Date(moment));
+}
 
 export function storeTodayStr() {
-  return storeDateFormatter.format(new Date());
+  return storeDateStr(new Date());
 }
 
 // The store-local date `days` days from today (negative = in the past).

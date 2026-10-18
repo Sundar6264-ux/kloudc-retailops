@@ -1,0 +1,43 @@
+{
+  "pack_version": 1,
+  "pack_id": "storeops_test_clover",
+  "label": "Fake Clover store for tests (STOREOPS_TEST_CLOVER)",
+
+  "menu": {
+    "excluded_category_groups": [],
+    "kitchen_groups": [],
+    "grocery_menus": [],
+    "kitchen_menu_prefixes": [],
+    "kitchen_label": "Kitchen"
+  },
+
+  "po_sections": {
+    "other_section": "Other",
+    "extra_sections": [],
+    "rules": [
+      {"lookup": "category", "map": {"Dairy": "Dairy & Eggs"}},
+      {"section_from": "category"}
+    ]
+  },
+
+  "house_vendors": {"prefixes": ["test clover grocery"]},
+
+  "issue_leads": {
+    "document_title": "Test Clover Grocery leads",
+    "leads": [
+      {"key": "lead_b", "name": "Lead B", "title": "Everything", "departments": null, "vendors": []}
+    ],
+    "fallback": {"key": "admin", "name": "Store admin", "title": "Inventory & Purchase"},
+    "section_proposals": {"dairy & eggs": {"lead": "lead_b", "basis": "guess", "why": "Chilled"}},
+    "section_notes": {}
+  },
+
+  "whatsapp_roles": [{"key": "store", "label": "Store staff group"}],
+
+  "flyer_categories": [
+    {"key": "groceries", "label": "Groceries", "folder": "Groceries"},
+    {"key": "others", "label": "Others", "folder": "Others"}
+  ],
+
+  "category_rules": []
+}

@@ -19,7 +19,7 @@ from sqlalchemy import select, text
 
 from app.models import CartItem, CategoryOverride, PoSectionRule
 from app.services.po_section_rules import GROUP_LABEL, load_section_rules
-from app.services.po_sections import BUILTIN_SECTIONS, OTHER, group_po_items, section_for
+from app.services.po_sections import OTHER, group_po_items, section_for
 from app.services.reorder import latest_inventory_by_item
 from tests.conftest import client_for, make_user
 from tests.test_ops_category_overrides import add_rule, add_snap, raw_rows
@@ -74,6 +74,7 @@ def overrides(db):
 # --------------------------------------------------------------------------
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_new_subcategory_mappings():
     cases = [
         (("RETAIL", "Snacks & Savories", "Chocolates & Candy"), "Chocolates & Candy"),
@@ -91,7 +92,10 @@ def test_new_subcategory_mappings():
         "Frozen - Sweets & Desserts"
     assert section_for("RETAIL", "Frozen Foods", "Frozen Sweets & Mithai", "Vadilal Mango Kulfi") == \
         "Frozen - Ice Cream"
-    assert "Chocolates & Candy" in BUILTIN_SECTIONS and OTHER not in BUILTIN_SECTIONS
+    from app.services import po_sections
+
+    builtin = po_sections.BUILTIN_SECTIONS  # the active pack's, read now
+    assert "Chocolates & Candy" in builtin and OTHER not in builtin
 
 
 def test_every_prod_catalog_combo_has_a_section():
@@ -116,6 +120,7 @@ def test_every_prod_catalog_combo_has_a_section():
 # --------------------------------------------------------------------------
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_resolution_order_and_renames(store, editor):
     rows = items(editor)
     assert rows["parle"]["category"] == "Biscuits, Cookies & Rusk" and rows["parle"]["source"] == "toast"
@@ -202,6 +207,7 @@ def _heading_before(textdump, item_name):
 _headings = []
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_pdf_prints_item_under_its_new_heading(store, editor):
     lines = [
         {"name": "Parle-G Biscuits 800g", "supplier_item_id": "RJ-1", "qty": 2},
@@ -270,6 +276,7 @@ RULE_KEYS = {"id", "match_type", "match_value", "category_group", "category", "s
 FULL_RULE_KEYS = RULE_KEYS | {"note", "active", "updated_at", "updated_by"}
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_build5_shapes(store, editor):
     editor.post("/api/categories/vendor-rules", json=dict(body("Raja Picks"), vendor="Raja Foods"))
     r = editor.put("/api/categories/items/parle", json=body("Front Shelf"))
@@ -305,6 +312,7 @@ def test_build5_shapes(store, editor):
     assert FULL_RULE_KEYS <= set(hist[0])
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_set_equal_to_automatic_removes_item_rule(store, editor):
     editor.put("/api/categories/items/chai", json=body("Front Shelf"))
     r = editor.put("/api/categories/items/chai", json=body("tea & coffee")).json()
@@ -318,6 +326,7 @@ def test_set_equal_to_automatic_removes_item_rule(store, editor):
     assert r["item"]["category"] == "Front Shelf" and r["item"]["subcategory"] is None
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_reset_semantics_mirror_the_old_ones(store, editor):
     editor.post("/api/categories/vendor-rules", json=dict(body("Raja Picks"), vendor="Raja Foods"))
     editor.put("/api/categories/items/parle", json=body("Front Shelf"))
@@ -353,6 +362,7 @@ def test_bulk_set_reset_and_move(store, editor):
     assert editor.post("/api/categories/items/move", json={"section": "X"}).status_code == 400
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_filters(store, editor):
     assert set(items(editor, category="Other")) == {"samosa"}
     assert set(items(editor, section="other")) == {"samosa"}
@@ -365,6 +375,7 @@ def test_filters(store, editor):
     assert editor.get("/api/categories/items", params={"source": "bogus"}).status_code == 400
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_validation_and_spelling(store, editor):
     assert editor.put("/api/categories/items/parle", json=body("x" * 81)).status_code == 400
     assert editor.put("/api/categories/items/parle", json=body("Bad\nName")).status_code == 400
@@ -396,6 +407,7 @@ def test_vendor_rules_replace_and_turn_off(store, editor):
     assert items(editor)["parle"]["source"] == "toast"
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_renames_merge_undo_and_cycles(store, editor):
     r = editor.post("/api/categories/renames", json={"from_section": "Tea & Coffee", "to_section": "Chai"})
     assert r.status_code == 200 and r.json()["merge"] is False
@@ -473,6 +485,7 @@ def test_history_and_undo_last_change(store, editor):
 # --------------------------------------------------------------------------
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_cart_sections_and_preview(store, editor, admin_client):
     added = editor.post("/api/ordering/cart/items", json={"supplier": "Raja Foods", "items": [
         {"item_id": "parle", "name": "Parle-G Biscuits 800g", "qty": 1},
@@ -527,6 +540,7 @@ def test_snapshots_and_category_overrides_untouched(store, editor):
     assert latest_inventory_by_item(store)["rusk"].category == "Snacks & Savories"
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_missing_table_falls_back_to_automatic(store):
     store.execute(text("DROP TABLE po_section_rules"))
     store.commit()
@@ -630,6 +644,7 @@ def test_section_names_collapse_inner_spaces(store, editor):
     assert rows["parle"]["category"] == "Front Shelf" and rows["chai"]["category"] == "Front Shelf"
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_frozen_sweets_category_beats_roll_and_sandwich_keywords():
     from app.services.po_sections import section_for
 

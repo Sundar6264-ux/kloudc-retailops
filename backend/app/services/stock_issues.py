@@ -210,7 +210,7 @@ def forecasts_by_item(db: Session, latest: dict, excluded_groups: set) -> dict:
         # The inventory is re-read here, with the category rules re-read too:
         # `latest` may have been loaded before a category edit that cleared
         # the cache, and caching a result built from it would serve the old
-        # Street Kitchen / Catering exclusions for FORECAST_CACHE_SECONDS.
+        # kitchen-group exclusions for FORECAST_CACHE_SECONDS.
         category_overrides.invalidate(db)
         data = _safe_compute(db, latest_inventory_by_item(db), set(excluded_groups), as_of)
         if data is None:

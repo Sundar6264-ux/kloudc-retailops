@@ -11,6 +11,7 @@ import StoreVsContainer from "./StoreVsContainer.jsx";
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
 import { groupByCategory } from "../groupByCategory.js";
+import { useStoreAllows } from "../store/StoreContext.jsx";
 
 const money = (v) => (v != null ? `$${v.toFixed(2)}` : "-");
 
@@ -298,6 +299,9 @@ function PriceHistorySearch() {
 
 export default function InventoryReports() {
   const [selected, setSelected] = useState(null);
+  // The Price change log needs the POS catalog (store/gating.js price_change_log).
+  const priceLog = useStoreAllows("price_change_log");
+  const reports = Object.entries(REPORTS).filter(([key]) => key !== "price_changes" || priceLog);
 
   return (
     <section className="card">
@@ -315,7 +319,7 @@ export default function InventoryReports() {
 
       {!selected && (
         <div className="report-tiles">
-          {Object.entries(REPORTS).map(([key, report]) => (
+          {reports.map(([key, report]) => (
             <button key={key} className="report-tile" onClick={() => setSelected(key)}>
               <span className="report-tile-title">{report.label}</span>
               <span className="report-tile-cta">View report →</span>

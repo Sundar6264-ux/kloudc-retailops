@@ -11,23 +11,19 @@ import {
   getVendorCalendar,
 } from "../api";
 import { useAuth } from "../AuthContext.jsx";
-import { storeTodayStr, storeDateOffsetStr } from "../format.js";
+import { inStoreZone, storeDateStr, storeTodayStr, storeDateOffsetStr } from "../format.js";
 import { INVOICE_STATUS_TERMS, TermInfo } from "../glossary.jsx";
+import { currentPosName } from "../store/gating.js";
 
 // Overview dashboard widgets. Every tile/panel is shown only when the user
 // has that feature (its endpoint would 403 otherwise), loads on its own, and
 // fails quietly to "-" so one slow or broken source never blanks the page.
 
-// Store-local (America/New_York) calendar date of a moment, "YYYY-MM-DD" -
-// not the viewing device's own date (someone checking in from out of town).
-const storeDayFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/New_York",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
+// Store-local calendar date of a moment, "YYYY-MM-DD" (the store's own time
+// zone, format.js) - not the viewing device's own date (someone checking in
+// from out of town).
 function localIso(date) {
-  return storeDayFormatter.format(date);
+  return storeDateStr(date);
 }
 
 // Both tile rows read the invoice list - share one request per page load.
@@ -215,7 +211,7 @@ export function StatTiles() {
         label="Open checks"
         state={open}
         value={count != null ? count.toLocaleString() : null}
-        sub={open.data ? (count ? "not yet closed in Toast" : "all closed") : null}
+        sub={open.data ? (count ? `not yet closed in ${currentPosName()}` : "all closed") : null}
         tone={count ? "warn" : "good"}
       />
     );
@@ -240,7 +236,7 @@ export function StatTiles() {
             ? failed
               ? `${failed} failed to send`
               : looksClosed
-                ? `${looksClosed} look${looksClosed === 1 ? "s" : ""} closed in Toast`
+                ? `${looksClosed} look${looksClosed === 1 ? "s" : ""} closed in ${currentPosName()}`
                 : "none failed to send"
             : null
         }
@@ -353,7 +349,7 @@ export function TodaySchedule() {
 }
 
 function shortDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "America/New_York" });
+  return new Date(iso).toLocaleDateString(undefined, inStoreZone({ month: "short", day: "numeric" }));
 }
 
 function hoursSince(iso) {

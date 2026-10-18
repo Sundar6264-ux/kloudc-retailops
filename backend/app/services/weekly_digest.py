@@ -94,13 +94,24 @@ def get_weekly_digest_data(db: Session, end_date: dt.date = None) -> dict:
     }
 
 
-SYSTEM_PROMPT = """You write a short, plain-language weekly digest for the person running Spice
-Town, a real South Asian grocery + halal meat + prepared-food store. You'll be given real
+SYSTEM_PROMPT_TEMPLATE = """You write a short, plain-language weekly digest for the person running
+{store_name}, {store_description}. You'll be given real
 structured data for the trailing 7 days (and the prior 7 days for sales comparison) - every number
 in it is already correct, computed the normal way; never invent, round loosely, or estimate a
 number that isn't in the data. If a section's data is empty, say so plainly (e.g. "no vendor
 savings flagged this week") rather than skipping it or padding it out. Be concise - 1 to 3 short
 sentences per section, direct and specific (name real items/vendors from the data), no filler."""
+
+
+
+def system_prompt() -> str:
+    """The digest prompt for this store (STORE_NAME, STORE_DESCRIPTION)."""
+    from app.store import settings_view as sv
+
+    return SYSTEM_PROMPT_TEMPLATE.format(
+        store_name=sv.store_display_name(), store_description=sv.store_description()
+    )
+
 
 # Added for a reader whose admin ticked "Hide sales numbers" (app/sales_access.py):
 # the data has no sales section, and nothing else may hint at what the store sold.
@@ -122,6 +133,8 @@ def _append_compare_line(narrative: dict, data: dict) -> None:
 
 
 DEMO_DIGEST_HEADLINE = "The written weekly summary is turned off for the demo account."
+# AI_ENABLED=false (per-store AI switch, M2): the numbers without the AI text.
+AI_OFF_DIGEST_HEADLINE = "The written weekly summary is turned off for this store."
 
 
 def generate_weekly_digest(
@@ -131,7 +144,10 @@ def generate_weekly_digest(
     never sent to Claude or returned - `data` has no "sales" key and
     `narrative.sales` is null. demo=True (an App Review demo login,
     app/demo.py): the same data with a fixed narrative - no Anthropic call."""
-    client = None if demo else get_anthropic_client()
+    from app.store.settings_view import ai_enabled
+
+    ai_off = not demo and not ai_enabled()
+    client = None if (demo or ai_off) else get_anthropic_client()
     data = get_weekly_digest_data(db, end_date)
     if not include_sales:
         data.pop("sales", None)
@@ -140,23 +156,24 @@ def generate_weekly_digest(
             {k: v for k, v in item.items() if k not in TOAST_SALES_DOLLAR_FIELDS} for item in data["dead_stock"]
         ]
 
-    if demo:
+    if demo or ai_off:
         narrative = {k: "" for k in WeeklyDigestNarrative.model_fields}
-        narrative["headline"] = DEMO_DIGEST_HEADLINE
+        narrative["headline"] = DEMO_DIGEST_HEADLINE if demo else AI_OFF_DIGEST_HEADLINE
         if not include_sales:
             narrative["sales"] = None
-        return {
+        out = {
             "week_start": data["week_start"],
             "week_end": data["week_end"],
             "narrative": narrative,
             "data": data,
-            "demo": True,
         }
+        out["demo" if demo else "ai_off"] = True
+        return out
 
     response = client.messages.parse(
         model=MODEL,
         max_tokens=2000,
-        system=SYSTEM_PROMPT if include_sales else SYSTEM_PROMPT + NO_SALES_PROMPT,
+        system=system_prompt() if include_sales else system_prompt() + NO_SALES_PROMPT,
         messages=[{"role": "user", "content": json.dumps(data, default=str)}],
         output_format=WeeklyDigestNarrative,
     )

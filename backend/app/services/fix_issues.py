@@ -53,10 +53,14 @@ from app.timeutil import restaurant_timezone, restaurant_today, to_restaurant_da
 
 logger = logging.getLogger(__name__)
 
-# Toast category groups for food made in the store - no barcode, no shelf stock.
-# "Event Menu" appeared in Toast on Sep 28 (samosas, chai, lassi for events):
-# all 11 of its items were showing as missing barcodes and slow - review.
-EXCLUDED_CATEGORY_GROUPS = {"STREET KITCHEN", "CATERING MENU", "EVENT MENU"}
+# Category groups for food made in the store - no barcode, no shelf stock:
+# the store pack's menu.excluded_category_groups (excluded_groups()).
+
+
+def excluded_groups() -> frozenset:
+    from app.store import pack as store_pack
+
+    return store_pack.excluded_category_groups()
 
 # Lists the hourly Toast menu re-check keeps current between uploads.
 BARCODE_ISSUE_TYPES = {"missing_barcode", "invalid_barcode"}
@@ -106,7 +110,7 @@ class _Context:
     @property
     def forecasts(self) -> dict:
         if self._forecasts is None:
-            self._forecasts = forecasts_by_item(self.db, self.latest, EXCLUDED_CATEGORY_GROUPS)
+            self._forecasts = forecasts_by_item(self.db, self.latest, set(excluded_groups()))
         return self._forecasts
 
     @property
@@ -358,8 +362,9 @@ def _detected(
     latest_date = max((s.snapshot_date for s in latest.values()), default=None)
     last_sold = ctx.last_sold
     items = []
+    excluded = excluded_groups()
     for item in ISSUE_TYPES[issue_type]["loader"](ctx):
-        if groups.get(item["item_id"]) in EXCLUDED_CATEGORY_GROUPS:
+        if groups.get(item["item_id"]) in excluded:
             continue
         product = _product(latest.get(item["item_id"]), last_sold.get(item["item_id"]))
         items.append({**item, "issue_key": _issue_key(issue_type, item), "product": product})
@@ -901,3 +906,12 @@ def get_closed_report(db: Session, start: dt.date, end: dt.date) -> dict:
         "by_reason": dict(sorted(by_reason_total.items(), key=lambda kv: -kv[1])),
         "days": out_days,
     }
+
+
+def __getattr__(name):
+    # The old constant: the store pack's excluded_category_groups (read at call time).
+    if name == "EXCLUDED_CATEGORY_GROUPS":
+        from app.store import pack as _pack
+
+        return set(_pack.excluded_category_groups())
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

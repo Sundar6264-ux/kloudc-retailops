@@ -59,7 +59,7 @@ export default function PublicLinkPanel({ checklistType, active }) {
   };
   const dirty = JSON.stringify(form) !== JSON.stringify(formFrom(link)) || !link.exists;
   const slugOk = form.slug.length >= 2 && form.slug.length <= 20 && SLUG_RE.test(form.slug) && !form.slug.includes("--");
-  // "https://ops.spicetown.shop/c/kitchen-4821" -> "ops.spicetown.shop/c/kitchen-4821" (what people type).
+  // "https://store.example.com/c/kitchen-4821" -> "store.example.com/c/kitchen-4821" (what people type).
   const shortUrl = link.url ? link.url.replace(/^https?:\/\//, "") : "";
 
   function addName() {

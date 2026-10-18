@@ -18,6 +18,7 @@ import {
   plural,
   qtyDiffers,
 } from "./suggestionsModel.js";
+import { currentPosName } from "../../store/gating.js";
 
 // Delivery Review's "Suggested deliveries" (automation batch item 4): the
 // deliveries the app found in the inventory uploads, one panel per vendor and
@@ -119,10 +120,10 @@ export default function SuggestedDeliveries({ onConfirmed }) {
         </label>
       </div>
       <InfoBlock brief="Deliveries found in the inventory uploads. Check the quantities, then confirm - nothing is logged until you do.">
-        <Term k="delivery_suggested">Each suggestion</Term> is one vendor on one upload. Most come from Toast itself: when a
-        delivery is received in Toast, the next inventory upload shows the receive time and Toast's receiving number (like
+        <Term k="delivery_suggested">Each suggestion</Term> is one vendor on one upload. Most come from {currentPosName()} itself: when a
+        delivery is received in {currentPosName()}, the next inventory upload shows the receive time and {currentPosName()}'s receiving number (like
         IN378) on each item, so we group those items under the vendor most of them list. On a day with only the nightly
-        Toast snapshot (no upload), a delivery shows as several of one vendor's items rising by more than sales explain.
+        {currentPosName()} snapshot (no upload), a delivery shows as several of one vendor's items rising by more than sales explain.
         Quantity = count now - count before + units sold in between. Ticked lines are logged when you press Confirm - the
         same as reviewing the delivery by hand. A vendor whose delivery is already logged isn't suggested again. Not a
         delivery? Dismiss it.
@@ -206,7 +207,7 @@ function SuggestedGroup({ group, isOpen, onToggle, onConfirmed, onDismiss, readO
             <p className="sugg-reason">{group.reason}</p>
             {!group.sales_complete && (
               <p className="sugg-warning">
-                Sales for a day in this window haven't synced from Toast yet, so quantities may be a little low.
+                Sales for a day in this window haven't synced from {currentPosName()} yet, so quantities may be a little low.
               </p>
             )}
             <div className="table-wrap">

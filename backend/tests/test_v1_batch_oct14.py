@@ -169,6 +169,7 @@ def test_retroactive_mark_doesnt_hide_an_earlier_real_order(db, admin, babco):
 # --- W4: a lead who can't see Team Tasks gets no (invisible) daily task ------------------------
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_lead_without_team_tasks_gets_no_task(db, admin, monkeypatch):
     """Every other way of giving a person a task refuses someone without
     Tasks (tasks_service._assignee_user, recurrence.problem_with): the daily
@@ -201,6 +202,7 @@ def test_lead_without_team_tasks_gets_no_task(db, admin, monkeypatch):
     assert "Kiran can't see Team Tasks" in il.last_run(db)["detail"]
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 @pytest.mark.parametrize("day", [dt.date(2026, 11, 1), dt.date(2027, 3, 14)], ids=["fall back", "spring forward"])
 def test_lead_tasks_once_a_store_day_across_dst(db, admin, monkeypatch, day):
     """The daily lead task on a DST change day: one run that store day (the

@@ -2,10 +2,10 @@
 plan 4.5, batch MT6).
 
 One process serves one store (plan 3.1), so the store's POS and its
-capability set are process-wide, like Settings. Spice Town is a Toast store:
+capability set are process-wide, like Settings. A Toast store:
 ``pos_name()`` is "Toast" and ``store_capabilities()`` is
 ``TOAST_CAPABILITIES``, which holds every capability today's code uses - so
-every gate here passes for Spice Town and nothing changes for it.
+every gate here passes for a Toast store and nothing changes for it.
 
 What uses it:
 - ``require_capability(...)``: FastAPI dependency for a POS-only route. A
@@ -32,13 +32,16 @@ from fastapi import HTTPException
 
 from app.config import get_settings
 from app.pos import registry
-from app.pos.capabilities import TOAST_CAPABILITIES, Capability
+from app.pos.capabilities import CLOVER_CAPABILITIES, CSV_CAPABILITIES, TOAST_CAPABILITIES, Capability
 
 logger = logging.getLogger(__name__)
 
 # provider -> (name shown to people, capabilities)
 PROVIDERS: Dict[str, Tuple[str, FrozenSet[Capability]]] = {
     "toast": ("Toast", TOAST_CAPABILITIES),
+    # No adapter in M2: these fallback entries gate pages and jobs (M2 contract 7).
+    "clover": ("Clover", CLOVER_CAPABILITIES),
+    "csv": ("CSV upload", CSV_CAPABILITIES),
 }
 DEFAULT_PROVIDER = "toast"
 
@@ -68,6 +71,12 @@ CAPABILITY_LABELS: Dict[Capability, str] = {
 FEATURE_CAPABILITIES: Dict[str, FrozenSet[Capability]] = {
     "open_orders": frozenset({Capability.OPEN_ORDERS}),
     "sales_insights": frozenset({Capability.ANALYTICS_REPORTS}),
+}
+
+# Grantable feature key -> the store features (not POS capabilities; M2
+# contract 1.3, app/store/settings_view.store_features) it needs.
+FEATURE_STORE_FEATURES: Dict[str, FrozenSet[str]] = {
+    "ask_bot": frozenset({"ai"}),
 }
 
 # Scheduled job function (__name__, app/scheduler.py) -> the POS capabilities
@@ -161,7 +170,7 @@ def not_supported_detail(missing: Iterable[Capability]) -> str:
 
 def require_capability(*caps: Capability):
     """FastAPI dependency: HTTP 409 unless the store's POS has every one of
-    `caps`. Always passes for Spice Town (Toast)."""
+    `caps`. Always passes for a Toast store."""
     required = tuple(caps)
 
     def _dep() -> None:
@@ -173,9 +182,33 @@ def require_capability(*caps: Capability):
 
 
 def features_for_store(keys: List[str]) -> List[str]:
-    """`keys` minus the features this store's POS can't support, order kept."""
+    """`keys` minus the features this store's POS can't support and the ones
+    whose store feature is off (e.g. the Ask bot without AI), order kept."""
+    from app.store.settings_view import store_features
+
     have = store_capabilities()
-    return [k for k in keys if FEATURE_CAPABILITIES.get(k, frozenset()) <= have]
+    on = set(store_features())
+    return [
+        k
+        for k in keys
+        if FEATURE_CAPABILITIES.get(k, frozenset()) <= have and FEATURE_STORE_FEATURES.get(k, frozenset()) <= on
+    ]
+
+
+def require_store_feature(*features: str):
+    """FastAPI dependency: HTTP 409 unless every one of `features` is on for
+    this store (store features, M2 contract 1.3)."""
+    required = tuple(features)
+
+    def _dep() -> None:
+        from app.store.settings_view import store_features
+
+        on = set(store_features())
+        missing = [f for f in required if f not in on]
+        if missing:
+            raise HTTPException(status_code=409, detail="Not available for this store.")
+
+    return _dep
 
 
 def job_func_name(job) -> str:
@@ -190,7 +223,7 @@ def job_supported(job) -> bool:
 
 def drop_unsupported_jobs(scheduler) -> List[str]:
     """Remove (before start) every job whose POS capability this store lacks.
-    Returns the removed job ids; none for Spice Town. A stand-in scheduler
+    Returns the removed job ids; none for a Toast store. A stand-in scheduler
     without get_jobs (some tests record add_job calls only) is left alone."""
     removed: List[str] = []
     get_jobs = getattr(scheduler, "get_jobs", None)

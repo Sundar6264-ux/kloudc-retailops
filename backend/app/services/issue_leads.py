@@ -3,7 +3,7 @@
 
 Owner's decision: "category" = PO section (the store aisles the PO PDF
 groups by - po_section_rules), because that's how the leads are split in the
-owner's "SpiceTown Operations - Quick-Reference" document.
+owner's lead document (the store pack's issue_leads).
 
 Who an item belongs to (owner's rule): the lead of its PO SECTION; if that
 section has no lead, the lead of one of its VENDORS (Toast's ";"-list, in
@@ -12,8 +12,8 @@ lead (an admin, kind "fallback"). No lead anywhere = unassigned.
 
 Only SAVED leads count (issue_leads rows). Until an admin saves the leads
 page nothing is assigned and no task is created: the page shows a proposed
-mapping read from the owner's document (DOC_LEADS / SECTION_PROPOSALS below,
-typed in from the PDF - the app never reads the PDF itself) for review.
+mapping read from the owner's document (the store pack's issue_leads, typed
+in from the document - the app never reads the document itself) for review.
 
 Daily task: once a day, at an admin-set time (default 10:00 store time),
 each lead gets ONE Team task listing how many open Fix Issues items they
@@ -54,6 +54,7 @@ from app.models import JobRun, User
 from app.services.item_vendors import vendors_of
 from app.setting_models import SettingChange
 from app.timeutil import restaurant_timezone, utcnow
+from app.store.settings_view import effective_public_base_url
 
 logger = logging.getLogger(__name__)
 
@@ -84,116 +85,62 @@ _settings_lock = threading.Lock()
 _run_lock = threading.Lock()
 
 # ---------------------------------------------------------------------------
-# The owner's document (SpiceTown Operations - Quick-Reference.pdf, page 1),
-# typed in. Names exactly as printed there (spelling included).
+# The proposed leads: the store pack's issue_leads section (the owner's lead
+# document, typed in - names exactly as printed there).
 # ---------------------------------------------------------------------------
-
-DOC_LEADS = [
-    {
-        "key": "amandeep",
-        "name": "Amandeep",
-        "title": "Frozen & Departments",
-        "departments": (
-            "All Frozen Foods, Ice Cream, Cold Drinks, Fresh Sweets, Household Items, Health & Beauty, "
-            "Tobacco Products, Halal Meat, Seafoods and Street Kitchen."
-        ),
-        "vendors": [
-            "Best Foods", "Advance Food", "Shata", "Vadilal", "Piece of India", "Prestige", "Jyena",
-            "Chandigarh", "OnTime", "Jain Foods", "Kitchen Xpress", "Desi Nation", "Manzar Distributors",
-            "Empire Halal", "Harbs", "Ganesha", "Restaurant Depot",
-        ],
-    },
-    {
-        "key": "sai",
-        "name": "Sai",
-        "title": "Produce & Grocery",
-        "departments": (
-            "Fresh Produce, Rice, Atta, Noodles, Oils, Ghee, Pulses, Rotis, Batters, RTEs, Masalas, Pickles, "
-            "Sauces, Dry Fruits, Salt, Jaggery, Tea/Coffee and Canned Foods."
-        ),
-        "vendors": [
-            "Chetak", "HOS", "Radhey Foods", "Real Foods", "RBest", "Aromiraa", "Concept Foods",
-            "Indigeneous", "KP Produce", "Aldi's",
-        ],
-    },
-    {
-        "key": "harshitha",
-        "name": "Harshitha",
-        "title": "Snacks & Specialty",
-        "departments": (
-            "Snacks, Bakery Items, Chikkis, Dry Sweets, Poha, Phool Makhana, Murmuras, Mukhwas, Flowers and "
-            "Puja Supplies."
-        ),
-        "vendors": [
-            "Rajafoods", "Babco", "Rimaray", "Mysha", "Sai Florals", "Shaz International", "Priyems", "Arya",
-            "JMR", "Vijay Home Foods", "Shahi Kulfi",
-        ],
-    },
-]
-# "Then the admin" (owner's rule). The document names Sundar as Inventory &
-# Purchase ("System issue - Sundar corrects it").
-DOC_FALLBACK = {"key": "sundar", "name": "Sundar", "title": "Inventory & Purchase"}
 
 DOCUMENT = "document"  # the department is named in the document
 GUESS = "guess"  # not named - a suggestion from what the section holds
 
-# PO section (lower case) -> (lead key, basis, why). Sections not listed get
-# no proposal (the vendor lead, then the admin, covers them until set).
-SECTION_PROPOSALS: Dict[str, Tuple[str, str, str]] = {
-    "frozen - breads & snacks": ("amandeep", DOCUMENT, "All Frozen Foods"),
-    "frozen - fruits": ("amandeep", DOCUMENT, "All Frozen Foods"),
-    "frozen - ice cream": ("amandeep", DOCUMENT, "All Frozen Foods, Ice Cream"),
-    "frozen - meat & fish": ("amandeep", DOCUMENT, "All Frozen Foods, Halal Meat, Seafoods"),
-    "frozen - ready meals": ("amandeep", DOCUMENT, "All Frozen Foods"),
-    "frozen - sweets & desserts": ("amandeep", DOCUMENT, "All Frozen Foods, Fresh Sweets"),
-    "frozen - vegetables": ("amandeep", DOCUMENT, "All Frozen Foods"),
-    "beverages": ("amandeep", DOCUMENT, "Cold Drinks"),
-    "household & cleaning": ("amandeep", DOCUMENT, "Household Items"),
-    "kitchenware": ("amandeep", DOCUMENT, "Household Items"),
-    "health & wellness": ("amandeep", DOCUMENT, "Health & Beauty"),
-    "personal care": ("amandeep", DOCUMENT, "Health & Beauty"),
-    "meat - fresh": ("amandeep", DOCUMENT, "Halal Meat"),
-    "fish - fresh": ("amandeep", DOCUMENT, "Seafoods"),
-    "dairy": ("amandeep", GUESS, "Not in the document - chilled, next to Cold Drinks"),
-    "produce - fruits": ("sai", DOCUMENT, "Fresh Produce"),
-    "produce - vegetables": ("sai", DOCUMENT, "Fresh Produce"),
-    "rice": ("sai", DOCUMENT, "Rice"),
-    "flours, atta & rava": ("sai", DOCUMENT, "Atta"),
-    "noodles & pasta": ("sai", DOCUMENT, "Noodles"),
-    "oils & ghee": ("sai", DOCUMENT, "Oils, Ghee"),
-    "dals, lentils & beans": ("sai", DOCUMENT, "Pulses"),
-    "rotis, naan & wraps": ("sai", DOCUMENT, "Rotis"),
-    "ready-to-eat & instant": ("sai", DOCUMENT, "Batters, RTEs"),
-    "spices - ground": ("sai", DOCUMENT, "Masalas"),
-    "spices - masala mixes": ("sai", DOCUMENT, "Masalas"),
-    "spices - whole": ("sai", DOCUMENT, "Masalas"),
-    "spices - salt & pepper": ("sai", DOCUMENT, "Salt"),
-    "pickles & chutneys": ("sai", DOCUMENT, "Pickles"),
-    "sauces & condiments": ("sai", DOCUMENT, "Sauces"),
-    "dry fruits & nuts": ("sai", DOCUMENT, "Dry Fruits"),
-    "sugar, jaggery & honey": ("sai", DOCUMENT, "Jaggery"),
-    "tea & coffee": ("sai", DOCUMENT, "Tea/Coffee"),
-    "canned & jarred goods": ("sai", DOCUMENT, "Canned Foods"),
-    "millets, cereals & oats": ("sai", GUESS, "Not in the document - grains, next to Rice and Atta"),
-    "baking & cooking essentials": ("sai", GUESS, "Not in the document - cooking staples"),
-    "snacks, chips & namkeen": ("harshitha", DOCUMENT, "Snacks"),
-    "biscuits, cookies & rusk": ("harshitha", DOCUMENT, "Bakery Items"),
-    "sweets & mithai": ("harshitha", DOCUMENT, "Chikkis, Dry Sweets"),
-    "mouth fresheners": ("harshitha", DOCUMENT, "Mukhwas"),
-    "flowers & leaves": ("harshitha", DOCUMENT, "Flowers"),
-    "pooja & festival": ("harshitha", DOCUMENT, "Puja Supplies"),
-    "chocolates & candy": ("harshitha", GUESS, "Not in the document - Toast files it under Snacks"),
-    "papad": ("harshitha", GUESS, "Not in the document - Toast files it under Snacks"),
-    "plants & seeds": ("harshitha", GUESS, "Not in the document - next to Flowers"),
+
+def _doc_leads() -> List[dict]:
+    from app.store import pack as store_pack
+
+    return [lead.model_dump() for lead in store_pack.issue_leads().leads]
+
+
+def _doc_fallback() -> dict:
+    """"Then the admin" (owner's rule): the pack's fallback lead."""
+    from app.store import pack as store_pack
+
+    return store_pack.issue_leads().fallback.model_dump()
+
+
+def _section_proposals() -> Dict[str, Tuple[str, str, str]]:
+    """PO section (lower case) -> (lead key, basis, why). Sections not listed
+    get no proposal (the vendor lead, then the admin, covers them until set)."""
+    from app.store import pack as store_pack
+
+    return {k: (p.lead, p.basis, p.why) for k, p in store_pack.issue_leads().section_proposals.items()}
+
+
+def _section_notes() -> Dict[str, str]:
+    """Sections the document leaves open on purpose (mixed aisles): explained
+    on the page instead of guessed."""
+    from app.store import pack as store_pack
+
+    return dict(store_pack.issue_leads().section_notes)
+
+
+def _document_title() -> str:
+    from app.store import pack as store_pack
+
+    return store_pack.issue_leads().document_title
+
+
+_LEGACY_NAMES = {
+    "DOC_LEADS": _doc_leads,
+    "DOC_FALLBACK": _doc_fallback,
+    "SECTION_PROPOSALS": _section_proposals,
+    "SECTION_NOTES": _section_notes,
 }
-# Sections the document leaves open on purpose (mixed aisles): explained on
-# the page instead of guessed.
-SECTION_NOTES = {
-    "pantry staples": "Mixed: Poha and Murmuras (Harshitha) sit with grocery staples (Sai) - pick one.",
-    "organic & specialty": "Mixed: organic rice, dal, atta and oils across leads - pick one.",
-    "baby food": "Not in the document.",
-    "other": "Kitchen and catering items, tobacco and anything without a section.",
-}
+
+
+def __getattr__(name):
+    # The old constants, now the active store pack's (read at call time).
+    if name in _LEGACY_NAMES:
+        return _LEGACY_NAMES[name]()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -579,7 +526,8 @@ def document_proposal(db: Session, vendor_names: Iterable[str]) -> dict:
     by_key: Dict[str, dict] = {}
     vendor_map: Dict[str, dict] = {}
     unmatched_vendors = []
-    for doc in DOC_LEADS + [DOC_FALLBACK]:
+    fallback_doc = _doc_fallback()
+    for doc in _doc_leads() + [fallback_doc]:
         user = match_user(users, doc["name"])
         entry = {
             "key": doc["key"],
@@ -597,11 +545,11 @@ def document_proposal(db: Session, vendor_names: Iterable[str]) -> dict:
             for m in matched:
                 vendor_map.setdefault(_key(m), {"lead_key": doc["key"], "doc_name": vname, "vendor": m})
         by_key[doc["key"]] = entry
-        if doc is not DOC_FALLBACK:
+        if doc is not fallback_doc:
             leads.append(entry)
     return {
         "leads": leads,
-        "fallback": by_key[DOC_FALLBACK["key"]],
+        "fallback": by_key[fallback_doc["key"]],
         "by_key": by_key,
         "vendor_map": vendor_map,
         "unmatched_vendors": unmatched_vendors,
@@ -645,10 +593,12 @@ def leads_page(db: Session) -> dict:
 
     from app.services.po_sections import section_sort_key
 
+    proposals = _section_proposals()
+    notes = _section_notes()
     section_rows = []
     for name in sorted(sections, key=section_sort_key):
         key = _key(name)
-        prop = SECTION_PROPOSALS.get(key)
+        prop = proposals.get(key)
         lead, saved = _lead_out(leads, "section", key)
         section_rows.append(
             {
@@ -657,7 +607,7 @@ def leads_page(db: Session) -> dict:
                 "lead": lead,
                 "saved": saved,
                 "proposal": _proposal_out(prop[0], doc, prop[1], prop[2]) if prop else None,
-                "note": SECTION_NOTES.get(key),
+                "note": notes.get(key),
             }
         )
     vendor_rows = []
@@ -703,12 +653,14 @@ def leads_page(db: Session) -> dict:
         "fallback": {
             "lead": fallback_lead,
             "saved": fallback_saved,
-            "proposal": _proposal_out(DOC_FALLBACK["key"], doc, DOCUMENT, "Inventory & Purchase in the document"),
+            "proposal": _proposal_out(
+                doc["fallback"]["key"], doc, DOCUMENT, f"{doc['fallback']['title']} in the document"
+            ),
         },
         "stale": stale,
         "people": people,
         "document": {
-            "title": "SpiceTown Operations - Quick-Reference",
+            "title": _document_title(),
             "leads": doc["leads"],
             "fallback": doc["fallback"],
             "unmatched_vendors": doc["unmatched_vendors"],
@@ -843,7 +795,7 @@ def open_by_lead(db: Session, types_off: Iterable[str] = ()) -> dict:
 
 
 def fix_issues_link(user_id: int) -> str:
-    base = (get_settings().public_base_url or "").rstrip("/")
+    base = effective_public_base_url()
     return f"{base}/#/fix-issues?lead={user_id}"
 
 
@@ -949,7 +901,7 @@ def run_daily_tasks(db: Session, now: Optional[dt.datetime] = None, force: bool 
     Returns a summary, or None when it didn't run."""
     from app.team.auto_tasks import _close, _existing
     from app.team.tasks_models import Task
-    from app.team.tasks_service import SYSTEM_NAME, SYSTEM_USER_ID, add_event, notify_assigned, record_task_change
+    from app.team.tasks_service import SYSTEM_USER_ID, add_event, notify_assigned, record_task_change, system_name
 
     now = now or dt.datetime.now(restaurant_timezone())
     local = now.astimezone(restaurant_timezone())
@@ -1000,7 +952,7 @@ def run_daily_tasks(db: Session, now: Optional[dt.datetime] = None, force: bool 
                     source_type=SOURCE_TYPE,
                     source_id=source_id,
                     created_by_user_id=SYSTEM_USER_ID,
-                    created_by_name=SYSTEM_NAME,
+                    created_by_name=system_name(),
                     created_at=stamp,
                     updated_at=stamp,
                     progress_total=len(entry["items"]),
@@ -1008,7 +960,7 @@ def run_daily_tasks(db: Session, now: Optional[dt.datetime] = None, force: bool 
                 )
                 db.add(task)
                 db.flush()
-                add_event(db, task, None, "created", {"auto": SOURCE_TYPE}, system_name=SYSTEM_NAME)
+                add_event(db, task, None, "created", {"auto": SOURCE_TYPE}, system_name=system_name())
                 record_task_change(db, task, "created")
                 created += 1
                 is_new = True
@@ -1021,7 +973,7 @@ def run_daily_tasks(db: Session, now: Optional[dt.datetime] = None, force: bool 
                     task.updated_at = stamp
                     task.progress_total = len(entry["items"])
                     task.progress_done = 0
-                    add_event(db, task, None, "edited", {"auto": SOURCE_TYPE}, system_name=SYSTEM_NAME)
+                    add_event(db, task, None, "edited", {"auto": SOURCE_TYPE}, system_name=system_name())
                     record_task_change(db, task, "updated")
                     updated += 1
             run = db.execute(

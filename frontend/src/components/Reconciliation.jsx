@@ -20,6 +20,7 @@ import InfoBlock from "./InfoBlock.jsx";
 import { Term, TermInfo } from "../glossary.jsx";
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
+import { currentPosName } from "../store/gating.js";
 
 function todayStr() {
   return storeTodayStr();
@@ -239,7 +240,7 @@ export function ReconciliationWorkedExample() {
     <details className="recon-demo" onToggle={(e) => e.currentTarget.open && setOpened(true)}>
       <summary>Worked example: see how this works with your real data</summary>
       <InfoBlock brief="A real example from your own store's numbers.">
-        Real inventory counts and real Toast sales, one real item, showing the formula in action.
+        Real inventory counts and real {currentPosName()} sales, one real item, showing the formula in action.
       </InfoBlock>
 
       {opened && loading && <p className="muted">Loading a real example from your data…</p>}
@@ -755,7 +756,7 @@ export default function Reconciliation() {
   return (
     <section className="card">
       <InfoBlock brief="Purchased vs. sold vs. counted - the shrinkage/spoilage signal.">
-        Toast's own Purchasing &amp; Receiving data isn't accessible with this account's current
+        {currentPosName()}'s own Purchasing &amp; Receiving data isn't accessible with this account's current
         API credentials, so "purchased" here comes from what you log by hand below - it's only as
         complete as what actually gets logged. For each item in a chosen window:{" "}
         <code>expected closing = opening count + purchased - sold</code>, compared against the

@@ -3,6 +3,7 @@ import { getSalesAccuracy, runSalesAccuracy } from "../api";
 import { formatRestaurantTime } from "../format.js";
 import InfoBlock from "./InfoBlock.jsx";
 import { SALES_ACCURACY_TERMS, Term } from "../glossary.jsx";
+import { currentPosName } from "../store/gating.js";
 
 // Admin-only card under Items Sold: each recent business date's stored sales
 // next to Toast's own item-level total (Toast Analytics), and what the
@@ -12,7 +13,9 @@ const REASONS = {
   item_net: "item sales differed",
   item_qty: "quantities differed",
   orders: "order count differed",
-  analytics_changed: "Toast changed this day",
+  get analytics_changed() {
+    return `${currentPosName()} changed this day`;
+  },
   unpaid: "unpaid items to recheck",
   never_synced: "not synced yet",
 };
@@ -34,7 +37,7 @@ function money(v) {
 
 function reasonText(row) {
   const parts = (row.reasons || []).map((r) => REASONS[r] || r);
-  if (row.waiting) parts.push("waiting for Toast to update");
+  if (row.waiting) parts.push(`waiting for ${currentPosName()} to update`);
   return parts.join(", ") || "-";
 }
 
@@ -84,8 +87,8 @@ export default function SalesAccuracy() {
       await runSalesAccuracy(days);
       setMessage(
         days
-          ? `Checking the last ${days} days with Toast - this takes several minutes.`
-          : "Checking with Toast - this takes about a minute."
+          ? `Checking the last ${days} days with ${currentPosName()} - this takes several minutes.`
+          : `Checking with ${currentPosName()} - this takes about a minute.`
       );
       setData((d) => (d ? { ...d, running: true } : d));
       poll();
@@ -124,21 +127,21 @@ export default function SalesAccuracy() {
           </div>
         )}
       </div>
-      <InfoBlock brief="Admins only. Each recent day's stored sales next to Toast's own item totals; days that differ are re-synced from Toast automatically.">
+      <InfoBlock brief={`Admins only. Each recent day's stored sales next to ${currentPosName()}'s own item totals; days that differ are re-synced from ${currentPosName()} automatically.`}>
         <p style={{ marginTop: 0 }}>
-          Toast keeps changing days after they close: a check voided or discounted the next
+          {currentPosName()} keeps changing days after they close: a check voided or discounted the next
           morning, an item taken off an order, a late payment. A few times a day
-          {data?.times?.length ? ` (${data.times.join(", ")})` : ""} the app asks Toast's Analytics
+          {data?.times?.length ? ` (${data.times.join(", ")})` : ""} the app asks {currentPosName()}'s Analytics
           for the last {data?.window_days ?? 14} days and compares each day's item sales (by
-          Toast's business date, add-ons inside their item, discounts taken off) with what we have
-          stored. A day that differs, or that Toast changed since the last check, is re-synced from
-          Toast's orders; the rest are left alone.
+          {currentPosName()}'s business date, add-ons inside their item, discounts taken off) with what we have
+          stored. A day that differs, or that {currentPosName()} changed since the last check, is re-synced from
+          {currentPosName()}'s orders; the rest are left alone.
         </p>
         <p style={{ marginBottom: 0 }}>
           "Ours" is the stored total before and after that re-sync. A day can still differ for a
-          few hours after an edit: Toast says its Analytics catch up within 2-4 hours (up to 6
+          few hours after an edit: {currentPosName()} says its Analytics catch up within 2-4 hours (up to 6
           days for an order edited long after its date). Such a day is checked again on the next
-          run. This compares Toast's business dates; the Items Sold report above counts by
+          run. This compares {currentPosName()}'s business dates; the Items Sold report above counts by
           payment date, so its daily totals can differ slightly from these.
         </p>
       </InfoBlock>
@@ -147,7 +150,7 @@ export default function SalesAccuracy() {
       {message && <p className="muted">{message}</p>}
       {data && !data.configured && (
         <p className="muted">
-          Toast Analytics isn't set up on this server (TOAST_ANALYTICS_CLIENT_ID / SECRET), so
+          {currentPosName()} Analytics isn't set up on this server (TOAST_ANALYTICS_CLIENT_ID / SECRET), so
           stored sales aren't being re-checked. Everything else works as before.
         </p>
       )}
@@ -164,7 +167,7 @@ export default function SalesAccuracy() {
             <thead>
               <tr>
                 <th>Business date</th>
-                <th className="num">Toast item sales</th>
+                <th className="num">{currentPosName()} item sales</th>
                 <th className="num">Ours before</th>
                 <th className="num">Ours after</th>
                 <th className="num">Difference</th>
@@ -189,7 +192,7 @@ export default function SalesAccuracy() {
                     </td>
                     <td className="cell-wrap">
                       {row.waiting ? (
-                        <Term k={SALES_ACCURACY_TERMS.waiting} label="Waiting for Toast">
+                        <Term k={SALES_ACCURACY_TERMS.waiting} label={`Waiting for ${currentPosName()}`}>
                           {reasonText(row)}
                         </Term>
                       ) : (

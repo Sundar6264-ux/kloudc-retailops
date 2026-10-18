@@ -1,9 +1,7 @@
 {
   "version": 2,
   "about": "Rules for app/services/similar_products.py. Learned from the Sep 2026 catalog (latest inventory upload, ~4,900 sellable items) and evaluated on the hand-labelled set in backend/tests/data/similar_products_labels.json. Edit, then re-run backend/tests/test_ops_similar_products.py.",
-  "excluded_category_groups": [
-    "STREET KITCHEN", "CATERING MENU", "EVENT MENU"
-  ],
+  "excluded_category_groups": [],
   "vendor_prefixes": [
     "pc"
   ],

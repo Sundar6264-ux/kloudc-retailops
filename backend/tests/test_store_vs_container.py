@@ -22,6 +22,9 @@ from app.services.supplier_projection import _split_suppliers, compute_supplier_
 from app.timeutil import utcnow
 from tests.conftest import client_for, make_user
 
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 TODAY = dt.date.today()
 OLDER = TODAY - dt.timedelta(days=3)
 URL = "/api/reports/store-vs-container"
@@ -83,8 +86,8 @@ def store(db):
     snap(db, "twin", "Twin Bare", 1)  # two bare rows: ambiguous
     bare(db, "twin-c1", "Twin Bare", 5)
     bare(db, "twin-c2", "Twin Bare", 6)
-    snap(db, "samosa", "Samosa", 1, group="STREET KITCHEN")  # kitchen
-    bare(db, "samosa-c", "Samosa", 10, group="STREET KITCHEN")
+    snap(db, "samosa", "Samosa", 1, group="KITCHEN")  # kitchen
+    bare(db, "samosa-c", "Samosa", 10, group="KITCHEN")
     # Only in an older upload (deleted in Toast since): not listed.
     snap(db, "old", "Old Masala", 1, day=OLDER)
     bare(db, "old-c", "Old Masala", 7, day=OLDER)
@@ -160,7 +163,7 @@ def test_search_and_vendor_filters(store, admin_client):
 
 
 def test_effective_categories_and_kitchen_from_a_correction(store):
-    for item_id, group, category in (("toor", "RETAIL", "Pulses"), ("atta", "STREET KITCHEN", "Kitchen")):
+    for item_id, group, category in (("toor", "RETAIL", "Pulses"), ("atta", "KITCHEN", "Kitchen")):
         store.add(
             CategoryOverride(
                 match_type="item_id", match_value=item_id, category_group=group, category=category,
@@ -271,7 +274,7 @@ def test_numbers_match_refill_and_projection_on_dev_data(dev_copy):
         pytest.skip("dev database has no store/container pairs")
     latest = latest_inventory_by_item(dev_copy)
     refill = {r["item_id"]: r for r in stock_issues.refill_from_container_items(latest)}
-    kitchen = {"STREET KITCHEN", "CATERING MENU", "EVENT MENU"}
+    kitchen = {"KITCHEN", "CATERING MENU", "EVENT MENU"}
     refill = {k: v for k, v in refill.items() if (latest[k].category_group or "").upper() not in kitchen}
     assert {k for k, r in items.items() if r["low_store"]} == set(refill)
     for item_id, row in refill.items():

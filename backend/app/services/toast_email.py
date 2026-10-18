@@ -14,6 +14,7 @@ from typing import Optional
 
 from app.config import get_settings
 from app.services.toast_pdf import toast_friendly_pdf
+from app.store import settings_view as sv
 
 TYPE_LABELS = {
     "invoice": "Invoice",
@@ -53,7 +54,8 @@ def send_toast_invoice_email(
     the attachment goes through toast_pdf first (Letter-sized pages + a
     text layer, see that module); the stored files are never modified."""
     settings = get_settings()
-    if not settings.gmail_address or not settings.gmail_app_password:
+    smtp = sv.smtp_config(settings)
+    if not smtp.username or not smtp.password:
         raise EmailNotConfigured(
             "GMAIL_ADDRESS and/or GMAIL_APP_PASSWORD aren't set in the backend's .env yet."
         )
@@ -65,7 +67,7 @@ def send_toast_invoice_email(
     total_str = f"${total_amount:,.2f}" if total_amount is not None else "$Unknown"
 
     msg = MIMEMultipart()
-    msg["From"] = settings.gmail_address
+    msg["From"] = smtp.username
     msg["To"] = inbox
     # Matches the original Apps Script's subject exactly: `${docType} - ${vendorName} - $${docTotal}`.
     msg["Subject"] = f"{type_label} - {vendor} - {total_str}"
@@ -90,6 +92,15 @@ def send_toast_invoice_email(
     attachment.add_header("Content-Disposition", "attachment", filename=pdf_filename)
     msg.attach(attachment)
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(settings.gmail_address, settings.gmail_app_password)
-        server.sendmail(settings.gmail_address, [inbox], msg.as_string())
+    with _connect(smtp) as server:
+        server.login(smtp.username, smtp.password)
+        server.sendmail(smtp.username, [inbox], msg.as_string())
+
+
+def _connect(smtp):
+    """SMTP_SSL (implicit TLS) or STARTTLS, per the SMTP_* settings."""
+    if smtp.ssl:
+        return smtplib.SMTP_SSL(smtp.host, smtp.port)
+    server = smtplib.SMTP(smtp.host, smtp.port)
+    server.starttls()
+    return server

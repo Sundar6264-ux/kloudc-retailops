@@ -40,6 +40,9 @@ from app.team import auto_tasks
 from app.team.models import TeamMedia
 from tests.conftest import client_for, make_user
 
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 FSA = "street_kitchen_fsa"
 NY = zoneinfo.ZoneInfo("America/New_York")
 BACKEND = pathlib.Path(__file__).resolve().parents[1]

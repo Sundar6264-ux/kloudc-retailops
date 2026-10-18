@@ -441,10 +441,15 @@ def test_one_run_at_a_time(db, repull):
         sales_accuracy._RUN_LOCK.release()
 
 
-def test_window_is_yesterday_back_and_never_before_real_sales():
+def test_window_is_yesterday_back_and_never_before_real_sales(monkeypatch):
+    from app.config import get_settings
+
     assert sales_accuracy._window(14, TODAY) == (dt.date(2026, 9, 27), D10)
     assert sales_accuracy._window(500, TODAY)[0] == TODAY - dt.timedelta(days=sales_accuracy.MAX_DAYS)
-    assert sales_accuracy._window(30, dt.date(2026, 6, 1))[0] == sales_accuracy.FIRST_REAL_SALES_DATE
+    # No FIRST_SALES_DATE: no floor.
+    assert sales_accuracy._window(30, dt.date(2026, 6, 1))[0] == dt.date(2026, 5, 2)
+    monkeypatch.setattr(get_settings(), "first_sales_date", "2026-05-26")
+    assert sales_accuracy._window(30, dt.date(2026, 6, 1))[0] == sales_accuracy.FIRST_REAL_SALES_DATE == dt.date(2026, 5, 26)
 
 
 # --- endpoints -------------------------------------------------------------------------------

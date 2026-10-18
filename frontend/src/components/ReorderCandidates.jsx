@@ -31,6 +31,8 @@ import { canAddToVendor } from "./reorderCart/reorderCartModel.js";
 import { ItemWeeklySales } from "./weeklySales/WeeklySalesTable.jsx";
 import { isoMinusDays } from "./weeklySales/weeklySalesModel.js";
 import { rowCodeMatch } from "../productMatch.js";
+import { inStoreZone } from "../format.js";
+import { currentPosName } from "../store/gating.js";
 
 // Same colour coding as Supplier Projection's item type tags.
 const CLASS_PILLS = {
@@ -119,18 +121,14 @@ function formatDate(iso) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
     return new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { ...opts, timeZone: "UTC" });
   }
-  return new Date(iso).toLocaleDateString(undefined, { ...opts, timeZone: "America/New_York" });
+  return new Date(iso).toLocaleDateString(undefined, inStoreZone(opts));
 }
 
 // "Ordered Sep 30" - an order placed for this vendor that hasn't arrived
 // yet (tier "ordered", see ordered_vendors in the backend).
 function urgencyText(urgency, orderedAt) {
   if (urgency.tier !== "ordered" || !orderedAt) return urgency.label;
-  const day = new Date(orderedAt).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    timeZone: "America/New_York",
-  });
+  const day = new Date(orderedAt).toLocaleDateString(undefined, inStoreZone({ month: "short", day: "numeric" }));
   return `${urgency.label} ${day}`;
 }
 
@@ -289,7 +287,7 @@ export default function ReorderCandidates() {
         forecast as Supplier Projection, so the two pages agree) - compared against the latest
         on-hand count. "Shortfall" is the whole number of units to order, including a small safety
         buffer; a negative on-hand count is treated as 0. Vendor
-        lead time is a manual estimate below - Toast's Purchasing API isn't wired up yet, so this
+        lead time is a manual estimate below - {currentPosName()}'s Purchasing API isn't wired up yet, so this
         isn't pulled per-vendor automatically. Nothing here is sent to a vendor. With Purchase Order
         Cart access you can add items to a vendor's cart from here: one at a time (1 each, like the
         app), or ticked items and a vendor's Critical + Order now items with their suggested
@@ -339,7 +337,7 @@ export default function ReorderCandidates() {
             short within {data.lead_time_days} day(s), based on the last {data.lookback_days}{" "}
             day(s) of sales (as of {data.as_of}). Most urgent vendors first - see Help for what each
             label means. "Check count" items show 0 on hand but sold this week, so fix the count in
-            Toast first. "Ordered" vendors already have an order on the way, so they're listed after the
+            {currentPosName()} first. "Ordered" vendors already have an order on the way, so they're listed after the
             urgent ones until the delivery is recorded. Click a vendor for its order schedule, last order placed, and estimated
             cost.
           </p>
@@ -349,7 +347,7 @@ export default function ReorderCandidates() {
             type="text"
             className="table-search rc-search"
             placeholder="Search vendor, item, category, SKU or barcode…"
-            aria-label="Search vendor, item, category, SKU, barcode or Toast item ID"
+            aria-label={`Search vendor, item, category, SKU, barcode or ${currentPosName()} item ID`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

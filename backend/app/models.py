@@ -147,7 +147,7 @@ class PosItemMap(Base):
     """POS item id -> our item id (multi-store M1, migration 0060).
 
     Our item ids are the ids the rest of the app joins on (orders.item_guid,
-    inventory_snapshots.item_id). For Spice Town they are Toast's item GUIDs,
+    inventory_snapshots.item_id). For a Toast store they are Toast's item GUIDs,
     so every Toast id maps to itself. The table is what lets a store change
     POS later without losing its sales history.
     """
@@ -575,7 +575,7 @@ class InvoiceSubmission(Base):
 
     # A human's manual confirmation that Toast actually finished processing
     # this into a real, closed bill - there is no Purchasing API access and
-    # no webhook (see the spicetown skill's gotcha #15), so that event is
+    # no webhook (see the StoreOps skill notes), so that event is
     # genuinely unobservable by this app on its own. NULL = not yet
     # confirmed. Set only via mark_toast_closed()/the matching route - never
     # inferred from whatsapp_sent/toast_email_sent, which only mean "we
@@ -650,7 +650,7 @@ class PlacedOrder(Base):
 
 
 class ChecklistSubmission(Base):
-    """A completed Daily Closing Checklist (Spice Town or Street Kitchen) -
+    """A completed Daily Closing Checklist (any checklist type) -
     a native replacement for the two Google Forms of the same name (see
     services/checklist_schemas.py for the exact question set, reproduced
     from those forms' own real data). This app's DB is the sole source of

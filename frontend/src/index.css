@@ -9,11 +9,17 @@
   --sidebar-border: #1f2937;
   --sidebar-hover: #1f2937;
 
-  /* Brand red - kept for primary actions and the active nav marker only, so
-     it signals "do this" instead of being on every surface. */
-  --accent: #d92d3f;
-  --accent-hover: #bf2334;
-  --accent-soft: #fdecee;
+  /* Brand colour - kept for primary actions and the active nav marker only,
+     so it signals "do this" instead of being on every surface. These are the
+     product defaults (BRAND_COLOR / BRAND_SECONDARY_COLOR); StoreContext
+     replaces them at boot with the store's own (branding.js brandCssVars,
+     darkened if needed so white button text keeps 4.5:1). */
+  --brand: #0f766e;
+  --brand-secondary: #334155;
+  --accent: #0f766e;
+  --accent-hover: #0d6861;
+  --accent-soft: #e7f1f0;
+  --accent-rgb: 15, 118, 110;
 
   /* Deliberately a different hue from --accent - the cart button needs to
      stand out from the app's red primary-action buttons/links/error text,
@@ -116,6 +122,38 @@ body {
   color: var(--sidebar-text-active);
   font-weight: 700;
   font-size: 1.05rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The store's logo when its image can't load: first letter on the brand colour. */
+.store-logo-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+/* A thin bar in the store's secondary colour under the brand row. */
+.sidebar-brand {
+  box-shadow: inset 0 -2px 0 var(--brand-secondary);
+}
+
+/* Before branding answers (one request at boot). */
+.store-boot {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
 }
 
 .sidebar-collapse-btn {
@@ -908,8 +946,8 @@ body {
 }
 
 .stat-card-accent {
-  border-color: rgba(217, 45, 63, 0.3);
-  background: rgba(217, 45, 63, 0.05);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  background: rgba(var(--accent-rgb), 0.05);
 }
 
 .stat-card-accent .stat-card-value {
@@ -1068,7 +1106,7 @@ button:disabled {
 
 /* The Toast closure column's Mark/Undo actions - same compact icon look,
    just interactive. Needs :not(:disabled) on its own hover rule (a known
-   gotcha in this app - see the spicetown skill's gotcha #18) since the
+   gotcha in this app - see the project skill's gotcha #18) since the
    global `button:hover:not(:disabled) { background: var(--accent-hover) }`
    rule otherwise wins on specificity and flashes every button red on
    hover regardless of what color this class declares. */
@@ -2500,7 +2538,7 @@ button {
 
 /* Plain (primary) buttons only - custom-classed buttons keep their own look. */
 button:not([class]) {
-  box-shadow: 0 1px 2px rgba(217, 45, 63, 0.25);
+  box-shadow: 0 1px 2px rgba(var(--accent-rgb), 0.25);
 }
 
 button:disabled,
@@ -2583,7 +2621,7 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(217, 45, 63, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }
 
 input[type="checkbox"],
@@ -10235,7 +10273,7 @@ button.po-add-manual-add {
 
 .po-stepper:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(217, 45, 63, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }
 
 .po-add-row.has-problem .po-stepper {
@@ -10391,7 +10429,7 @@ button.po-add-row-remove:disabled {
 
 button.po-add-submit {
   padding: 0.5rem 1.1rem;
-  box-shadow: 0 1px 2px rgba(217, 45, 63, 0.25);
+  box-shadow: 0 1px 2px rgba(var(--accent-rgb), 0.25);
 }
 
 button.po-add-submit:disabled {
@@ -10612,7 +10650,7 @@ button.po-confirm-yes,
 button.po-confirm-danger {
   padding: 0.4rem 0.85rem;
   font-size: 0.82rem;
-  box-shadow: 0 1px 2px rgba(217, 45, 63, 0.25);
+  box-shadow: 0 1px 2px rgba(var(--accent-rgb), 0.25);
 }
 
 .error.po-vendor-error {
@@ -14663,3 +14701,4 @@ button.btn-secondary.sp-qty-update {
 .pill.ann-pill {
   text-transform: none;
 }
+.login-logo { border-radius: 8px; }

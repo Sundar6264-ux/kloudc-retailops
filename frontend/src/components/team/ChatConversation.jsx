@@ -16,10 +16,11 @@ import {
 } from "../../api";
 import { ChatSearch, MessageAttachment, PinsBar, SeenByDialog, togglePin, useVoiceRecorder } from "./ChatExtras.jsx";
 import { checkDocument, displayBody, formatDuration } from "./teamAdvancedModel";
-import { STORE_TZ, storeDay, todayStoreDay } from "./taskUtils";
+import { storeDay, todayStoreDay } from "./taskUtils";
 import useDialogA11y from "./useDialogA11y";
 import usePageActive, { isPageVisible, onPageShown } from "./usePageActive";
 import { refreshTeamBadges } from "./useTeamBadges";
+import { lazyStoreFormat } from "../../format.js";
 
 // One chat conversation (team channel or DM): messages oldest-first grouped
 // by day, "Load earlier", a 5 s poll for new ones while it's open, and a
@@ -34,8 +35,8 @@ const MAX_BODY = 4000;
 // were deleted or moderated.
 const MAX_WINDOW_PAGES = 10;
 
-const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, hour: "numeric", minute: "2-digit" });
-const dayFmt = new Intl.DateTimeFormat("en-US", { timeZone: STORE_TZ, weekday: "long", month: "short", day: "numeric" });
+const timeFmt = lazyStoreFormat("en-US", { hour: "numeric", minute: "2-digit" });
+const dayFmt = lazyStoreFormat("en-US", { weekday: "long", month: "short", day: "numeric" });
 
 function newUuid() {
   if (window.crypto?.randomUUID) return window.crypto.randomUUID();

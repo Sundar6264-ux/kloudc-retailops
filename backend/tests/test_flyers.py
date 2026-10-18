@@ -31,6 +31,11 @@ from app.services import flyer_sender, flyers, notifications, whapi_client
 from app.timeutil import to_restaurant_date, utcnow
 from tests.conftest import client_for, make_user
 
+# Made-up rules in the shape these tests were written for (six flyer
+# categories, two WhatsApp roles): tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
+
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 # The real queue + thread (the `pauses` fixture swaps in an inline stand-in).
 REAL_ENQUEUE = flyer_sender.enqueue
@@ -147,7 +152,7 @@ class FakeWhapi:
 
 @pytest.fixture(autouse=True)
 def base(tmp_path, monkeypatch):
-    folder = tmp_path / "Spice Town Flyers"
+    folder = tmp_path / "Store Flyers"
     monkeypatch.setattr(get_settings(), "flyers_dir", str(folder))
     return folder
 
@@ -310,7 +315,7 @@ def test_upload_jpeg_is_normalized_and_stored_by_category(admin_client, db, base
         assert not dict(img.getexif()) and "exif" not in img.info
     # All six category folders exist (first use), in Finder-friendly names.
     assert {p.name for p in base.iterdir() if p.is_dir() and not p.name.startswith(".")} == {
-        "Groceries", "Street Kitchen", "Flowers", "Halal Meat", "Spice Town", "Others"}
+        "Groceries", "Kitchen", "Flowers", "Halal Meat", "Store", "Others"}
     # Nothing temporary left behind.
     assert not [p for p in (base / "Flowers").iterdir() if p.name.startswith(".")]
 
@@ -584,17 +589,17 @@ def test_rename_and_category_move_keep_date_and_id(admin_client, db, base):
     assert path.is_file() and not old_path.exists()
     assert row.updated_at is not None
 
-    r = admin_client.patch(f"{API}/{body['id']}", json={"category": "spice_town"})
-    assert r.status_code == 200 and r.json()["category_label"] == "Spice Town (Generic)"
+    r = admin_client.patch(f"{API}/{body['id']}", json={"category": "store"})
+    assert r.status_code == 200 and r.json()["category_label"] == "Store (Generic)"
     moved, row = stored(base, body, db)
-    assert row.file_rel_path == f"Spice Town/{day} Diwali Marigolds ({row.id}).jpg"
+    assert row.file_rel_path == f"Store/{day} Diwali Marigolds ({row.id}).jpg"
     assert moved.is_file() and not path.exists()
     # A case-only change on a case-insensitive disk just changes the case.
     r = admin_client.patch(f"{API}/{body['id']}", json={"title": "diwali marigolds"})
     assert r.status_code == 200
     final, row = stored(base, body, db)
     assert final.name == f"{day} diwali marigolds ({row.id}).jpg" and final.is_file()
-    assert len(list((base / "Spice Town").iterdir())) == 1
+    assert len(list((base / "Store").iterdir())) == 1
     # Caption cleared; nothing else moves.
     r = admin_client.patch(f"{API}/{body['id']}", json={"caption": "  "})
     assert r.json()["caption"] is None
@@ -680,15 +685,15 @@ def test_soft_delete_moves_the_file_to_deleted(admin_client, db, base):
 
 def test_list_paging_search_and_counts(admin_client):
     ids = []
-    for title, cat, caption in (("Mango festival", "groceries", None), ("Biryani Friday", "street_kitchen", "Hot *biryani*"),
+    for title, cat, caption in (("Mango festival", "groceries", None), ("Biryani Friday", "kitchen", "Hot *biryani*"),
                                 ("Roses", "flowers", None), ("Eid lamb", "halal_meat", "Fresh goat and lamb"),
-                                ("Grand opening", "spice_town", None)):
+                                ("Grand opening", "store", None)):
         ids.append(made(admin_client, title=title, category=cat, caption=caption)["id"])
     page = admin_client.get(API, params={"limit": 2}).json()
     assert [f["id"] for f in page["items"]] == [ids[4], ids[3]]
     assert page["next_before_id"] == ids[3]
-    assert page["counts"] == {"all": 5, "groceries": 1, "street_kitchen": 1, "flowers": 1, "halal_meat": 1,
-                              "spice_town": 1, "others": 0}
+    assert page["counts"] == {"all": 5, "groceries": 1, "kitchen": 1, "flowers": 1, "halal_meat": 1,
+                              "store": 1, "others": 0}
     page2 = admin_client.get(API, params={"limit": 2, "before_id": page["next_before_id"]}).json()
     assert [f["id"] for f in page2["items"]] == [ids[2], ids[1]]
     page3 = admin_client.get(API, params={"limit": 2, "before_id": page2["next_before_id"]}).json()
@@ -804,9 +809,9 @@ def test_meta_lists_only_active_marketing_groups(admin_client, marketing, monkey
     assert meta["groups"] == [{"key": "customers_manchester", "label": "Customers Manchester"},
                               {"key": "customers_vernon", "label": "Customers Vernon"}]
     assert meta["categories"] == [
-        {"key": "groceries", "label": "Groceries"}, {"key": "street_kitchen", "label": "Street Kitchen"},
+        {"key": "groceries", "label": "Groceries"}, {"key": "kitchen", "label": "Kitchen"},
         {"key": "flowers", "label": "Flowers"}, {"key": "halal_meat", "label": "Halal Meat"},
-        {"key": "spice_town", "label": "Spice Town (Generic)"}, {"key": "others", "label": "Others"}]
+        {"key": "store", "label": "Store (Generic)"}, {"key": "others", "label": "Others"}]
     assert meta["whatsapp_connected"] is False
     assert (meta["max_image_mb"], meta["max_pdf_mb"], meta["max_groups_per_send"]) == (25, 20, 25)
     assert meta["accept"] == ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"]
@@ -825,7 +830,7 @@ def test_builtin_staff_groups_start_unmarked_but_can_be_ticked(admin_client, mon
     assert admin_client.get(f"{API}/meta").json()["groups"] == []
     r = admin_client.patch(f"{GROUPS}/store", json={"marketing": True})
     assert r.status_code == 200 and r.json()["marketing"] is True
-    assert admin_client.get(f"{API}/meta").json()["groups"] == [{"key": "store", "label": "Spice Town staff group"}]
+    assert admin_client.get(f"{API}/meta").json()["groups"] == [{"key": "store", "label": "Store staff group"}]
     # The kitchen built-in has no chat id (blank env): ticking it offers nothing to send to.
     admin_client.patch(f"{GROUPS}/kitchen", json={"marketing": True})
     assert [g["key"] for g in admin_client.get(f"{API}/meta").json()["groups"]] == ["store"]
@@ -961,7 +966,7 @@ def test_whatsapp_not_configured_is_409(admin_client, db, marketing, monkeypatch
 @pytest.mark.parametrize("keys, needle", [
     (["nope"], "can't go to"),
     (["deli_staff"], "Deli staff"),
-    (["store"], "Spice Town staff group"),
+    (["store"], "Store staff group"),
     ([], "at least one"),
     ([f"g{n}" for n in range(26)], "at most 25"),
 ])
@@ -1380,7 +1385,7 @@ def test_titles_and_captions_keep_emoji_joiners_and_new_characters(admin_client,
     cook = "\U0001F469\u200d\U0001F373"  # woman + ZWJ + frying pan
     roots = "\U0001FADC"  # root vegetable, Unicode 16
     hindi = "\u0915\u094d\u200d\u0937 \u0930\u0941\u200c\u092a\u092f\u0947"  # a ZWJ half form, a ZWNJ
-    caption = f"{cook} Street Kitchen special!\n{roots} fresh roots {hindi}"
+    caption = f"{cook} Kitchen special!\n{roots} fresh roots {hindi}"
     body = made(admin_client, title=f"Chef {cook} {roots}", caption=caption)
     assert body["caption"] == caption and body["title"] == f"Chef {cook} {roots}"
     path, _ = stored(base, body, db)

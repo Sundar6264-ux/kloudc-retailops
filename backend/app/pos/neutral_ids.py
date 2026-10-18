@@ -155,7 +155,7 @@ def advance_sales_cursor(db: Session, business_date: dt.date, source: str = TOAS
 
 def after_sales_sync(db: Session, business_date: dt.date, source: str = TOAST) -> None:
     """Bookkeeping after a successful sales sync of `business_date` from the
-    POS `source` (the connector's `source`; "toast" for Spice Town). Never
+    POS `source` (the connector's `source`; "toast" for a Toast store). Never
     raises (see the module docstring)."""
     try:
         heal_orders(db)
