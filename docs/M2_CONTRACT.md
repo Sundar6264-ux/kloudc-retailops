@@ -1336,7 +1336,7 @@ files pass on 3.9 too. **Parity** (`scripts/parity`, Python 3.12, a fresh
 read-only copy of the production database, deleted after): import commit
 `56e095c` vs this batch: **114 files compared, DIFFERENCES: 0**.
 
-App (`storeops-app`, commits `cdf79bd`..`06c6a98`, history kept):
+App (`storeops-app`, commits `812beb2`..`06c6a98`, history kept):
 - iOS `PRODUCT_BUNDLE_IDENTIFIER` `com.kloudc.storeops` (+ `.RunnerTests`),
   `CFBundleDisplayName` / `CFBundleName` "StoreOps", permission strings say
   StoreOps; no `DEVELOPMENT_TEAM` (owner picks the team in Xcode). Android
@@ -1371,7 +1371,8 @@ App (`storeops-app`, commits `cdf79bd`..`06c6a98`, history kept):
   issues; `flutter test --concurrency=2` 5343 passed, 6 skipped, 2 failed
   (the iOS metadata audit, fixed in `93c51bf`; that file 9/9 after).
 - CI: `.github/workflows/ci.yml` (Flutter 3.47.2 stable: pub get, analyze,
-  test --concurrency=2, a check that no Firebase/signing file is tracked).
+  test --concurrency=2, a check that no Firebase/signing file is tracked);
+  run `39149278647` green: analyze no issues, **5345 passed, 6 skipped**.
 
 **Deferred / for other batches:**
 - MT7: `po_export.py` letterhead off `spice-town-icon.jpg`; `config.py`
