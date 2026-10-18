@@ -143,7 +143,6 @@ def worker_data(stores: StoresFile, cfg: DirectoryConfig) -> "OrderedDict[str, A
             ("schema", 1),
             ("generated_by", "app.directory.build_static"),
             ("rate", OrderedDict([("per_minute", cfg.rate_per_minute), ("per_hour", cfg.rate_per_hour)])),
-            ("client_ip_header", cfg.client_ip_header or "CF-Connecting-IP"),
             (
                 "cache",
                 OrderedDict(

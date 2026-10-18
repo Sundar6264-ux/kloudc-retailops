@@ -79,9 +79,10 @@ function ifNoneMatch(request, etag) {
   });
 }
 
-function clientIp(request, header) {
-  const value = (header && request.headers.get(header)) || request.headers.get("CF-Connecting-IP") || "";
-  return value.split(",")[0].trim() || "unknown";
+// On Cloudflare, CF-Connecting-IP is set by the edge and cannot be forged by
+// the client (unlike X-Forwarded-For), so the Worker always keys on it.
+function clientIp(request) {
+  return (request.headers.get("CF-Connecting-IP") || "").trim() || "unknown";
 }
 
 export function createDirectory(data, options = {}) {
@@ -116,7 +117,7 @@ export function createDirectory(data, options = {}) {
   }
 
   async function lookup(request, env, rawCode) {
-    const ip = clientIp(request, data.client_ip_header);
+    const ip = clientIp(request);
     // Cloudflare's Workers rate-limit binding (wrangler.toml [[ratelimits]],
     // see wrangler.toml.example) is shared across isolates; optional.
     if (env && env.DIRECTORY_RATE_LIMITER && typeof env.DIRECTORY_RATE_LIMITER.limit === "function") {

@@ -9,7 +9,6 @@ const BODY = '{"schema":1,"code":"DEMO","name":"StoreOps Demo Market"}';
 const DATA = {
   schema: 1,
   rate: { per_minute: 3, per_hour: 100 },
-  client_ip_header: "CF-Connecting-IP",
   cache: {
     ok: "public, max-age=300, stale-while-revalidate=3600",
     not_found: "public, max-age=60",
