@@ -76,7 +76,6 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 import httpx
 from sqlalchemy import and_, case, delete, func, or_, select
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
 from app.config import get_settings

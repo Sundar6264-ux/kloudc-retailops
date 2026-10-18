@@ -53,11 +53,11 @@ import time
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.db import SessionLocal
+from app.dbcompat import dialect_insert
 from app.insights_models import AnalyticsCache, AnalyticsCallLog, GuestVisit
 from app.models import JobRun
 from app.services import toast_analytics
@@ -297,7 +297,7 @@ def store(db: Session, report: str, day: Optional[dt.date], rows: list, meta: Op
     payload = dict(meta or {})
     payload["rows"] = rows
     now = utcnow()
-    stmt = sqlite_insert(AnalyticsCache).values(
+    stmt = dialect_insert(AnalyticsCache, db).values(
         report=report,
         params_hash=params_hash(report, day, extra),
         business_date=day,
@@ -756,7 +756,7 @@ def store_guest_rows(db: Session, raw: list, dates: List[dt.date]) -> int:
         {"visit_date": d, "card_hash": h, "payments": n} for d, cards in per_day.items() for h, n in cards.items()
     ]
     for i in range(0, len(batch), 500):
-        db.execute(sqlite_insert(GuestVisit).values(batch[i : i + 500]))
+        db.execute(dialect_insert(GuestVisit, db).values(batch[i : i + 500]))
     for d in dates:
         store(
             db,

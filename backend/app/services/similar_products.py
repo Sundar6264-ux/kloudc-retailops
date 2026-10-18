@@ -890,9 +890,9 @@ def get_index(db: Session, latest: Optional[dict] = None) -> Optional[SimilarInd
             func.sum(func.length(InventorySnapshot.name)),
             func.sum(func.length(InventorySnapshot.supplier)),
             func.sum(func.length(InventorySnapshot.category)),
-            func.total(InventorySnapshot.price),
-            func.total(InventorySnapshot.cost),
-            func.total(InventorySnapshot.inventory_quantity),
+            func.coalesce(func.sum(InventorySnapshot.price), 0.0),
+            func.coalesce(func.sum(InventorySnapshot.cost), 0.0),
+            func.coalesce(func.sum(InventorySnapshot.inventory_quantity), 0.0),
         ).where(InventorySnapshot.snapshot_date == latest_date)
     ).one()
     key = (

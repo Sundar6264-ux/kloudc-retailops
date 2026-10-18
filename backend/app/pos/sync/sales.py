@@ -34,9 +34,9 @@ import logging
 from typing import Callable, Dict, List, Optional
 
 from sqlalchemy import delete, select
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
+from app.dbcompat import dialect_insert
 from app.models import JobRun, Order
 from app.pos import registry
 from app.pos.neutral_ids import TOAST, after_sales_sync, neutral_line_values
@@ -151,7 +151,7 @@ def _upsert_line_items(
         # The POS-neutral copies (migration 0060) go in the same upsert.
         neutral = neutral_items[index] if neutral_items is not None else neutral_line_values(item)
         values = {**item, **neutral}
-        stmt = sqlite_insert(Order).values(business_date=business_date, **values)
+        stmt = dialect_insert(Order, db).values(business_date=business_date, **values)
         update_cols = {c: getattr(stmt.excluded, c) for c in values if c != "toast_selection_guid"}
         update_cols["business_date"] = business_date
         stmt = stmt.on_conflict_do_update(

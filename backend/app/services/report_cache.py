@@ -158,9 +158,10 @@ def data_version(db: Session) -> Tuple:
             text(
                 "SELECT (SELECT max(id) FROM orders), (SELECT max(id) FROM inventory_snapshots), "
                 "(SELECT max(snapshot_date) FROM inventory_snapshots), "
-                "(SELECT count(*) || ':' || ifnull(max(id), 0) FROM placed_orders), "
+                "(SELECT CAST(count(*) AS TEXT) || ':' || CAST(coalesce(max(id), 0) AS TEXT) FROM placed_orders), "
                 "(SELECT max(id) FROM purchase_log), (SELECT max(id) FROM invoice_submissions), "
-                f"(SELECT max(id) || ':' || ifnull(max(finished_at), '') FROM job_runs WHERE job_name IN ({jobs}))"
+                "(SELECT CAST(max(id) AS TEXT) || ':' || coalesce(CAST(max(finished_at) AS TEXT), '') "
+                f"FROM job_runs WHERE job_name IN ({jobs}))"
             )
         ).first()
         version = tuple(row) if row is not None else ()

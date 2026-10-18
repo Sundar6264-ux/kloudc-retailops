@@ -49,9 +49,10 @@ from operator import attrgetter, itemgetter
 from typing import Optional
 
 from sqlalchemy import select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
+from app.dbcompat import is_postgres
 from app.models import CategoryOverride
 from app.services.item_vendors import vendors_of
 
@@ -225,10 +226,12 @@ def load_rules(db: Session) -> Rules:
         return cached
     try:
         rows = db.execute(select(CategoryOverride).where(CategoryOverride.active.is_(True))).scalars().all()
-    except OperationalError:
+    except (OperationalError, ProgrammingError):  # SQLite / PostgreSQL "no such table"
         # The table doesn't exist yet (code deployed before `alembic upgrade`)
         # - behave as if there were no rules rather than break every report.
         logger.warning("category_overrides table missing - run alembic upgrade; no overrides applied")
+        if is_postgres(db):
+            db.rollback()  # the failed statement aborted the transaction
         rows = []
     rules = Rules([_RuleValues(r) for r in rows])
     db.info[_CACHE_KEY] = rules
