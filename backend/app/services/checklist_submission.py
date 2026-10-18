@@ -378,7 +378,7 @@ def _whatsapp_text(entry: ChecklistSubmission) -> str:
     """The staff-group summary:
 
         ⚠️ *Kitchen Closing - Service*
-        Sadia (public link) · Oct 1, 1:40 AM
+        Asha (public link) · Oct 1, 1:40 AM
 
         *15 items not done*
 

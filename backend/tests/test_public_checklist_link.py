@@ -115,8 +115,15 @@ def good_answers(checklist_type=FSA):
     return answers
 
 
+# The product suggests no names (a new list link starts empty), so the tests
+# give the FSA link its two people explicitly.
+NAMES = ["Sadia", "Satinder"]
+
+
 def enable(admin_client, checklist_type=FSA, **fields):
     body = {"enabled": True}
+    if checklist_type == FSA and fields.get("name_mode", "list") == "list":
+        body["allowed_names"] = list(NAMES)
     body.update(fields)
     r = admin_client.put(f"{ADMIN_BASE}/{checklist_type}/public-link", json=body)
     assert r.status_code == 200, r.text
@@ -160,7 +167,9 @@ def test_admin_get_suggests_the_service_link_but_creates_nothing(db, admin_clien
     body = r.json()
     assert body["exists"] is False and body["enabled"] is False and body["url"] is None
     assert body["slug"] == "kitchen" and body["name_mode"] == "list"
-    assert body["allowed_names"] == ["Sadia", "Satinder"] and body["max_per_hour"] == 6
+    # No staff names are built into the product: a new link starts with an
+    # empty name list that the store's admin fills in.
+    assert body["allowed_names"] == [] and body["max_per_hour"] == 6
     assert db.query(ChecklistPublicLink).count() == 0
     # Creating without "enabled" leaves it off.
     r = admin_client.put(f"{ADMIN_BASE}/{FSA}/public-link", json={})

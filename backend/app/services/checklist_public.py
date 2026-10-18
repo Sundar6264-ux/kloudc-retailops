@@ -113,11 +113,11 @@ MAX_ANSWER_KEY = 200
 MAX_ANSWER_VALUE = 10000
 MAX_MEDIA_KEYS = 50
 
-# The service checklist link the owner asked for (Oct 1): prefilled in the
-# admin panel when no link exists yet. Never created automatically.
+# One-word link defaults for the legacy built-in checklist types, prefilled
+# in the admin panel when no link exists yet (never created automatically).
+# No staff names: the allowed-name list always starts empty.
 SUGGESTED = {
-    "street_kitchen_fsa": {"slug": "kitchen", "allowed_names": ["Sadia", "Satinder"]},
-    # One-word defaults for the other built-in checklists (no names).
+    "street_kitchen_fsa": {"slug": "kitchen"},
     "street_kitchen_closing": {"slug": "chef"},
     "spice_town_closing": {"slug": "store"},
 }
