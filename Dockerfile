@@ -50,6 +50,7 @@ RUN chmod 0755 /usr/local/bin/storeops-entrypoint \
 # Container paths. docker-compose.yml sets the same values so a store's .env
 # cannot point them somewhere outside the volume by accident.
 ENV DATABASE_URL=sqlite:////data/storeops.db \
+    UPLOADS_ROOT=/data/uploads \
     INVOICE_UPLOADS_DIR=/data/uploads/invoices \
     TEAM_UPLOADS_DIR=/data/uploads/team \
     FLYERS_DIR=/data/uploads/flyers \
