@@ -1513,6 +1513,11 @@ determinism, refusals, smoke on the data, pack, reset folder safety, swap,
 runner env, reset time across DST, reset end to end). App
 `test/core/legal/ai_consent_test.dart`, `test/core/legal/legal_links_test.dart`;
 `audit_c_ask_bot_test.dart` pre-agrees the notice in `setUp`.
+Full runs (rebased on `main` @ `6d2cc7f` / app `main` @ `783033a`): backend
+3.9 and 3.12 each 2488 passed, 19 skipped; app `flutter analyze` clean,
+`flutter test --concurrency=2` 5351 passed, 6 skipped, 2 failed - both in
+`final_ios_metadata_test.dart`, fixed on app `main` by `93c51bf`; after
+rebasing onto it that file, the new tests and the App Review journey pass.
 
 **Deferred / for other batches:**
 - MT7: add `ai_consent_notice`, `demo_mode` and the legal fields to
