@@ -2119,3 +2119,92 @@ The parity recording was not re-run. Nothing changed touches a recorded
 endpoint for the origin store: its service link already exists, so it never
 gets the suggestion. The rest of the changes are tests, docs and deploy
 files.
+## As built - Verify (app track, adversarial)
+
+Repository `storeops-app`, branch `m2/verify-app`, rebased on `main` @ `b84f9f2` (after the identity
+verifier's app commits) and fast-forwarded into `main`. Each fix has a test that failed before it.
+
+**Confirmed and fixed**
+- `b802819` **Cross-store bleed (5.5 step 5).** Flyer files/thumbnails
+  (`flyers_providers.dart` `_bytesMemory`) and team photos
+  (`team_media.dart` `_mediaMemory`) are kept in top-level maps outside the
+  ProviderContainer, keyed by the server's relative URL. `/api/flyers/1/thumb`
+  is another flyer at every store, so after a switch store B's flyer 1 drew
+  store A's picture (the StoreOpsRoot restart does not touch top-level
+  state). `StoreSwitcher.resetSession` now clears both and
+  `ProviderFreshness` (the "Updated 2:08 AM" times). Test
+  `test/core/tenant/store_memory_bleed_test.dart` (3).
+- `7ebda2c` **Hard-coded US Eastern offsets (5.8).**
+  `critical_dismissal.dart` `_wallToUtc` (the provisional "hide vendor"
+  end time) tried UTC-4 then UTC-5; at Chicago/Los Angeles stores the vendor
+  came back 1-3 h early until the server answered. Now
+  `StoreTime.fromStoreWallClock`. Tests for Chicago and Los Angeles in
+  `critical_provisional_test.dart`.
+- `3846aa9` **Gating holes (6).** The Inventory Reports hub showed Price
+  Change Log without the `catalog` capability (only its search entry was
+  gated); Home's Today card fetched open checks for an admin at a store
+  without `open_orders` (server 409). Both use `storeAllowsFeature`. Tests
+  `inventory_reports_hub_gating_test.dart` (3), `today_card_test.dart` (+1).
+- `9162376` **Gating hole (6), App Review path.** Home's first quick action
+  "Print Label History" showed at stores without a labels site (Clover,
+  DEMO) and opened a screen whose repository throws. Now
+  `storeHasLabelsProvider`, like the Scan tab. Tests in
+  `home_screen_test.dart` (+3).
+- `eae10c3` **8 s lookup timeout (5.3).** `DioTenantHttp` set send/receive
+  timeouts only; with no connect timeout a host that drops packets held
+  the store-code screen for the OS default (~75 s) instead of falling back
+  to the static copy. `connectTimeout` added. Test `tenant_http_test.dart` (2).
+- `8401e31` **`APP_ENV` fail-safe (5.1).** Any value but the exact word
+  `production` made a development build (http/localhost servers,
+  `DEV_API_BASE_URL`), so `APP_ENV=prod` was quietly development. Now only
+  `development` is. Test `test/core/config/env_config_test.dart` (2).
+- `f8b1ad1` **Origin-store name in `integration_test` (9.2).** `app_test.dart`
+  expected "Spice Town" on Home (now the tenant's short name) and its fakes
+  used origin-store checklist titles.
+- `8534e98` **DEMO wording.** The demo-login note said "nothing is sent to
+  WhatsApp, Toast or the printer" and Upload Inventory asked for "the Toast
+  Retail export" on the DEMO store (POS "CSV upload"). Store-neutral now.
+  Test `test/identity/demo_store_wording_test.dart` (2).
+
+**Checked, no change**
+- Branding fixtures: the app copies equal `backend/tests/fixtures/stores/
+  <CODE>.branding.json` on server `main` byte-for-byte (after JSON sort).
+- `/api/app/config` key `min_supported_build`, push `data["store"]`
+  (`with_store`), `/api/notifications/unregister`: app and server agree.
+- Token host checks (auth and labels interceptors), no ATS/cleartext
+  exceptions, bundle id `com.kloudc.storeops` everywhere, no
+  `DEVELOPMENT_TEAM`, no Firebase or signing files tracked.
+- Push for another store: dialog, no routing; gated push routes open
+  "Not available".
+- `ApiHostPolicy`'s explicit refusal of the origin store's domain came in
+  with the identity verifier's `ac3cff4`; the store-code tests cover it.
+
+**Found, not fixed (for later batches / owner)**
+- Store-specific POS text: about 70 visible strings still say "Toast"
+  (Items Sold, Open Checks, invoices "Close in Toast", Fix Issues "Toast
+  ID", schedule suggestions, Insights). Clover and DEMO stores read them.
+  The website did this in MT9; the app's deferred partial gates (MT12) are
+  the natural place.
+- Device-local "today" (not store time) in `vendorCalendarPageStart`,
+  `reconciliation_providers.dart` default range, Supplier Projection and
+  Log Purchase date defaults. Pre-M2; off by a day only when the phone's
+  zone differs from the store's around midnight.
+- `integration_test/app_test.dart` also has pre-M2 stale expectations
+  ("Connected" pill, "Print Labels" title) - Regression stage.
+- Test fixtures still carry origin-store data: real vendor names, staff
+  usernames, OCR text of real invoices (`long_receipt_fixtures.dart`,
+  `invoice_scan_parser_test.dart`), `ops.spicetown.shop` links. They were
+  in the kept history too; removing them is an owner decision.
+- Git history (kept by decision) contains the origin store's Firebase iOS
+  client config (`firebase_options.dart` before `c6bec1a`). Not a server
+  secret, but it names the origin project; rewriting history needs the
+  owner.
+- `m2/mt13-legal` conflicts with `main` in `legal_links.dart`,
+  `about_screen.dart`, `login_footer.dart` (MT11 already added
+  `LegalLinks`/About/footer) - for the merge step.
+
+**Tests:** `flutter analyze` no issues; full `flutter test --concurrency=2`
+(heavy queue, before the rebase onto `b84f9f2`): **5476 passed, 6 skipped, 0 failed** (was
+5454 + 4 at `ba945b3`; +18 new). No simulator run (Regression stage).
+After the rebase: `flutter analyze` clean and test/core, test/identity and
+the touched feature tests (447) pass. `main` = `8534e98`, pushed.
