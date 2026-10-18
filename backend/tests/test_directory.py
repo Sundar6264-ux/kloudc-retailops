@@ -188,11 +188,15 @@ def test_settings_validate_owner_ids_and_store_links(caplog):
     assert cfg.app_store_url == "https://apps.apple.com/us/app/storeops/id1234567890"
 
 
-def test_from_settings_reads_environment_until_mt7_adds_fields(monkeypatch):
-    monkeypatch.setenv("DIRECTORY_STORES_FILE", "/tmp/elsewhere.json")
-    monkeypatch.setenv("DIRECTORY_RATE_PER_MINUTE", "7")
-    monkeypatch.setenv("DIRECTORY_EXTRA_API_HOSTS", "a.example.com, b.example.com")
-    monkeypatch.setenv("DIRECTORY_CLIENT_IP_HEADER", "CF-Connecting-IP")
+def test_from_settings_reads_the_store_settings(monkeypatch):
+    # MT7 added the DIRECTORY_* fields to Settings (contract 1.1).
+    from app.config import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "directory_stores_file", "/tmp/elsewhere.json")
+    monkeypatch.setattr(s, "directory_rate_per_minute", 7)
+    monkeypatch.setattr(s, "directory_extra_api_hosts", "a.example.com, b.example.com")
+    monkeypatch.setattr(s, "directory_client_ip_header", "CF-Connecting-IP")
     cfg = DirectoryConfig.from_settings()
     assert cfg.stores_file == "/tmp/elsewhere.json"
     assert cfg.rate_per_minute == 7 and cfg.rate_per_hour == 100
@@ -414,14 +418,17 @@ def test_store_server_serves_the_association_files(anon_client, monkeypatch):
     assert r.status_code == 200 and r.headers["content-type"] == "application/json"
     assert r.json()["applinks"]["details"][0]["appIDs"] == []
     assert anon_client.get("/.well-known/assetlinks.json").json()[0]["target"]["sha256_cert_fingerprints"] == []
-    monkeypatch.setenv("APPLE_TEAM_ID", TEAM.lower())
-    monkeypatch.setenv("ANDROID_CERT_SHA256", f"{FP}, not-a-fingerprint")
+    from app.config import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "apple_team_id", TEAM.lower())
+    monkeypatch.setattr(s, "android_cert_sha256", f"{FP}, not-a-fingerprint")
     r = anon_client.get("/.well-known/apple-app-site-association")
     assert r.json()["applinks"]["details"][0]["appIDs"] == [f"{TEAM}.com.kloudc.storeops"]
     assert r.content == build_static.aasa_bytes(TEAM, "com.kloudc.storeops")
     prints = anon_client.get("/.well-known/assetlinks.json").json()[0]["target"]["sha256_cert_fingerprints"]
     assert prints == [FP]
-    monkeypatch.setenv("APPLE_TEAM_ID", "bad")
+    monkeypatch.setattr(s, "apple_team_id", "bad")
     assert anon_client.get("/.well-known/apple-app-site-association").json()["applinks"]["details"][0]["appIDs"] == []
 
 

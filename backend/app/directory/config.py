@@ -15,8 +15,8 @@ from typing import Any, Optional, Tuple
 from urllib.parse import urlsplit
 
 # Contract rule 0.3: nothing StoreOps serves or links to may live under the
-# legacy store's domain (the one literal; everything else uses the constant).
-FORBIDDEN_DOMAIN = "spicetown.shop"
+# legacy store's domain. The one literal lives in app.config (MT7).
+from app.config import REFUSED_DOMAIN as FORBIDDEN_DOMAIN
 
 DEFAULT_PLATFORM_DOMAIN = "storeops.invalid"
 DEFAULT_BUNDLE_ID = "com.kloudc.storeops"
