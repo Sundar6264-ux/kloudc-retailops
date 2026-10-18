@@ -1,0 +1,9 @@
+# The real store list is private (store names and server addresses).
+stores.json
+# Build outputs (python -m app.directory.build_static).
+dist/
+worker/src/data.json
+# The owner's Wrangler config (account id, routes); copy wrangler.toml.example.
+worker/wrangler.toml
+worker/.wrangler/
+worker/.dev.vars
