@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   getAllTimeOpenOrders,
   getCart,
+  getChecklistSchemas,
   getChecklistSubmissions,
   getDeliveryHistory,
   getInvoiceSubmissions,
@@ -14,6 +15,8 @@ import { useAuth } from "../AuthContext.jsx";
 import { inStoreZone, storeDateStr, storeTodayStr, storeDateOffsetStr } from "../format.js";
 import { INVOICE_STATUS_TERMS, TermInfo } from "../glossary.jsx";
 import { currentPosName } from "../store/gating.js";
+import { useStoreAllows } from "../store/StoreContext.jsx";
+import { closingTileGroups } from "./closingChecklists.js";
 
 // Overview dashboard widgets. Every tile/panel is shown only when the user
 // has that feature (its endpoint would 403 otherwise), loads on its own, and
@@ -114,6 +117,9 @@ export function StatTiles() {
 
   // No sales tiles (and no sales requests) for a "Hide sales numbers" user.
   const canSales = hasFeature("items_sold") && canSeeSales;
+  // "Today's sales" is the POS's live today (store/gating.js items_sold_today);
+  // a store whose POS has none gets only Yesterday's.
+  const liveToday = useStoreAllows("items_sold_today");
   const canReorder = hasFeature("reorder_candidates");
   const canCart = hasFeature("purchase_order_cart") || hasFeature("supplier_projection");
   const canOpen = hasFeature("open_orders");
@@ -124,11 +130,11 @@ export function StatTiles() {
   const cart = useLoad(canCart, () => getCart());
   const open = useLoad(canOpen, () => getAllTimeOpenOrders());
   const invoices = useLoad(canInvoices, () => sharedLoad("invoices", getInvoiceSubmissions));
-  const todaySales = useLoad(canSales, () => getItemsSold(todayIso, todayIso));
+  const todaySales = useLoad(canSales && liveToday, () => getItemsSold(todayIso, todayIso));
 
   const tiles = [];
 
-  if (canSales) {
+  if (canSales && liveToday) {
     const t = todaySales.data;
     tiles.push(
       <StatTile
@@ -142,6 +148,8 @@ export function StatTiles() {
         maskable
       />
     );
+  }
+  if (canSales) {
     const d = sales.data;
     tiles.push(
       <StatTile
@@ -381,38 +389,66 @@ function checklistTile(key, label, state, to) {
   );
 }
 
-// Kitchen closing tile: the chef's and the Food Service Associate's closing
-// checklists share one tile (a third tile would crowd the one-row activity
-// strip). Issues if either latest has issues; amber if either is stale.
-function kitchenTile(chefState, fsaState, to) {
-  const loading = chefState.loading || fsaState.loading;
-  const error = chefState.error || fsaState.error;
-  const state = { loading, error, data: chefState.data && fsaState.data ? true : null };
-  const chef = chefState.data?.items?.[0];
-  const fsa = fsaState.data?.items?.[0];
-  const latest = [chef, fsa].filter(Boolean);
+// Several closing checklists in one tile (e.g. the kitchen's, so a third tile
+// doesn't crowd the one-row activity strip). Issues if any latest has
+// issues; amber if any is stale. `checklists`: [{ name, last }].
+function combinedClosingTile(key, label, checklists, to) {
+  const latest = checklists.map((c) => c.last).filter(Boolean);
   const anyIssues = latest.some((s) => !s.all_clear);
-  // Only a stale submission turns it amber - a missing one just reads "none"
-  // (a non-admin sees only their own, and a chef never submits the FSA one).
+  // Only a stale submission turns it amber - a missing one just reads "-"
+  // (a non-admin sees only their own, and not everyone fills in every one).
   const stale = latest.some((s) => hoursSince(s.created_at) > 36);
-  // Compact (the tile is narrow): "Chef 9/28 · FSA 9/29", "-" when none.
+  // Compact (the tile is narrow): "Line 9/28 · Prep 9/29", "-" when none.
   const md = (iso) => {
     const [, m, d] = localIso(new Date(iso)).split("-");
     return `${Number(m)}/${Number(d)}`;
   };
-  const part = (name, s) => `${name} ${s ? md(s.created_at) : "-"}`;
+  const part = (c) => `${c.name} ${c.last ? md(c.last.created_at) : "-"}`;
   return (
     <StatTile
-      key="kitchen"
+      key={key}
       to={to}
-      label="Kitchen closing"
+      label={label}
       termKey={latest.length ? (anyIssues ? "checklist_issues" : "checklist_all_clear") : undefined}
-      state={state}
-      value={state.data ? (latest.length ? (anyIssues ? "Issues" : "All clear") : "None yet") : null}
-      sub={latest.length ? `${part("Chef", chef)} · ${part("FSA", fsa)}` : null}
+      state={{ loading: false, error: false, data: true }}
+      value={latest.length ? (anyIssues ? "Issues" : "All clear") : "None yet"}
+      sub={latest.length ? checklists.map(part).join(" · ") : null}
       tone={!latest.length ? "neutral" : anyIssues ? "bad" : stale ? "warn" : "good"}
     />
   );
+}
+
+// The store's own closing checklists (closingChecklists.js), each with its
+// latest submission. One failed lookup only blanks its own tile.
+async function loadClosingGroups() {
+  const res = await getChecklistSchemas();
+  const groups = closingTileGroups(res?.schemas);
+  return Promise.all(
+    groups.map(async (g) => ({
+      ...g,
+      checklists: await Promise.all(
+        g.checklists.map(async (c) => {
+          try {
+            const r = await getChecklistSubmissions({ checklistType: c.type, limit: 1 });
+            return { ...c, last: r?.items?.[0] || null, failed: false };
+          } catch {
+            return { ...c, last: null, failed: true };
+          }
+        })
+      ),
+    }))
+  );
+}
+
+function closingTile(group, to) {
+  if (group.checklists.some((c) => c.failed)) {
+    return <StatTile key={group.key} to={to} label={group.label} state={{ loading: false, error: true, data: null }} />;
+  }
+  if (group.checklists.length === 1) {
+    const { last } = group.checklists[0];
+    return checklistTile(group.key, group.label, { loading: false, error: false, data: { items: last ? [last] : [] } }, to);
+  }
+  return combinedClosingTile(group.key, group.label, group.checklists, to);
 }
 
 const INVOICE_TONES = { completed: "good", in_progress: "info", pending: "neutral", failed: "bad" };
@@ -424,22 +460,17 @@ export function ActivityTiles() {
   const canInvoices = hasFeature("invoice_submission");
   const canDeliveries = hasFeature("delivery_review");
 
-  const store = useLoad(canChecklists, () =>
-    getChecklistSubmissions({ checklistType: "spice_town_closing", limit: 1 })
-  );
-  const kitchen = useLoad(canChecklists, () =>
-    getChecklistSubmissions({ checklistType: "street_kitchen_closing", limit: 1 })
-  );
-  const kitchenFsa = useLoad(canChecklists, () =>
-    getChecklistSubmissions({ checklistType: "street_kitchen_fsa", limit: 1 })
-  );
+  const closing = useLoad(canChecklists, loadClosingGroups);
   const invoices = useLoad(canInvoices, () => sharedLoad("invoices", getInvoiceSubmissions));
   const deliveries = useLoad(canDeliveries, () => getDeliveryHistory(14));
 
   const tiles = [];
   if (canChecklists) {
-    tiles.push(checklistTile("store", "Store closing", store, "/daily-checklists"));
-    tiles.push(kitchenTile(kitchen, kitchenFsa, "/daily-checklists"));
+    if (!closing.data) {
+      tiles.push(<StatTile key="closing" to="/daily-checklists" label="Closing checklists" state={closing} />);
+    } else {
+      for (const group of closing.data) tiles.push(closingTile(group, "/daily-checklists"));
+    }
   }
   if (canInvoices) {
     const last = invoices.data?.items?.[0];
