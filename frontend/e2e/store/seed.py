@@ -55,7 +55,13 @@ from app.services.checklist_builtin import SEED_DEFINITIONS  # noqa: E402
 
 types_ = [d["checklist_type"] for d in SEED_DEFINITIONS]
 removed = {}
-for label, sql, params in [
+# run.sh runs `python -m app.store init` first: it already removed these
+# rows and then inserted the store pack's own (its "store" WhatsApp group
+# too) - deleting again would take the pack's rows away.
+stamped = db.execute(text("SELECT COUNT(*) FROM sqlite_master WHERE name='store_identity'")).scalar() and db.execute(
+    text("SELECT COUNT(*) FROM store_identity")
+).scalar()
+for label, sql, params in [] if stamped else [
     ("category_overrides", "DELETE FROM category_overrides WHERE (match_type='supplier' AND match_value='Shaz International') "
      "OR created_by='category merge plan (migration 0037)'", {}),
     ("checklist_definition_versions", "DELETE FROM checklist_definition_versions WHERE definition_id IN "

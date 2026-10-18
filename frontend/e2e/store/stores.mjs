@@ -24,7 +24,7 @@ const STORES = [
 ];
 const ROLES = ["e2e_admin", "e2e_staff", "e2e_hide", "app_store_review"];
 const WIDTHS = [1280, 375];
-const NAMES = new RegExp(["spice ?town", "stre" + "et kitchen", "ver" + "non", "spice" + "town\\.shop"].join("|"), "i");
+const NAMES = new RegExp(["spice[ _]?town", "stre" + "et[ _]kitchen", "ver" + "non", "spice" + "town\\.shop"].join("|"), "i");
 const SHOTS = join(WORK, "shots");
 mkdirSync(SHOTS, { recursive: true });
 
@@ -163,6 +163,17 @@ async function runStore(browser, store) {
         } else if (role === "e2e_admin") {
           check(!url.includes("not-available"), `${tag}: ${hash} -> ${url} on a Toast store`);
         }
+      }
+
+      // ---- Overview closing tiles follow the store's own closing checklists ----
+      if (role === "e2e_admin") {
+        await page.goto(`${base}/#/`);
+        await settle(page);
+        const tiles = await page.$$eval(".stat-tile-label", (els) => els.map((e) => e.textContent.trim()));
+        check(tiles.includes("Store closing"), `${tag}: Overview has no Store closing tile (${tiles.join(", ")})`);
+        check(!tiles.includes("Kitchen closing"), `${tag}: Overview shows a Kitchen closing tile for a pack without one`);
+        check(!tiles.includes("Closing checklists"), `${tag}: Overview closing tiles did not load`);
+        check(tiles.includes("Today's sales") === brand.capabilities.includes("live_today_sales"), `${tag}: Today's sales tile vs live_today_sales`);
       }
 
       // ---- store time zone ----
