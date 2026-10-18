@@ -1213,3 +1213,172 @@ App (source: `ops-fixes` @ `f99c2e0`, 232 commits):
 
 **Deferred:** a synthetic catalog + labels fixture so the similar-products
 quality-floor tests run again in StoreOps.
+
+---
+
+## As built - MT7a part 2 (identity, Docker, CI)
+
+Server + web (`storeops`, commits `4c7f6ca`..`6d2cc7f` plus this section):
+
+**Clean-out (handoff section 3, step 3 last list).**
+- Removed: the origin store's business docs and batch contracts under `docs/`
+  (kept: `M2_CONTRACT.md`, `MULTISTORE_M1_CONTRACT.md`,
+  `MULTISTORE_M1_HANDOFF.md`), `docs/architecture/`, root `HANDOFF.md`,
+  `MOBILE_APP_CONTEXT.md`, `MOBILE_APP_FIXES.md`, `WEBSITE_REQUIREMENTS.md`.
+  Code comments that cite the removed contracts now point at files that only
+  exist in the origin repository's history; harmless, left for the owning
+  batches to reword.
+- `.claude/skills/spicetown/` replaced by `.claude/skills/storeops/SKILL.md`
+  (ground rules, architecture, 12 generic gotchas, feature pattern, commands).
+- Mac-mini deploy scripts removed (backend/cloudflared/updater/watchdog
+  plists, `setup_persistent.sh`, `update_cloudflared.sh`, `watchdog.sh`).
+  Generic templates in `backend/scripts/launchd/`
+  (`com.kloudc.storeops.backend.plist`, `.watchdog.plist`, `watchdog.sh`,
+  README) with `__STOREOPS_DIR__` / `__RUN_AS_USER__`.
+- `backend/scripts/backup/`: plists renamed to `com.kloudc.storeops.backup` /
+  `.litestream` with placeholders; prefix default `storeops`; config dir
+  `~/.config/storeops` (`STOREOPS_LITESTREAM_DIR`); Litestream template needs
+  `REPLACE_WITH_STORE_CODE` and `REPLACE_WITH_STOREOPS_DIR`; README rewritten
+  with the Docker path. `run_litestream.sh` now reads permissions with GNU
+  `stat -c` first (BSD `stat -f` second): on Linux `stat -f` is filesystem
+  status, which made the 600 check refuse a correct file (found by CI).
+- `dump_db_to_csv.sh` defaults to `backend/storeops.db`.
+
+**Identity.**
+- Website shell: `<title>StoreOps</title>` + SVG favicon; "StoreOps" on the
+  login page, sidebar brand and public checklist header (MT9 files, one string
+  each; MT9 replaces them with the branding `store_name` / `product` values).
+  FastAPI title "StoreOps" (`app/main.py`, one line; not in parity's
+  recording).
+- Placeholder artwork: `backend/scripts/branding/make_placeholder_art.py`
+  (Pillow; a geometric storefront on `#2457A6`, no store artwork) writes
+  `backend/app/assets/branding/{logo.svg, logo-128.png, logo-512.png,
+  app-icon-1024.png}` (the defaults MT7's `/api/app/branding` serves),
+  `frontend/public/{logo.svg, logo-header.png, favicon-32.png, favicon-512.png,
+  apple-touch-icon.png}`, and with `--app-repo` the app's `app_icon.png` and
+  `wordmark.png`. The unused store logo JPEG is removed;
+  **`backend/app/assets/spice-town-icon.jpg` stays** because
+  `services/po_export.py` (MT7) loads it for the PO PDF letterhead - MT7
+  switches it to the branding logo setting and deletes the file.
+- Capacitor wrapper: `appId` `com.kloudc.storeops`, `appName` "StoreOps"
+  (config, Android namespace/applicationId/strings, `MainActivity` package,
+  iOS bundle id and display name); npm package `storeops-frontend`.
+  `frontend/.env.mobile` holds `https://demo.storeops.invalid`.
+- `README.md` rewritten for StoreOps.
+
+**Docker** (`Dockerfile`, `docker/entrypoint.sh`, `docker/litestream.yml`,
+`.dockerignore`, `docker-compose.yml`, `.env.example`).
+- Multi-stage: `node:22-bookworm-slim` runs `npm ci` + `vite build`;
+  runtime `python:3.12-slim-bookworm` + `tesseract-ocr` (5.3.0) + `tini`;
+  user `storeops` (uid/gid 10001) owns `/data` only; `test ! -e .env` at build.
+- Container paths (image ENV and compose `environment`, which wins over
+  `.env`): `DATABASE_URL=sqlite:////data/storeops.db`,
+  `INVOICE_UPLOADS_DIR=/data/uploads/invoices`,
+  `TEAM_UPLOADS_DIR=/data/uploads/team`, `FLYERS_DIR=/data/uploads/flyers`,
+  `INSIGHTS_HMAC_KEY_FILE=/data/insights_hmac.key`,
+  `FRONTEND_DIST_DIR=/app/frontend/dist`. MT7's neutral defaults do not change
+  these.
+- Entrypoint: makes the upload folders, `alembic upgrade head`, then
+  `uvicorn app.main:app --workers 1 --proxy-headers` (one worker: jobs run
+  in-process; `FORWARDED_ALLOW_IPS` from `.env`). Any other command runs as a
+  one-off (`docker compose run --rm store python scripts/seed_admin.py`).
+- `HEALTHCHECK` on `/api/health` (Python urllib, interval 30 s, start 60 s).
+- Compose: service `store` (`env_file: .env`, volume `store-data:/data`,
+  port `${STORE_HTTP_BIND:-127.0.0.1}:${STORE_HTTP_PORT:-8000}`), service
+  `litestream` (`litestream/litestream:0.3.13`, profile `backup`, waits for
+  `store` healthy, config `docker/litestream.yml` with
+  `${LITESTREAM_R2_ACCOUNT_ID}` / `${LITESTREAM_R2_BUCKET}` /
+  `stores/${STORE_CODE}/db`; keys `LITESTREAM_ACCESS_KEY_ID` /
+  `LITESTREAM_SECRET_ACCESS_KEY` from `.env`). One folder + one
+  `COMPOSE_PROJECT_NAME` per store on a machine.
+- Root `.env.example`: compose values, store basics, Toast, optional
+  services, Litestream - all blank; the full settings list stays in
+  `backend/.env.example` (MT7).
+
+**CI** (`.github/workflows/ci.yml`, GitHub Actions, run `39148433449` green):
+- backend: pytest on Python 3.9 and 3.12 with Tesseract, outside base URLs at
+  `http://127.0.0.1:9`: **2448 passed, 22 skipped** on each;
+- website: `npm ci`, `node --test` (**208 passed**), `vite build`, title check;
+- docker: buildx build (GHA cache); non-root (uid 10001); no `.env`, `*.db`,
+  keys, Firebase files, CSV/TSV under `/app` or `/data`; no tests in the
+  image; `docker compose config` with and without `--profile backup`; boot on
+  an empty database via compose: `/api/health` 200, website served with the
+  StoreOps title, `alembic current` = `0061 (head)`, Docker health
+  `healthy`; restart on the existing database; **full backend suite inside
+  the image: 2448 passed, 22 skipped**.
+- Not covered by CI: booting the image on a copy of a real store database
+  (no store data may enter GitHub). The parity run below covers the same
+  code on a production copy locally.
+
+**Name grep test** (`backend/tests/test_no_spicetown_names.py`, section 9.2):
+- identity scope, zero hits allowed: `README.md`, `Dockerfile`,
+  `.dockerignore`, `docker-compose.yml`, `.env.example`,
+  `frontend/{index.html, capacitor.config.json, package.json, .env.mobile}`,
+  `frontend/src/pages/LoginPage.jsx`, and the folders `.claude`, `.github`,
+  `docker`, `frontend/public`, `frontend/android`, `frontend/ios`,
+  `backend/app/assets/branding`, `backend/scripts/{launchd,backup,branding}`;
+- code scope (`backend/app`, `frontend/src`): every hit must match
+  `backend/tests/data/spicetown_name_allowlist.txt` (`<path>:<substring>`);
+  **136 entries** today across MT7, MT8 and MT9 files; an entry that matches
+  nothing fails the test, so each batch deletes its lines as it moves values
+  out;
+- explicitly excluded: `backend/alembic/versions/`,
+  `backend/app/services/checklist_builtin.py`, `backend/packs/`.
+
+**Other test change:** `test_public_checklist_link.py::
+test_page_paths_trailing_slash_and_nested` asserts `GET /` only when the
+`frontend` static mount exists (it is made at import time only when
+`frontend/dist` exists; a fresh checkout and the CI backend job have none).
+
+**Local checks:** full suite 3.12 on this machine 2450 passed / 1 failed
+(the static-mount assertion above, fixed after) / 19 skipped; the touched
+files pass on 3.9 too. **Parity** (`scripts/parity`, Python 3.12, a fresh
+read-only copy of the production database, deleted after): import commit
+`56e095c` vs this batch: **114 files compared, DIFFERENCES: 0**.
+
+App (`storeops-app`, commits `cdf79bd`..`06c6a98`, history kept):
+- iOS `PRODUCT_BUNDLE_IDENTIFIER` `com.kloudc.storeops` (+ `.RunnerTests`),
+  `CFBundleDisplayName` / `CFBundleName` "StoreOps", permission strings say
+  StoreOps; no `DEVELOPMENT_TEAM` (owner picks the team in Xcode). Android
+  `namespace` / `applicationId` `com.kloudc.storeops`, `MainActivity` in
+  `kotlin/com/kloudc/storeops`, label "StoreOps". Release builds are still
+  signed with the debug key until the owner adds an upload key.
+- Icons: `assets/icon/app_icon.png` (generated) -> `dart run
+  flutter_launcher_icons` (iOS AppIcon set + Android mipmaps). The login and
+  splash wordmark is `assets/icon/wordmark.png` (old store wordmark deleted;
+  two one-line path changes in `login_screen.dart` / `splash_screen.dart`).
+- `lib/core/notifications/firebase_options.dart`: no project values in git.
+  `appFirebaseOptions` is built by `firebaseOptionsFrom(...)` from build
+  defines `FIREBASE_PROJECT_ID`, `FIREBASE_MESSAGING_SENDER_ID`,
+  `FIREBASE_STORAGE_BUCKET`, `FIREBASE_IOS_API_KEY`, `FIREBASE_IOS_APP_ID`,
+  `FIREBASE_ANDROID_API_KEY`, `FIREBASE_ANDROID_APP_ID` (+ `APP_BUNDLE_ID`,
+  default `com.kloudc.storeops`); any missing value -> null -> push off
+  ("Notifications aren't set up yet"). MT11's `EnvConfig` may later read the
+  same define names; they are part of this contract now.
+- No `GoogleService-Info.plist` / `google-services.json` existed; `.gitignore`
+  now blocks them, signing keys, `key.properties` and env files.
+- Removed `MOBILE_APP_CONTEXT.md`, `SPICETOWN_FLUTTER_CLAUDE_HANDOFF.md`; new
+  `README.md`; `docs/backend-api-map.md` describes hosts generically;
+  `docs/OWNER_SETUP.md` (Apple App ID + APNs key + App Store record, Play app
+  + upload key, StoreOps Firebase project, build defines, per-store FCM
+  service account).
+- `pubspec.yaml`: description only; package name stays `spicetown_app`.
+- Tests: `test/identity/app_identity_test.dart` (bundle ids, display names,
+  no Firebase config files, no legacy names in pubspec/README/docs/CI/iOS and
+  Android project files); notification tests for the placeholder;
+  `test/audit/final_ios_metadata_test.dart` expects StoreOps; fake
+  `packageName`s are `com.kloudc.storeops`. Local: `flutter analyze` no
+  issues; `flutter test --concurrency=2` 5343 passed, 6 skipped, 2 failed
+  (the iOS metadata audit, fixed in `93c51bf`; that file 9/9 after).
+- CI: `.github/workflows/ci.yml` (Flutter 3.47.2 stable: pub get, analyze,
+  test --concurrency=2, a check that no Firebase/signing file is tracked).
+
+**Deferred / for other batches:**
+- MT7: `po_export.py` letterhead off `spice-town-icon.jpg`; `config.py`
+  defaults (`DATABASE_URL`, `FLYERS_DIR`, `PUBLIC_BASE_URL`, ...); the
+  allowlist lines of its files.
+- MT8 / MT9 / MT12: their allowlist lines; the app's in-`lib/` strings
+  ("Spice Town" in home/login text, `integration_test/` expectations).
+- `e2e/regression/*` still uses the origin store's local paths (it runs
+  against production copies on the origin machine); left as is.
+- The Capacitor wrapper keeps Capacitor's default splash/icon art.
