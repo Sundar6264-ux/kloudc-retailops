@@ -13,8 +13,8 @@ International rule is used instead. Items are taken from the latest upload.
 Category mapping rules (match_type "category") count too: they list the items
 Toast still files under an old category name.
 
-    python scripts/category_fix_list.py /path/to/spicetown.db > fix.csv
-    python scripts/category_fix_list.py /path/to/spicetown.db --all   # also items already right
+    python scripts/category_fix_list.py /path/to/storeops.db > fix.csv
+    python scripts/category_fix_list.py /path/to/storeops.db --all   # also items already right
 """
 
 import argparse

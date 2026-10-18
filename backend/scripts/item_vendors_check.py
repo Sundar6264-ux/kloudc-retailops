@@ -7,8 +7,8 @@ it in step; this script shows how far it is from that, and can put it right
 if an upload's refresh ever failed (the upload logs
 "item_vendors: refresh after CSV upload failed").
 
-    python scripts/item_vendors_check.py --db /path/to/spicetown.db            # read-only check
-    python scripts/item_vendors_check.py --db /path/to/spicetown.db --refresh  # re-sync, then check
+    python scripts/item_vendors_check.py --db /path/to/storeops.db            # read-only check
+    python scripts/item_vendors_check.py --db /path/to/storeops.db --refresh  # re-sync, then check
 
 The database path is required (the app's .env is never used to pick it).
 The check only reads; --refresh writes only the item_vendors table.
