@@ -521,20 +521,17 @@ def _copy(src: pathlib.Path, dst: pathlib.Path) -> None:
         d.close()
 
 
-def _newest_prod_backup() -> pathlib.Path:
-    """The newest `.backup` copy of the production database - never the live
-    prod file itself (even a read-only open of a WAL database touches its
-    -shm)."""
-    folder = pathlib.Path("/Users/sundar/spicetown-backend/backend")
-    copies = [
-        p for p in folder.glob("spicetown.db.bak-*") if not p.name.endswith(("-shm", "-wal")) and p.stat().st_size
-    ]
-    return max(copies, key=lambda p: p.stat().st_mtime) if copies else folder / "no-backup-here"
+def _legacy_copy(var: str) -> pathlib.Path:
+    """A `.backup` copy of an existing store's database, named explicitly by
+    an environment variable (made with sqlite3 "file:...?mode=ro" ".backup").
+    No default path: the suite never reaches into another store's folders."""
+    raw = os.environ.get(var, "").strip()
+    return pathlib.Path(raw) if raw else pathlib.Path(f"/nonexistent/{var}-not-set")
 
 
 DB_COPIES = {
-    "dev": BACKEND / "spicetown-dev.db",
-    "prod": _newest_prod_backup(),
+    "dev": _legacy_copy("MIGRATION_DEV_DB_COPY"),
+    "prod": _legacy_copy("MIGRATION_PROD_DB_COPY"),
 }
 
 

@@ -121,6 +121,15 @@ def use_suite_pack() -> None:
     checklist_schemas.clear_cache()
 
 
+def private_data(name: str) -> pathlib.Path:
+    """A data file recorded from the origin store (business data), kept in the
+    private folder outside git (M2 contract 0.6 / 1.6). Skips without it."""
+    path = PRIVATE_DIR / name
+    if not path.is_file():
+        pytest.skip(f"private origin-store data not on this machine ({path}); see docs/M2_CONTRACT.md 1.6")
+    return path
+
+
 def legacy_private_files():
     return PRIVATE_DIR / "spicetown.pack.json", PRIVATE_DIR / "spicetown.env"
 

@@ -158,3 +158,35 @@ def test_explicit_exclusions_still_exist():
     for rel in EXCLUDED:
         assert (REPO / rel).is_file(), f"EXCLUDED entry no longer exists: {rel}"
     assert (REPO / "backend/alembic/versions").is_dir()
+
+
+# The origin store's production folder and its recorded business data stay
+# out of the product: no code or test may name that folder, and no origin
+# data file may sit in the repository's test data (private folder only,
+# M2 contract 1.6).
+ORIGIN_FOLDER = re.compile(r"/spicetown-backend\b")
+ORIGIN_DATA_FILES = ("checklist_real_answers_", "prod_category_combos_")
+
+
+def test_code_and_tests_never_reach_into_the_origin_store_folder():
+    found = []
+    for p in _files(["backend/app", "backend/tests", "backend/alembic"], []):
+        if p.resolve() == pathlib.Path(__file__).resolve():
+            continue
+        for n, line in enumerate(_text(p).splitlines(), 1):
+            if ORIGIN_FOLDER.search(line):
+                found.append(f"{_rel(p)}:{n}: {line.strip()[:160]}")
+    assert not found, "origin store folder named in code or tests:\n" + "\n".join(found)
+
+
+def test_no_origin_store_data_files_in_the_repository():
+    data = REPO / "backend" / "tests" / "data"
+    found = sorted(p.name for p in data.iterdir() if p.name.startswith(ORIGIN_DATA_FILES)) if data.is_dir() else []
+    assert not found, f"origin-store data files belong in the private folder: {found}"
+
+
+def _text(path: pathlib.Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
+        return ""

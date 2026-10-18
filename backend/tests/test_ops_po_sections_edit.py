@@ -22,10 +22,10 @@ from app.services.po_section_rules import GROUP_LABEL, load_section_rules
 from app.services.po_sections import OTHER, group_po_items, section_for
 from app.services.reorder import latest_inventory_by_item
 from tests.conftest import client_for, make_user
+from tests.store_fixtures import private_data
 from tests.test_ops_category_overrides import add_rule, add_snap, raw_rows
 
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
-DATA = pathlib.Path(__file__).resolve().parent / "data"
 
 
 def body(section):
@@ -98,11 +98,12 @@ def test_new_subcategory_mappings():
     assert "Chocolates & Candy" in builtin and OTHER not in builtin
 
 
+@pytest.mark.legacy_pack  # the origin store's own section rules and catalog (private files)
 def test_every_prod_catalog_combo_has_a_section():
     """Every (group, category, subcategory) in the prod catalog (Sep 30, with
     the category corrections applied) prints under a real section, except
     the kitchen / menu groups and the few non-stock categories."""
-    combos = json.loads((DATA / "prod_category_combos_2026-09-30.json").read_text())
+    combos = json.loads(private_data("prod_category_combos_2026-09-30.json").read_text())
     assert len(combos) > 150
     kitchen_groups = {"CATERING MENU", "STREET KITCHEN", "EVENT MENU"}
     allowed_other = {"Outdoor Recreation", "Smokeless Tobacco", "Uninvoiced/Kitchen"}

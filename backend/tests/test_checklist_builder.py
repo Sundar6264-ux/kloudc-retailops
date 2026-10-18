@@ -36,10 +36,10 @@ from app.team.tasks_models import Task
 
 from tests import checklist_legacy_reference as old
 from tests.conftest import add_member, client_for, make_user
+from tests.store_fixtures import private_data
 
 NY = zoneinfo.ZoneInfo("America/New_York")
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
-DATA = pathlib.Path(__file__).resolve().parent / "data"
 
 ST, SK, FSA = "spice_town_closing", "street_kitchen_closing", "street_kitchen_fsa"
 ORIGINAL = {
@@ -319,7 +319,7 @@ def test_real_stored_answers_give_the_same_results():
     """Every checklist submission in the dev DB copy (synced from prod),
     through the old code and the new engine: same validation, all_clear and
     issue_summary as stored, and the same WhatsApp text."""
-    rows = json.loads((DATA / "checklist_real_answers_2026-09-30.json").read_text())["submissions"]
+    rows = json.loads(private_data("checklist_real_answers_2026-09-30.json").read_text())["submissions"]
     assert rows
     for row in rows:
         ctype, answers = row["checklist_type"], row["answers"]
@@ -901,7 +901,7 @@ def test_editing_a_seeded_checklist_keeps_build5_working(db, admin_client, check
     expected = copy.deepcopy(checklist_builtin.SPICE_TOWN_CLOSING)
     expected["sections"][0]["grid"]["rows"][0]["label"] = "All freezers below 0°F?"
     deep_superset(served, expected)
-    rows = json.loads((DATA / "checklist_real_answers_2026-09-30.json").read_text())["submissions"]
+    rows = json.loads(private_data("checklist_real_answers_2026-09-30.json").read_text())["submissions"]
     for row in rows:
         r = checker_client.post(f"/api/checklists/{ST}/submit", json={"answers": row["answers"]})
         assert r.status_code == 200, r.text
