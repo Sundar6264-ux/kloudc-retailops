@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.directory import build_static
-from app.directory.config import DirectoryConfig, DirectoryConfigError, is_forbidden_host
+from app.directory.config import FORBIDDEN_DOMAIN, DirectoryConfig, DirectoryConfigError, is_forbidden_host
 from app.directory.main import create_app
 from app.directory.open_page import open_page
 from app.directory.stores import (
@@ -681,3 +681,21 @@ def test_worker_and_service_agree_on_odd_codes(stores_file, tmp_path, clock):
     # Only ASCII whitespace is trimmed; nothing else turns into a valid code.
     assert [s["status"] for s in steps] == [400, 400, 400, 400, 404, 404, 404, 400, 400, 404]
     assert json.loads(steps[5]["body"])["error"] == "not_found"
+
+
+def test_refresh_branding_never_fetches_from_a_file_that_is_refused(tmp_path):
+    # The file is checked before any fetch: an http:// or legacy-domain
+    # api_base_url must not be contacted, even by the dev-only refresh.
+    data = _example()
+    data["stores"][0]["api_base_url"] = "https://x." + FORBIDDEN_DOMAIN
+    data["stores"][1]["api_base_url"] = "http://storeops-test-clover.storeops.invalid"
+    bad = _write_stores(tmp_path / "s.json", data)
+    fetched = []
+
+    def fetch(url):
+        fetched.append(url)
+        return {}
+
+    with pytest.raises(StoresFileError):
+        build_static.load_for_build(bad, DirectoryConfig(), fetch)
+    assert fetched == []

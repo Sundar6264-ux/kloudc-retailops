@@ -100,9 +100,12 @@ def load_for_build(
     except ValueError as exc:
         raise StoresFileError(str(stores_path), [f"not valid JSON: {exc}"])
     notes: List[str] = []
+    # Check the file first, so a refused api_base_url (http, the legacy
+    # domain, a host off the platform) is never fetched from.
+    stores = parse_stores(raw, cfg, str(stores_path))
     if fetch is not None:
         notes = refresh_branding(raw, fetch)
-    stores = parse_stores(raw, cfg, str(stores_path))
+        stores = parse_stores(raw, cfg, str(stores_path))
     return StoresFile(path=str(stores_path), stores=stores, updated_at=updated_at_from_mtime_ns(stamp[0]), stamp=stamp), notes
 
 
