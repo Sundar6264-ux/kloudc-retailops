@@ -25,6 +25,7 @@ from typing import Dict, List, Optional
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.dbcompat import group_order
 from app.demo import hide_demo_clause
 from app.features import user_has_feature
 from app.models import ChecklistDefinition, ChecklistDefinitionVersion, ChecklistSubmission, User
@@ -219,6 +220,7 @@ def _submission_counts(db: Session) -> Dict[tuple, int]:
         select(ChecklistSubmission.checklist_type, version, func.count(ChecklistSubmission.id))
         .where(hide_demo_clause(db, ChecklistSubmission.submitted_by_user_id, ChecklistSubmission.submitted_by_name))  # demo submissions don't count
         .group_by(ChecklistSubmission.checklist_type, version)
+        .order_by(*group_order(ChecklistSubmission.checklist_type, version))
     ).all()
     return {(t, v): n for t, v, n in rows}
 
@@ -362,14 +364,16 @@ def _summary(db: Session, row: ChecklistDefinition, counts: Dict[tuple, int], ve
 def list_definitions(db: Session) -> List[dict]:
     ensure_seeded(db)
     rows = db.execute(
-        select(ChecklistDefinition).order_by(ChecklistDefinition.sort_order, ChecklistDefinition.title)
+        select(ChecklistDefinition).order_by(
+            ChecklistDefinition.sort_order, ChecklistDefinition.title, ChecklistDefinition.id
+        )
     ).scalars().all()
     counts = _submission_counts(db)
     version_counts = dict(
         db.execute(
-            select(ChecklistDefinitionVersion.definition_id, func.count(ChecklistDefinitionVersion.id)).group_by(
-                ChecklistDefinitionVersion.definition_id
-            )
+            select(ChecklistDefinitionVersion.definition_id, func.count(ChecklistDefinitionVersion.id))
+            .group_by(ChecklistDefinitionVersion.definition_id)
+            .order_by(*group_order(ChecklistDefinitionVersion.definition_id))
         ).all()
     )
     last = dict(
@@ -377,6 +381,7 @@ def list_definitions(db: Session) -> List[dict]:
             select(ChecklistSubmission.checklist_type, func.max(ChecklistSubmission.created_at))
             .where(hide_demo_clause(db, ChecklistSubmission.submitted_by_user_id, ChecklistSubmission.submitted_by_name))
             .group_by(ChecklistSubmission.checklist_type)
+            .order_by(*group_order(ChecklistSubmission.checklist_type))
         ).all()
     )
     return [_summary(db, r, counts, version_counts.get(r.id, 0), last.get(r.checklist_type)) for r in rows]

@@ -233,7 +233,7 @@ def latest_job_run(db: Session, job_name: str) -> Optional[JobRun]:
     stmt = (
         select(JobRun)
         .where(JobRun.job_name == job_name)
-        .order_by(JobRun.started_at.desc())
+        .order_by(JobRun.started_at.desc(), JobRun.id.desc())
         .limit(1)
     )
     return db.execute(stmt).scalar_one_or_none()

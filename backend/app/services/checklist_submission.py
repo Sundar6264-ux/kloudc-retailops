@@ -184,7 +184,7 @@ def _find_recent_duplicate(
             ChecklistSubmission.answers_hash == answers_hash,
             ChecklistSubmission.created_at >= cutoff,
         )
-        .order_by(ChecklistSubmission.created_at.desc())
+        .order_by(ChecklistSubmission.created_at.desc(), ChecklistSubmission.id.desc())
         .limit(1)
     )
     return db.execute(stmt).scalar_one_or_none()
@@ -567,7 +567,7 @@ def list_submissions(
     stmt = (
         select(ChecklistSubmission)
         .where(*conditions)
-        .order_by(ChecklistSubmission.created_at.desc())
+        .order_by(ChecklistSubmission.created_at.desc(), ChecklistSubmission.id.desc())
         .limit(min(limit, 500))
     )
     return list(db.execute(stmt).scalars().all())

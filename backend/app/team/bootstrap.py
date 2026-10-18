@@ -9,6 +9,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import group_order
 from app.features import user_has_feature
 from app.models import User
 from app.pos.gating import capability_values, pos_name
@@ -60,7 +61,7 @@ def member_counts(db: Session, teams: List[Team]) -> Dict[int, int]:
     """team id -> how many people are in it, for a list of teams (two
     queries, not one per team)."""
     rows = dict(
-        db.execute(select(TeamMember.team_id, func.count()).group_by(TeamMember.team_id)).all()
+        db.execute(select(TeamMember.team_id, func.count()).group_by(TeamMember.team_id).order_by(*group_order(TeamMember.team_id))).all()
     )
     everyone = len(everyone_user_ids(db)) if any(t.is_everyone for t in teams) else 0
     return {t.id: (everyone if t.is_everyone else int(rows.get(t.id, 0))) for t in teams}

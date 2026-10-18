@@ -1621,7 +1621,7 @@ def list_templates(db: Session, user: User) -> List[dict]:
     if not is_assigner(user):
         raise HTTPException(status_code=403, detail="Only people who can assign tasks can see schedules")
     rows = db.execute(
-        select(TaskTemplate).order_by(TaskTemplate.active.desc(), TaskTemplate.title)
+        select(TaskTemplate).order_by(TaskTemplate.active.desc(), TaskTemplate.title, TaskTemplate.id)
     ).scalars().all()
     names = _Names(db)
     return [template_out(db, t, names) for t in rows]

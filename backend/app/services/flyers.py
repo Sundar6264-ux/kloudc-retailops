@@ -51,6 +51,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import group_order
 from app.models import Flyer, FlyerSend, User
 from app.services import whatsapp_groups
 from app.team.media import MAX_PIXELS
@@ -851,7 +852,7 @@ def list_flyers(
     count_stmt = select(Flyer.category, func.count(Flyer.id)).where(Flyer.deleted_at.is_(None))
     if search is not None:
         count_stmt = count_stmt.where(search)
-    per_category = dict(db.execute(count_stmt.group_by(Flyer.category)).all())
+    per_category = dict(db.execute(count_stmt.group_by(Flyer.category).order_by(*group_order(Flyer.category))).all())
     counts = {"all": sum(per_category.values())}
     counts.update({key: per_category.get(key, 0) for key, _, _ in categories()})
 
@@ -872,6 +873,7 @@ def _send_stats(db: Session, flyer_ids: List[int]) -> Dict[int, dict]:
         select(FlyerSend.flyer_id, FlyerSend.status, func.count(FlyerSend.id), func.max(FlyerSend.sent_at))
         .where(FlyerSend.flyer_id.in_(flyer_ids))
         .group_by(FlyerSend.flyer_id, FlyerSend.status)
+        .order_by(*group_order(FlyerSend.flyer_id, FlyerSend.status))
     ).all()
     for flyer_id, status, count, last_sent in rows:
         stats = out.setdefault(flyer_id, {"sent": 0, "failed": 0, "pending": 0, "last_sent_at": None})

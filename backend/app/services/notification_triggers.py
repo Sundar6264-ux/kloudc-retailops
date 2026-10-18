@@ -401,7 +401,7 @@ def cart_removal_dedupe_key(row: CartItem) -> str:
 
 def cart_removal_request_alerts(db: Session, now: dt.datetime) -> List[Alert]:
     rows = db.execute(
-        select(CartItem).where(CartItem.removal_requested_at.is_not(None)).order_by(CartItem.removal_requested_at)
+        select(CartItem).where(CartItem.removal_requested_at.is_not(None)).order_by(CartItem.removal_requested_at, CartItem.id)
     ).scalars().all()
     # An App Review demo login's request never pushes the real admins
     # (app/demo.py) - it stays visible in the cart for them to see.

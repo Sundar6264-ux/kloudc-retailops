@@ -22,6 +22,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import group_order
 from app.demo import hide_demo_clause
 from app.models import InventorySnapshot, InvoiceSubmission, PlacedOrder, PurchaseLogEntry
 from app.services.category_overrides import apply_overrides
@@ -654,7 +655,9 @@ def group_candidates_by_vendor(
     # Deliveries confirmed in the app and orders placed from the cart count
     # as activity too (a vendor delivering only untracked items still shows).
     for vendor, day in db.execute(
-        select(PurchaseLogEntry.supplier, func.max(PurchaseLogEntry.received_date)).group_by(PurchaseLogEntry.supplier)
+        select(PurchaseLogEntry.supplier, func.max(PurchaseLogEntry.received_date))
+        .group_by(PurchaseLogEntry.supplier)
+        .order_by(*group_order(PurchaseLogEntry.supplier))
     ).all():
         if vendor and day and (vendor not in last_delivery or day > last_delivery[vendor]):
             last_delivery[vendor] = day
@@ -671,6 +674,7 @@ def group_candidates_by_vendor(
             hide_demo_clause(db, InvoiceSubmission.submitted_by_user_id, InvoiceSubmission.submitted_by_name),  # demo uploads are no proof of delivery
         )
         .group_by(InvoiceSubmission.vendor)
+        .order_by(*group_order(InvoiceSubmission.vendor))
     ).all():
         if not typed or uploaded_at is None:
             continue
@@ -706,6 +710,7 @@ def group_candidates_by_vendor(
             select(PlacedOrder.supplier, func.max(PlacedOrder.placed_at))
             .where(PlacedOrder.status == "placed")
             .group_by(PlacedOrder.supplier)
+            .order_by(*group_order(PlacedOrder.supplier))
         ).all()
     )
 

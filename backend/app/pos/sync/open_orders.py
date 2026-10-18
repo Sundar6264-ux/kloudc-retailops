@@ -354,7 +354,7 @@ def _today_is_stale(db: Session, max_age_seconds: int) -> bool:
     last = db.execute(
         select(JobRun.started_at)
         .where(JobRun.job_name == JOB_NAME, JobRun.status.in_(["success", "running"]))
-        .order_by(JobRun.started_at.desc())
+        .order_by(JobRun.started_at.desc(), JobRun.id.desc())
         .limit(1)
     ).scalar_one_or_none()
     if last is not None and (utcnow() - last).total_seconds() < max_age_seconds:
@@ -456,7 +456,7 @@ def get_cached_open_orders(db: Session, employee_guid: Optional[str] = None) -> 
 
     bounds_stmt = select(
         JobRun.started_at, JobRun.finished_at, JobRun.status, JobRun.detail
-    ).where(JobRun.job_name == JOB_NAME).order_by(JobRun.started_at.desc()).limit(1)
+    ).where(JobRun.job_name == JOB_NAME).order_by(JobRun.started_at.desc(), JobRun.id.desc()).limit(1)
     last_job = db.execute(bounds_stmt).first()
 
     scanned_from = min((r.business_date for r in rows), default=None)

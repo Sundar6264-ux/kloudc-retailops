@@ -23,6 +23,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import fsum, group_order
 from app.insights_models import GuestVisit, LossWatchFlag
 from app.models import NotificationLog, Order, User
 from app.services import insights_data as data
@@ -794,6 +795,7 @@ def _check_db_facts(db: Session, guids: List[str]) -> Tuple[Dict[str, dt.datetim
             select(Order.toast_check_guid, func.min(Order.opened_at))
             .where(Order.toast_check_guid.in_(part))
             .group_by(Order.toast_check_guid)
+            .order_by(*group_order(Order.toast_check_guid))
         ):
             if isinstance(at, str):
                 at = dt.datetime.fromisoformat(at)
@@ -802,13 +804,14 @@ def _check_db_facts(db: Session, guids: List[str]) -> Tuple[Dict[str, dt.datetim
             if at is not None:
                 opened[g] = at
         for g, v in db.execute(
-            select(Order.toast_check_guid, func.sum(Order.net_price))
+            select(Order.toast_check_guid, fsum(Order.net_price))
             .where(
                 Order.toast_check_guid.in_(part),
                 Order.voided.is_(True),
                 Order.top_level(),
             )
             .group_by(Order.toast_check_guid)
+            .order_by(*group_order(Order.toast_check_guid))
         ):
             voids[g] = r2(v)
     return opened, voids
@@ -1541,7 +1544,9 @@ def returning_customers(db: Session, weeks: int) -> dict:
     loaded = _load(db, "guest", dates)
     first_seen: Dict[str, dt.date] = {}
     for h, first in db.execute(
-        select(GuestVisit.card_hash, func.min(GuestVisit.visit_date)).group_by(GuestVisit.card_hash)
+        select(GuestVisit.card_hash, func.min(GuestVisit.visit_date))
+        .group_by(GuestVisit.card_hash)
+        .order_by(*group_order(GuestVisit.card_hash))
     ):
         if isinstance(first, str):
             first = dt.date.fromisoformat(first)

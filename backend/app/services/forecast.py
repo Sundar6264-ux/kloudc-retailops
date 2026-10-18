@@ -11,6 +11,7 @@ import datetime as dt
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.dbcompat import fsum, group_order
 from app.models import Order
 
 
@@ -30,7 +31,7 @@ def forecast_daily_demand(
         select(
             Order.item_guid,
             func.max(Order.item_name).label("item_name"),
-            func.sum(Order.quantity).label("total_quantity"),
+            fsum(Order.quantity).label("total_quantity"),
         )
         .where(
             Order.item_guid.isnot(None),
@@ -40,6 +41,7 @@ def forecast_daily_demand(
             Order.business_date < as_of_date,
         )
         .group_by(Order.item_guid)
+        .order_by(*group_order(Order.item_guid))
     )
 
     results: dict[str, dict] = {}

@@ -79,6 +79,7 @@ from sqlalchemy import and_, case, delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.dbcompat import fsum, group_order
 from app.models import InventorySnapshot, JobRun, Order, ToastMenuItem
 from app.services import inventory_api_switch
 from app.timeutil import restaurant_timezone, restaurant_today
@@ -265,6 +266,7 @@ def sales_by_item(db: Session, snapshot_date: dt.date, end_offset_days: int = 1)
             Order.item_guid.is_not(None),
         )
         .group_by(Order.item_guid)
+        .order_by(*group_order(Order.item_guid))
     )
     out = {}
     for row in db.execute(stmt):
@@ -300,7 +302,7 @@ def units_sold_between(db: Session, since: dt.datetime, until: dt.datetime) -> D
     lo = since.date() - dt.timedelta(days=2)
     hi = until.date() + dt.timedelta(days=2)
     rows = db.execute(
-        select(Order.item_guid, func.sum(Order.quantity))
+        select(Order.item_guid, fsum(Order.quantity))
         .where(
             Order.business_date >= lo,
             Order.business_date <= hi,
@@ -310,6 +312,7 @@ def units_sold_between(db: Session, since: dt.datetime, until: dt.datetime) -> D
             when <= until,
         )
         .group_by(Order.item_guid)
+        .order_by(*group_order(Order.item_guid))
     )
     return {guid: round(float(units or 0), 3) for guid, units in rows if units}
 

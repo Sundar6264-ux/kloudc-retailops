@@ -769,7 +769,7 @@ def list_links(db: Session) -> List[dict]:
     ensure_seeded(db)
     links = {l.checklist_type: l for l in db.execute(select(ChecklistPublicLink)).scalars().all()}
     out = []
-    for definition in db.execute(select(ChecklistDefinition).order_by(ChecklistDefinition.sort_order)).scalars():
+    for definition in db.execute(select(ChecklistDefinition).order_by(ChecklistDefinition.sort_order, ChecklistDefinition.id)).scalars():
         row = admin_out(db, definition, links.get(definition.checklist_type))
         row["title"] = definition.title
         row["active"] = bool(definition.active)

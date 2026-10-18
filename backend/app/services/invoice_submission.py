@@ -138,7 +138,7 @@ def find_duplicate_by_hash(
             InvoiceSubmission.deleted_at.is_(None),
             not_demo(db, viewer),
         )
-        .order_by(InvoiceSubmission.created_at.desc())
+        .order_by(InvoiceSubmission.created_at.desc(), InvoiceSubmission.id.desc())
         .limit(1)
     )
     return db.execute(stmt).scalar_one_or_none()
@@ -516,7 +516,7 @@ def list_trashed_submissions(
     stmt = (
         select(InvoiceSubmission)
         .where(InvoiceSubmission.deleted_at.is_not(None), not_demo(db, viewer, include_demo))
-        .order_by(InvoiceSubmission.deleted_at.desc(), InvoiceSubmission.id.desc())
+        .order_by(InvoiceSubmission.deleted_at.desc().nulls_last(), InvoiceSubmission.id.desc())
     )
     return list(db.execute(stmt).scalars().all())
 

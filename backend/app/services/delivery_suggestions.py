@@ -69,6 +69,7 @@ from typing import Dict, List, Optional, Set, Tuple
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.dbcompat import fsum, group_order
 from app.demo import hide_demo_clause
 from app.models import (
     InventorySnapshot,
@@ -241,7 +242,7 @@ def sold_between(db: Session, start: dt.date, end: dt.date) -> Dict[str, float]:
     if end <= start:
         return {}
     rows = db.execute(
-        select(Order.item_guid, func.sum(Order.quantity))
+        select(Order.item_guid, fsum(Order.quantity))
         .where(
             Order.business_date >= start,
             Order.business_date < end,
@@ -250,6 +251,7 @@ def sold_between(db: Session, start: dt.date, end: dt.date) -> Dict[str, float]:
             Order.item_guid.is_not(None),
         )
         .group_by(Order.item_guid)
+        .order_by(*group_order(Order.item_guid))
     ).all()
     return {item: float(qty or 0) for item, qty in rows}
 

@@ -407,7 +407,7 @@ def budget_frees_at(db: Session, family: str, need: int = 1) -> Optional[dt.date
         db.execute(
             select(AnalyticsCallLog.called_at)
             .where(AnalyticsCallLog.family == family, AnalyticsCallLog.called_at >= since)
-            .order_by(AnalyticsCallLog.called_at)
+            .order_by(AnalyticsCallLog.called_at, AnalyticsCallLog.id)
         ).scalars()
     )
     extra = need - (daily_budget(family) - len(times))

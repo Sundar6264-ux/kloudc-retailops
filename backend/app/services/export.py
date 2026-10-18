@@ -44,7 +44,7 @@ def _fetch_rows(db: Session, start: dt.date, end: dt.date) -> list[Order]:
             Order.business_date <= end,
             Order.top_level(),
         )
-        .order_by(Order.business_date, Order.opened_at)
+        .order_by(Order.business_date, Order.opened_at.nulls_first(), Order.id)
     )
     return list(db.execute(stmt).scalars())
 

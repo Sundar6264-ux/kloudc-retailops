@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.dbcompat import fsum
 from app.models import Order
 from app.sales_access import TOAST_SALES_DOLLAR_FIELDS
 from app.services.anthropic_client import get_anthropic_client
@@ -44,8 +45,8 @@ class WeeklyDigestNarrative(BaseModel):
 
 def _sales_totals(db: Session, start: dt.date, end: dt.date) -> dict:
     stmt = select(
-        func.coalesce(func.sum(Order.net_price), 0.0),
-        func.coalesce(func.sum(Order.quantity), 0.0),
+        func.coalesce(fsum(Order.net_price), 0.0),
+        func.coalesce(fsum(Order.quantity), 0.0),
         func.count(func.distinct(Order.toast_check_guid)),
     ).where(
         Order.business_date >= start,

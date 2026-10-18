@@ -48,6 +48,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.dbcompat import fsum, group_order
 from app.models import InventorySnapshot, Order
 from app.services.item_vendors import aligned_item_codes, split_field
 
@@ -930,7 +931,7 @@ def units_sold_by_item(db: Session, item_ids: Sequence[str], days: int = 30, as_
     as_of = as_of or dt.date.today()
     start = as_of - dt.timedelta(days=days)
     stmt = (
-        select(Order.item_guid, func.sum(Order.quantity))
+        select(Order.item_guid, fsum(Order.quantity))
         .where(
             Order.item_guid.in_(list(item_ids)),
             Order.voided.is_(False),
@@ -939,6 +940,7 @@ def units_sold_by_item(db: Session, item_ids: Sequence[str], days: int = 30, as_
             Order.business_date < as_of,
         )
         .group_by(Order.item_guid)
+        .order_by(*group_order(Order.item_guid))
     )
     return {guid: float(qty or 0) for guid, qty in db.execute(stmt)}
 

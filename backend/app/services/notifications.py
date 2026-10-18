@@ -29,6 +29,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.dbcompat import group_order
 from app.features import user_has_feature
 from app.models import DeviceToken, NotificationLog, NotificationPref, User
 from app.notification_models import PushDelivery
@@ -814,6 +815,7 @@ def push_volume(db: Session, days: int = 14) -> dict:
         select(PushDelivery.user_id, PushDelivery.key, func.count())
         .where(PushDelivery.sent_at >= since)
         .group_by(PushDelivery.user_id, PushDelivery.key)
+        .order_by(*group_order(PushDelivery.user_id, PushDelivery.key))
     ):
         counts.setdefault(uid, {})[key] = n
     names = dict(db.execute(select(User.id, User.username).where(User.id.in_(list(counts) or [-1]))).all())
