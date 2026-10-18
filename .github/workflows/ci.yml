@@ -105,7 +105,7 @@ jobs:
           set -eux
           {
             echo "COMPOSE_PROJECT_NAME=storeops-ci"
-            echo "STORE_CODE=CI"
+            echo "STORE_CODE=STOREOPS_CI"
             echo "STOREOPS_IMAGE=storeops:ci"
             echo "TOAST_API_BASE=http://127.0.0.1:9"
             echo "TOAST_ANALYTICS_BASE=http://127.0.0.1:9"
@@ -114,7 +114,7 @@ jobs:
           # A new store is set up once (store pack + identity stamp) before
           # its first start; the server refuses to start without the stamp.
           docker compose run --rm --no-deps store sh -c \
-            "alembic upgrade head && python -m app.store init --code CI --pack packs/generic.json"
+            "alembic upgrade head && python -m app.store init --code STOREOPS_CI --pack packs/generic.json"
           docker compose up -d --no-build store
           for i in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:8000/api/health; then break; fi
