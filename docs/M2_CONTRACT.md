@@ -2128,3 +2128,35 @@ rebasing onto it that file, the new tests and the App Review journey pass.
   only; an alias file needs `canonical_csv` first (not wired into the route).
 - `is_demo_submission` (invoices/checklists) still keys on `DEMO_USERNAMES`;
   in the DEMO store every outside channel is blank anyway (forced by the runner).
+
+## As built - MT13 verification (adversarial check of the demo track)
+
+Both MT13 branches now carry a merge of `main` (server `2c43df8`, app
+`2ce8a2c`), so they merge into `main` without conflicts.
+
+- **Server merge:** `backend/packs/demo.json` is MT13's DEMO pack. On
+  `main` it was MT8's placeholder. MT13's pack passes `load_pack_file`.
+- **App merge: one `LegalLinks` type.** MT11 and MT13 each built one. The
+  merged app keeps `TenantConfig.legal` (MT11) and adds MT13's rules to it:
+  only https links are taken from the server, and the product's Terms link
+  comes from the `TERMS_URL` define. `legal_links.dart` now holds only the
+  product defaults (the `COMPANY_NAME`, `PRIVACY_URL`, `SUPPORT_URL` and
+  `TERMS_URL` defines) and `copyrightLine(company)`.
+- **App merge: About and login footer.** Both stay store-aware (MT11) and
+  gain the Terms link plus "StoreOps · © <build year> <company>".
+- **`AI_CONSENT_NOTICE`:** it is now a field in `config.py` and a line in
+  `.env.example`. Before, `extra="ignore"` dropped it silently.
+- **Blank `COMPANY_NAME`:** `settings_view.company_name()` returns the
+  product default, matching `GET /api/app/legal`. A test checks that the
+  `legal` block in branding equals the one from `/api/app/legal`.
+- **App AI notice, per store:** `aiNoticeProvider` reads the notice from
+  the store's `GET /api/app/legal` (`ai.notice`) and falls back to the
+  default. `ask_bot_screen` sends `scope: <store code>`, so the saved
+  answer key is `ai_consent_accepted.<CODE>.<version>`. Agreeing at one
+  store no longer counts for another. The Privacy link in the notice is the
+  store's own.
+- **Ask bot example question:** the website and the app no longer name one
+  of the origin store's vendors.
+- **`test_demo_data` determinism:** the test now ignores
+  `uploads/.store_identity`. MT8's store init writes a random instance id
+  into that file on every build.
