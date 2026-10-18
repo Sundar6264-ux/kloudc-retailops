@@ -1,0 +1,38 @@
+# Only what the image needs: backend/ (minus tests and local state),
+# frontend/ sources (built inside the image) and docker/.
+**/.git
+**/.github
+**/.claude
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.DS_Store
+**/.venv
+**/.venv*
+
+# Secrets and store data never enter the build context.
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/*.sqlite
+**/*.sqlite3
+**/*.key
+**/*.pem
+**/*.p12
+**/*.p8
+**/firebase-service-account*.json
+**/GoogleService-Info.plist
+**/google-services.json
+backend/uploads
+backend/logs
+backend/tests
+frontend/dist
+frontend/dist-mobile
+frontend/android
+frontend/ios
+docs
+e2e

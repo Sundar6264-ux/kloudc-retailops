@@ -1,0 +1,48 @@
+# One StoreOps store: the store container plus an optional Litestream sidecar.
+#
+#   cp .env.example .env                       # the store's settings (never in git)
+#   docker compose up -d                       # build, migrate, start
+#   docker compose --profile backup up -d      # also start Litestream (after the R2 setup)
+#
+# Several stores on one machine: one folder per store (this file + its own
+# .env), each with its own COMPOSE_PROJECT_NAME (so its own volume) and a
+# different STORE_HTTP_PORT. Put Caddy or a Cloudflare Tunnel in front.
+
+services:
+  store:
+    build: .
+    image: ${STOREOPS_IMAGE:-storeops:local}
+    env_file:
+      - .env
+    environment:
+      # Container paths win over anything in .env: the database and uploads
+      # always live in the store's volume.
+      DATABASE_URL: sqlite:////data/storeops.db
+      INVOICE_UPLOADS_DIR: /data/uploads/invoices
+      TEAM_UPLOADS_DIR: /data/uploads/team
+      FLYERS_DIR: /data/uploads/flyers
+      INSIGHTS_HMAC_KEY_FILE: /data/insights_hmac.key
+      FRONTEND_DIST_DIR: /app/frontend/dist
+    ports:
+      - "${STORE_HTTP_BIND:-127.0.0.1}:${STORE_HTTP_PORT:-8000}:8000"
+    volumes:
+      - store-data:/data
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+  litestream:
+    image: litestream/litestream:0.3.13
+    profiles: ["backup"]
+    command: ["replicate", "-config", "/etc/litestream.yml"]
+    env_file:
+      - .env
+    volumes:
+      - store-data:/data
+      - ./docker/litestream.yml:/etc/litestream.yml:ro
+    depends_on:
+      store:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  store-data:

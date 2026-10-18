@@ -1,0 +1,21 @@
+# Litestream for the docker-compose `litestream` service (profile "backup"):
+# streams the store database in the shared volume to Cloudflare R2.
+#
+# Values come from the store's .env (Litestream expands ${VAR} by itself):
+#   LITESTREAM_R2_ACCOUNT_ID, LITESTREAM_R2_BUCKET, STORE_CODE
+#   LITESTREAM_ACCESS_KEY_ID, LITESTREAM_SECRET_ACCESS_KEY (read directly by Litestream)
+# No credentials in this file. Owner steps: backend/scripts/backup/README.md.
+dbs:
+  - path: /data/storeops.db
+    replicas:
+      - name: r2
+        type: s3
+        endpoint: https://${LITESTREAM_R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+        region: auto
+        bucket: ${LITESTREAM_R2_BUCKET}
+        # One folder per store.
+        path: stores/${STORE_CODE}/db
+        force-path-style: true
+        sync-interval: 10s
+        snapshot-interval: 24h
+        retention: 720h
