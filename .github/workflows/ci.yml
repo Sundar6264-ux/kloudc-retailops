@@ -22,13 +22,31 @@ env:
 
 jobs:
   backend:
-    name: Backend tests (Python ${{ matrix.python }})
+    # The real suite: PostgreSQL 16, like production (platform contract 18.1).
+    # PGTZ puts the test sessions in a non-UTC zone on purpose: stored
+    # timestamps must not depend on the connection's TimeZone.
+    name: Backend tests (PostgreSQL 16, Python 3.12)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ["3.9", "3.12"]
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: storeops
+          POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U storeops"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      STOREOPS_TEST_DB: postgres
+      STOREOPS_TEST_PG_URL: postgresql+psycopg://storeops@127.0.0.1:5432/postgres
+      STOREOPS_TEST_DB_PREFIX: so_ci
+      PGTZ: America/New_York
     defaults:
       run:
         working-directory: backend
@@ -36,7 +54,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python }}
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: |
             backend/requirements.txt
@@ -44,7 +62,46 @@ jobs:
       - name: Tesseract (invoice OCR text layer)
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
       - run: pip install -r requirements-dev.txt
-      - name: pytest
+      - name: Store migrations on PostgreSQL (baseline 0062 + chain to head, twice)
+        run: |
+          set -eux
+          psql "postgresql://storeops@127.0.0.1:5432/postgres" -c "CREATE DATABASE so_ci_chain TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'"
+          alembic -x db_url=postgresql+psycopg://storeops@127.0.0.1:5432/so_ci_chain upgrade head
+          alembic -x db_url=postgresql+psycopg://storeops@127.0.0.1:5432/so_ci_chain upgrade head
+          alembic -x db_url=postgresql+psycopg://storeops@127.0.0.1:5432/so_ci_chain current | grep "(head)"
+      - name: The PostgreSQL baseline matches the SQLite chain at 0062
+        run: python scripts/pg/make_baseline.py --check
+      - name: pytest (PostgreSQL)
+        run: python -m pytest -q -p no:cacheprovider
+
+  backend-sqlite:
+    # Single-instance (M2) stores and quick local runs still use SQLite.
+    name: Backend tests (SQLite, Python 3.12)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      STOREOPS_TEST_DB: sqlite
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - name: Tesseract (invoice OCR text layer)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
+      - run: pip install -r requirements-dev.txt
+      - name: Store migrations on SQLite (full chain)
+        run: |
+          set -eux
+          DATABASE_URL=sqlite:///$RUNNER_TEMP/chain.db alembic upgrade head
+          DATABASE_URL=sqlite:///$RUNNER_TEMP/chain.db alembic current | grep "(head)"
+      - name: pytest (SQLite)
         run: python -m pytest -q -p no:cacheprovider
 
   frontend:
@@ -155,5 +212,6 @@ jobs:
         run: |
           docker run --rm --user root --entrypoint sh \
             -e TOAST_API_BASE -e TOAST_ANALYTICS_BASE -e WHAPI_BASE_URL \
+            -e STOREOPS_TEST_DB=sqlite \
             -v "$PWD:/repo" -w /repo/backend storeops:ci \
             -c "pip install -q pytest==8.3.3 && python -m pytest -q -p no:cacheprovider"
