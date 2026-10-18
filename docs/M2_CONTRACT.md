@@ -2248,6 +2248,11 @@ first, in `backend/tests/test_m2_backend_verify.py` unless noted.
 | 6 | A store without WhatsApp and/or an AP inbox (both optional store features, 1.3) marked **every** invoice "failed" and pushed "Invoice failed to send" to every admin for each one; with WhatsApp off a bill could never be marked closed | section 1.3 note above (`WHATSAPP_OFF` / `AP_EMAIL_OFF`). Rows written before this, and every Spice Town-shaped row, read exactly as before |
 | 7 | Origin-store names left in code the name test did not cover: the supplier of migration 0034 in three backend comments, and staff/owner first names and origin vendors (private `forbidden_tokens.txt`) in backend comments (the website ones were fixed in parallel by the website verify, `97567d1`) | reworded / made-up names; `test_no_spicetown_names.py` now also matches `shaz international` (one allowlisted line: `store/__main__.py`'s `LEGACY_CATEGORY_SUPPLIER`, which removes that row) and checks the private staff names over `backend/app` and `frontend/src` when the file is present |
 
+Tests after the rebase (local; CI on the push): backend Python 3.9 and 3.12
+**2589 passed, 20 skipped, 0 failed** each (19 new verify tests; the private
+staff-name check runs here and skips in CI); website `node --test` 231/231,
+`vite build` OK.
+
 Dismissed after checking:
 - Secrets: no key, token or private-key pattern in any of the 46 commits; both `.env.example` files have blank secrets.
 - Python 3.9: `compileall` with 3.9 over `app`, `scripts`, `alembic` is clean; no `X | Y` annotations.
