@@ -1979,3 +1979,64 @@ these batches. The database copies and recordings were deleted afterwards.
   --pack <pack.json>` once before its first start (CI does it); README
   wording is MT7a's.
 
+
+## As built - website verification (adversarial pass on MT9)
+
+Branch `m2/verify-website`, merged fast-forward into `main`. Website files
+only, plus the MT9 e2e harness; no server code changed.
+
+Confirmed and fixed:
+- **Overview closing tiles were hard-wired to the origin store.** They asked
+  for `spice_town_closing`, `street_kitchen_closing` and `street_kitchen_fsa`,
+  so every new store read "None yet" forever (and requested types it doesn't
+  have). The name scan missed it (underscore form). Now
+  `components/closingChecklists.js`: the active checklists with
+  `settings.closing` from `GET /api/checklists/schemas`, `whatsapp_group ==
+  "kitchen"` ones on a Kitchen closing tile, the rest on Store closing, no
+  tile when there are none.
+- **Overview "Today's sales" ignored gating.** It called the live today
+  endpoint on every store; it now needs `items_sold_today`
+  (`live_today_sales`), like Items Sold's Today choice.
+- **Device time zone leaks.** Open Orders times and the Overview sync line
+  formatted clock times in the viewer's zone; Vendor Calendar's "today" was
+  the UTC date (tomorrow on a US evening) and its grid keys were
+  `toISOString()` of local midnights (a day early east of UTC); Fix Issues
+  ranges and chat "Yesterday" stepped a device Date back 24h (skips a store
+  day across DST when the device is in another zone). All now use the store
+  zone (`inStoreZone`, `storeTodayStr`, `storeDateOffsetStr`).
+- **Origin-store names in visible text:** a staff first name and a vendor
+  name in Help, FSA-specific Help wording, a real vendor in the Ask bot
+  example questions; staff names in comments and node test fixtures.
+- **Gating gap:** Inventory from <pos> "Check barcodes now" needs
+  `catalog_change_stamp` (409 on Clover); new element `menu_recheck`.
+- **Favicon:** the branding swap left index.html's `type="image/svg+xml"` on
+  the store's PNG icon; the type is dropped.
+- **e2e harness:** fake stores now run `python -m app.store init` with their
+  pack; `seed.py` no longer deletes the pack's "store" WhatsApp group on a
+  stamped store.
+
+Tests added: `closingChecklists.test.mjs`; `noStoreNames.test.mjs` catches
+`spice_town`/`street_kitchen` forms and fails on any hour-showing
+`toLocaleString`/`toLocaleTimeString` without the store zone (both scans
+fail on the pre-fix tree); Playwright checks the closing tiles and that
+Today's sales appears exactly when the store has `live_today_sales`.
+
+Numbers: website `node --test` 231/231; `vite build` OK; backend
+`test_no_spicetown_names.py` + `test_glossary_store_words.py` pass (3.9);
+Playwright (two fresh fake stores via store-init, 4 roles, 1280/375):
+674 checks, 0 failures; server-text hits 46 (MT9 run: 81), all server
+strings saying "Toast" on the Clover store.
+
+Found, not fixed (server, MT7/MT8 files):
+- `app/services/checklist_public.py` `SUGGESTED` holds two origin-store staff
+  first names and the origin checklist types (dead for a new store, but
+  staff names ship in the product).
+- `notification_triggers.CLOSING_CHECKLIST_TYPES` (unused constant) and
+  `models.py` comments name origin checklist types.
+- Clover fake store: `/api/sales/items-sold` today 500/503 and
+  `/api/orders/employees` 500 (no Clover connector on `main`; MT13 branch
+  has the items-sold fallback). Notification descriptions say "Toast" on a
+  Clover store.
+- Website has no AI consent notice before the Ask bot (the app has one,
+  MT13); not in the contract for the website.
+- Vendor names (not staff) remain in a few node test fixtures and comments.
