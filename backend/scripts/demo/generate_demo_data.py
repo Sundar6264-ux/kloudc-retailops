@@ -30,6 +30,13 @@ timestamps are the only exceptions):
   passwords, and the App Review login ``appreview`` whose password comes
   from DEMO_REVIEW_PASSWORD or ``--review-password-file``.
 
+With ``--pg-url <empty PostgreSQL database>`` the finished database is
+also copied into PostgreSQL (scripts/pg/copy_sqlite_to_pg.py: migrated to
+the same revision, every row copied, checksums compared - 0 differences or
+the run fails), for a DEMO store on the shared PostgreSQL service. The
+SQLite file stays the source of truth of the generator (same rows for the
+same seed on both).
+
 Nothing here talks to the network. Python 3.9 compatible.
 """
 
@@ -1033,8 +1040,23 @@ def generate(args) -> dict:
         conn.exec_driver_sql("PRAGMA wal_checkpoint(TRUNCATE)")
     engine.dispose()
     info["store_init"] = how
+    if getattr(args, "pg_url", ""):
+        info["postgres"] = copy_to_postgres(out / "storeops.db", args.pg_url)
     (out / "demo_dataset.json").write_text(json.dumps(info, indent=2, sort_keys=True) + "\n")
     return info
+
+
+def copy_to_postgres(sqlite_file: pathlib.Path, pg_url: str) -> dict:
+    """The generated SQLite database -> an empty PostgreSQL database
+    (dialect branch, platform track A). Fails unless the copy is exact."""
+    sys.path.insert(0, str(BACKEND / "scripts" / "pg"))
+    import copy_sqlite_to_pg
+    from sqlalchemy.engine import make_url
+
+    problems = copy_sqlite_to_pg.copy(str(sqlite_file), pg_url, log=lambda *a: None)
+    if problems:
+        raise GenerateError("PostgreSQL copy differs: " + "; ".join(problems[:10]))
+    return {"database": make_url(pg_url).database, "differences": 0}
 
 
 def parse_args(argv=None):
@@ -1050,6 +1072,7 @@ def parse_args(argv=None):
         help="store time zone (default STORE_TIMEZONE or America/New_York)",
     )
     p.add_argument("--review-password-file", default="", help="file holding the review login password")
+    p.add_argument("--pg-url", default="", help="also copy the result into this EMPTY PostgreSQL database")
     args = p.parse_args(argv)
     if args.days < 7 or args.days > 400:
         p.error("--days must be 7-400")
