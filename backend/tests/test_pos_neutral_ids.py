@@ -20,9 +20,9 @@ import subprocess
 import sys
 
 import pytest
-from sqlalchemy import select, text
+from sqlalchemy import Boolean, Date, bindparam, select, text
 
-from app.db import Base
+from app.db import Base, UTCDateTime
 from app.models import OpenOrderCache, Order, PosItemMap, SyncCursor
 from app.pos import neutral_ids
 from app.services import sales_sync
@@ -93,14 +93,15 @@ def test_multi_row_inserts_still_work_and_copy_per_row(db):
     isolate one row of it for a context-aware default) and must copy each
     row's own values."""
     from sqlalchemy import insert
-    from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+    from app.dbcompat import dialect_insert
 
     def row(i, parent=None):
         return dict(toast_order_guid=f"o{i}", toast_check_guid=f"c{i}", toast_selection_guid=f"s{i}",
                     parent_selection_guid=parent, business_date=D1, item_guid=f"i{i}", dining_option=f"d{i}")
 
     db.execute(insert(Order).values([row(1), row(2, "s1"), row(3)]))
-    db.execute(sqlite_insert(Order).values([row(4, "s3"), row(5)]).on_conflict_do_nothing())
+    db.execute(dialect_insert(Order, db).values([row(4, "s3"), row(5)]).on_conflict_do_nothing())
     db.execute(insert(OpenOrderCache).values([dict(toast_order_guid=g, business_date=D1) for g in ("oa", "ob")]))
     db.commit()
     n = _neutral(db)
@@ -180,15 +181,19 @@ def test_a_failed_sync_records_nothing(db, toast, monkeypatch):
 
 def test_rows_written_without_neutral_ids_are_healed_and_keep_updated_at(db, toast):
     # What the old code (still serving between `alembic upgrade` and the restart) writes.
+    # Timestamps / dates / booleans bound through the column types, so the SQL runs on
+    # SQLite and PostgreSQL alike.
+    stamp = dt.datetime(2026, 10, 8, 10, 0, tzinfo=dt.timezone.utc)
+    typed = (bindparam("t", type_=UTCDateTime()), bindparam("d", type_=Date()), bindparam("f", type_=Boolean()))
     db.execute(text(
         "INSERT INTO orders (toast_order_guid, toast_check_guid, toast_selection_guid, parent_selection_guid,"
         " business_date, item_guid, quantity, unit_price, net_price, tax_amount, voided, dining_option,"
         " created_at, updated_at) VALUES"
-        " ('oldo', 'oldc', 'olds', NULL, '2026-10-08', 'i-old', 1, 1, 1, 0, 0, 'dine', '2026-10-08 10:00:00.000000', '2026-10-08 10:00:00.000000'),"
-        " ('oldo', 'oldc', 'oldm', 'olds', '2026-10-08', 'i-oldm', 1, 0, 0, 0, 0, 'dine', '2026-10-08 10:00:00.000000', '2026-10-08 10:00:00.000000')"
-    ))
+        " ('oldo', 'oldc', 'olds', NULL, :d, 'i-old', 1, 1, 1, 0, :f, 'dine', :t, :t),"
+        " ('oldo', 'oldc', 'oldm', 'olds', :d, 'i-oldm', 1, 0, 0, 0, :f, 'dine', :t, :t)"
+    ).bindparams(*typed), {"t": stamp, "d": dt.date(2026, 10, 8), "f": False})
     db.execute(text("INSERT INTO open_order_cache (toast_order_guid, business_date, total_amount, num_checks, scanned_at)"
-                    " VALUES ('open1', '2026-10-08', 0, 0, '2026-10-08 10:00:00.000000')"))
+                    " VALUES ('open1', :d, 0, 0, :t)").bindparams(*typed[:2]), {"t": stamp, "d": dt.date(2026, 10, 8)})
     db.commit()
     assert _neutral(db)["olds"] == ("toast", None, None, None, None, 0, None)
 
@@ -197,7 +202,8 @@ def test_rows_written_without_neutral_ids_are_healed_and_keep_updated_at(db, toa
     n = _neutral(db)
     assert n["olds"] == ("toast", "oldo", "oldc", "olds", None, 0, "dine")
     assert n["oldm"] == ("toast", "oldo", "oldc", "oldm", "olds", 1, "dine")
-    assert db.execute(text("SELECT updated_at FROM orders WHERE toast_selection_guid = 'olds'")).scalar() == "2026-10-08 10:00:00.000000"
+    db.expire_all()
+    assert db.execute(select(Order.updated_at).where(Order.toast_selection_guid == "olds")).scalar() == stamp
     assert db.execute(text("SELECT external_order_id FROM open_order_cache")).scalar() == "open1"
 
 

@@ -318,7 +318,7 @@ def test_set_equal_to_automatic_removes_item_rule(store, editor):
     editor.put("/api/categories/items/chai", json=body("Front Shelf"))
     r = editor.put("/api/categories/items/chai", json=body("tea & coffee")).json()
     assert r["changed"] == 1 and r["item"]["source"] == "toast" and r["item"]["category"] == "Tea & Coffee"
-    assert store.execute(text("SELECT COUNT(*) FROM po_section_rules WHERE active = 1")).scalar() == 0
+    assert store.execute(text("SELECT COUNT(*) FROM po_section_rules WHERE active")).scalar() == 0
     # Same value again: nothing to do.
     assert editor.put("/api/categories/items/chai", json=body("Tea & Coffee")).json()["changed"] == 0
     # Build 5's group / subcategory are ignored.

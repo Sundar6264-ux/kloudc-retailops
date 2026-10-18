@@ -37,6 +37,8 @@ from app.services import inventory_api, inventory_parser, toast_analytics
 BACKEND = Path(__file__).resolve().parents[1]
 
 # Every global each old module had at b9501ad (before the move), dunders left out.
+# Except `sqlite_insert`: the PostgreSQL port (platform track A) replaced the SQLite-only
+# upserts with app.dbcompat.dialect_insert and dropped the import.
 OLD_NAMES = {
     "app.toast_client": [
         "ToastAPIError", "_TOKEN_CACHE", "_drop_token", "_extract_access_token", "dt", "fetch_employees",
@@ -73,13 +75,13 @@ OLD_NAMES = {
         "logger", "logging", "menu_price", "menu_recheck_moment", "menu_shows_barcode_issue", "merged_barcode",
         "or_", "overlay_live_stock", "parse_menus", "parse_toast_time", "re", "refresh_menu_cache",
         "rerun_after_upload", "rerun_for_late_csv", "restaurant_timezone", "restaurant_today", "run_api_snapshot",
-        "sales_by_item", "sales_synced_through", "select", "sqlite_insert", "status", "store_api_snapshot",
+        "sales_by_item", "sales_synced_through", "select", "status", "store_api_snapshot",
         "stored_menu_last_updated", "threading", "time", "toast_get", "units_sold_between", "upload_due",
     ],
     "app.services.inventory_parser": [
         "COLUMN_MAP", "InventoryParseError", "InventorySnapshot", "NUMERIC_FIELDS", "REQUIRED_SOURCE_COLUMNS",
         "Session", "XLS_NOT_SUPPORTED", "_load_dataframe", "_normalize_header", "delete", "dt", "io",
-        "parse_and_store", "pd", "sqlite_insert",
+        "parse_and_store", "pd",
     ],
 }
 
