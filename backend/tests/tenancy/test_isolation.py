@@ -56,7 +56,9 @@ def test_header_or_query_naming_another_store_is_409(multi):
 
 def test_no_store_means_401_and_platform_scope_403(multi):
     assert TestClient(app).get("/api/auth/me").status_code == 401
-    r = _client("PLATFORM.whatever").get("/api/auth/me")
+    # A master's token on a store route (/api/auth/me itself answers masters
+    # with the platform body - track C, contract 4.5).
+    r = _client("PLATFORM.whatever").get("/api/auth/users")
     assert r.status_code == 403 and r.json()["error"] == "platform_scope"
     # Logged-out routes without a store still work (health, static).
     assert TestClient(app).get("/api/health").json() == {"status": "ok"}

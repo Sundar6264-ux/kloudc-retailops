@@ -211,7 +211,10 @@ def test_multi_tenant_schedulers_start_with_every_stores_jobs(multi, clean_jobs,
         assert {j.id for j in started["platform"].get_jobs()} == {
             "tenancy_reconcile_store_jobs",
             "tenancy_sweep_idle_engines",
+            "platform_prune_login_attempts",  # track C's PLATFORM_JOBS, leader only
         }
+        prune = started["platform"].get_job("platform_prune_login_attempts")
+        assert "hour='3', minute='30'" in repr(prune.trigger) and "UTC" in repr(prune.trigger)
         from app.pos.gating import job_func_name
 
         assert job_func_name(started["main"].get_job("daily_sales_sync:ALPHA")) == "run_daily_sales_sync"

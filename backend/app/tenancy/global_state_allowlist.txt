@@ -169,3 +169,28 @@ app/team/recurrence.py:_ALLOWED_KEYS  # constant table (never changed at run tim
 app/team/recurrence.py:_DAYS  # constant table (never changed at run time)
 app/team/recurrence.py:_FREQS  # constant table (never changed at run time)
 app/team/tasks_service.py:_DAY_NAMES  # constant table (never changed at run time)
+
+# Control plane (app/platform, track C): product-wide, not per store (PLATFORM_CONTRACT "As built - C").
+app/platform/audit.py:_ALLOWED_KEYS  # constant table (audit detail keys kept unscrubbed)
+app/platform/config.py:DEFAULTS  # constant table (platform setting defaults)
+app/platform/config.py:_TRUE  # constant table
+app/platform/connector_tests.py:TESTERS  # constant table (connector test functions by kind)
+app/platform/credentials.py:KINDS  # constant table (credential kinds -> Settings fields)
+app/platform/crypto.py:_lock  # guards the one process key ring
+app/platform/crypto.py:global _ring  # the process key ring (STOREOPS_SECRET_KEYS); one for the whole platform
+app/platform/db.py:_lock  # guards the platform DB engine
+app/platform/db.py:global _engine  # the one platform (control-plane) DB engine
+app/platform/db.py:global _engine_url  # the platform DB URL the engine was built for
+app/platform/db.py:global _factory  # sessionmaker of the platform DB
+app/platform/errors.py:MESSAGES  # constant table (error code -> message)
+app/platform/jobs.py:PLATFORM_JOBS  # constant table (platform-level jobs, run on the leader)
+app/platform/provisioning.py:STEP_FUNCS  # constant table (provisioning steps)
+app/platform/provisioning.py:_results  # provisioning results keyed by store code (control plane)
+app/platform/provisioning.py:_running  # provisioning threads keyed by store code (control plane)
+app/platform/provisioning.py:_running_lock  # guards _running / _results
+app/platform/routes.py:NO_STORE  # constant table (response headers)
+app/platform/signup.py:REASON_TEXT  # constant table
+app/platform/sources.py:global _configured  # the registry/settings sources are installed once per process
+app/platform/stores.py:_MIRRORED  # constant table (store setting -> registry column)
+app/platform/throttle.py:_limiters  # rate limiters keyed by (name, limits); each counts per caller key (IP, or store code for per-store limits)
+app/platform/throttle.py:_limiters_lock  # guards _limiters

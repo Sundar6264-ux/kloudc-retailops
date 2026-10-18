@@ -521,7 +521,9 @@ def approve_signup(
     overrides = overrides or {}
     with platform_session() as pdb:
         q = select(SignupRequest).where(SignupRequest.id == int(request_id))
-        if pdb.bind.dialect.name == "postgresql":
+        from app.dbcompat import is_postgres
+
+        if is_postgres(pdb):
             q = q.with_for_update()
         req = pdb.execute(q).scalar_one_or_none()
         if req is None:

@@ -794,6 +794,20 @@ def start_multi_tenant_schedulers() -> dict:
         coalesce=True,
         max_instances=1,
     )
+    # Control-plane jobs (track C, app/platform/jobs.py): once per
+    # deployment, no store context, cron in UTC.
+    from app.platform.jobs import PLATFORM_JOBS
+
+    for job_id, func, cron in PLATFORM_JOBS:
+        platform.add_job(
+            func,
+            trigger=CronTrigger(timezone=dt.timezone.utc, **cron),
+            id=job_id,
+            replace_existing=True,
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=3600,
+        )
     _platform_scheduler = started["platform"] = platform
     try:
         stats = reconcile_store_jobs()

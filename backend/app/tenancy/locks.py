@@ -110,11 +110,12 @@ def advisory_key(name: str, store: Optional[str] = None) -> int:
 
 
 def _is_postgres(db) -> bool:
+    from app.dbcompat import is_postgres  # track A's dialect helper
+
     try:
-        bind = db.get_bind()
+        return is_postgres(db)
     except Exception:  # noqa: BLE001 - an unbound session: not PostgreSQL
         return False
-    return getattr(getattr(bind, "dialect", None), "name", "") == "postgresql"
 
 
 @contextmanager
