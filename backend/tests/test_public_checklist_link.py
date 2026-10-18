@@ -803,8 +803,11 @@ def test_page_paths_trailing_slash_and_nested(db, admin_client, anon, dist):
         r = anon.get(path)
         assert r.status_code == 404 and "This link is not active" in r.text, path
         assert r.headers["content-type"].startswith("text/html") and r.headers["cache-control"] == "no-store"
-    # The website itself is still served by the static mount.
-    assert anon.get("/").status_code == 200
+    # The website itself is still served by the static mount. The mount is
+    # made at import time only when frontend/dist exists (a checkout or CI
+    # job that has not built the website has none).
+    if any(getattr(route, "name", None) == "frontend" for route in app.routes):
+        assert anon.get("/").status_code == 200
 
 
 def test_malformed_bodies_are_client_errors_not_500(db, admin_client, anon):
