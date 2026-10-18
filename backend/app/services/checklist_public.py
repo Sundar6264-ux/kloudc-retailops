@@ -382,9 +382,25 @@ def link_key(link: ChecklistPublicLink) -> str:
     return f"{link.slug}-{link.token}"
 
 
+def link_path(link: ChecklistPublicLink) -> str:
+    """/c/{slug}-{code}; on the shared service (platform contract 4.4)
+    /c/{STORE_CODE}/{slug}-{code}, so the page knows which store it is."""
+    from app.tenancy import current_store_code, is_multi_tenant
+
+    if is_multi_tenant():
+        return f"/c/{current_store_code()}/{link_key(link)}"
+    return f"/c/{link_key(link)}"
+
+
 def link_url(link: ChecklistPublicLink) -> str:
+    from app.tenancy import is_multi_tenant
+
+    if is_multi_tenant():
+        from app.config import platform_public_url
+
+        return f"{platform_public_url()}{link_path(link)}"
     base = effective_public_base_url()
-    return f"{base}/c/{link_key(link)}"
+    return f"{base}{link_path(link)}"
 
 
 # --- Public form ----------------------------------------------------------------------
@@ -592,7 +608,7 @@ def admin_out(db: Session, definition: ChecklistDefinition, link: Optional[Check
         "allowed_names": allowed_names(link),
         "max_per_hour": link.max_per_hour,
         "url": link_url(link),
-        "path": f"/c/{link_key(link)}",
+        "path": link_path(link),
         # The 4 digits (None for an old long link - rotate to get a short one).
         "code": link.token if is_short_code(link.token) else None,
         "short": is_short_code(link.token),

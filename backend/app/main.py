@@ -139,6 +139,12 @@ app.include_router(team_router_core.app_router)
 app.include_router(team_router_chat.router)
 app.include_router(team_router_tasks.router)
 app.include_router(issue_leads_router.router)
+# Platform (docs/PLATFORM_CONTRACT.md 13; track C): /api/platform, /api/signup,
+# /api/public/stores, /api/settings/integrations - and, in multi mode, the
+# platform registry/settings sources.
+from app.platform.routes import install as _install_platform  # noqa: E402
+
+_install_platform(app)
 
 
 @app.get("/api/health")

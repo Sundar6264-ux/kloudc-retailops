@@ -47,6 +47,16 @@ PUBLIC = {
     # JSON built from settings, no store data.
     ("GET", "/.well-known/apple-app-site-association"),
     ("GET", "/.well-known/assetlinks.json"),
+    # Platform (docs/PLATFORM_CONTRACT.md 13.3, 13.4; tests/platform/):
+    # sign-up request + its code check and status poll, the owner's one-time
+    # set-up link, the public store lookup (M2 directory body), and a
+    # master's support token turned into the website cookie.
+    ("POST", "/api/signup"),
+    ("GET", "/api/signup/code-available"),
+    ("GET", "/api/signup/status"),
+    ("POST", "/api/signup/owner-setup"),
+    ("GET", "/api/public/stores/{code}"),
+    ("POST", "/api/auth/support-login"),
 }
 # Any logged-in user, no feature grant (small lookups, own account/devices,
 # team hub basics - see the notes in each router).
