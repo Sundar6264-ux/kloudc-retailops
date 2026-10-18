@@ -1445,3 +1445,210 @@ Owner actions (placeholders, never faked):
    needs it) and `PLATFORM_REQUIRE_TOTP` (recommended for production).
 
 ---
+
+## As built - B (tenancy core)
+
+Branch `plat/tenancy-core` (worktree `wt-tenancy`), on `ab5cf34`. Commits:
+`bc3fb00` interface package (section 16, no behaviour change), `017bf41`
+wiring (db, auth tokens, middleware, lifespan, scheduler, leader),
+`4f5a75f` per-store locks / caches / threads / long-poll / flyer sender +
+cache lint, `89e36f9` PostgreSQL tests, the private-keys fix, `d606919`
+structured access errors, and this section.
+
+### What exists
+
+- `app/tenancy/` implements every section 16 signature, plus the additive
+  extras listed under section 16 ("Additions made by B"). Modules: `errors`,
+  `mode`, `registry` (StoreRef, single-mode source, 10 s cache incl. negative
+  answers), `context` (ContextVar; single mode always has its one store,
+  code `_` when STORE_CODE is blank), `engines` (lazy LRU, idle sweep, busy
+  engines never disposed, PG `options=-c timezone=UTC -c
+  statement_timeout=...`, identity + uploads-marker check on first open,
+  `store.identity_mismatch` event), `jobs`, `locks`, `cache`, `paths`,
+  `settings`, `routing` (dedicated-hosting block, clearly marked),
+  `middleware`, `tokens`, `leader`, `boot`, `events`, `testing`, and
+  `global_state_allowlist.txt`.
+- `app/db.py`: `engine` (single mode; `None` in multi), tenant-aware
+  `SessionLocal()` (sets `info["store_code"]`; `kw` / `configure` kept),
+  `get_db`, `get_optional_db`, `get_engine`. Without a store in multi mode
+  `get_db` answers 401 `Not logged in`; a token of a suspended store 403
+  `store_suspended`, pending / provisioning / failed 403 `store_not_ready`, a
+  master's session on a store route 403 `platform_scope`, an identity or
+  connection failure 503 `store_unavailable`. These answers keep FastAPI's
+  `detail` (old clients) and add `error` + `message` (rendered by the
+  HTTPException handler in `main.py`). An archived store's token answers
+  401 like an unknown store.
+- `app/auth.py`: tokens `"<CODE>.<secret>"`, stored as sha256 hex in
+  `user_sessions.token` (no migration); `lookup_session(db, token)` (prefix
+  must be the current store; single mode also accepts the dev placeholder
+  `_`), `create_session` / `delete_session` / `get_current_user` unchanged
+  signatures. Raw pre-platform tokens stop working: **every user signs in
+  once after this deploys** (M2 stores included).
+- `TenantMiddleware` sits inside CORS (CORS stays outermost). Public store
+  routes taking `?store=`: `/api/public/checklists/`, `/api/app/branding`,
+  `/api/app/config`, `/api/app/legal`; C adds more with
+  `register_public_store_route(prefix)`. A platform token ignores `?store=`
+  (it is a filter on `/api/platform/*`).
+- Lifespan: single mode exactly as M2. Multi mode `app/tenancy/boot.py`:
+  startup hooks (`add_startup_hook` - C installs its registry and settings
+  sources there), `STORE_DATABASE_URL_TEMPLATE` required, connection budget
+  check, leader election (`pg_try_advisory_lock(0x53544F5245)` on a
+  dedicated AUTOCOMMIT connection to `PLATFORM_DATABASE_URL`, watchdog every
+  30 s, a follower keeps trying), flyer sender in every process.
+- Scheduler (multi mode, leader only): `start_multi_tenant_schedulers()`.
+  Per store (`"<job>:<CODE>"`, store timezone and store settings, 0-120 s
+  per-store offset): daily_sales_sync, open_orders_full_scan, sales_repull
+  (one OrTrigger per store), insights_nightly, insights_catchup,
+  inventory_api_snapshot, notify_closing_checklist, notify_morning_summary,
+  notify_open_orders_HHMM, every TEAM_JOBS job (`team_<id>`). Startup
+  catch-ups per store when first seen (startup_catchup_sync,
+  startup_open_orders_today, startup_fix_issues_warmup,
+  startup_open_orders_full_scan). Interval jobs once, each tick over every
+  store: open_orders_today_refresh, menu_barcode_recheck,
+  notify_invoice_failed, notify_cart_removal_request - their intervals are
+  the process values (a per-store `open_orders_today_refresh_minutes` is
+  not used in multi mode). A "platform" scheduler reconciles every 5 min
+  and sweeps idle engines every minute. Capability gating per store
+  (`JOB_CAPABILITIES` by function name). Executors: `SCHEDULER_MAX_WORKERS`
+  threads per scheduler.
+- Locks: all 31 per-store locks of 6.4 (incl. the 11 cache guards) are
+  `tenant_lock(name)`; `po_cart` is reentrant. `advisory_lock(db, name)` is
+  added inside the same blocks for po_cart, order_actions (4 sites),
+  critical_dismissals (2), purchase_order_log (3), po_send and the flyer
+  `_SEND_LOCK` (2). The xact lock ends at the block's commit. Kept global as
+  listed in 6.4; `insights_data._live_locks` (map of per-key locks) is per
+  store with a global guard.
+- Caches / state: every per-store item of 6.5 is `tenant_local(...)` (call
+  sites unchanged), plus `open_orders._EMPLOYEE_CACHE` and
+  `_live_last_failure` (not in 6.5, per store now). `stock_issues._generation`
+  and `toast_analytics._token` keep a module name for old callers; the live
+  values are per store. Store pack: pack + source per store; the test
+  override (`set_override`) stays process-wide. POS connectors keyed
+  `(store, provider)`; `reset_cache(store_code=None)`.
+- Threads: `routers/sales.py`, `pos/sync/open_orders.py`,
+  `services/stock_issues.py`, `services/insights_data._spawn` use
+  `spawn_in_store`; the flyer sender queues `(store, send id)` and sweeps
+  per store (`for_each_store`; the first multi-mode sweep runs in the
+  background).
+- Long-poll: versions per store; `notify_changed(store_code=None)`; a
+  commit wakes only its own store's waiters.
+- Report cache: listeners on every engine via `register_engine_hook`;
+  a commit through ALPHA's engine ends only ALPHA's cache.
+- Settings: precedence env < registry row (name, timezone, POS) <
+  store_settings < credentials < derived. **Addition:**
+  `STORE_PRIVATE_KEYS` (credentials, `gmail_*`, `whapi_chat_id` + legacy
+  group ids, `toast_invoice_email` / `ap_inbox_email`, store name / address
+  / phone / email / description, logos, `labels_url`, `public_base_url`,
+  `email_from_name`, `first_sales_date`, `demo_mode`, `insights_hmac_secret`)
+  never come from the platform env in multi mode - they start at the class
+  default, so one store's values left in `.env` cannot reach other stores.
+  Derived: `store_code`, `uploads_root` / `team_uploads_dir` /
+  `invoice_uploads_dir` / `flyers_dir` / `insights_hmac_key_file` under
+  `<UPLOADS_ROOT>/<CODE>/`, `public_host` = PLATFORM_PUBLIC_URL,
+  `store_pack_file` blank. A bad stored value is dropped (logged), never
+  fatal; `validate_store_setting` refuses it at write time.
+- Cache lint: `tests/tenancy/test_cache_lint.py` (module-level mutable
+  containers, locks, `lru_cache`/`cache`, `global`) against the allowlist
+  (171 entries, each with a reason; constant tables included so a new
+  mutable one has to be added on purpose; a stale entry fails too).
+
+### Files outside B's list (contract 0.2.10)
+
+- `app/demo_guard.py` (C): `Depends(get_optional_db)` + `db is None` early
+  return (it is an app-wide dependency and ran `get_db` on login / health /
+  platform routes, which would answer 401 in multi mode), and
+  `lookup_session` instead of `db.get(UserSession, token)`.
+- Tests changed for the new per-store state / hashed tokens (one line
+  each): `test_flyers.py` (pacing), `test_push_devices.py` (token hash),
+  `test_team_tasks.py` (`recurrence._run_state`), `test_team_auto_tasks.py`
+  and `test_v1_batch_oct14.py` (`auto_tasks._order_scan`).
+- `app/services/inventory_api.py` keeps `import threading` (an old name the
+  compat test resolves).
+
+### Tests
+
+- Full backend suite (SQLite single mode, existing harness) + tenancy:
+  **2744 passed, 20 skipped** (2687 existing + 57 new), via m1heavy.
+- `tests/tenancy/` (57): PostgreSQL 16 on the dev cluster, databases
+  `so_b_<pid>_<store>` created with C collation and dropped at the end;
+  skipped when PG is not reachable. Isolation over HTTP (each token reads
+  its store; forged prefix / random secret / unknown store -> 401;
+  `X-Store` / `?store=` mismatch -> 409; suspended / not ready / archived;
+  dedicated store `store_moved` only with the flag; dedicated node serves
+  only its codes; admin user lists per store; 300 interleaved requests in
+  16 threads over 3 stores, every answer from its own DB); identity /
+  instance-id / uploads-marker mismatch refused (503 + event); sessions
+  hashed; logout isolation; context propagation (sync endpoint, sync
+  dependency, BackgroundTasks, run_in_threadpool, spawn_in_store, raw
+  thread has none, scheduler job runner); per-store locks, reentrant lock,
+  PG advisory lock across sessions; tenant_cache / tenant_local isolation,
+  LRU, TTL; real caches (report cache incl. the engine hook, POS
+  connectors); settings precedence, platform-only keys ignored, private
+  keys not leaked from env, invalidation, bad values dropped, registry
+  timezone; push `data.store`; `store_path` escapes (`..`, absolute,
+  backslash, symlink out); long-poll per store; engine LRU / idle sweep
+  never close a busy engine; UTC + statement timeout on PG; SessionLocal
+  without a store; connection budget; for_each_store (once per active
+  store, writes stay in their DB, errors isolated, suspended / pending /
+  dedicated skipped, dedicated node); per-store cron in each timezone across
+  the 2026-11-01 US DST change; reconcile on suspend / timezone change;
+  startup jobs once; capability gating per store (Clover / CSV stores get
+  no POS jobs); per-store settings shape the jobs; full multi-mode
+  scheduler start; each_store_job; leader election (one leader; a lost
+  connection stops it, the other takes over); single mode unchanged
+  (implicit store, tokens, middleware no-op); cache lint.
+
+### Notes for A (PostgreSQL port)
+
+Found while running store code on PG (not fixed here - A's files):
+1. `Base.metadata.create_all` fails on PG: Boolean `server_default=text("0")`
+   (`models.py:113`, `orders.is_modifier`). The tenancy tests patch Boolean
+   0/1 defaults to false/true for their own create_all only.
+2. `services/invoice_close_suggestions.py:222` `_fingerprint`: `sum(boolean)`
+   does not exist on PG (the close-suggestions call fails, logged).
+3. `team/changes.py` `current_cursor`: the `sqlite_sequence` query fails and
+   poisons the PG transaction -> `GET /api/team/bootstrap` 500 (known, 1.1).
+4. A's conftest switch to multi mode: wrap each test in
+   `as_store(TEST_STORE)` (or make the client requests carry store tokens -
+   `create_session` inside the store context does that); `app.db.engine` is
+   `None` in multi mode, use `tenant_engine(TEST_STORE)` for create_all /
+   truncate; fixtures that run outside a store context use the platform
+   bucket of tenant caches.
+
+### Notes for C (platform backend)
+
+- Install sources in a startup hook: `app.tenancy.boot.add_startup_hook(fn)`
+  calling `set_registry_source` / `set_settings_source`. Store settings
+  values are expected decoded (not JSON strings); credentials as Settings
+  field names.
+- Login: create the session inside `tenant_session(code)` (the token gets
+  the code prefix). Logout: `delete_session` inside the store. A platform
+  token gets scope `platform` from the middleware; C verifies
+  `platform_sessions` itself (B's `token_hash` is the same sha256).
+- Provisioning: `tenant_session(code, allow_inactive=True)` / `store_context(
+  code, allow_inactive=True)`; an engine of a `provisioning` store opens
+  without a stamp; after activation the stamp must match
+  `stores.instance_id`. Call `on_store_changed(code)` after approve /
+  suspend / resume / archive / settings, timezone or POS changes (clears the
+  store's caches and engine when it is no longer active, reschedules jobs).
+- Audit: `app.tenancy.events.add_listener(fn(action, store_code, details))`
+  receives `store.identity_mismatch`.
+- `validate_store_setting(key, value)` for the settings PUT (400 on
+  ValueError).
+
+### Owner actions (B)
+
+- Production PostgreSQL `max_connections`: with the defaults
+  (TENANT_MAX_ENGINES 40 x (2 + 3) + 10 = 210) the startup check refuses a
+  server with the stock 100 / 200; set `max_connections` to 250+ or lower
+  `TENANT_MAX_ENGINES`. (The dev cluster has 200: dev multi mode needs
+  `TENANT_MAX_ENGINES=38` or less.)
+- Everyone signs in once after this ships (tokens are now store-bound and
+  stored hashed).
+
+### Deferred (B)
+
+Cross-process long-poll wake-ups (`LISTEN/NOTIFY`); per-store interval
+lengths in multi mode; running the flyer sender only on the leader; a
+platform-level (not per-store) Toast Analytics budget for stores that share
+one Toast client.
