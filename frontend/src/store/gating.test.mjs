@@ -77,6 +77,7 @@ test("every row of the contract's gating table is declared", () => {
     invoice_ap_inbox: { storeFeatures: ["ap_inbox"] },
     whatsapp: { storeFeatures: ["whatsapp"] },
     also_in_pos: { capabilities: ["analytics_reports"] },
+    menu_recheck: { capabilities: ["catalog_change_stamp"] },
   });
 });
 

@@ -11,6 +11,7 @@ import { ReadinessCard, SwitchCard, SwitchHistory } from "../components/inventor
 import { formatRestaurantTime } from "../format.js";
 import { TermInfo } from "../glossary.jsx";
 import { currentPosName } from "../store/gating.js";
+import { useStoreAllows } from "../store/StoreContext.jsx";
 
 // Admin page for the inventory-from-Toast work (backend
 // services/inventory_api.py): the "Use Toast for inventory" switch and its
@@ -28,6 +29,7 @@ const pct = (v) => (v == null ? "-" : `${v}%`);
 const when = (iso) => (iso ? formatRestaurantTime(iso) : "-");
 
 function SettingsCard({ status, onRecheck, rechecking, recheckMsg }) {
+  const canRecheck = useStoreAllows("menu_recheck");
   const s = status.settings;
   const due = status.upload_due;
   return (
@@ -88,9 +90,11 @@ function SettingsCard({ status, onRecheck, rechecking, recheckMsg }) {
                 {when(status.menu_check.fetched_at)} ({status.menu_check.items} items). Missing and invalid barcodes
                 in Fix Issues use it when it is newer than the latest upload.
               </div>
-              <button className="btn-secondary invapi-btn" disabled={rechecking} onClick={onRecheck}>
-                {rechecking ? "Checking…" : "Check barcodes now"}
-              </button>
+              {canRecheck && (
+                <button className="btn-secondary invapi-btn" disabled={rechecking} onClick={onRecheck}>
+                  {rechecking ? "Checking…" : "Check barcodes now"}
+                </button>
+              )}
               {recheckMsg && <span className="muted"> {recheckMsg}</span>}
             </td>
           </tr>

@@ -66,6 +66,9 @@ export const ELEMENT_REQUIREMENTS = {
   whatsapp: { storeFeatures: ["whatsapp"] },
   // Sidebar "Also in <pos>" subgroup.
   also_in_pos: { capabilities: ["analytics_reports"] },
+  // Inventory from <pos>: "Check barcodes now" (the menu re-check reads the
+  // POS menu's change stamp; the server answers 409 without it).
+  menu_recheck: { capabilities: ["catalog_change_stamp"] },
 };
 
 // The contract table's rows, for the coverage test.

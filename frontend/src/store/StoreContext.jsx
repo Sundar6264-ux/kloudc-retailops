@@ -24,6 +24,9 @@ function setFavicon(href) {
   if (typeof document === "undefined" || !href) return;
   for (const link of document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')) {
     link.setAttribute("href", href);
+    // index.html's first icon is declared SVG; the store's icon is an image
+    // of its own type, and a browser may skip one whose declared type is wrong.
+    link.removeAttribute("type");
   }
 }
 
