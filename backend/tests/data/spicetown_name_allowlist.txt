@@ -141,3 +141,5 @@ frontend/src/pages/insights/MenuPerformancePage.jsx:their item, discounts are ta
 frontend/src/pages/insights/MenuPerformancePage.jsx:{group === "kitchen" ? "Street Kitchen" : "Grocery"} items only
 frontend/src/pages/insights/PrepForecastPage.jsx:For each Street Kitchen item we take its sales on the
 frontend/src/pages/insights/PrepForecastPage.jsx:brief="How many of each Street Kitchen item to expect on a day, to plan prep."
+# MT10: the guard that refuses the legacy domain (contract rule 0.3) must name it once.
+backend/app/directory/config.py:FORBIDDEN_DOMAIN = "spicetown.shop"
