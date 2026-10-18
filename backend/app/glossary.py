@@ -185,8 +185,8 @@ TERMS = [
         "urgency_check_count",
         "Check count",
         "reorder",
-        "Toast says 0 or less on hand, but it sold this week, so the count is wrong, not the shelf. "
-        "Count the shelf and fix it in Toast before ordering.",
+        "{pos} says 0 or less on hand, but it sold this week, so the count is wrong, not the shelf. "
+        "Count the shelf and fix it in {pos} before ordering.",
         "On hand is 0 or less AND it sold at least 1 unit in the last 7 days.",
         "violet",
         ["check count", "wrong count"],
@@ -217,7 +217,7 @@ TERMS = [
         "An order to this vendor is already placed and on the way, so its items are not urgent until it arrives. "
         "Stock numbers still show as they are.",
         "The vendor's latest order was marked placed after its last recorded delivery (Delivery Review, logged "
-        "purchase, uploaded invoice or Toast receiving). Clears when a delivery is recorded, or "
+        "purchase, uploaded invoice or {pos} receiving). Clears when a delivery is recorded, or "
         f"{_n(ORDERED_GRACE_DAYS)} days after the expected delivery (the next scheduled delivery on the Vendor "
         "Calendar, else the lead time). Only that vendor's items change; the same item under another vendor keeps "
         "its real status.",
@@ -285,7 +285,7 @@ TERMS = [
         "reorder",
         "An admin hid a critical vendor from the Today Critical tile and the morning critical-vendors notification "
         "for the rest of this week, for everyone.",
-        "Comes back when the next store week starts: Monday at midnight (12 AM) store time, New York. On a Sunday "
+        "Comes back when the next store week starts: Monday at midnight (12 AM) store time ({store_city}). On a Sunday "
         "that is the next day. Reorder Candidates still lists it; an admin can Show again sooner.",
         None,
         ["skip this week", "skipped this week", "skip week"],
@@ -300,7 +300,7 @@ TERMS = [
         f"(after {_ampm(_CD.LATER_TODAY_CUTOFF)} it is tomorrow {_ampm(_CD.SNOOZE_TIME)} instead). Tomorrow: "
         f"{_ampm(_CD.SNOOZE_TIME)}. In {_n(_CD.SNOOZE_IN_DAYS)} days: {_ampm(_CD.SNOOZE_TIME)} that day. Pick a "
         f"date: {_ampm(_CD.SNOOZE_TIME)} that day, up to {_n(_CD.SNOOZE_MAX_DAYS_AHEAD)} days ahead. Store time "
-        "(New York); it comes back at that time.",
+        "({store_city}); it comes back at that time.",
         None,
         ["remind me later", "snooze", "snoozed", "remind later"],
     ),
@@ -417,7 +417,7 @@ TERMS = [
         "flag_negative_inventory",
         "Negative on-hand",
         "review",
-        "Toast shows less than 0 on hand, which can't be real. The count needs fixing.",
+        "{pos} shows less than 0 on hand, which can't be real. The count needs fixing.",
         "Shelf + container count below 0 in the latest inventory upload.",
         "warning",
     ),
@@ -434,7 +434,7 @@ TERMS = [
         "flag_missing_inventory_history",
         "No inventory counts",
         "review",
-        "Toast has no stock counts for this item, so days out of stock can't be seen. Information only.",
+        "{pos} has no stock counts for this item, so days out of stock can't be seen. Information only.",
         None,
         "warning",
     ),
@@ -563,7 +563,7 @@ TERMS = [
         "Container qty",
         "projection",
         "Extra stock kept in the Container storage location, added to the shelf count.",
-        "Toast lists it as a second row with the same name, no price and no vendor.",
+        "{pos} lists it as a second row with the same name, no price and no vendor.",
         None,
         ["container", "+ container"],
     ),
@@ -574,7 +574,7 @@ TERMS = [
         "The item's average stock count over the days of that week, shown next to what sold.",
         "Taken from the daily inventory counts (the morning count of each day), with the Container row added in. "
         "Only days with a count are averaged - \"6 of 7 days\" means one day had no count - and \"-\" means no "
-        "day did. A negative number is Toast's own count going below zero.",
+        "day did. A negative number is {pos}'s own count going below zero.",
         None,
         ["average on hand", "on hand", "stock that week"],
     ),
@@ -589,7 +589,7 @@ TERMS = [
         "also_at",
         "Also at",
         "similar",
-        "Other vendors Toast lists for this item, with that vendor's own item code when Toast has it.",
+        "Other vendors {pos} lists for this item, with that vendor's own item code when {pos} has it.",
         None,
         None,
         ["other vendors"],
@@ -601,7 +601,7 @@ TERMS = [
         "Other products in the store of the same kind (other brands, other sizes, close variants), best matches "
         "first.",
         "Matched on the cleaned-up name (size and brand taken off, spellings made the same). "
-        "Street Kitchen, Catering, Event Menu and Container rows are never listed.",
+        "Kitchen, catering, event menu and Container rows are never listed.",
         None,
         ["similar products", "substitutes"],
     ),
@@ -625,7 +625,7 @@ TERMS = [
         "similar_possible_duplicate",
         "Same product and size - possible duplicate listing",
         "similar",
-        "Looks like the same product, brand and size listed twice in Toast. Worth checking.",
+        "Looks like the same product, brand and size listed twice in {pos}. Worth checking.",
         None,
         "info",
     ),
@@ -652,34 +652,34 @@ TERMS = [
         "issue_missing_barcode",
         "Missing barcodes",
         "fix_issues",
-        "Items with no barcode in Toast, so they can't be scanned at the register.",
+        "Items with no barcode in {pos}, so they can't be scanned at the register.",
     ),
     _t(
         "issue_invalid_barcode",
         "Invalid barcodes",
         "fix_issues",
-        "The barcode in Toast is badly formed (wrong length, letters, or a wrong check digit).",
+        "The barcode in {pos} is badly formed (wrong length, letters, or a wrong check digit).",
         "Checked against the GS1 rules for UPC-A (12), EAN-8, EAN-13 and GTIN-14.",
     ),
     _t(
         "issue_duplicate",
         "Duplicates",
         "fix_issues",
-        "Two or more priced items in Toast with exactly the same name.",
+        "Two or more priced items in {pos} with exactly the same name.",
         "Container rows (same name, no price) are not duplicates and are left out.",
     ),
     _t(
         "issue_dead_stock",
         "Dead inventory",
         "fix_issues",
-        "The older list: items with stock and either no sales in Toast's own 90-day sales figure, or 90+ days of "
+        "The older list: items with stock and either no sales in {pos}'s own 90-day sales figure, or 90+ days of "
         "stock on hand. Replaced by Dead with stock.",
     ),
     _t(
         "issue_negative_inventory",
         "Negative inventory",
         "fix_issues",
-        "Toast shows less than 0 on hand. A shelf can't hold less than nothing, so the count needs fixing.",
+        "{pos} shows less than 0 on hand. A shelf can't hold less than nothing, so the count needs fixing.",
         "On hand below 0 in the latest upload. A close covers this time only: if it goes negative again after "
         "being 0 or more, it comes back. Closing it as Loose / weighed, Discontinued or Not an issue keeps it "
         "closed for good.",
@@ -702,7 +702,7 @@ TERMS = [
         "store_vs_container",
         "Low on shelf (Store vs Container)",
         "reports",
-        "Store vs Container lists only products that have both a store (shelf) row and a Container row in Toast, "
+        "Store vs Container lists only products that have both a store (shelf) row and a Container row in {pos}, "
         "with the stock in each. Low on shelf means the shelf is low but there is stock in the Container. Bring "
         "some out.",
         f"Rows are paired by exact name in the latest upload: one priced row (store) and one row with no price "
@@ -737,12 +737,12 @@ TERMS = [
         "Dead - zero stock",
         "fix_issues",
         "Items that aren't selling and have nothing left. Decide whether to stop reordering, deactivate them in "
-        "Toast, or reorder on purpose because they should sell.",
+        "{pos}, or reorder on purpose because they should sell.",
         f"Shelf + container is 0 AND either the forecast classes it Dead (no sale in {FC.dead_quiet_days} days while "
         f"in stock), or it has had no sale in {ZERO_STOCK_NO_SALE_DAYS} days (or never sold) and isn't brand new (still "
         "waiting for its first delivery): it has sold before, or it first showed up in the uploads, or was last "
         f"received, at least {ZERO_STOCK_MIN_AGE_DAYS} days before the latest upload. If the shelf or Container count "
-        "is below 0 it is on Negative inventory instead, so an item is never on both. Items with no count in Toast at "
+        "is below 0 it is on Negative inventory instead, so an item is never on both. Items with no count in {pos} at "
         "all are not listed.",
         None,
         ["dead zero stock", "zero stock", "out of stock dead"],
@@ -784,9 +784,9 @@ TERMS = [
         "came_back_fixed_but_still_showing",
         "Came back: still showing after fix",
         "fix_issues",
-        "It was closed as fixed (for example Count corrected in Toast), but an inventory upload from a later day "
+        "It was closed as fixed (for example Count corrected in {pos}), but an inventory upload from a later day "
         "still shows the problem, so it's open again.",
-        "Usually the change wasn't saved in Toast, or the upload was taken before the fix.",
+        "Usually the change wasn't saved in {pos}, or the upload was taken before the fix.",
         "warning",
         ["still showing", "fixed but still showing"],
     ),
@@ -847,42 +847,42 @@ TERMS = [
     ),
     _t(
         "reason_fixed",
-        "Count corrected in Toast",
+        "Count corrected in {pos}",
         "fix_issues",
-        "The on-hand count in Toast was wrong and has been corrected.",
+        "The on-hand count in {pos} was wrong and has been corrected.",
         _RECHECKED,
         "success",
         ["count corrected"],
     ),
     _t(
         "reason_missing_barcode_fixed",
-        "Barcode added in Toast",
+        "Barcode added in {pos}",
         "fix_issues",
-        "The missing barcode has been typed into Toast.",
+        "The missing barcode has been typed into {pos}.",
         _RECHECKED,
         "success",
     ),
     _t(
         "reason_invalid_barcode_fixed",
-        "Barcode corrected in Toast",
+        "Barcode corrected in {pos}",
         "fix_issues",
-        "The bad barcode has been corrected in Toast.",
+        "The bad barcode has been corrected in {pos}.",
         _RECHECKED,
         "success",
     ),
     _t(
         "reason_duplicate_fixed",
-        "Merged / removed in Toast",
+        "Merged / removed in {pos}",
         "fix_issues",
-        "The extra copies were merged or deleted in Toast so only one item has this name.",
+        "The extra copies were merged or deleted in {pos} so only one item has this name.",
         _RECHECKED,
         "success",
     ),
     _t(
         "reason_negative_inventory_fixed",
-        "Count corrected in Toast (negative)",
+        "Count corrected in {pos} (negative)",
         "fix_issues",
-        "The count was fixed in Toast, so it is 0 or more now.",
+        "The count was fixed in {pos}, so it is 0 or more now.",
         _RECHECKED + " " + _ONE_TIME,
         "success",
     ),
@@ -890,7 +890,7 @@ TERMS = [
         "reason_refill_from_container_fixed",
         "Moved stock to the shelf",
         "fix_issues",
-        "Stock was brought out of the Container onto the shelf, and the counts were moved in Toast.",
+        "Stock was brought out of the Container onto the shelf, and the counts were moved in {pos}.",
         _RECHECKED + " " + _ONE_TIME,
         "success",
     ),
@@ -924,7 +924,7 @@ TERMS = [
         "Different products (size / variant)",
         "fix_issues",
         "The items share a name but are really different sizes or variants, so they are not duplicates.",
-        _STAYS + " Tip: add the size to the names in Toast.",
+        _STAYS + " Tip: add the size to the names in {pos}.",
         "neutral",
     ),
     _t(
@@ -954,9 +954,9 @@ TERMS = [
     ),
     _t(
         "reason_deactivated",
-        "Deactivated in Toast",
+        "Deactivated in {pos}",
         "fix_issues",
-        "The item was turned off in Toast, so it is no longer sold or counted.",
+        "The item was turned off in {pos}, so it is no longer sold or counted.",
         _STAYS,
         "neutral",
         ["deactivate", "turned off"],
@@ -1007,7 +1007,7 @@ TERMS = [
         "reason_sold_before_received",
         "Sold before the delivery was received",
         "fix_issues",
-        "Items were sold before the delivery was received in Toast, so the count dipped below 0 for a while.",
+        "Items were sold before the delivery was received in {pos}, so the count dipped below 0 for a while.",
         _ONE_TIME,
         "neutral",
     ),
@@ -1031,7 +1031,7 @@ TERMS = [
         "reason_container_count_wrong",
         "Container count is wrong",
         "fix_issues",
-        "There isn't really stock in the Container; its count in Toast is wrong.",
+        "There isn't really stock in the Container; its count in {pos} is wrong.",
         _ONE_TIME,
         "neutral",
     ),
@@ -1039,7 +1039,7 @@ TERMS = [
         "reason_store_count_wrong",
         "Shelf count is wrong - shelf is stocked",
         "fix_issues",
-        "The shelf is actually full; its count in Toast is too low.",
+        "The shelf is actually full; its count in {pos} is too low.",
         _ONE_TIME,
         "neutral",
     ),
@@ -1136,9 +1136,9 @@ TERMS = [
         "open_order_tab_name",
         "Tab name",
         "open_orders",
-        "The name typed on the check's tab in Toast, usually the customer's name. Shown as Tab: Name so you can "
+        "The name typed on the check's tab in {pos}, usually the customer's name. Shown as Tab: Name so you can "
         "tell whose check it is.",
-        "Taken from each check on the Toast order; an order with several checks lists each different tab name "
+        "Taken from each check on the {pos} order; an order with several checks lists each different tab name "
         "once. Not shown when the tab has no name.",
         None,
         ["tab", "tab name", "customer name", "customer"],
@@ -1157,7 +1157,7 @@ TERMS = [
         "In Progress",
         "invoices",
         "Being worked on, nothing has failed: a send may still be running, WhatsApp may be Uncertain, or both "
-        "sends are done and it is waiting for someone to confirm it is closed in Toast.",
+        "sends are done and it is waiting for someone to confirm it is closed in {pos}.",
         None,
         "info",
     ),
@@ -1165,7 +1165,7 @@ TERMS = [
         "invoice_completed",
         "Completed",
         "invoices",
-        "Sent to WhatsApp and Toast and marked closed in Toast. Transfers (and old Untracked uploads) complete once "
+        "Sent to WhatsApp and {pos} and marked closed in {pos}. Transfers (and old Untracked uploads) complete once "
         "WhatsApp is sent.",
         None,
         "success",
@@ -1174,12 +1174,12 @@ TERMS = [
         "invoice_failed",
         "Failed",
         "invoices",
-        "Sending to WhatsApp or the Toast email failed. Tap or hover for the error, then Resend. (Uncertain - check "
+        "Sending to WhatsApp or the {pos} email failed. Tap or hover for the error, then Resend. (Uncertain - check "
         "WhatsApp is not counted as failed.)",
         None,
         "danger",
     ),
-    _t("invoice_sent", "Sent", "invoices", "That channel (WhatsApp or Toast email) confirmed it was sent. "
+    _t("invoice_sent", "Sent", "invoices", "That channel (WhatsApp or {pos} email) confirmed it was sent. "
        "\"Sent (manual)\" or \"Sent (set by name)\" means an admin set it by hand.", None, "success"),
     _t("invoice_sending", "Sending", "invoices", "The send is still running in the background.", None, "neutral"),
     _t(
@@ -1194,20 +1194,20 @@ TERMS = [
     ),
     _t(
         "invoice_closed_in_toast",
-        "Closed in Toast",
+        "Closed in {pos}",
         "invoices",
-        "Someone checked Toast and confirmed the bill is closed there. Only possible after both sends succeed.",
-        "\"To close\" (app Home) counts invoices sent in the last 7 days that nobody has marked closed in Toast yet.",
+        "Someone checked {pos} and confirmed the bill is closed there. Only possible after both sends succeed.",
+        "\"To close\" (app Home) counts invoices sent in the last 7 days that nobody has marked closed in {pos} yet.",
         None,
         ["closed", "to close"],
     ),
     _t(
         "invoice_close_suggested",
-        "Looks closed in Toast",
+        "Looks closed in {pos}",
         "invoices",
-        "An open invoice whose vendor was received in Toast after the upload, so it is probably closed there. One "
-        "tap marks it Closed in Toast; Not closed yet hides the suggestion. Nothing is closed automatically.",
-        f"A Toast receiving of that vendor no earlier than {_hours(_ICS.UPLOAD_GRACE)} hours before the upload (or, "
+        "An open invoice whose vendor was received in {pos} after the upload, so it is probably closed there. One "
+        "tap marks it Closed in {pos}; Not closed yet hides the suggestion. Nothing is closed automatically.",
+        f"A {{pos}} receiving of that vendor no earlier than {_hours(_ICS.UPLOAD_GRACE)} hours before the upload (or, "
         "on a nightly-snapshot day, a delivery-like stock rise after it). With several open invoices for one vendor, "
         "the oldest gets the first receiving. Invoices only (not returns).",
         "info",
@@ -1217,8 +1217,8 @@ TERMS = [
         "invoice_untracked",
         "Untracked",
         "invoices",
-        "An invoice that never becomes a Toast bill. It goes to WhatsApp only (no Toast email), is Completed once "
-        "WhatsApp is sent, and can't be marked Closed in Toast.",
+        "An invoice that never becomes a {pos} bill. It goes to WhatsApp only (no {pos} email), is Completed once "
+        "WhatsApp is sent, and can't be marked Closed in {pos}.",
         "No longer offered for new uploads (use Transfer for store/container moves). Older Untracked uploads still "
         "show as before.",
     ),
@@ -1227,8 +1227,8 @@ TERMS = [
         "Transfer",
         "invoices",
         "Stock moved between the store and the container, uploaded with its direction: Store \u2192 Container or "
-        "Container \u2192 Store. It goes to WhatsApp only (no Toast email), is Completed once WhatsApp is sent, and "
-        "can't be marked Closed in Toast.",
+        "Container \u2192 Store. It goes to WhatsApp only (no {pos} email), is Completed once WhatsApp is sent, and "
+        "can't be marked Closed in {pos}.",
         "Vendor is optional. A transfer never counts as a vendor delivery (ordering, reconciliation, reports).",
         None,
         ["store to container", "container to store", "move", "movement"],
@@ -1327,7 +1327,7 @@ TERMS = [
         "Delivery days read off a vendor's recent deliveries, offered for a vendor with no schedule yet. Add, edit or "
         "dismiss it, or Add all; a vendor that already has a schedule is never changed.",
         f"Over the last {_n(_SS.LOOKBACK_DAYS // 7)} weeks, every source counts: invoice uploads and hand-logged "
-        f"deliveries (the delivery day), Toast receiving records from the daily inventory files, Delivery Review "
+        f"deliveries (the delivery day), {{pos}} receiving records from the daily inventory files, Delivery Review "
         f"confirms and stock rises (the day before). Pieces up to {_n(_SS.ATTACH_DAYS)} days after an invoice are the "
         f"same delivery. A weekday counts with {_n(_SS.MIN_PER_WEEKDAY)}+ deliveries and "
         f"{_pct(_SS.MIN_WEEKDAY_SHARE)}+ of all, and the days chosen must hold {_n(_SS.MIN_COVERED)}+ deliveries and "
@@ -1354,9 +1354,9 @@ TERMS = [
         "schedule_missing",
         "Vendors without a schedule",
         "vendor_calendar",
-        "Every vendor Toast lists on an item (or that delivered lately) with no schedule and no suggestion, and why.",
+        "Every vendor {pos} lists on an item (or that delivered lately) with no schedule and no suggestion, and why.",
         f"Too few deliveries in the last {_n(_SS.LOOKBACK_DAYS // 7)} weeks, deliveries on scattered days, or a "
-        "dismissed suggestion. Set schedule adds one by hand. The store's own house items (SpiceTown) aren't listed.",
+        "dismissed suggestion. Set schedule adds one by hand. The store's own house items aren't listed.",
         "neutral",
         ["no schedule", "set schedule", "missing schedule"],
     ),
@@ -1408,8 +1408,8 @@ TERMS = [
         "delivery",
         "A delivery the app found in the inventory uploads, one per vendor and upload. Nothing is logged until "
         "someone checks it and presses Confirm, which logs it exactly like a manual review.",
-        "Mostly from Toast's own receiving: items whose receive time and receiving number (like IN378) are new since "
-        "the previous upload, grouped under the vendor most of them list. On a day with only the nightly Toast "
+        "Mostly from {pos}'s own receiving: items whose receive time and receiving number (like IN378) are new since "
+        "the previous upload, grouped under the vendor most of them list. On a day with only the nightly {pos} "
         f"snapshot: {_n(_DS.RISE_MIN_ITEMS)} or more of one vendor's items rising by at least {_n(_DS.RISE_MIN_UNITS)} "
         "more than sales explain (or one, if the vendor uploaded an invoice then); a shelf rise matched by its "
         f"Container row dropping by {_pct(_DS.TRANSFER_MATCH_SHARE)} of it is a move, and a weighed item must rise by "
@@ -1522,7 +1522,7 @@ TERMS = [
         "The last run of a background job (sales sync, inventory upload): green = worked, red = failed, "
         "amber = running.",
     ),
-    _t("on_sale", "On sale", "other", "The item has a sale price in Toast.", None, "success"),
+    _t("on_sale", "On sale", "other", "The item has a sale price in {pos}.", None, "success"),
     _t("clearance", "Clearance", "other", "The item is marked for clearance.", None, "warning"),
     # ---- PO sections (services/po_sections.py + po_section_rules.py, PO sections page) ----
     _t(
@@ -1532,7 +1532,7 @@ TERMS = [
         "The heading an item prints under on a vendor's purchase order PDF (for example Spices - Whole or "
         "Frozen - Ice Cream), so the supplier can pick the order shelf by shelf. Lines with no section "
         "(hand-added items, kitchen items) print under Other, always last.",
-        "Automatic from the item's category (Toast's, with the app's category corrections). Changed on the PO "
+        "Automatic from the item's category ({pos}'s, with the app's category corrections). Changed on the PO "
         "sections page: an item's own section wins over a vendor rule, and a vendor rule wins over the automatic "
         "section; a rename or merge of a section then applies to all of them. On a vendor's PO that vendor's own "
         "rule is used first. A hand-added cart line can be given a section from the cart. Every change records "
@@ -1549,9 +1549,9 @@ TERMS = [
         "other",
         "In the app's Product categories screen, an item's category is now its PO section: the heading it "
         "prints under on vendor purchase order PDFs. Item change = this item has its own section; Vendor rule "
-        "= every item from that vendor goes to one section. Toast categories are not changed.",
-        "An item's own change wins over a vendor rule. Reset to Toast puts the item back in its automatic "
-        "section. Category corrections made earlier (Toast has an item in the wrong category) still apply "
+        "= every item from that vendor goes to one section. {pos} categories are not changed.",
+        "An item's own change wins over a vendor rule. Reset to {pos} puts the item back in its automatic "
+        "section. Category corrections made earlier ({pos} has an item in the wrong category) still apply "
         "everywhere but are no longer edited in the app or on the website.",
         "violet",
         ["category correction", "category override", "category rule", "category mapping", "corrected category",
@@ -1584,11 +1584,11 @@ TERMS = [
     # definition. ----
     _t(
         "open_order_approval",
-        "Approval status (Toast)",
+        "Approval status ({pos})",
         "open_orders",
-        "Toast's own approval state for an online or scheduled check, shown as it comes from Toast (for example "
+        "{pos}'s own approval state for an online or scheduled check, shown as it comes from {pos} (for example "
         "NEEDS_APPROVAL or FUTURE). The chip only shows when the check is not APPROVED.",
-        "NEEDS_APPROVAL usually means someone has to accept the order on the Toast device.",
+        "NEEDS_APPROVAL usually means someone has to accept the order on the {pos} device.",
         "warning",
         ["needs approval", "approval", "not approved"],
     ),
@@ -1606,7 +1606,7 @@ TERMS = [
         "Price flagged",
         "other",
         "The label app saw this item's price change by more than 20% and flagged it as possibly wrong. Check the "
-        "price in Toast; printing still works.",
+        "price in {pos}; printing still works.",
         None,
         "warning",
         ["price flag", "suspicious price"],
@@ -1617,7 +1617,7 @@ TERMS = [
         "other",
         "Printed = the label printer finished it. In progress = waiting for or on the printer. Failed = the "
         "printer reported an error; print it again.",
-        "Price change = printed automatically because the Toast price changed. Manual = someone printed it.",
+        "Price change = printed automatically because the {pos} price changed. Manual = someone printed it.",
         None,
         ["printed", "in progress", "failed", "price change", "manual"],
     ),
@@ -1625,7 +1625,7 @@ TERMS = [
         "invoice_type_return",
         "Return",
         "invoices",
-        "Paperwork for goods sent back to the vendor (a credit). It goes to WhatsApp and the Toast email like an "
+        "Paperwork for goods sent back to the vendor (a credit). It goes to WhatsApp and the {pos} email like an "
         "invoice.",
         None,
         None,
@@ -1635,7 +1635,7 @@ TERMS = [
         "invoice_type_other",
         "Something else",
         "invoices",
-        "Any other paperwork. It is still sent to WhatsApp and the Toast email, but it is not treated as a "
+        "Any other paperwork. It is still sent to WhatsApp and the {pos} email, but it is not treated as a "
         "delivery: it's left out of Invoices without a logged purchase and of the delivery suggestions.",
         None,
         None,
@@ -1786,7 +1786,7 @@ TERMS = [
         "store's marketing WhatsApp groups.",
         f"A photo is saved as one JPEG (at most {_flyers.MAX_SIDE} px on its longest side, about "
         f"{_flyers.TARGET_MAX_BYTES // _flyers.MB} MB) and a PDF as uploaded (up to {_flyers.MAX_PDF_MB} MB). The files "
-        "are kept on the Mac mini in the Spice Town Flyers folder, one folder per category. A deleted flyer moves to "
+        "are kept on the store's server in its flyers folder, one folder per category. A deleted flyer moves to "
         "the _Deleted folder; it is never removed.",
         None,
         ["flyers", "marketing flyer", "promotion"],
@@ -1844,7 +1844,7 @@ TERMS = [
         "sales_addons",
         "Add-ons",
         "sales",
-        "A spice level, extra cheese or other choice added to an item. Toast already includes its price in the "
+        "A spice level, extra cheese or other choice added to an item. {pos} already includes its price in the "
         "item's price, so Items Sold and the sales download count the item once and never add the add-on on top.",
         None,
         None,
@@ -1852,13 +1852,13 @@ TERMS = [
     ),
     _t(
         "sales_live_today",
-        "Today (live from Toast)",
+        "Today (live from {pos})",
         "sales",
-        "Today's Items Sold and the Overview sales tile come straight from Toast when you open them, including "
-        "payments made after midnight for the previous day. Refresh asks Toast again.",
-        f"Toast's business dates yesterday, today and tomorrow are pulled live and replace the stored copy of those "
+        "Today's Items Sold and the Overview sales tile come straight from {pos} when you open them, including "
+        "payments made after midnight for the previous day. Refresh asks {pos} again.",
+        f"{{pos}}'s business dates yesterday, today and tomorrow are pulled live and replace the stored copy of those "
         f"dates, so nothing is counted twice. One pull is shared for {_n(_default('live_sales_cache_seconds'))} "
-        "seconds. Past days come from the stored sales, which the sales accuracy check keeps in step with Toast.",
+        "seconds. Past days come from the stored sales, which the sales accuracy check keeps in step with {pos}.",
         "info",
         ["live", "today live"],
     ),
@@ -1866,8 +1866,8 @@ TERMS = [
         "sales_accuracy_match",
         "Matches",
         "sales",
-        "Our stored sales for this business date equal Toast's own item sales for it.",
-        f"Same item sales to the cent and the same quantity as Toast Analytics' item report (add-ons inside their "
+        "Our stored sales for this business date equal {pos}'s own item sales for it.",
+        f"Same item sales to the cent and the same quantity as {{pos}} Analytics' item report (add-ons inside their "
         f"item, discounts taken off), checked for the last {_n(_default('sales_repull_days'))} days at "
         f"{_times(_default('sales_repull_times'))} (store time).",
         "success",
@@ -1877,9 +1877,9 @@ TERMS = [
         "sales_accuracy_fixed",
         "Fixed",
         "sales",
-        "The day differed from Toast (an edit made after it was synced), so it was re-synced from Toast's orders "
+        "The day differed from {pos} (an edit made after it was synced), so it was re-synced from {pos}'s orders "
         "and now matches.",
-        "A day is re-synced when its item sales or quantity differ from Toast's, Toast's numbers for it changed "
+        "A day is re-synced when its item sales or quantity differ from {pos}'s, {pos}'s numbers for it changed "
         f"since the last check, it still has unpaid items and was last synced over {_n(_SA.UNPAID_RESYNC_HOURS)} "
         "hours ago, or it was never synced.",
         "success",
@@ -1889,18 +1889,18 @@ TERMS = [
         "sales_accuracy_differs",
         "Differs",
         "sales",
-        "Still different from Toast after a re-sync. Usually Toast's Analytics haven't caught up with a recent "
-        "edit yet (Toast says 2 to 4 hours); a later check corrects it. Worth a look only if it stays for days.",
+        "Still different from {pos} after a re-sync. Usually {pos}'s Analytics haven't caught up with a recent "
+        "edit yet ({pos} says 2 to 4 hours); a later check corrects it. Worth a look only if it stays for days.",
         None,
         "warning",
         ["mismatch", "differs"],
     ),
     _t(
         "sales_accuracy_waiting",
-        "Waiting for Toast",
+        "Waiting for {pos}",
         "sales",
-        "This day was already re-synced against the same Toast numbers, so it isn't fetched again until Toast's "
-        "numbers for it change. This keeps the check from asking Toast for the same day over and over.",
+        "This day was already re-synced against the same {pos} numbers, so it isn't fetched again until {pos}'s "
+        "numbers for it change. This keeps the check from asking {pos} for the same day over and over.",
         None,
         "neutral",
         ["waiting"],
@@ -1909,25 +1909,25 @@ TERMS = [
         "live_stock",
         "Live stock",
         "projection",
-        "With Inventory from Toast turned on by an admin, on hand on Reorder Candidates, Supplier Projection, "
-        "Negative inventory and Refill from container is Toast's current count, not the count from the last "
+        "With Inventory from {pos} turned on by an admin, on hand on Reorder Candidates, Supplier Projection, "
+        "Negative inventory and Refill from container is {pos}'s current count, not the count from the last "
         "inventory snapshot.",
-        f"Toast's stock list is read at most once every {_n(_default('live_stock_cache_seconds') / 60)} minutes. "
-        "Out of stock in Toast shows 0, except that an item the last upload counted below zero keeps that count. "
-        "When Toast doesn't answer, the latest snapshot's counts are used and the page says so.",
+        f"{{pos}}'s stock list is read at most once every {_n(_default('live_stock_cache_seconds') / 60)} minutes. "
+        "Out of stock in {pos} shows 0, except that an item the last upload counted below zero keeps that count. "
+        "When {pos} doesn't answer, the latest snapshot's counts are used and the page says so.",
         "info",
         ["live", "live count", "on hand live"],
     ),
     _t(
         "inventory_api_snapshot",
-        "Nightly Toast snapshot",
+        "Nightly {pos} snapshot",
         "reports",
-        "With Inventory from Toast turned on, the app builds each day's inventory early in the morning from Toast "
+        "With Inventory from {pos} turned on, the app builds each day's inventory early in the morning from {pos} "
         "itself, so the daily file upload is no longer needed. An uploaded file for the same day always replaces it.",
         f"Built at {_ampm(dt.time(_default('inventory_api_snapshot_hour'), _default('inventory_api_snapshot_minute')))}: "
-        "counts, names, prices, barcodes and categories from Toast's stock and menu; 7, 30 and 90-day sales from "
+        "counts, names, prices, barcodes and categories from {pos}'s stock and menu; 7, 30 and 90-day sales from "
         "our own sales through yesterday; cost, vendor, vendor code and last received carried from each item's "
-        "latest uploaded file (Toast's API doesn't have them). It isn't saved if Toast's stock list is empty or "
+        "latest uploaded file ({pos}'s API doesn't have them). It isn't saved if {pos}'s stock list is empty or "
         f"has under {_pct(_INV.MIN_BUILD_SHARE)} of the items of the latest upload.",
         "info",
         ["api snapshot", "from toast", "inventory from toast"],
@@ -1936,7 +1936,7 @@ TERMS = [
         "inventory_upload_due",
         "Inventory upload due",
         "reports",
-        "A reminder to upload Toast's inventory file. Even with the nightly Toast snapshot the app needs a file "
+        "A reminder to upload {pos}'s inventory file. Even with the nightly {pos} snapshot the app needs a file "
         "now and then for cost, vendor codes and last-received dates.",
         f"Sent at 9 AM while the latest uploaded file is {_n(_default('inventory_csv_max_age_days'))} or more days "
         "old. You can switch it off in your alert settings.",
@@ -1945,13 +1945,13 @@ TERMS = [
     ),
     _t(
         "barcode_menu_recheck",
-        "Re-checked in Toast",
+        "Re-checked in {pos}",
         "fix_issues",
-        "Between uploads, Missing and Invalid barcodes are checked again against Toast's menu, so an item fixed in "
-        "Toast leaves the list within the hour instead of the next morning.",
-        f"Every {_n(_default('menu_barcode_recheck_minutes'))} minutes the app asks Toast whether the menu changed "
-        "and reads it again only if it did. Toast's menu holds an item's first barcode only: extra barcodes in a "
-        "list, and a barcode removed in Toast, are judged at the next upload.",
+        "Between uploads, Missing and Invalid barcodes are checked again against {pos}'s menu, so an item fixed in "
+        "{pos} leaves the list within the hour instead of the next morning.",
+        f"Every {_n(_default('menu_barcode_recheck_minutes'))} minutes the app asks {{pos}} whether the menu changed "
+        "and reads it again only if it did. {pos}'s menu holds an item's first barcode only: extra barcodes in a "
+        "list, and a barcode removed in {pos}, are judged at the next upload.",
         "info",
         ["barcode re-check", "menu check"],
     ),
@@ -2032,12 +2032,12 @@ _NIGHTLY = _ampm(dt.time(_default("insights_nightly_hour"), _default("insights_n
 TERMS += [
     _t(
         "insights_source",
-        "From Toast Analytics",
+        "From {pos} Analytics",
         "insights",
-        "These numbers come from Toast's own reporting (Toast Analytics), the same figures Toast's sales reports "
-        "show, not from the orders this app copies from Toast.",
+        "These numbers come from {pos}'s own reporting ({pos} Analytics), the same figures {pos}'s sales reports "
+        "show, not from the orders this app copies from {pos}.",
         f"Past days are saved once and reused. Each night at {_NIGHTLY} the app fetches yesterday and re-checks the "
-        f"last {_n(_INSD.REPULL_DAYS)} days, because Toast edits can land days later. Today is fetched live and "
+        f"last {_n(_INSD.REPULL_DAYS)} days, because {{pos}} edits can land days later. Today is fetched live and "
         f"reused for {_n(_default('insights_today_cache_seconds'))} seconds.",
         "info",
         ["toast analytics", "data source", "updated"],
@@ -2046,9 +2046,9 @@ TERMS += [
         "insights_stale",
         "Not up to date",
         "insights",
-        "Some of the days on this page haven't been fetched from Toast Analytics yet, or Toast didn't answer. "
+        "Some of the days on this page haven't been fetched from {pos} Analytics yet, or {pos} didn't answer. "
         "You're seeing what was saved last.",
-        "Missing days fill in on their own, a few at a time, so the store never goes over Toast's limits.",
+        "Missing days fill in on their own, a few at a time, so the store never goes over {pos}'s limits.",
         "warning",
         ["stale", "out of date", "still loading"],
     ),
@@ -2056,12 +2056,12 @@ TERMS += [
         "insights_net_sales",
         "Net sales",
         "insights",
-        "What the store sold after discounts, refunds and voids, before tax and tips, as Toast counts it.",
+        "What the store sold after discounts, refunds and voids, before tax and tips, as {pos} counts it.",
         None,
         None,
         ["net"],
     ),
-    _t("insights_orders", "Orders", "insights", "Toast's count of orders for the day (voided orders left out).", None, None),
+    _t("insights_orders", "Orders", "insights", "{pos}'s count of orders for the day (voided orders left out).", None, None),
     _t(
         "insights_avg_check",
         "Average check",
@@ -2071,7 +2071,7 @@ TERMS += [
         None,
         ["average order", "aov"],
     ),
-    _t("insights_guests", "Guests", "insights", "Toast's guest count for the day (usually one per order).", None, None),
+    _t("insights_guests", "Guests", "insights", "{pos}'s guest count for the day (usually one per order).", None, None),
     _t(
         "insights_heatmap",
         "Busy hours",
@@ -2102,7 +2102,7 @@ TERMS += [
         "insights_channel",
         "Channel",
         "insights",
-        "How the order came in, from Toast's dining option: In-store (the counter), Pick up (the kiosk), "
+        "How the order came in, from {pos}'s dining option: In-store (the counter), Pick up (the kiosk), "
         "Online ordering, DoorDash, Uber Eats, Catering, or Other.",
         None,
         None,
@@ -2155,7 +2155,7 @@ TERMS += [
         "insights",
         "Discounts, voids, refunds and comps per day and per employee, with the checks worth a second look "
         "(admins only).",
-        f"Built from Toast's check report, fetched each night at {_NIGHTLY}. Admins get one push at 9 AM when "
+        f"Built from {{pos}}'s check report, fetched each night at {_NIGHTLY}. Admins get one push at 9 AM when "
         "yesterday has checks to review.",
         None,
         ["loss", "comps", "discounts"],
@@ -2165,7 +2165,7 @@ TERMS += [
         "insights_void",
         "Voids",
         "insights",
-        "Orders or items cancelled after they were rung in. Per day this is Toast's voided order total; per "
+        "Orders or items cancelled after they were rung in. Per day this is {pos}'s voided order total; per "
         "employee it's the voided items on their checks.",
         None,
         None,
@@ -2175,7 +2175,7 @@ TERMS += [
         "insights_comp_estimate",
         "Comps (estimate)",
         "insights",
-        "Discounts on checks that ended up free (a 100% discount). Toast doesn't mark comps separately, so this "
+        "Discounts on checks that ended up free (a 100% discount). {pos} doesn't mark comps separately, so this "
         "is an estimate.",
         None,
         None,
@@ -2254,7 +2254,7 @@ TERMS += [
         "Open too long",
         "insights",
         f"More than {_ODD_HOURS} hours between opening the check and paying it (or still open).",
-        "The hours are a setting (ODD_CHECK_OPEN_HOURS). A scheduled order isn't counted: Toast opens it at the "
+        "The hours are a setting (ODD_CHECK_OPEN_HOURS). A scheduled order isn't counted: {pos} opens it at the "
         "pickup time.",
         "warning",
     ),
@@ -2266,7 +2266,7 @@ TERMS += [
         f"{_INS.MODIFIED_AFTER_PAID_MINUTES} minutes after it was paid.",
         f"Same-day changes are normal (the kitchen marking an order done updates it). Not counted: online, "
         f"delivery and kiosk pick up orders (they change when picked up, unless refunded), orders paid on an "
-        f"earlier day, and Toast's own batch updates ({_INS.BATCH_MODIFY_MIN_CHECKS} or more checks changed in "
+        f"earlier day, and {{pos}}'s own batch updates ({_INS.BATCH_MODIFY_MIN_CHECKS} or more checks changed in "
         "the same minute).",
         "warning",
     ),
@@ -2315,7 +2315,7 @@ TERMS += [
         "insights_menu_not_sold",
         "Not sold",
         "insights",
-        "Street Kitchen menu items that didn't sell at all in the period.",
+        "Kitchen menu items that didn't sell at all in the period.",
         "Last sold shows the latest sale in the period before, if any.",
         "danger",
     ),
@@ -2323,17 +2323,17 @@ TERMS += [
         "insights_menu_kitchen",
         "Kitchen",
         "insights",
-        "Street Kitchen menu items (both Street Kitchen menus), without the bottled and canned drinks, which are "
-        "store stock. House drinks like lassi count.",
+        "Items on the store's kitchen (prepared-food) menus, without the bottled and canned drinks, which are "
+        "store stock. Drinks made in house count.",
         None,
         None,
-        ["street kitchen"],
+        ["kitchen menu"],
     ),
     _t(
         "insights_menu_grocery",
         "Grocery",
         "insights",
-        "Items on the Retail, Produce, Halal Meat, Fresh Flowers and Fish Market menus that aren't kitchen items.",
+        "Items on the store's other (retail) menus that aren't kitchen items.",
         None,
         None,
     ),
@@ -2342,7 +2342,7 @@ TERMS += [
         "Attach rate",
         "insights",
         "How often this add-on is chosen: add-ons sold divided by how many of the items that offer it were sold.",
-        "Empty when Toast's menu doesn't say which items offer it.",
+        "Empty when {pos}'s menu doesn't say which items offer it.",
         None,
         ["modifier", "add-on"],
     ),
@@ -2354,7 +2354,7 @@ TERMS += [
         "and lowest day, adjusted for the recent trend.",
         f"The trend compares the last {_INS.PREP_TREND_DAYS} days with the {_INS.PREP_TREND_DAYS} before, counts "
         f"half of the change, and never moves the number more than {_pct(_INS.PREP_TREND_MAX - 1)} either way. "
-        "Street Kitchen items only.",
+        "Kitchen items only.",
         None,
         ["prep list", "forecast"],
     ),
@@ -2372,7 +2372,7 @@ TERMS += [
         "By hour",
         "insights",
         "The expected amount spread over the day using the store's usual share of orders per hour on that weekday.",
-        "Toast doesn't report items by hour, so this is the store's pattern, not the item's own.",
+        "{pos} doesn't report items by hour, so this is the store's pattern, not the item's own.",
         None,
     ),
     _t(
@@ -2467,7 +2467,7 @@ TERMS += [
         "insights_prep",
         "Prep forecast",
         "insights",
-        "How many of each Street Kitchen item to expect on a day (tomorrow by default), with a low and high and an "
+        "How many of each kitchen item to expect on a day (tomorrow by default), with a low and high and an "
         "hourly split.",
         None,
         None,
@@ -2485,13 +2485,54 @@ TERMS += [
 
 TERMS_BY_KEY = {t["key"]: t for t in TERMS}
 
+# Per-store words (multi-store M2, docs/M2_CONTRACT.md section 6): the text
+# above says "{pos}" where it means the store's POS ("Toast", "Clover") and
+# "{store_city}" for the store's time zone as people say it ("New York").
+# They are filled in when the glossary is served, so one server's glossary
+# reads in its own store's terms; for a Toast store in New York the text is
+# exactly what it was before.
+_TEXT_FIELDS = ("label", "definition", "rule")
+
+
+def _store_words() -> dict:
+    from app.config import get_settings
+    from app.pos.gating import pos_name
+
+    s = get_settings()
+    tz = getattr(s, "store_timezone", "") or getattr(s, "toast_timezone", "") or "America/New_York"
+    city = tz.rsplit("/", 1)[-1].replace("_", " ")
+    return {"{pos}": pos_name() or "the POS", "{store_city}": city}
+
+
+def _fill(text, words: dict):
+    if not isinstance(text, str):
+        return text
+    for k, v in words.items():
+        text = text.replace(k, v)
+    return text
+
+
+def localize_term(term: Optional[dict], words: Optional[dict] = None) -> Optional[dict]:
+    """A copy of `term` with this store's words filled in."""
+    if term is None:
+        return None
+    words = words or _store_words()
+    out = dict(term)
+    for f in _TEXT_FIELDS:
+        out[f] = _fill(out.get(f), words)
+    return out
+
 
 def reason_term(issue_type: str, reason: str) -> Optional[dict]:
     """The glossary term for a Fix Issues close reason: the list's own
     (reason_<issue_type>_<reason>) when the meaning differs on that list,
-    else the shared reason_<reason>."""
-    return TERMS_BY_KEY.get(f"reason_{issue_type}_{reason}") or TERMS_BY_KEY.get(f"reason_{reason}")
+    else the shared reason_<reason>. This store's words filled in."""
+    term = TERMS_BY_KEY.get(f"reason_{issue_type}_{reason}") or TERMS_BY_KEY.get(f"reason_{reason}")
+    return localize_term(term)
 
 
 def get_glossary() -> dict:
-    return {"version": GLOSSARY_VERSION, "categories": CATEGORIES, "terms": TERMS}
+    words = _store_words()
+    terms = [localize_term(t, words) for t in TERMS]
+    categories = [{**c, "label": _fill(c.get("label"), words)} for c in CATEGORIES]
+    return {"version": GLOSSARY_VERSION, "categories": categories, "terms": terms}
