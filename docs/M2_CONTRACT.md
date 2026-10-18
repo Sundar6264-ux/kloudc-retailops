@@ -723,7 +723,7 @@ implementation, dev server and self-host option: `backend/app/directory/`
 mounted in a store server). `tests/test_directory.py` replays the same
 requests against both and requires identical status, body and headers.
 
-Code handling: trim, upper-case, `-` -> `_`, then the pattern
+Code handling: trim ASCII whitespace (space, tab, CR, LF, VT, FF - the same set in the service and the Worker), upper-case, `-` -> `_`, then the pattern
 `^[A-Z0-9][A-Z0-9_]{2,23}$`.
 
 `200`:

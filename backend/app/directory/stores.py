@@ -59,12 +59,18 @@ class StoresFileError(ValueError):
         super().__init__(f"stores file {path} refused: " + "; ".join(self.problems))
 
 
+# Trimmed characters: ASCII whitespace only. Python's str.strip() and JS's
+# trim() disagree outside ASCII (\x1c-\x1f, U+0085, U+FEFF), and the Worker
+# must answer exactly like this service.
+CODE_TRIM = " \t\n\r\x0b\x0c"
+
+
 def normalize_code(raw: Any) -> Optional[str]:
-    """Trim, upper-case, ``-`` -> ``_``, then the store-code pattern.
-    Returns None when the result is not a valid code."""
+    """Trim ASCII whitespace, upper-case, ``-`` -> ``_``, then the store-code
+    pattern. Returns None when the result is not a valid code."""
     if not isinstance(raw, str):
         return None
-    code = raw.strip().upper().replace("-", "_")
+    code = raw.strip(CODE_TRIM).upper().replace("-", "_")
     return code if CODE_RE.match(code) else None
 
 

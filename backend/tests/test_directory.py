@@ -616,3 +616,51 @@ def test_open_page_escapes_names_and_links():
     assert "Store&lt;Ops&gt;" in text and "Store<Ops>" not in text
     assert "&quot;y&quot;" in text
     assert "Google Play" not in text
+
+
+_ODD_CODE_PATHS = [
+    "/v1/stores/%1Cdemo",  # Python's str.strip() drops \x1c-\x1f; JS trim() doesn't
+    "/v1/stores/%C2%85demo",  # U+0085 (NEL): Python whitespace, not JS
+    "/v1/stores/%EF%BB%BFdemo",  # U+FEFF (BOM): JS whitespace, not Python
+    "/v1/stores/%E2%80%A8demo",  # U+2028: whitespace to both
+    "/v1/stores/%C3%9Femo",  # "ß" upper-cases to "SS" in both (unknown code)
+    "/v1/stores/DE%2FMO",  # an encoded slash: not a lookup path
+    "/s/DE%2FMO",
+    "/v1/stores/%E0%A4",  # broken UTF-8 escape
+    "/v1/stores/%FFDEMO",
+    "/v1/stores/de-mo%09",  # "DE_MO" (unknown)
+]
+
+
+@needs_node
+def test_worker_and_service_agree_on_odd_codes(stores_file, tmp_path, clock):
+    cfg = _cfg(stores_file, rate_per_minute=1000, rate_per_hour=10000)
+    client = TestClient(create_app(cfg, clock=clock))
+    data_path = tmp_path / "data.json"
+    stores, _ = build_static.load_for_build(stores_file, cfg)
+    build_static.build(stores, cfg, worker_data_path=data_path)
+    steps = []
+    for path in _ODD_CODE_PATHS:
+        headers = {"CF-Connecting-IP": "203.0.113.1"}
+        r = client.get(path, headers=headers)
+        steps.append(
+            {
+                "path": path,
+                "headers": headers,
+                "status": r.status_code,
+                "body": r.text,
+                "expect_headers": {h: r.headers.get(h) for h in _PARITY_HEADERS},
+            }
+        )
+    cases = tmp_path / "cases.json"
+    cases.write_text(json.dumps({"start": clock.t, "steps": steps}))
+    proc = subprocess.run(
+        [NODE, str(WORKER_DIR / "test" / "parity.mjs"), str(data_path), str(cases)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    # Only ASCII whitespace is trimmed; nothing else turns into a valid code.
+    assert [s["status"] for s in steps] == [400, 400, 400, 400, 404, 404, 404, 400, 400, 404]
+    assert json.loads(steps[5]["body"])["error"] == "not_found"

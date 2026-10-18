@@ -15,11 +15,13 @@ const HOUR = 3600;
 const AASA_PATH = "/.well-known/apple-app-site-association";
 const ASSETLINKS_PATH = "/.well-known/assetlinks.json";
 
+// ASCII whitespace only, like stores.CODE_TRIM (JS trim() and Python's
+// strip() disagree outside ASCII).
+const CODE_TRIM_RE = /^[ \t\n\r\v\f]+|[ \t\n\r\v\f]+$/g;
+
 export function normalizeCode(raw) {
   if (typeof raw !== "string") return null;
-  // Python's str.strip() / .upper(): trim whitespace, ASCII upper-case is
-  // all the pattern accepts anyway.
-  const code = raw.trim().toUpperCase().replace(/-/g, "_");
+  const code = raw.replace(CODE_TRIM_RE, "").toUpperCase().replace(/-/g, "_");
   return CODE_RE.test(code) ? code : null;
 }
 
@@ -133,6 +135,9 @@ export function createDirectory(data, options = {}) {
     } catch {
       decoded = null;
     }
+    // The service matches routes on the decoded path, so an encoded "/"
+    // (%2F) is a path that isn't a lookup there: answer the same.
+    if (decoded !== null && decoded.includes("/")) return notFound(request);
     const code = normalizeCode(decoded);
     if (code === null) return json(request, 400, data.errors.invalid_code, cache.no_store);
     const entry = Object.prototype.hasOwnProperty.call(data.stores, code) ? data.stores[code] : null;
@@ -145,6 +150,10 @@ export function createDirectory(data, options = {}) {
       });
     }
     return json(request, 200, entry.body, cache.ok, { ETag: entry.etag });
+  }
+
+  function notFound(request) {
+    return json(request, 404, data.errors.not_found, cache.no_store);
   }
 
   function rateLimited(request, seconds) {
@@ -176,8 +185,18 @@ export function createDirectory(data, options = {}) {
           "Cache-Control": cache.well_known,
         });
       }
-      if (path === "/s" || path === "/s/" || /^\/s\/[^/]+$/.test(path)) return page(request);
-      return json(request, 404, data.errors.not_found, cache.no_store);
+      if (path === "/s" || path === "/s/") return page(request);
+      const s = path.match(/^\/s\/([^/]+)$/);
+      if (s) {
+        let seg;
+        try {
+          seg = decodeURIComponent(s[1]);
+        } catch {
+          seg = "";
+        }
+        return seg.includes("/") ? notFound(request) : page(request);
+      }
+      return notFound(request);
     },
   };
 }
