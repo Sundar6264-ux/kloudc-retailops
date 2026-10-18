@@ -2041,3 +2041,81 @@ Found, not fixed (server, MT7/MT8 files):
 - Website has no AI consent notice before the Ask bot (the app has one,
   MT13); not in the contract for the website.
 - Vendor names (not staff) remain in a few node test fixtures and comments.
+---
+
+## As built - Verify (identity, adversarial)
+
+Branch `verify/identity` in both repositories (worktrees
+`/Users/sundar/storeops/worktrees/verify-identity{,-app}`). Each item was
+first confirmed with a test that fails, then fixed.
+
+**Confirmed and fixed (server + web):**
+- **Docker `UPLOADS_ROOT`.** Compose pinned `UPLOADS_ROOT=/data/uploads`
+  (MT8 identity marker), the image did not. With the Dockerfile's own
+  `docker run -v storeops-data:/data` usage, the marker went to
+  `/app/backend/uploads`: outside the volume, and not writable by the
+  non-root user. Fixed in the Dockerfile `ENV`; `tests/test_docker_config.py`
+  keeps every compose path pin equal to the image default.
+- **Litestream sidecar ran as root** on the shared volume (root-owned
+  `-wal`/`-shm` when it opens the database first). Now `user: "10001:10001"`
+  (the store's uid), checked by the same test file.
+- **Staff names in product code.** `checklist_public.SUGGESTED` prefilled two
+  of the origin store's staff first names as a public link's allowed names
+  (MT12 removed the same names from the app). A new list link now starts
+  with no names. The origin store already has that link, so parity is
+  unchanged.
+- **Origin-store business data in git.**
+  `tests/data/checklist_real_answers_2026-09-30.json` (every stored
+  checklist submission) and `prod_category_combos_2026-09-30.json` moved to
+  the private folder (1.6). Their tests now skip without that folder, and the
+  catalog-combo test runs on the legacy pack (on the suite pack it passed
+  trivially). Both files remain in the pushed history (owner decision).
+- **A test reached into the origin store's production folder.**
+  `test_migration_0040_up_and_down` copied the newest `.backup` of the
+  production database out of its live folder on every full run on this Mac.
+  It now uses only the copies named in `MIGRATION_DEV_DB_COPY` /
+  `MIGRATION_PROD_DB_COPY`. Two guards were added to the name test: no code or
+  test may name that folder, and no origin data file may be in `tests/data`.
+- **e2e regression defaults.** Suite B defaulted to the origin store's
+  working copy (it built and served that code, not this repo's) and to
+  copying its production database and flyer folder. Suite A defaulted to that
+  database too. They now use this repository by default, and the source
+  database must be named (`SUITE_B_SOURCE_DB`, `REG_PROD_DB`). The suites'
+  origin-store UI expectations stay for the Regression stage.
+- **Docs.** The README, compose and `.env.example` quick starts were missing
+  the one-time `python -m app.store init` step. Without it, a store with
+  `STORE_CODE` set refuses to start, so the container loops on restart. In
+  3.4, the service name in the example was wrong (`api` instead of `store`).
+
+**Confirmed and fixed (app):**
+- **Rule 0.3 in `ApiHostPolicy`.** `spicetown.shop` was refused only because
+  it is not under the default `PLATFORM_DOMAIN`. A build with
+  `PLATFORM_DOMAIN` or `EXTRA_ALLOWED_API_HOSTS` naming it would have sent
+  session tokens there. It is now refused outright (any case, trailing dots
+  too). The one line in `lib/` is on the name allowlist.
+- The `firebase_options.dart` comment now points at the setup doc that exists
+  (`docs/OWNER_SETUP.md`).
+
+**Dismissed:**
+- Spice Town's Firebase client config in the app's history: already
+  documented in MT7a part 1 (client identifiers, not secrets).
+- The Capacitor wrapper and the Flutter app share `com.kloudc.storeops`.
+  They did the same under the origin ids, and only one of them ships.
+- Legacy `_`-separated checklist type ids and `WHAPI_SPICE_TOWN_*` setting
+  names are allowed by contract 9.2.
+- No secrets matched in any branch of either repo (Anthropic, AWS, private
+  key, GitHub, Slack and Google key patterns).
+
+**Tests (this branch):**
+
+| Run | Result |
+|---|---|
+| Backend, full, Python 3.9 | 2570 passed, 20 skipped |
+| Backend, full, Python 3.12 | 2570 passed, 20 skipped |
+| App, `flutter analyze` | no issues |
+| App, full `flutter test --concurrency=2` | 5459 passed, 6 skipped, 0 failed |
+
+The parity recording was not re-run. Nothing changed touches a recorded
+endpoint for the origin store: its service link already exists, so it never
+gets the suggestion. The rest of the changes are tests, docs and deploy
+files.
