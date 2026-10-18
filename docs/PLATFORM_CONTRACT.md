@@ -1166,6 +1166,30 @@ def make_test_store(code: str, url: str, **fields) -> StoreRef      # registers 
 def as_store(code: str) -> Iterator[None]                            # test helper = store_context
 ```
 
+Additions made by B in the interface commit (additive; nothing above changed):
+
+```python
+# app/tenancy/errors.py: StoreIdentityError (app.store.identity re-exports it), StoreUnavailable (-> 503)
+# registry: normalize_store_code(raw), is_valid_store_code(code), RESERVED_CODES, find_store(code) -> Optional,
+#           invalidate_store(code=None), single_store_ref()
+# context:  current_store_block(), platform_scope(), no_store(); store_context(..., allow_remote=False)
+#           (StoreMoved for a dedicated store this node does not serve)
+# engines:  tenant_session(code=None, *, allow_inactive=False, allow_remote=False); sweep_idle_engines();
+#           create_store_engine(url, tenant=True); check_connection_budget()
+# jobs:     register_store_job(..., coalesce=True, max_instances=1, jitter=True) - trigger(store) may return None;
+#           register_store_startup_job(job_id, func, delay_seconds); each_store_job(func) (interval jobs);
+#           store_jitter_seconds(code)
+# locks:    tenant_lock(name, reentrant=False) -> TenantLock: a MODULE-LEVEL drop-in for threading.Lock()
+#           whose real lock is keyed_lock(name) of the store current at acquire time
+# cache:    tenant_local(name, factory) -> a module-level proxy (dict/list/set...) whose object is per store
+# settings: validate_store_setting(key, value) (C's PUT validation), CREDENTIAL_SETTING_KEYS
+# tokens:   app/tenancy/tokens.py holds make_token / token_hash / token_scope_code (app.auth re-exports)
+# events:   app/tenancy/events.py add_listener(fn(action, store_code, details)) - C writes audit rows
+#           (e.g. "store.identity_mismatch")
+# middleware: register_public_store_route(prefix) - logged-out routes that take ?store=CODE
+# db:       get_optional_db() - like get_db but yields None (no 401) without a store (app-wide deps)
+```
+
 C provides the platform implementations of `RegistrySource` and
 `SettingsSource` (`app/platform/sources.py`) and calls
 `set_registry_source` / `set_settings_source` in the lifespan when

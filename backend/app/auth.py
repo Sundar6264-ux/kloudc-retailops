@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_db
 from app.models import User, UserSession
+from app.tenancy.tokens import make_token, token_hash, token_scope_code  # noqa: F401 - contract 16 re-exports
 from app.timeutil import utcnow
 
 SESSION_COOKIE_NAME = "session_token"
