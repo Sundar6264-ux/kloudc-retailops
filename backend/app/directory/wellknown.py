@@ -15,11 +15,11 @@ AASA_PATH = "/.well-known/apple-app-site-association"
 ASSETLINKS_PATH = "/.well-known/assetlinks.json"
 CACHE_CONTROL = "public, max-age=3600"
 
-# Paths the app opens: store-code links / QR codes and public checklist links.
-APP_LINK_COMPONENTS = (
-    ("/s/*", "store-code links and QR codes"),
-    ("/c/*", "public checklist links"),
-)
+# Paths the app opens: store-code links / QR codes. Public checklist links
+# (/c/...) are left out on purpose: the app has no /c/ route (MT11 As
+# built), so claiming them would open those links in the app (on a page it
+# can't show) instead of the browser. Add "/c/*" only with an app route.
+APP_LINK_COMPONENTS = (("/s/*", "store-code links and QR codes"),)
 
 
 def aasa_payload(apple_team_id: str, bundle_id: str) -> "OrderedDict[str, Any]":

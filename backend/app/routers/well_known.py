@@ -1,8 +1,9 @@
 """``/.well-known/apple-app-site-association`` and ``assetlinks.json`` on
 every store server (M2 contract 4.4, MT10).
 
-Store servers serve public checklist links (``/c/...``), so iOS and Android
-must find the association files on the store's own host too. The bodies are
+The same files as the directory's, so a store host can be listed in the
+app's associated domains. They claim only ``/s/*``: public checklist links
+(``/c/...``) keep opening in the browser (the app has no /c/ route). The bodies are
 the directory's (``app.directory.wellknown``); with ``APPLE_TEAM_ID`` /
 ``ANDROID_CERT_SHA256`` blank the lists are empty. Registered before the
 static mount at "/" so the SPA never answers these paths.

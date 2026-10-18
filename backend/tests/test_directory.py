@@ -395,7 +395,10 @@ def test_aasa_and_assetlinks_without_owner_ids(directory):
     aasa = r.json()
     assert aasa["applinks"]["details"][0]["appIDs"] == []
     paths = [c["/"] for c in aasa["applinks"]["details"][0]["components"]]
-    assert paths == ["/s/*", "/c/*"]
+    # Only store links: the app has no /c/ route (MT11 As built), so claiming
+    # /c/* would open public checklist links in the app instead of the
+    # browser once the owner turns on Associated Domains.
+    assert paths == ["/s/*"]
     links = _get(directory, "/.well-known/assetlinks.json").json()
     assert links[0]["target"]["package_name"] == "com.kloudc.storeops"
     assert links[0]["target"]["sha256_cert_fingerprints"] == []

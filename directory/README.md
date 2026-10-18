@@ -145,8 +145,11 @@ You need:
    and `/s/*` must answer on `https://<domain>` itself. QR codes link to
    `https://<domain>/s/<CODE>`. Either add `{ pattern = "<domain>",
    custom_domain = true }` to the Worker's `routes`, or add `<domain>` as a
-   second custom domain on the Pages project. Each store server already
-   serves the two association files for its own `/c/...` links.
+   second custom domain on the Pages project. Each store server serves the
+   same two files too. They claim only `/s/*`: public checklist links
+   (`/c/...`) must keep opening in the browser, because the app has no page
+   for them. Don't add `/c/` paths to the app's Android intent filter
+   either until the app can show them.
 8. **Fill in the app ids.** Once the Apple Team ID and the Play upload-key
    fingerprint exist, set `APPLE_TEAM_ID` and `ANDROID_CERT_SHA256`, then
    repeat steps 3-5.

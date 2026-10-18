@@ -814,8 +814,10 @@ static `https://static.<PLATFORM_DOMAIN>` - both serve `/v1/stores/<CODE>`
 Served with `Content-Type: application/json`, `Cache-Control: public,
 max-age=3600`, no redirect, from the directory
 host, the static host, the bare `<PLATFORM_DOMAIN>`, **and every store
-server** (store servers serve public checklist links `/c/...`; route
-`app/routers/well_known.py`, MT10):
+server** (route `app/routers/well_known.py`, MT10, so a store host can be
+added to Associated Domains later). Only `/s/*` is claimed: the app has no
+`/c/` route (MT11 As built), so public checklist links `/c/...` must keep
+opening in the browser; add `/c/*` here only together with an app route.
 
 ```json
 {
@@ -824,8 +826,7 @@ server** (store servers serve public checklist links `/c/...`; route
       {
         "appIDs": ["<APPLE_TEAM_ID>.com.kloudc.storeops"],
         "components": [
-          {"/": "/s/*", "comment": "store-code links and QR codes"},
-          {"/": "/c/*", "comment": "public checklist links"}
+          {"/": "/s/*", "comment": "store-code links and QR codes"}
         ]
       }
     ]
