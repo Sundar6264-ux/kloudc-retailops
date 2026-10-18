@@ -4,21 +4,22 @@
   TEMPLATE - not installed, and DISABLED until the owner's R2 keys exist
   (run_litestream.sh exits quietly without them). Continuous backup of the
   store database to Cloudflare R2. A LaunchDaemon (like the backend's own
-  com.spicetown.backend) so it runs with nobody logged in, as the user who
+  com.kloudc.storeops.backend) so it runs with nobody logged in, as the user who
   owns the database file (Litestream writes next to it: the -wal and a
-  .spicetown.db-litestream folder). Install steps: scripts/backup/README.md.
+  .storeops.db-litestream folder). Install steps: scripts/backup/README.md.
+  Replace __STOREOPS_DIR__, __RUN_AS_USER__ and __RUN_AS_HOME__ first.
 -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.spicetown.litestream</string>
+    <string>com.kloudc.storeops.litestream</string>
 
     <key>UserName</key>
-    <string>sundar</string>
+    <string>__RUN_AS_USER__</string>
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/sundar/spicetown-backend/backend/scripts/backup/run_litestream.sh</string>
+        <string>__STOREOPS_DIR__/backend/scripts/backup/run_litestream.sh</string>
     </array>
 
     <!-- HOME is not set for a LaunchDaemon; the wrapper finds its config
@@ -26,7 +27,7 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>HOME</key>
-        <string>/Users/sundar</string>
+        <string>__RUN_AS_HOME__</string>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     </dict>
@@ -47,8 +48,8 @@
     <integer>10</integer>
 
     <key>StandardOutPath</key>
-    <string>/Users/sundar/spicetown-backend/backend/logs/litestream.log</string>
+    <string>__STOREOPS_DIR__/backend/logs/litestream.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/sundar/spicetown-backend/backend/logs/litestream.error.log</string>
+    <string>__STOREOPS_DIR__/backend/logs/litestream.error.log</string>
 </dict>
 </plist>

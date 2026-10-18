@@ -2,25 +2,25 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   TEMPLATE - not installed. Nightly database backup as a user LaunchAgent.
-  Install steps (and the "Mac mini not logged in" caveat) are in
-  scripts/backup/README.md. Paths assume the production checkout at
-  /Users/sundar/spicetown-backend and backups in ~/spicetown-backups/nightly.
+  Install steps (and the "nobody logged in" caveat) are in
+  scripts/backup/README.md. Replace __STOREOPS_DIR__ (the checkout) and
+  __BACKUP_DIR__ (the backup folder, written out in full) first.
 -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.spicetown.backup</string>
+    <string>com.kloudc.storeops.backup</string>
 
     <!-- Standard-library-only script: any python3 works; the prod venv's
          is used so the runtime is the one the server already runs on. -->
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/sundar/spicetown-backend/backend/.venv312/bin/python</string>
-        <string>/Users/sundar/spicetown-backend/backend/scripts/backup/backup_db.py</string>
+        <string>__STOREOPS_DIR__/backend/.venv/bin/python</string>
+        <string>__STOREOPS_DIR__/backend/scripts/backup/backup_db.py</string>
         <string>--db</string>
-        <string>/Users/sundar/spicetown-backend/backend/spicetown.db</string>
+        <string>__STOREOPS_DIR__/backend/storeops.db</string>
         <string>--dest</string>
-        <string>/Users/sundar/spicetown-backups/nightly</string>
+        <string>__BACKUP_DIR__</string>
         <string>--keep-days</string>
         <string>30</string>
     </array>
@@ -45,10 +45,10 @@
     <string>Background</string>
 
     <!-- The script keeps its own one-line-per-run log in
-         ~/spicetown-backups/nightly/backup.log; these catch anything else. -->
+         __BACKUP_DIR__/backup.log; these catch anything else. -->
     <key>StandardOutPath</key>
-    <string>/Users/sundar/spicetown-backend/backend/logs/backup.launchd.log</string>
+    <string>__STOREOPS_DIR__/backend/logs/backup.launchd.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/sundar/spicetown-backend/backend/logs/backup.launchd.error.log</string>
+    <string>__STOREOPS_DIR__/backend/logs/backup.launchd.error.log</string>
 </dict>
 </plist>

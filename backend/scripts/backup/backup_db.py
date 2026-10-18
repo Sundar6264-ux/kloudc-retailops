@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Nightly backup of the store database: a consistent copy, checked, kept 30 days.
 
-    python3 backup_db.py --db /Users/sundar/spicetown-backend/backend/spicetown.db \\
-                         --dest ~/spicetown-backups/nightly
+    python3 backup_db.py --db __STOREOPS_DIR__/backend/storeops.db \\
+                         --dest ~/storeops-backups/nightly
 
 Standard library only, so it runs with any python3 (no app virtualenv needed).
 
@@ -168,7 +168,7 @@ def run(
     db: str,
     dest: str,
     keep_days: int = DEFAULT_KEEP_DAYS,
-    prefix: str = "spicetown",
+    prefix: str = "storeops",
     compress: bool = True,
     log: Optional[str] = None,
     now: Optional[dt.datetime] = None,
@@ -253,7 +253,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--db", required=True, help="Database file to back up (opened read-only)")
     p.add_argument("--dest", required=True, help="Folder the backups go into")
     p.add_argument("--keep-days", type=int, default=DEFAULT_KEEP_DAYS, help="Delete backups older than this (default 30)")
-    p.add_argument("--prefix", default="spicetown", help="File name prefix, one per store (default spicetown)")
+    p.add_argument("--prefix", default="storeops", help="File name prefix, one per store (default storeops)")
     p.add_argument("--no-compress", action="store_true", help="Keep a plain .db instead of .db.gz")
     p.add_argument("--log", help="Log file (default <dest>/backup.log)")
     args = p.parse_args(argv)

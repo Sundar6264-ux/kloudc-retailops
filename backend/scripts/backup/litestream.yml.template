@@ -3,9 +3,9 @@
 # DISABLED until the owner has created the R2 bucket and an R2 API token
 # (scripts/backup/README.md, "Off-site: Litestream to Cloudflare R2").
 #
-# Copy to ~/.config/spicetown/litestream.yml and replace the two REPLACE_WITH_
+# Copy to ~/.config/storeops/litestream.yml and replace every REPLACE_WITH_
 # values. NO credentials go in this file: run_litestream.sh loads them from
-# ~/.config/spicetown/litestream.env (chmod 600), as the environment
+# ~/.config/storeops/litestream.env (chmod 600), as the environment
 # variables LITESTREAM_ACCESS_KEY_ID and LITESTREAM_SECRET_ACCESS_KEY, which
 # Litestream reads by itself.
 #
@@ -13,7 +13,7 @@
 # against https://litestream.io/reference/config/ at install time.
 
 dbs:
-  - path: /Users/sundar/spicetown-backend/backend/spicetown.db
+  - path: REPLACE_WITH_STOREOPS_DIR/backend/storeops.db
     replicas:
       - name: r2
         type: s3
@@ -22,7 +22,7 @@ dbs:
         region: auto
         bucket: REPLACE_WITH_BUCKET_NAME
         # One folder per store (multi-store plan, section 3.1).
-        path: stores/spicetown/db
+        path: stores/REPLACE_WITH_STORE_CODE/db
         force-path-style: true
         # Changes reach R2 within ~10 seconds.
         sync-interval: 10s
