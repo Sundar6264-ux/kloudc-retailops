@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import PublicChecklistPage from "./pages/PublicChecklistPage.jsx";
+import { storeFromPath } from "./login/loginModel.js";
 import { StoreProvider } from "./store/StoreContext.jsx";
 import "./index.css";
 
@@ -13,7 +14,7 @@ const isPublicChecklist = window.location.pathname.startsWith("/c/");
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     {isPublicChecklist ? (
-      <StoreProvider>
+      <StoreProvider storeCode={storeFromPath(window.location.pathname)}>
         <PublicChecklistPage />
       </StoreProvider>
     ) : (

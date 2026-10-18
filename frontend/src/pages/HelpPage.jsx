@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import GlossaryPage from "./GlossaryPage.jsx";
 import { ReconciliationWorkedExample } from "../components/Reconciliation.jsx";
@@ -26,8 +26,9 @@ const SECTIONS = [
   { id: "team", title: "Team: tasks, templates and chat" },
   { id: "flyers", title: "Flyers (Marketing)" },
   { id: "ask", title: "Ask Inventory Bot" },
-  { id: "notifications", title: "Notifications" },
+  { id: "notifications", title: "Phone alerts (in the app)" },
   { id: "users", title: "Users (admin)" },
+  { id: "integrations", title: "Integrations (admin)" },
   { id: "inventory-api", title: "Inventory from {pos} (admin)" },
   { id: "live-data", title: "What's live and what's on a schedule" },
   { id: "limitations", title: "What this doesn't do (yet)" },
@@ -235,13 +236,13 @@ export default function HelpPage({ tab = "help" }) {
             </li>
             <li>
               <strong>Setup</strong>: pages you set once and rarely change - Users, Teams, Recurring tasks, Reported
-              messages, Checklist builder, PO sections, Vendor contacts, Category &amp; vendor leads and Inventory from
-              {pos} (most are for admins).
+              messages, Checklist builder, PO sections, Vendor contacts, Category &amp; vendor leads, Inventory from
+              {pos} and Integrations (most are for admins).
             </li>
             <li>
               Below the groups, for everyone: <strong>Label Scanner</strong> (opens the label app),{" "}
-              <strong>Help</strong> (this page, with the <strong>Glossary</strong> tab), <strong>Notifications</strong>{" "}
-              and <strong>Change password</strong>.
+              <strong>Help</strong> (this page, with the <strong>Glossary</strong> tab) and{" "}
+              <strong>Change password</strong>.
             </li>
           </ul>
           <p style={{ marginBottom: 0 }}>
@@ -1588,7 +1589,7 @@ export default function HelpPage({ tab = "help" }) {
             </li>
             <li>
               <strong>@mentions</strong>: type @ and pick a name. The person gets a "mentioned you" notification even in a
-              chat they muted (they can switch Chat mentions off on <Link to="/notifications">Notifications</Link>).
+              chat they muted (they can switch Chat mentions off in the phone app: More → Notifications).
             </li>
             <li>
               <strong>Pinned messages</strong> stay at the top of a chat. In a team chat admins and shift leads (people who
@@ -1720,39 +1721,11 @@ export default function HelpPage({ tab = "help" }) {
       </details>
 
       <details className="help-section" id="notifications">
-        <summary>Notifications</summary>
+        <summary>Phone alerts (in the app)</summary>
         <div className="help-section-body">
-          <p>
-            <strong>Notifications</strong> in the menu (the app: More → Notifications) is the one place to choose which
-            phone alerts you get. The switches are the same on both and save straight away; a change on one shows on
-            the other.
-          </p>
-          <ul>
-            <li>
-              <strong>Needs action</strong>: the closing checklist, tasks given to you, overdue tasks of yours, a task
-              someone can't do, an invoice that failed to send.
-            </li>
-            <li>
-              <strong>Team</strong>: chat messages, @mentions and announcements.
-            </li>
-            <li>
-              <strong>Daily summary</strong>: admins get one <strong>Morning summary</strong> at 9 AM with a line for each
-              morning alert (orders due, critical vendors, yesterday's sales, loss watch, Fix Issues items back, opening
-              open checks). Switch any of those on to get it as its own push instead.
-            </li>
-            <li>
-              <strong>Admin</strong>: store-level alerts, admins only.
-            </li>
-          </ul>
-          <p>
-            Off unless you switch them on: open-checks pushes, "Due in 30 minutes" reminders, Fix Issues items back,
-            flyer sent, and reminders for the Fix Issues lead tasks. The important ones ask before you switch them off.{" "}
-            <strong>Reset to recommended</strong> forgets your own choices. Your choice always wins over the store's
-            defaults.
-          </p>
           <p style={{ marginBottom: 0 }}>
-            <strong>Store defaults</strong> (admins, at the bottom of the page): what staff and admins get when they
-            haven't chosen themselves. Each change is recorded with who made it.
+            Which phone alerts you get is chosen in the phone app: <strong>More → Notifications</strong> (your own
+            switches, Reset to recommended, and for admins the store defaults). The website has no alerts page.
           </p>
         </div>
       </details>
@@ -1838,6 +1811,22 @@ export default function HelpPage({ tab = "help" }) {
             leaves the list without waiting for the next file, and an item closed as fixed that still shows after
             {pos}'s next menu change comes back. {pos}'s menu only holds an item's first barcode; any extra barcodes
             come from the last file.
+          </p>
+        </div>
+      </details>
+
+      <details className="help-section" id="integrations">
+        <summary>Integrations (admin)</summary>
+        <div className="help-section-body">
+          <p>
+            <strong>Setup → Integrations</strong> is where a store admin connects the store's {pos} POS, WhatsApp,
+            email (SMTP) and the AI key. Pick a tile, fill in the fields, <strong>Save</strong>, then{" "}
+            <strong>Test connection</strong> - the chip turns green when it works.
+          </p>
+          <p style={{ marginBottom: 0 }}>
+            Keys and passwords are encrypted and never shown again: a saved one shows as "saved •••• 1234". Leave a key
+            box empty to keep the saved one, or type a new one to replace it. Clover's <strong>Connect</strong> button
+            arrives with the next release.
           </p>
         </div>
       </details>

@@ -3,6 +3,15 @@ import { getMe, login as apiLogin, logout as apiLogout, restoreToken } from "./a
 import { UserStoreContext, useBranding } from "./store/StoreContext.jsx";
 import { storeView } from "./store/branding.js";
 import { featureAvailable, setCurrentPosName } from "./store/gating.js";
+import { isPlatformUser, normalizeMe } from "./login/loginModel.js";
+
+// Tells StoreProvider which store's branding to show (a shared server
+// answers branding per store: docs/PLATFORM_CONTRACT.md 4.4). null = the
+// product's (logged out, or a master on the platform console).
+function announceStore(me) {
+  const code = me && !isPlatformUser(me) && typeof me.store_code === "string" ? me.store_code : null;
+  window.dispatchEvent(new CustomEvent("store:changed", { detail: { code } }));
+}
 
 const AuthContext = createContext(null);
 
@@ -26,8 +35,9 @@ export function AuthProvider({ children }) {
       // relaunch would look logged-out for a moment (no cookie exists there
       // to fall back on) even though a valid stored session exists.
       await restoreToken();
-      const me = await getMe();
+      const me = normalizeMe(await getMe());
       setUser(me);
+      announceStore(me);
     } catch {
       setUser(null);
     } finally {
@@ -45,15 +55,22 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("auth:unauthorized", onUnauthorized);
   }, []);
 
-  async function login(username, password) {
-    const me = await apiLogin(username, password);
+  // Store ID + username + password (contract 4.5). Store ID PLATFORM
+  // signs a master in: user.scope === "platform".
+  async function login(storeCode, username, password) {
+    const me = normalizeMe(await apiLogin(storeCode, username, password));
     setUser(me);
+    announceStore(me);
     return me;
   }
 
   async function logout() {
-    await apiLogout();
-    setUser(null);
+    try {
+      await apiLogout();
+    } finally {
+      setUser(null);
+      announceStore(null);
+    }
   }
 
   // Admin always has full access; a non-admin only sees what's in their own
@@ -64,7 +81,7 @@ export function AuthProvider({ children }) {
   // store's POS or settings can't support is off (store/gating.js
   // FEATURE_REQUIREMENTS; the server answers 409 for those).
   function hasFeature(key) {
-    if (!user) return false;
+    if (!user || isPlatformUser(user)) return false;
     if (!featureAvailable(key, store)) return false;
     if (user.is_admin) return true;
     // Items Sold is nothing but sales numbers - off for a "Hide sales
@@ -76,7 +93,7 @@ export function AuthProvider({ children }) {
   // False when an admin ticked "Hide sales numbers" for this user (never for
   // an admin). Hides sales tiles, totals and digest sales - the server strips
   // or 403s the same data (backend/app/sales_access.py).
-  const canSeeSales = !!user && (user.is_admin || !user.hide_sales);
+  const canSeeSales = !!user && !isPlatformUser(user) && (user.is_admin || !user.hide_sales);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, refresh, hasFeature, canSeeSales, store }}>

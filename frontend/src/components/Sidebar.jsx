@@ -199,7 +199,7 @@ export default function Sidebar() {
 
           {/* For everyone, below the groups: the label printer (an external
               tool with its own login, not part of the feature grants), Help
-              (or just its Glossary tab), Notifications, Change password. */}
+              (or just its Glossary tab), Change password. */}
           {footerLinks({ hasFeature, store }).map((l, i) =>
             l.external ? (
               <a
