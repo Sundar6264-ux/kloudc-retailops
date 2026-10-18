@@ -105,3 +105,16 @@ def test_demo_mode_reads_the_setting(monkeypatch):
     assert demo.demo_mode() is True
     monkeypatch.setattr(demo, "get_settings", lambda: _settings(demo_usernames=""))
     assert demo.demo_mode() is False  # before MT7 adds the field
+
+
+def test_ai_consent_notice_is_a_real_setting(anon_client, monkeypatch):
+    """AI_CONSENT_NOTICE (contract 1.1) must reach /api/app/legal from the
+    store's .env / environment, not only through getattr defaults."""
+    from app.config import Settings
+
+    monkeypatch.setenv("AI_CONSENT_NOTICE", "This store's own AI notice.")
+    s = Settings(_env_file=None)
+    monkeypatch.setattr(legal, "get_settings", lambda: s)
+    body = anon_client.get("/api/app/legal").json()
+    assert body["ai"]["notice"] == "This store's own AI notice."
+    assert body["ai"]["notice_version"] == legal.ai_notice_version("This store's own AI notice.")

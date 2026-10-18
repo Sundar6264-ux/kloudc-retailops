@@ -131,7 +131,9 @@ def _digest(folder: pathlib.Path) -> str:
         for row in c.execute(f'SELECT * FROM "{table}" ORDER BY 1'):
             h.update(repr(row).encode())
     for path in sorted((folder / "uploads").rglob("*")):
-        if path.is_file():
+        # .store_identity (MT8) carries this data set's random instance id,
+        # which differs by design on every build.
+        if path.is_file() and path.name != ".store_identity":
             h.update(path.name.encode() + path.read_bytes())
     return h.hexdigest()
 
