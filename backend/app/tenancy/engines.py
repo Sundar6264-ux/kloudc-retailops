@@ -241,6 +241,14 @@ def _verify_identity(ref: StoreRef, engine: Engine) -> None:
         problem = f"the database belongs to {stamp.get('store_code')}"
     elif ref.instance_id and stamp.get("instance_id") != ref.instance_id:
         problem = f"instance {stamp.get('instance_id')} is not the registry's {ref.instance_id}"
+    if problem is None and stamp is not None:
+        from app.store.identity import check_store_marker
+        from app.tenancy.paths import store_root
+
+        try:
+            check_store_marker(store_root(ref.code), ref.code, stamp["instance_id"])
+        except StoreIdentityError as exc:
+            problem = str(exc).rstrip(".")
     if problem:
         events.emit(
             "store.identity_mismatch",

@@ -48,6 +48,8 @@ from app.routers import legal as legal_router  # GET /api/app/legal: legal links
 from app.services import flyer_sender
 from app.store.identity import check_store_identity
 from app.store.settings_view import effective_public_base_url
+from app.tenancy import is_multi_tenant
+from app.tenancy.middleware import TenantMiddleware
 from app.team import router_core as team_router_core
 from app.team import router_chat as team_router_chat
 from app.team import router_tasks as team_router_tasks
@@ -66,6 +68,16 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if is_multi_tenant():
+        # Platform milestone (docs/PLATFORM_CONTRACT.md 5, 6): the identity
+        # check runs per store on its engine's first open; the schedulers run
+        # on the elected leader only (app/tenancy/boot.py).
+        from app.tenancy.boot import start_multi_tenant, stop_multi_tenant
+
+        start_multi_tenant()
+        yield
+        stop_multi_tenant()
+        return
     # StoreOps M2: refuse to start against another store's database or upload
     # folder (app/store/identity.py) - before any job can write anything.
     check_store_identity()
@@ -88,6 +100,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="StoreOps", lifespan=lifespan, dependencies=[Depends(demo_write_guard)])
 
 settings = get_settings()
+# The store of each request (multi mode; a no-op in single mode). Added
+# before CORS so CORS stays outermost and its headers are on every answer.
+app.add_middleware(TenantMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,

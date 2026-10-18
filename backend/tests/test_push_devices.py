@@ -38,11 +38,12 @@ def test_unregister_unknown_token_is_quiet(anon_client):
 
 
 def test_logout_with_expired_session_detaches_phone(db, staff_client, anon_client, staff):
+    from app.auth import token_hash
     from app.models import UserSession
 
     _register(staff_client, "phone-3")
     # The session expires; the app can't use the authenticated DELETE.
-    db.query(UserSession).filter(UserSession.token == staff_client.token).delete()
+    db.query(UserSession).filter(UserSession.token == token_hash(staff_client.token)).delete()
     db.commit()
     assert staff_client.delete("/api/notifications/devices", params={"token": "phone-3"}).status_code == 401
     assert anon_client.post("/api/notifications/unregister", json={"token": "phone-3"}).status_code == 200

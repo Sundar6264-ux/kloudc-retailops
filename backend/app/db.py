@@ -1,11 +1,17 @@
 import datetime as dt
 from collections.abc import Generator
+from typing import Optional
 
-from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.types import DateTime, TypeDecorator
 
 from app.config import get_settings
+from app.tenancy import engines as _tenancy_engines
+from app.tenancy.context import current_scope, current_store, current_store_block, require_store
+from app.tenancy.errors import StoreIdentityError, StoreUnavailable
+from app.tenancy.mode import is_multi_tenant
+from app.tenancy.registry import single_store_code
 
 
 class UTCDateTime(TypeDecorator):
@@ -36,50 +42,107 @@ class UTCDateTime(TypeDecorator):
             value = value.replace(tzinfo=dt.timezone.utc)
         return value
 
+# --- Engines and sessions (owner B; docs/PLATFORM_CONTRACT.md 5.3) -----------------------
+# Single mode (default): one engine from DATABASE_URL, exactly as in M2.
+# Multi mode: no process-wide engine (None); every session is opened on the
+# CURRENT store's engine (app/tenancy/engines.py).
+
 settings = get_settings()
 is_sqlite = settings.database_url.startswith("sqlite")
 
-# SQLite pragmas (speed #14): negative cache_size = KiB.
-SQLITE_CACHE_SIZE_KIB = -16384
-SQLITE_MMAP_SIZE_BYTES = 268435456
+# Kept for callers that read them (values unchanged).
+SQLITE_CACHE_SIZE_KIB = _tenancy_engines.SQLITE_CACHE_SIZE_KIB
+SQLITE_MMAP_SIZE_BYTES = _tenancy_engines.SQLITE_MMAP_SIZE_BYTES
 
-connect_args = {"check_same_thread": False} if is_sqlite else {}
-engine = create_engine(settings.database_url, connect_args=connect_args)
+engine: Optional[Engine] = (
+    None if settings.tenancy_mode == "multi" else _tenancy_engines.create_store_engine(settings.database_url, tenant=False)
+)
+_tenancy_engines.set_single_engine(engine)
 
-if is_sqlite:
-    # Default SQLite locking lets a reader's open transaction (e.g. a GUI tool
-    # like DB Browser for SQLite, just browsing a table) block the backend's
-    # writes outright. WAL mode lets readers and a writer proceed concurrently
-    # instead, and busy_timeout makes any remaining brief contention retry for
-    # up to 5s instead of failing immediately with "database is locked".
-    #
-    # Speed (#14, Oct 15) - per connection, all safe for WAL and readers:
-    # cache_size: 16 MB of page cache (default 2 MB; the forecast reads tens
-    # of MB of orders/snapshots). Per connection, so modest: the pool can
-    # hold up to 15 and the server has 8 GB.
-    # mmap_size: read the 380+ MB file through the OS page cache (shared by
-    # every connection, not extra memory per connection).
-    # temp_store: sorts / temp b-trees in memory instead of temp files.
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragmas(dbapi_connection, _connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA busy_timeout=5000")
-        cursor.execute(f"PRAGMA cache_size={SQLITE_CACHE_SIZE_KIB}")
-        cursor.execute(f"PRAGMA mmap_size={SQLITE_MMAP_SIZE_BYTES}")
-        cursor.execute("PRAGMA temp_store=MEMORY")
-        cursor.close()
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+class _TenantSessionLocal:
+    """``SessionLocal()``: a Session on the current store's database.
+
+    Single mode: the M2 sessionmaker bound to ``engine``. Multi mode: the
+    current store's sessionmaker; raises NoStoreContext without a store.
+    Every session carries ``info["store_code"]`` (the change feed reads it).
+    ``kw`` / ``configure`` act on the single-mode sessionmaker, as before.
+    """
+
+    def __init__(self):
+        self._single = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+    @property
+    def kw(self):
+        return self._single.kw
+
+    def configure(self, **kwargs) -> None:
+        self._single.configure(**kwargs)
+
+    def __call__(self, **kwargs) -> Session:
+        if not is_multi_tenant():
+            session = self._single(**kwargs)
+            session.info.setdefault("store_code", single_store_code())
+            return session
+        ref = require_store()
+        return _tenancy_engines.tenant_sessionmaker(ref.code)(**kwargs)
+
+
+SessionLocal = _TenantSessionLocal()
 
 
 class Base(DeclarativeBase):
     pass
 
 
+def _store_session_or_http_error() -> Session:
+    """SessionLocal() for a request; multi mode without a store -> 401 (or
+    403 for an inactive store / a master's session), a store whose database
+    is refused or down -> 503."""
+    if not is_multi_tenant():
+        return SessionLocal()
+    from fastapi import HTTPException
+
+    if current_store() is None:
+        block = current_store_block()
+        if block == "suspended":
+            raise HTTPException(status_code=403, detail="This store is suspended. Contact support.")
+        if block:
+            raise HTTPException(status_code=403, detail="This store is not ready yet.")
+        if current_scope() == "platform":
+            raise HTTPException(status_code=403, detail="Sign in with a store login to use this page.")
+        raise HTTPException(status_code=401, detail="Not logged in")
+    try:
+        return SessionLocal()
+    except StoreIdentityError:
+        raise HTTPException(status_code=503, detail="This store's data is not available (identity check failed).")
+    except StoreUnavailable:
+        raise HTTPException(status_code=503, detail="This store's data is not available right now. Try again soon.")
+
+
 def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
+    """The current store's session (FastAPI dependency)."""
+    db = _store_session_or_http_error()
     try:
         yield db
     finally:
         db.close()
+
+
+def get_optional_db() -> Generator[Optional[Session], None, None]:
+    """Like get_db, but yields None instead of answering 401 when there is no
+    store (multi mode) - for app-wide dependencies that also run on
+    logged-out and platform routes (app/demo_guard.py)."""
+    if is_multi_tenant() and current_store() is None:
+        yield None
+        return
+    db = _store_session_or_http_error()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_engine(store_code: Optional[str] = None) -> Engine:
+    """The engine of `store_code` (None = the current store)."""
+    return _tenancy_engines.tenant_engine(store_code)
