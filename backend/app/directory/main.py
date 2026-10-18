@@ -136,6 +136,9 @@ def create_app(
         redoc_url=None,
         openapi_url=None,
     )
+    # Contract 4.2: any other path is 404 not_found, like the Worker; no
+    # 307 to the slash-less URL (built from the request's Host header).
+    app.router.redirect_slashes = False
     app.state.config = cfg
     app.state.registry = registry
     app.state.limiter = limiter

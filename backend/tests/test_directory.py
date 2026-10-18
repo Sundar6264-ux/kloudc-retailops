@@ -390,6 +390,16 @@ def test_service_refuses_to_start_on_a_bad_file(tmp_path):
             pass
 
 
+def test_a_trailing_slash_is_an_unknown_path_not_a_redirect(directory):
+    # Contract 4.2: any other path is 404 not_found (the Worker's answer);
+    # no 307 to a URL built from the request's Host header.
+    for path in ("/v1/stores/DEMO/", "/healthz/", "/s/DEMO/"):
+        r = directory.get(path, headers={"CF-Connecting-IP": "203.0.113.1"}, follow_redirects=False)
+        assert r.status_code == 404, path
+        assert r.json()["error"] == "not_found"
+        assert "location" not in r.headers
+
+
 def test_healthz_and_unknown_paths(directory):
     assert _get(directory, "/healthz").json() == {"ok": True, "stores": 3}
     r = _get(directory, "/v1/nothing")
@@ -658,6 +668,7 @@ _ODD_CODE_PATHS = [
     "/v1/stores/%E0%A4",  # broken UTF-8 escape
     "/v1/stores/%FFDEMO",
     "/v1/stores/de-mo%09",  # "DE_MO" (unknown)
+    "/v1/stores/DEMO/",  # a trailing slash: not_found, no redirect
 ]
 
 
@@ -691,7 +702,7 @@ def test_worker_and_service_agree_on_odd_codes(stores_file, tmp_path, clock):
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
     # Only ASCII whitespace is trimmed; nothing else turns into a valid code.
-    assert [s["status"] for s in steps] == [400, 400, 400, 400, 404, 404, 404, 400, 400, 404]
+    assert [s["status"] for s in steps] == [400, 400, 400, 400, 404, 404, 404, 400, 400, 404, 404]
     assert json.loads(steps[5]["body"])["error"] == "not_found"
 
 
