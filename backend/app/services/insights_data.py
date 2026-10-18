@@ -65,6 +65,7 @@ from app.services.sales_accuracy import closed_business_today
 from app.store import pack as store_pack
 from app.store import settings_view as sv
 from app.timeutil import restaurant_timezone, utcnow
+from app.tenancy import spawn_in_store, tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -181,9 +182,8 @@ REPORTS: Dict[str, dict] = {
 
 # Seams for tests: never call Toast or sleep for real in unit tests.
 _run_report: Callable = toast_analytics.run_report
-_spawn: Callable[[Callable[[], None]], None] = lambda fn: threading.Thread(
-    target=fn, name="insights-fill", daemon=True
-).start()
+# spawn_in_store: the thread keeps the caller's store (PLATFORM_CONTRACT 6.6).
+_spawn: Callable[[Callable[[], None]], None] = lambda fn: spawn_in_store(fn, name="insights-fill") and None
 
 
 # ---------------------------------------------------------------------------
@@ -699,8 +699,8 @@ def fill_reserved(
 # Returning customers: HMAC'd card fingerprints only
 # ---------------------------------------------------------------------------
 
-_key_lock = threading.Lock()
-_key_cache: Dict[str, bytes] = {}
+_key_lock = tenant_lock("insights_data._key_lock")
+_key_cache: Dict[str, bytes] = tenant_local("insights_data._key_cache", dict)
 
 
 def _hmac_key() -> bytes:
@@ -902,9 +902,9 @@ def refresh_menu_map(
 # Live today (request path: fail fast, never queue)
 # ---------------------------------------------------------------------------
 
-_live_locks: Dict[str, threading.Lock] = {}
-_live_locks_guard = threading.Lock()
-_live_failed_until: Dict[str, float] = {}
+_live_locks: Dict[str, threading.Lock] = tenant_local("insights_data._live_locks", dict)
+_live_locks_guard = threading.Lock()  # global: guards the (per-store) map
+_live_failed_until: Dict[str, float] = tenant_local("insights_data._live_failed_until", dict)
 LIVE_LOCK_TIMEOUT = 5.0
 LIVE_FAILURE_MEMO_SECONDS = 60.0
 
@@ -950,7 +950,7 @@ def live_fetch(db: Session, report: str, day: dt.date) -> Tuple[Optional[Entry],
 # Background fill (request paths) and the nightly job
 # ---------------------------------------------------------------------------
 
-_fill_lock = threading.Lock()
+_fill_lock = tenant_lock("insights_data._fill_lock")
 
 
 def is_filling() -> bool:
@@ -1140,7 +1140,7 @@ def run_catchup(db: Session, now: Optional[dt.datetime] = None) -> Optional[dict
         _fill_lock.release()
 
 
-_NIGHTLY_LOCK = threading.Lock()
+_NIGHTLY_LOCK = tenant_lock("insights_data._NIGHTLY_LOCK")
 
 
 def run_nightly(db: Session, now: Optional[dt.datetime] = None, refresh_menu: bool = True) -> Optional[JobRun]:

@@ -655,7 +655,7 @@ def test_assignees_lists_tasks_users_for_assigners_only(db, admin, staff, staff2
 @pytest.fixture(autouse=True)
 def _fresh_generation_state(monkeypatch):
     # recurrence keeps per-process memory (last run, logged templates).
-    monkeypatch.setattr(recurrence, "_last_run", None)
+    monkeypatch.setitem(recurrence._run_state, "last_run", None)  # per store (platform B)
     monkeypatch.setattr(recurrence, "_warned_assignee", set())
 
 

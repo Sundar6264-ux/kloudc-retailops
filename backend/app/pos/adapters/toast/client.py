@@ -25,12 +25,14 @@ import httpx
 
 from app.config import get_settings
 from app.pos import http as pos_http
+from app.tenancy import tenant_local
 
 # Same logger name as before the move, so log lines (and any filter on them)
 # stay identical: the 429 warning used to come from inventory_api.
 logger = logging.getLogger("app.services.inventory_api")
 
-_TOKEN_CACHE: dict[str, tuple[str, float]] = {}
+# Per store, then client id (docs/PLATFORM_CONTRACT.md 6.5).
+_TOKEN_CACHE: dict[str, tuple[str, float]] = tenant_local("toast_client.tokens", dict)
 
 
 class ToastAPIError(RuntimeError):

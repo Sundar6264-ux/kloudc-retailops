@@ -21,6 +21,12 @@ spammer:
 5. When nothing in a batch is pending any more, the person who sent it gets
    one push (alert `flyer_sent`, quiet hours respected).
 
+Platform milestone (docs/PLATFORM_CONTRACT.md 6.3): one worker thread per
+process for every store. Queue items are (store code, send id) and each is
+sent inside its store's context; the idle sweep runs per store
+(for_each_store). The MediaID cache and the pause between sends are per
+store, so one store's sends never change another store's pacing.
+
 Nothing restarts by itself after a crash or restart: start() (app startup)
 and an idle sweep every few minutes mark rows stuck in queued / sending for
 more than STALE_AFTER as failed ("Interrupted - retry"), so a person decides
@@ -46,6 +52,7 @@ from app.services import flyers, whapi_client
 from app.services.flyers import CHANNEL_WHATSAPP, FAILED, PENDING, QUEUED, SENDING, SENT
 from app.services.notifications import Alert, dispatch_alert, in_quiet_hours
 from app.services.whapi_client import WhapiAmbiguousTimeout, WhapiMediaError, WhapiNotConfigured
+from app.tenancy import current_store_code, for_each_store, store_context, tenant_local, tenant_lock
 from app.timeutil import restaurant_timezone, utcnow
 
 logger = logging.getLogger(__name__)
@@ -73,18 +80,20 @@ def jitter() -> float:
     return random.uniform(*DELAY_RANGE)
 
 
-_lock = threading.Lock()
-_queue: "queue.Queue[Optional[int]]" = queue.Queue()  # None = stop
-# send id -> how many times it's waiting in, or being sent by, this
-# process's queue. A count, not a set: a send retried while the worker is
-# still finishing its failed attempt (e.g. dispatching the push) is queued
+_lock = threading.Lock()  # global: guards the queue bookkeeping below (keys carry the store)
+# (store code, send id), or None = stop.
+_queue: "queue.Queue[Optional[Tuple[str, int]]]" = queue.Queue()
+# (store code, send id) -> how many times it's waiting in, or being sent by,
+# this process's queue. A count, not a set: a send retried while the worker
+# is still finishing its failed attempt (e.g. dispatching the push) is queued
 # again rather than skipped - the worker re-reads its status anyway.
-_owned: Dict[int, int] = {}
+_owned: Dict[Tuple[str, int], int] = {}
 _thread: Optional[threading.Thread] = None
-_last_send_done = 0.0  # time.monotonic() when the last real send finished
-_media_lock = threading.Lock()
-# (flyer id, sha256) -> (MediaID, or None = upload failed: send inline; monotonic time)
-_media_ids: Dict[Tuple[int, str], Tuple[Optional[str], float]] = {}
+# Per store: time.monotonic() when the store's last real send finished.
+_pacing: dict = tenant_local("flyer_sender.pacing", lambda: {"last_send_done": 0.0})
+_media_lock = tenant_lock("flyer_sender.media")
+# Per store: (flyer id, sha256) -> (MediaID, or None = upload failed: send inline; monotonic time)
+_media_ids: Dict[Tuple[int, str], Tuple[Optional[str], float]] = tenant_local("flyer_sender.media_ids", dict)
 
 
 # --- Queue + worker ---------------------------------------------------------------------
@@ -94,20 +103,24 @@ def enqueue(send_ids: Iterable[int]) -> None:
     """Hands queued rows to this process's worker (started on first use).
     An id already in the queue is queued again: process_send skips a row
     that isn't `queued` any more, so nothing is sent twice."""
+    code = current_store_code()
+    if code is None:
+        raise RuntimeError("flyer sends are queued inside a store")
     with _lock:
         for send_id in send_ids:
-            _owned[send_id] = _owned.get(send_id, 0) + 1
-            _queue.put(send_id)
+            key = (code, send_id)
+            _owned[key] = _owned.get(key, 0) + 1
+            _queue.put(key)
         _ensure_thread()
 
 
-def _release(send_id: int) -> None:
+def _release(key: Tuple[str, int]) -> None:
     with _lock:
-        left = _owned.get(send_id, 0) - 1
+        left = _owned.get(key, 0) - 1
         if left > 0:
-            _owned[send_id] = left
+            _owned[key] = left
         else:
-            _owned.pop(send_id, None)
+            _owned.pop(key, None)
 
 
 def _ensure_thread() -> None:
@@ -120,25 +133,36 @@ def _ensure_thread() -> None:
 def _run() -> None:
     while True:
         try:
-            send_id = _queue.get(timeout=IDLE_SWEEP_SECONDS)
+            item = _queue.get(timeout=IDLE_SWEEP_SECONDS)
         except queue.Empty:
             _sweep()
             continue
-        if send_id is None:
+        if item is None:
             _queue.task_done()
             return
+        code, send_id = item
         try:
-            process_send(send_id)
+            with store_context(code, allow_inactive=True):
+                process_send(send_id)
         except Exception:  # noqa: BLE001 - one bad send must never stop the worker
-            logger.exception("Flyer send %s crashed", send_id)
+            logger.exception("Flyer send %s (store %s) crashed", send_id, code)
         finally:
-            _release(send_id)
+            _release(item)
             _queue.task_done()
 
 
 def _sweep() -> None:
+    """The stale-row sweep, for every store this process serves."""
+    try:
+        for_each_store(lambda _ref: _sweep_store())
+    except Exception:  # noqa: BLE001 - the registry may be briefly unreachable
+        logger.exception("Flyer sends: sweep failed")
+
+
+def _sweep_store() -> None:
+    code = current_store_code()
     with _lock:
-        owned = set(_owned)
+        owned = {send_id for (c, send_id) in _owned if c == code}
     db = SessionLocal()
     try:
         recovered = recover_stuck_sends(db, owned=owned)
@@ -156,8 +180,14 @@ def _sweep() -> None:
 
 def start() -> None:
     """App startup (main.py lifespan): fail sends a previous run left stuck,
-    then start the (idle) worker so the sweep keeps running. Never raises."""
-    _sweep()
+    then start the (idle) worker so the sweep keeps running. Never raises.
+    Multi mode: the first sweep (every store) runs in the background."""
+    from app.tenancy import is_multi_tenant, spawn_in_store
+
+    if is_multi_tenant():
+        spawn_in_store(_sweep, name="flyer-sender-first-sweep")
+    else:
+        _sweep()
     with _lock:
         _ensure_thread()
 
@@ -275,15 +305,15 @@ def _mark_failed(db: Session, row: FlyerSend, error: str, ambiguous: bool = Fals
 
 def _pace() -> None:
     """3-6 s (random) between the end of one real send and the next."""
-    if _last_send_done:
-        wait = _last_send_done + jitter() - time.monotonic()
+    last = _pacing["last_send_done"]
+    if last:
+        wait = last + jitter() - time.monotonic()
         if wait > 0:
             sleep(wait)
 
 
 def _send_finished() -> None:
-    global _last_send_done
-    _last_send_done = time.monotonic()
+    _pacing["last_send_done"] = time.monotonic()
 
 
 def _media_for(flyer: Flyer, data: bytes) -> Tuple[str, bool]:

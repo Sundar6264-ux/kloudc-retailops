@@ -29,6 +29,7 @@ from app.demo import demo_usernames
 from app.models import User
 from app.team.models import Team, TeamChange, TeamMember
 from app.timeutil import utcnow
+from app.tenancy import current_store_code
 
 logger = logging.getLogger(__name__)
 
@@ -178,24 +179,29 @@ _DIRTY = "team_changes_dirty"
 # Long-poll waits are capped below the app's 30 s Dio receiveTimeout.
 MAX_WAIT_S = 20
 
-_signal_lock = threading.Lock()
-_signal_version = 0
-_waiters: List[Tuple[asyncio.AbstractEventLoop, asyncio.Event]] = []
+# Platform milestone (PLATFORM_CONTRACT 6.7): one waiter list per process,
+# but the version is PER STORE and a wake-up for one store never wakes
+# another store's waiters. The store comes from the context (requests,
+# jobs) or, after a commit, from the session's info["store_code"].
+_signal_lock = threading.Lock()  # global: guards the two containers below
+_signal_versions: Dict[Optional[str], int] = {}  # store code -> version
+_waiters: List[Tuple[Optional[str], asyncio.AbstractEventLoop, asyncio.Event]] = []
 
 
 def change_version() -> int:
-    """Bumped after every commit that added feed rows. Read it BEFORE
-    querying, then wait_for_change(version): a commit landing between the
-    query and the wait still wakes the wait."""
-    return _signal_version
+    """Bumped after every commit (of the current store) that added feed
+    rows. Read it BEFORE querying, then wait_for_change(version): a commit
+    landing between the query and the wait still wakes the wait."""
+    return _signal_versions.get(current_store_code(), 0)
 
 
-def notify_changed() -> None:
-    """Wakes every waiting /updates long-poll (any thread)."""
-    global _signal_version
+def notify_changed(store_code: Optional[str] = None) -> None:
+    """Wakes every waiting /updates long-poll of the current store (or of
+    `store_code`), from any thread."""
+    code = store_code if store_code is not None else current_store_code()
     with _signal_lock:
-        _signal_version += 1
-        waiters = list(_waiters)
+        _signal_versions[code] = _signal_versions.get(code, 0) + 1
+        waiters = [(loop, ev) for (c, loop, ev) in _waiters if c == code]
     for loop, ev in waiters:
         try:
             loop.call_soon_threadsafe(ev.set)
@@ -210,9 +216,10 @@ async def wait_for_change(version: int, timeout: float) -> bool:
     if timeout <= 0:
         return False
     ev = asyncio.Event()
-    entry = (asyncio.get_running_loop(), ev)
+    code = current_store_code()
+    entry = (code, asyncio.get_running_loop(), ev)
     with _signal_lock:
-        if _signal_version != version:
+        if _signal_versions.get(code, 0) != version:
             return True
         _waiters.append(entry)
     try:
@@ -229,7 +236,7 @@ async def wait_for_change(version: int, timeout: float) -> bool:
 @event.listens_for(Session, "after_commit")
 def _after_commit(session: Session) -> None:
     if session.info.pop(_DIRTY, False):
-        notify_changed()
+        notify_changed(session.info.get("store_code") or current_store_code())
 
 
 @event.listens_for(Session, "after_rollback")

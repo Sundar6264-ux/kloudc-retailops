@@ -49,7 +49,6 @@ app behaves exactly as before.
 import datetime as dt
 import json
 import logging
-import threading
 import time
 from typing import Callable, Optional
 
@@ -64,6 +63,7 @@ from app.pos.models import SalesDay
 from app.pos.sync.sales import JOB_NAME as SALES_SYNC_JOB, sync_sales_for_date
 from app.store import settings_view as sv
 from app.timeutil import restaurant_timezone, restaurant_today, utcnow
+from app.tenancy import tenant_lock
 
 # Same logger name as before the move (log lines and filters unchanged).
 logger = logging.getLogger("app.services.sales_accuracy")
@@ -86,7 +86,7 @@ RESYNC_PAUSE_SECONDS = 0.5
 # the cutoff must not treat the still-open business date as "yesterday" (it
 # would compare, and re-sync, a day that is still taking orders).
 
-_RUN_LOCK = threading.Lock()
+_RUN_LOCK = tenant_lock("accuracy._RUN_LOCK")
 _sleep: Callable[[float], None] = time.sleep
 
 

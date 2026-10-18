@@ -40,7 +40,8 @@ from typing import Any, Callable, Dict, Hashable, Optional, Tuple
 from sqlalchemy import event, text
 from sqlalchemy.orm import Session
 
-from app.db import Base, engine
+from app.db import Base
+from app.tenancy import is_multi_tenant, register_engine_hook, tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +71,14 @@ _WRITE_RE = re.compile(
     re.IGNORECASE,
 )
 
-_lock = threading.Lock()
-_entries: "OrderedDict[Hashable, Tuple[float, int, Any, Any]]" = OrderedDict()  # key -> (at, gen, version, value)
-_key_locks: dict = {}
-_state = {"generation": 0, "hits": 0, "misses": 0}
+_lock = tenant_lock("report_cache._lock")
+# Per store (docs/PLATFORM_CONTRACT.md 6.5): one store's writes end only that
+# store's cached reports.
+_entries: "OrderedDict[Hashable, Tuple[float, int, Any, Any]]" = tenant_local(
+    "report_cache._entries", OrderedDict
+)  # key -> (at, gen, version, value)
+_key_locks: dict = tenant_local("report_cache._key_locks", dict)
+_state = tenant_local("report_cache._state", lambda: {"generation": 0, "hits": 0, "misses": 0})
 
 
 def generation() -> int:
@@ -81,11 +86,12 @@ def generation() -> int:
         return _state["generation"]
 
 
-def invalidate(reason: str = "") -> None:
-    """Ends every cached result (the next request recomputes)."""
-    with _lock:
-        _state["generation"] += 1
-        _entries.clear()
+def invalidate(reason: str = "", store: Optional[str] = None) -> None:
+    """Ends every cached result of the current store (or of `store`; the
+    next request recomputes)."""
+    with _lock.of(store):
+        _state.of(store)["generation"] += 1
+        _entries.of(store).clear()
     if reason:
         logger.debug("Report cache cleared: %s", reason)
 
@@ -115,7 +121,8 @@ def _after_cursor_execute(conn, _cursor, statement, _parameters, _context, _exec
 
 def _on_commit(conn):
     if conn.info.pop("report_cache_dirty", False):
-        invalidate("tracked table committed")
+        # The engine's own store (multi mode); the single store otherwise.
+        invalidate("tracked table committed", store=getattr(conn.engine, "_report_cache_store", None))
 
 
 def _on_rollback(conn):
@@ -128,9 +135,17 @@ def _on_schema_change(*_args, **_kwargs):
     invalidate("tables created/dropped")
 
 
-event.listen(engine, "after_cursor_execute", _after_cursor_execute)
-event.listen(engine, "commit", _on_commit)
-event.listen(engine, "rollback", _on_rollback)
+def _attach(code: str, engine) -> None:
+    """Engine hook (app.tenancy.register_engine_hook): every store engine,
+    and the single-mode engine, gets the invalidation listeners."""
+    engine._report_cache_store = code if is_multi_tenant() else None
+    if not event.contains(engine, "commit", _on_commit):
+        event.listen(engine, "after_cursor_execute", _after_cursor_execute)
+        event.listen(engine, "commit", _on_commit)
+        event.listen(engine, "rollback", _on_rollback)
+
+
+register_engine_hook(_attach)
 event.listen(Base.metadata, "after_create", _on_schema_change)
 event.listen(Base.metadata, "after_drop", _on_schema_change)
 

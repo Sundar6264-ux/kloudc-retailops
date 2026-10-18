@@ -21,7 +21,6 @@ Rules enforced here, once, so no trigger can get them wrong:
 import datetime as dt
 import json
 import logging
-import threading
 from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Optional, Set
 
@@ -35,6 +34,7 @@ from app.notification_models import PushDelivery
 from app.services import push
 from app.setting_models import SettingChange
 from app.timeutil import utcnow
+from app.tenancy import tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -436,7 +436,7 @@ def catalog_default(key: str, role: str) -> bool:
 # its value is {alert key: {"staff": bool, "admin": bool}} with only the
 # overridden roles present. No row = the catalog's defaults.
 STORE_DEFAULTS_KEY = "notification_defaults"
-_store_defaults_lock = threading.Lock()
+_store_defaults_lock = tenant_lock("notifications._store_defaults_lock")
 
 
 def _newest_store_defaults(db: Session) -> Optional[SettingChange]:

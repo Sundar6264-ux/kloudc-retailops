@@ -741,7 +741,9 @@ def warm_fix_issues_cache(bind=None, refresh: bool = False) -> None:
     raises: a failure is logged and the page just computes on first load."""
     try:
         if bind is None:
-            from app.db import engine as bind
+            from app.tenancy import tenant_engine
+
+            bind = tenant_engine()  # the current store's (PLATFORM_CONTRACT 6.5)
         if refresh:
             clear_forecast_cache()
         db = Session(bind=bind)

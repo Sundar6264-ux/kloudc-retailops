@@ -30,10 +30,10 @@ import json
 import logging
 import pathlib
 import re
-import threading
 from typing import Any, Callable, Dict, FrozenSet, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError, field_validator, model_validator
+from app.tenancy import tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -661,8 +661,12 @@ def json_schema() -> dict:
 # The active pack
 # ---------------------------------------------------------------------------
 
-_lock = threading.Lock()
-_state: Dict[str, Any] = {"pack": None, "source": None, "override": None}
+_lock = tenant_lock("pack._lock")
+# The active pack and where it came from: per store (PLATFORM_CONTRACT 6.5).
+_state: Dict[str, Any] = tenant_local("store_pack._state", lambda: {"pack": None, "source": None})
+# A pinned pack (tests and the fake-store fixtures): process-wide on purpose,
+# so a fixture set outside a store context still applies inside one.
+_override: Dict[str, Any] = {"pack": None}
 
 
 def _from_database(db=None) -> Optional[Tuple[StorePack, str]]:
@@ -714,7 +718,7 @@ def _resolve(db=None) -> Tuple[StorePack, str]:
 
 def current_pack(db=None) -> StorePack:
     """The active pack, cached per process."""
-    override = _state["override"]
+    override = _override["pack"]
     if override is not None:
         return override
     pack = _state["pack"]
@@ -728,7 +732,7 @@ def current_pack(db=None) -> StorePack:
 
 
 def current_source() -> str:
-    if _state["override"] is not None:
+    if _override["pack"] is not None:
         return "override (tests)"
     current_pack()
     return _state["source"] or ""
@@ -743,7 +747,7 @@ def reload_pack() -> None:
 def set_override(pack: Optional[StorePack]) -> None:
     """Pin a pack for this process (tests and the fake-store fixtures); None
     clears it."""
-    _state["override"] = pack
+    _override["pack"] = pack
 
 
 def _p(pack: Optional[StorePack]) -> StorePack:

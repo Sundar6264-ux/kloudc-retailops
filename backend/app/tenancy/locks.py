@@ -57,6 +57,10 @@ class TenantLock:
         """The real lock for the current store."""
         return keyed_lock(self.name, reentrant=self.reentrant)
 
+    def of(self, store: Optional[str]):
+        """The real lock of store `store` (None: the current store's)."""
+        return keyed_lock(self.name, store=store, reentrant=self.reentrant)
+
     def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
         lock = self.current()
         ok = lock.acquire(blocking, timeout)
@@ -65,10 +69,14 @@ class TenantLock:
         return ok
 
     def release(self) -> None:
+        """Releases what this thread acquired; a plain (non-reentrant) lock
+        may also be released by another thread, as with threading.Lock -
+        that thread must be in the same store (spawn_in_store)."""
         stack = self._stack()
-        if not stack:
-            raise RuntimeError(f"release of an unheld tenant lock {self.name!r}")
-        stack.pop().release()
+        if stack:
+            stack.pop().release()
+            return
+        self.current().release()
 
     def locked(self) -> bool:
         lock = self.current()
@@ -115,7 +123,7 @@ def advisory_lock(db, name: str) -> Iterator[None]:
     PostgreSQL: ``pg_advisory_xact_lock`` inside `db`'s transaction (released
     at commit / rollback, not at the end of the block) plus the in-process
     keyed lock for the block. SQLite: the keyed lock only."""
-    lock = keyed_lock(f"advisory:{name}")
+    lock = keyed_lock(f"advisory:{name}", reentrant=True)  # nested blocks (po_cart) are fine
     with lock:
         if _is_postgres(db):
             from sqlalchemy import text

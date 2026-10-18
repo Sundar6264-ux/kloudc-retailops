@@ -23,7 +23,6 @@ Two ways to see this:
 import datetime as dt
 import json
 import logging
-import threading
 import time
 from typing import Optional
 
@@ -36,13 +35,14 @@ from app.pos import registry
 from app.pos.models import Order as PosOrder
 from app.pos.sync.sales import line_rows
 from app.timeutil import restaurant_today, utcnow
+from app.tenancy import spawn_in_store, tenant_local, tenant_lock
 
 # Same logger name as before the move (log lines and filters unchanged).
 logger = logging.getLogger("app.services.open_orders")
 
 JOB_NAME = "open_orders_scan"
 
-_EMPLOYEE_CACHE: dict = {"at": 0.0, "by_guid": {}}
+_EMPLOYEE_CACHE: dict = tenant_local("open_orders._EMPLOYEE_CACHE", lambda: {"at": 0.0, "by_guid": {}})
 _EMPLOYEE_CACHE_TTL_SECONDS = 600
 
 # Real order volume starts at the store's FIRST_SALES_DATE (store setting;
@@ -337,11 +337,11 @@ def refresh_open_orders_cache(db: Session, full: bool = False, max_retries: int 
 # the all-time list refreshes today's part first when the last scan is older
 # than this. One refresh at a time; anyone arriving meanwhile gets the cache.
 LIVE_MAX_AGE_SECONDS = 120
-_live_refresh_lock = threading.Lock()
+_live_refresh_lock = tenant_lock("open_orders._live_refresh_lock")
 # Monotonic time of the last on-demand refresh that failed: a failed scan
 # writes no "success" row, so without this every request would ask Toast
 # again while it's down or rate limiting us.
-_live_last_failure: dict = {"at": None}
+_live_last_failure: dict = tenant_local("open_orders._live_last_failure", lambda: {"at": None})
 
 
 def _today_is_stale(db: Session, max_age_seconds: int) -> bool:
@@ -428,7 +428,7 @@ def refresh_today_in_background(db: Session, max_age_seconds: int = LIVE_MAX_AGE
             _live_refresh_lock.release()
 
     try:
-        threading.Thread(target=run, name="open-checks-refresh", daemon=True).start()
+        spawn_in_store(run, name="open-checks-refresh")  # keeps this store's context
     except Exception:  # noqa: BLE001 - e.g. no threads left: serve the cache
         _live_refresh_lock.release()
         logger.exception("Could not start the open checks refresh")

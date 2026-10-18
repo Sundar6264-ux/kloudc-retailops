@@ -140,10 +140,10 @@ def tenant_cache(name: str, *, maxsize: int = 256, ttl: Optional[float] = None) 
         return cache
 
 
-def tenant_state(name: str, factory: Callable[[], T]) -> T:
-    """The current store's object called `name`, created with `factory()` on
-    first use."""
-    code = current_store_code()
+def tenant_state(name: str, factory: Callable[[], T], *, store: Any = _MISSING) -> T:
+    """The current store's object called `name` (or store `store`'s), created
+    with `factory()` on first use."""
+    code = current_store_code() if store is _MISSING else (normalize_store_code(store) if store else None)
     per_store = _states.get(name)
     if per_store is not None:
         obj = per_store.get(code, _MISSING)
@@ -193,6 +193,12 @@ class TenantLocal:
 
     def current(self) -> Any:
         return tenant_state(self._name, self._factory)
+
+    def of(self, store: Optional[str]) -> Any:
+        """Store `store`'s object (None: the current store's)."""
+        if store is None:
+            return self.current()
+        return tenant_state(self._name, self._factory, store=store)
 
     def __getattr__(self, attr: str) -> Any:
         return getattr(self.current(), attr)

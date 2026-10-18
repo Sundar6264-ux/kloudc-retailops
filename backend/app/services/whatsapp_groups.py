@@ -26,7 +26,6 @@ Every group starts unticked, the two built-in staff groups included.
 
 import logging
 import re
-import threading
 import time
 from typing import Dict, List, Optional
 
@@ -40,6 +39,7 @@ from app.db import SessionLocal
 from app.models import ChecklistDefinition, User, WhatsAppGroup
 from app.services import whapi_client
 from app.timeutil import utcnow
+from app.tenancy import tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -308,8 +308,8 @@ def delete_group(db: Session, key: str) -> None:
 
 # --- Available on WhatsApp ----------------------------------------------------------------
 
-_cache_lock = threading.Lock()
-_cache: Dict[str, object] = {"at": 0.0, "groups": None}
+_cache_lock = tenant_lock("whatsapp_groups._cache_lock")
+_cache: Dict[str, object] = tenant_local("whatsapp_groups._cache", lambda: {"at": 0.0, "groups": None})
 
 
 def clear_available_cache() -> None:

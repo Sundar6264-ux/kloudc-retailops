@@ -172,7 +172,7 @@ def pauses(monkeypatch):
     slept = []
     monkeypatch.setattr(flyer_sender, "sleep", slept.append)
     monkeypatch.setattr(flyer_sender, "enqueue", lambda ids: [flyer_sender.process_send(i) for i in ids])
-    monkeypatch.setattr(flyer_sender, "_last_send_done", 0.0)
+    monkeypatch.setitem(flyer_sender._pacing, "last_send_done", 0.0)  # per store (platform B)
     monkeypatch.setattr(flyer_sender, "utcnow", lambda: NOON)
     flyer_sender.clear_media_cache()
     yield slept

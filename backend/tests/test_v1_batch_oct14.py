@@ -88,7 +88,7 @@ def order_rule(db, monkeypatch):
     s = get_settings()
     monkeypatch.setattr(s, "team_autotask_order_enabled", True)
     monkeypatch.setattr(s, "team_autotask_order_min_items", 1)
-    monkeypatch.setattr(auto_tasks, "_order_scan_day", None)
+    monkeypatch.setitem(auto_tasks._order_scan, "day", None)  # per store (platform B)
     team = db.query(Team).filter(Team.name == s.team_autotask_order_team).one()
     add_member(db, team, make_user(db, "meena", features=["team_tasks"]))
 

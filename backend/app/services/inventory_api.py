@@ -69,7 +69,7 @@ import datetime as dt
 import json
 import logging
 import re
-import threading
+import threading  # noqa: F401 - an old name tests/compat still resolve
 import time
 from collections import defaultdict
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
@@ -83,6 +83,7 @@ from app.config import get_settings
 from app.models import InventorySnapshot, JobRun, Order, ToastMenuItem
 from app.services import inventory_api_switch
 from app.timeutil import restaurant_timezone, restaurant_today
+from app.tenancy import tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -450,7 +451,7 @@ LATE_CSV = "late_csv"
 LATE_CSV_MAX_TRIES = 2
 # A "running" row older than this is a run that died (restart mid-run).
 STALE_RUN = dt.timedelta(hours=1)
-_late_csv_lock = threading.Lock()
+_late_csv_lock = tenant_lock("inventory_api._late_csv_lock")
 
 
 def _job_detail(job: JobRun) -> dict:
@@ -606,7 +607,7 @@ def refresh_menu_cache(
 # Item 6: barcodes from the latest menu check
 # ---------------------------------------------------------------------------
 
-_menu_cache_state: dict = {}
+_menu_cache_state: dict = tenant_local("inventory_api._menu_cache_state", dict)
 
 
 def _menu_cache(db: Session) -> dict:
@@ -859,8 +860,8 @@ LIVE_STOCK_SCREENS = [
 # On-demand comparison ("Compare now" on the admin page)
 # ---------------------------------------------------------------------------
 
-_compare_lock = threading.Lock()
-_compare_cache: dict = {}
+_compare_lock = tenant_lock("inventory_api._compare_lock")
+_compare_cache: dict = tenant_local("inventory_api._compare_cache", dict)
 COMPARE_CACHE_SECONDS = 600
 
 

@@ -30,7 +30,6 @@ import logging
 import re
 import smtplib
 import socket
-import threading
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -51,6 +50,7 @@ from app.services.po_cart import list_cart
 from app.services.po_export import export_simple_po_pdf
 from app.services.toast_email import EmailNotConfigured
 from app.timeutil import restaurant_today, utcnow
+from app.tenancy import advisory_lock, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ WHATSAPP_OFF_REASON = (
     "and share it on WhatsApp yourself."
 )
 
-_send_lock = threading.Lock()
+_send_lock = tenant_lock("po_send._send_lock")
 
 _EMAIL_RE = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$")
 _KEY_RE = re.compile(r"^[A-Za-z0-9_-]{8,100}$")
@@ -699,7 +699,7 @@ def send_po(
     if not channels or any(c not in CHANNELS for c in channels):
         raise PoSendError(422, "channels must be email and/or whatsapp.")
 
-    with _send_lock:
+    with _send_lock, advisory_lock(db, "po_send"):
         existing = db.execute(select(PoSend).where(PoSend.idempotency_key == key)).scalar_one_or_none()
         if existing is not None:
             return _replay(existing, supplier)

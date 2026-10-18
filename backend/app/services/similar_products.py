@@ -50,6 +50,7 @@ from sqlalchemy.orm import Session
 
 from app.models import InventorySnapshot, Order
 from app.services.item_vendors import aligned_item_codes, split_field
+from app.tenancy import tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -850,8 +851,8 @@ def _same_size(a: Optional[Tuple[str, float]], b: Optional[Tuple[str, float]]) -
 # DB wiring + cache (one index per inventory upload)
 # ---------------------------------------------------------------------------
 
-_cache: dict = {}
-_cache_lock = threading.Lock()
+_cache: dict = tenant_local("similar_products._cache", dict)
+_cache_lock = tenant_lock("similar_products._cache_lock")
 
 
 def clear_similar_cache() -> None:

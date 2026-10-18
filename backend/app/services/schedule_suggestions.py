@@ -64,7 +64,6 @@ import datetime as dt
 import json
 import re
 import statistics
-import threading
 from collections import Counter, defaultdict
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
@@ -78,6 +77,7 @@ from app.services.suggestion_dismissals import dismissed_keys
 from app.services.supplier_projection import list_suppliers
 from app.services.vendor_schedule import create_vendor_schedule, decode_weekdays, list_vendor_schedules, schedule_out
 from app.timeutil import restaurant_timezone, restaurant_today, to_restaurant_date
+from app.tenancy import tenant_local, tenant_lock
 
 LOOKBACK_DAYS = 84
 # Pattern thresholds (see the module docstring).
@@ -213,8 +213,8 @@ class _Names:
 # --- Evidence ----------------------------------------------------------------------------------
 
 
-_rise_cache_lock = threading.Lock()
-_rise_cache: Dict[tuple, List[str]] = {}
+_rise_cache_lock = tenant_lock("schedule_suggestions._rise_cache_lock")
+_rise_cache: Dict[tuple, List[str]] = tenant_local("schedule_suggestions._rise_cache", dict)
 
 
 def _stock_rise_vendors(db: Session, prev_date: dt.date, date: dt.date) -> List[str]:
@@ -669,7 +669,7 @@ def _why_text(why: str, counts: Dict[str, int], weeks: int, days: List[dt.date])
 
 # --- Add all ------------------------------------------------------------------------------------
 
-_accept_lock = threading.Lock()
+_accept_lock = tenant_lock("schedule_suggestions._accept_lock")
 # POST /schedules takes the same lock (VX12): its "no schedule under any
 # spelling yet" check and the insert must not interleave with Add all or a
 # second POST (a double tap made a 500 from the unique constraint, or a

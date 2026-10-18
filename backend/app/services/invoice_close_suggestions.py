@@ -29,7 +29,6 @@ Measured on a prod copy (Sep 1 - Oct 11 2026): see the contract's "As built".
 
 import datetime as dt
 import logging
-import threading
 import time
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
@@ -43,6 +42,7 @@ from app.services import delivery_suggestions as ds
 from app.services.invoice_submission import can_mark_toast_closed
 from app.services.suggestion_dismissals import dismissed_keys
 from app.timeutil import restaurant_timezone, to_restaurant_date
+from app.tenancy import tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -213,8 +213,8 @@ def compute_close_suggestions(db: Session, include_dismissed: bool = False) -> D
     return out
 
 
-_cache_lock = threading.Lock()
-_cache: Dict[tuple, Tuple[float, Dict[int, dict]]] = {}
+_cache_lock = tenant_lock("invoice_close_suggestions._cache_lock")
+_cache: Dict[tuple, Tuple[float, Dict[int, dict]]] = tenant_local("invoice_close_suggestions._cache", dict)
 
 
 def _fingerprint(db: Session) -> tuple:

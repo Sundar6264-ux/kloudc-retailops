@@ -38,7 +38,6 @@ import datetime as dt
 import json
 import logging
 import re
-import threading
 from collections import Counter, defaultdict
 from difflib import SequenceMatcher
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -55,6 +54,7 @@ from app.services.item_vendors import vendors_of
 from app.setting_models import SettingChange
 from app.timeutil import restaurant_timezone, utcnow
 from app.store.settings_view import effective_public_base_url
+from app.tenancy import tenant_lock
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +81,8 @@ MIN_HOURS = 1
 MAX_HOURS = 72
 MAX_SECTIONS_IN_TASK = 6
 
-_settings_lock = threading.Lock()
-_run_lock = threading.Lock()
+_settings_lock = tenant_lock("issue_leads._settings_lock")
+_run_lock = tenant_lock("issue_leads._run_lock")
 
 # ---------------------------------------------------------------------------
 # The proposed leads: the store pack's issue_leads section (the owner's lead

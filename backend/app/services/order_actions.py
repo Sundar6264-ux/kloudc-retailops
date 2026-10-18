@@ -31,7 +31,6 @@ allowlisted).
 """
 
 import datetime as dt
-import threading
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import func, select
@@ -41,6 +40,7 @@ from app.models import PlacedOrder, User, VendorOrderSkip
 from app.services.purchase_order_log import SOURCE_OUTSIDE, STATUS_PLACED
 from app.services.vendor_schedule import decode_weekdays, list_vendor_schedules
 from app.timeutil import to_restaurant_date, utcnow
+from app.tenancy import advisory_lock, tenant_lock
 
 ACTIONS = ("placed", "skip", "other")
 ACTION_LABELS = {
@@ -61,7 +61,7 @@ NOTE_MAX_CHARS = 500
 # within this long is the same tap (double tap / retry): no second row.
 DUPLICATE_WINDOW = dt.timedelta(minutes=2)
 
-_write_lock = threading.Lock()
+_write_lock = tenant_lock("order_actions._write_lock")
 
 
 class OrderActionError(Exception):
@@ -162,7 +162,7 @@ def place_outside(
         name = _check_cycle(db, vendor, for_delivery_date)
     else:
         name = resolve_vendor(db, vendor)
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "order_actions"):
         existing = _existing_outside(db, name, for_delivery_date, now)
         if existing is not None:
             return existing, True
@@ -188,7 +188,7 @@ def undo_outside(db: Session, order_id: int) -> PlacedOrder:
     """Undo "Order already placed": deletes that row. Returns the deleted
     row (detached) for the answer. Only an outside row - an order placed from
     the cart has lines and history and is never deleted here."""
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "order_actions"):
         row = db.get(PlacedOrder, order_id)
         if row is None:
             raise OrderActionError(404, "That order wasn't found (it may already be undone).")
@@ -221,7 +221,7 @@ def skip_cycle(
     if reason == SKIP_REASON_OTHER and not note:
         raise OrderActionError(400, "Add a note for Other.")
     name = _check_cycle(db, vendor, delivery_date)
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "order_actions"):
         row = db.execute(
             select(VendorOrderSkip).where(
                 func.lower(func.trim(VendorOrderSkip.vendor)) == vendor_key(name),
@@ -242,7 +242,7 @@ def skip_cycle(
 
 def unskip_cycle(db: Session, vendor: str, delivery_date: dt.date) -> bool:
     """Undo Skip this week / Other. False = that order wasn't skipped."""
-    with _write_lock:
+    with _write_lock, advisory_lock(db, "order_actions"):
         rows = list(
             db.execute(
                 select(VendorOrderSkip).where(

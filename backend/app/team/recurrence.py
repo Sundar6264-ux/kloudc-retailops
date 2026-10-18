@@ -33,6 +33,7 @@ from app.features import user_has_feature
 from app.models import User
 from app.team.models import Team
 from app.team.tasks_models import Task, TaskEvent, TaskItem, TaskTemplate
+from app.tenancy import tenant_local
 
 logger = logging.getLogger(__name__)
 
@@ -257,13 +258,14 @@ def validate_template_fields(rule: str, tz_name: Optional[str], generate_ahead_m
     return normalized, tz
 
 
-# When the previous generation run happened (per process) - bounds the
+# Per store (PLATFORM_CONTRACT 6.5), per process:
+# "last_run": when the previous generation run happened - bounds the
 # "missed entirely" check to what fell out of the catch-up window since.
-_last_run: Optional[dt.datetime] = None
+_run_state: dict = tenant_local("recurrence._run_state", lambda: {"last_run": None})
 # Templates whose bad assignee was already logged this process.
-_warned_assignee: Set[int] = set()
+_warned_assignee: Set[int] = tenant_local("recurrence._warned_assignee", set)
 # (template, user, team) weekday assignees whose problem was logged.
-_warned_day: Set[Tuple[int, Optional[int], Optional[int]]] = set()
+_warned_day: Set[Tuple[int, Optional[int], Optional[int]]] = tenant_local("recurrence._warned_day", set)
 
 
 WEEKDAY_CODES = ("MO", "TU", "WE", "TH", "FR", "SA", "SU")
@@ -362,9 +364,8 @@ def _log_missed(db: Session, tpl: TaskTemplate, now: dt.datetime, since: Optiona
 def generate_occurrences(db: Session, now: dt.datetime) -> List[Task]:
     """Creates every template occurrence whose generate time has passed and
     that doesn't exist yet. Commits. Returns the new tasks."""
-    global _last_run
     created: List[Task] = []
-    since = _last_run
+    since = _run_state["last_run"]
     templates = db.execute(
         select(TaskTemplate).where(TaskTemplate.active.is_(True), TaskTemplate.repeats.is_not(False))
     ).scalars().all()
@@ -444,7 +445,7 @@ def generate_occurrences(db: Session, now: dt.datetime) -> List[Task]:
                 continue
             created.append(task)
     db.commit()
-    _last_run = now
+    _run_state["last_run"] = now
     if created:
         logger.info("Recurring tasks: created %d occurrence(s)", len(created))
     return created
