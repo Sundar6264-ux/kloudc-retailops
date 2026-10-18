@@ -1315,7 +1315,8 @@ skipped without it; GitHub's Ubuntu runners have Node.
 **Tests**
 - `tests/test_directory.py`: 52 tests.
 - `node --test directory/worker/test/directory.test.mjs`: 7 tests.
-- Full backend suite: see the report for this batch.
+- Full backend suite on the rebased branch: 2503 passed, 19 skipped on both
+  Python 3.9 and 3.12.
 
 **Owner steps** (`directory/README.md` "Deploy"; nothing deployed):
 1. Domain on Cloudflare; set `PLATFORM_DOMAIN`.
