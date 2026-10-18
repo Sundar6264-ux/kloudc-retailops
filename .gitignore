@@ -22,3 +22,11 @@ node_modules
 backend/tests/data/similar_products_catalog.tsv
 backend/tests/data/similar_products_labels.json
 .DS_Store
+
+# Store packs and settings of real stores never go in git (docs/M2_CONTRACT.md 1.6):
+# a private folder outside git, or this ignored one. Only product and fake
+# packs (backend/packs/*.json) and fake-store fixtures are committed.
+backend/packs/private/
+**/*.pack.json
+**/legacy_cases.json
+**/forbidden_tokens.txt
