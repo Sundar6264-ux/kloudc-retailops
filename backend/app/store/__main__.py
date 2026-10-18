@@ -238,7 +238,10 @@ def store_init(code: str, pack_path: str, adopt: bool = False, db=None, settings
         marker = identity.read_marker(root)
         if marker is not None and marker.get("store_code") != code:
             raise InitError(f"The upload folder {root} belongs to {marker.get('store_code')}, not {code}.")
-        if not adopt and stamp is None:
+        # Contract 3.5 step 2: store data means an existing store, stamped or
+        # not (an adopted store keeps its seeded rows - its WhatsApp roles hold
+        # its chat ids); only --adopt goes on, and it removes nothing.
+        if not adopt:
             busy = {t: _count(db, t) for t in DATA_TABLES}
             busy = {t: n for t, n in busy.items() if n}
             if busy:
