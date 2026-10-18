@@ -427,3 +427,35 @@ def test_unknown_or_inactive_store_context(multi):
             pass
     with store_context("GAMMA", allow_inactive=True) as ref:
         assert ref.status == "pending"
+
+
+def test_platform_env_credentials_never_reach_a_store(multi, monkeypatch):
+    """One store's Toast / WhatsApp / email values left in the platform's .env
+    must not become every store's (they would read another store's data)."""
+    from app.config import get_settings, process_settings
+    from app.tenancy.testing import set_test_store_settings
+
+    s = process_settings()
+    for key, value in {
+        "toast_client_id": "leaked-id",
+        "toast_client_secret": "leaked-secret",
+        "toast_restaurant_guid": "leaked-guid",
+        "whapi_api_token": "leaked-token",
+        "gmail_app_password": "leaked-pw",
+        "anthropic_api_key": "leaked-key",
+        "toast_invoice_email": "ap@leak.test",
+        "insights_hmac_secret": "leaked-hmac",
+        "store_phone": "555-LEAK",
+        "team_poll_interval_s": 45,
+    }.items():
+        monkeypatch.setattr(s, key, value)
+    set_test_store_settings("BETA", {"toast_client_id": "beta-id", "toast_restaurant_guid": "beta-guid"}, credentials=True)
+    with store_context("ALPHA"):
+        a = get_settings()
+        assert (a.toast_client_id, a.toast_client_secret, a.toast_restaurant_guid) == ("", "", "")
+        assert a.whapi_api_token == a.gmail_app_password == a.anthropic_api_key == ""
+        assert a.toast_invoice_email == "" and a.insights_hmac_secret == "" and a.store_phone == ""
+        assert a.team_poll_interval_s == 45  # a product-wide tuning value still comes from env
+    with store_context("BETA"):
+        b = get_settings()
+        assert (b.toast_client_id, b.toast_restaurant_guid, b.toast_client_secret) == ("beta-id", "beta-guid", "")

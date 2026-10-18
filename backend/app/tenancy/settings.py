@@ -54,6 +54,20 @@ CREDENTIAL_SETTING_KEYS: FrozenSet[str] = frozenset(
     }
 )
 
+# Never taken from the process env in multi mode: one store's credentials,
+# identity or outside addresses in the platform's .env must not reach every
+# other store. They start at the Settings class default, then the store's
+# own layers fill them.
+_EXPLICIT_PRIVATE_KEYS = frozenset(
+    {
+        "gmail_address", "gmail_app_password", "whapi_chat_id", "whapi_spice_town_checklist_group_id",
+        "whapi_street_kitchen_checklist_group_id", "toast_invoice_email", "ap_inbox_email", "insights_hmac_secret",
+        "store_name", "store_short_name", "store_address", "store_phone", "store_email", "store_description",
+        "logo_url", "icon_url", "document_logo_file", "labels_url", "public_base_url", "email_from_name",
+        "first_sales_date", "demo_mode",
+    }
+)
+
 _EXPLICIT_PLATFORM_KEYS = frozenset(
     {
         "database_url", "tenancy_mode", "app_env", "platform_database_url", "store_database_url_template",
@@ -94,6 +108,7 @@ def _store_keys() -> FrozenSet[str]:
 PLATFORM_ONLY_KEYS: FrozenSet[str] = _platform_only()
 # team_jobs_enabled starts with team_ but is platform-only: removed above.
 STORE_SETTING_KEYS: FrozenSet[str] = _store_keys()
+STORE_PRIVATE_KEYS: FrozenSet[str] = (CREDENTIAL_SETTING_KEYS | _EXPLICIT_PRIVATE_KEYS) & _all_fields()
 
 
 @runtime_checkable
@@ -169,6 +184,8 @@ def build_store_settings(ref: StoreRef, base=None):
 
     base = base if base is not None else process_settings()
     merged = base.model_dump()
+    for key in STORE_PRIVATE_KEYS:
+        merged[key] = Settings.model_fields[key].default
     registry_layer = {"store_name": ref.name, "pos_provider": ref.pos_provider}
     if ref.timezone:
         registry_layer["store_timezone"] = ref.timezone
@@ -198,6 +215,7 @@ def build_store_settings(ref: StoreRef, base=None):
                     layers = [{k: v for k, v in layer.items() if k != "store_timezone"} for layer in layers]
     values = dict(merged)
     values.update(derived)
+    values["toast_timezone"] = values["store_timezone"] = ref.timezone or base.store_timezone
     return Settings.model_validate(values)
 
 
