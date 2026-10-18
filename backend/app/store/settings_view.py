@@ -43,7 +43,7 @@ def product_name(s=None) -> str:
 
 
 def company_name(s=None) -> str:
-    return _clean(_get(_s(s), "company_name", "KloudC LLC"))
+    return _clean(_get(_s(s), "company_name", "KloudC LLC")) or "KloudC LLC"
 
 
 def store_display_name(s=None) -> str:

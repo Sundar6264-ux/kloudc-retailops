@@ -118,3 +118,19 @@ def test_ai_consent_notice_is_a_real_setting(anon_client, monkeypatch):
     body = anon_client.get("/api/app/legal").json()
     assert body["ai"]["notice"] == "This store's own AI notice."
     assert body["ai"]["notice_version"] == legal.ai_notice_version("This store's own AI notice.")
+
+
+@pytest.mark.parametrize("company", ["", "  ", "Example Co"])
+def test_legal_and_branding_agree_on_the_company(company, monkeypatch):
+    """/api/app/legal and branding's legal block are the same links for the
+    same settings (a blank COMPANY_NAME is the product default in both)."""
+    from app.config import Settings
+    from app.store.branding import branding_payload
+
+    monkeypatch.setenv("COMPANY_NAME", company)
+    s = Settings(_env_file=None)
+    monkeypatch.setattr(legal, "get_settings", lambda: s)
+    body = legal.legal_payload()
+    brand = branding_payload("http://testserver", s=s)
+    assert brand["legal"] == {k: body[k] for k in ("company", "privacy_url", "terms_url", "support_url")}
+    assert brand["product"]["company"] == body["company"] == (company.strip() or "KloudC LLC")
