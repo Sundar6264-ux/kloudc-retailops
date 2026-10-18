@@ -13,6 +13,7 @@ source $HERE/env.sh
 mkdir -p $REG_WORK
 cd $REG_WORK
 rm -f copy.db copy.db-wal copy.db-shm pristine.db pristine.db-wal pristine.db-shm
+[[ -n "$REG_PROD_DB" ]] || { echo "set REG_PROD_DB to the store database to copy (read-only)" >&2; exit 2; }
 nice -n 15 sqlite3 "file:$REG_PROD_DB?mode=ro" ".backup $REG_WORK/copy.db"
 sqlite3 copy.db "PRAGMA integrity_check" | grep -qx ok
 CLEAN_ENV=(env -i HOME=$HOME PATH=/usr/bin:/bin REG_WORK=$REG_WORK DATABASE_URL="sqlite:///$REG_WORK/copy.db"

@@ -1,8 +1,8 @@
 {
-  "name": "spicetown-e2e",
+  "name": "storeops-e2e",
   "private": true,
   "type": "module",
-  "description": "Read-only browser smoke test for the Spice Town dashboard.",
+  "description": "Read-only browser smoke test for the StoreOps website.",
   "scripts": {
     "smoke": "node smoke.mjs",
     "install-browser": "playwright install chromium"

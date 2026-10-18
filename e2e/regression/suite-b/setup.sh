@@ -5,8 +5,9 @@
 set -e
 HERE=${0:A:h}
 W=${SUITE_B_WORK:-/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB}
-REPO=${SUITE_B_REPO:-/Users/sundar/spicetown-dev/website}
-PROD=/Users/sundar/spicetown-backend/backend/spicetown.db
+REPO=${SUITE_B_REPO:-${HERE:h:h:h}}   # default: this repository
+# The store database to copy (opened mode=ro, .backup only). No default: name it.
+PROD=${SUITE_B_SOURCE_DB:?set SUITE_B_SOURCE_DB to the store database to copy (read-only)}
 mkdir -p $W && cd $W
 if [[ "$1" != "--keep-db" ]]; then
   rm -f prodcopy.db prodcopy.db-wal prodcopy.db-shm
@@ -16,8 +17,8 @@ if [[ "$1" != "--keep-db" ]]; then
 fi
 # The copy's existing flyers need their files, or the library's thumbnails 404 and the sweep
 # fails ("no failed API calls"). A plain copy of the real folder (only ever read).
-FLYERS_SRC="$HOME/Spice Town Flyers"
-if [[ "$1" != "--keep-db" && -d "$FLYERS_SRC" ]]; then
+FLYERS_SRC=${SUITE_B_FLYERS_SRC:-}   # optional: that store's flyer folder (only read)
+if [[ "$1" != "--keep-db" && -n "$FLYERS_SRC" && -d "$FLYERS_SRC" ]]; then
   rm -rf $W/flyers && mkdir -p $W/flyers && rsync -a "$FLYERS_SRC"/ $W/flyers/
 fi
 (cd $REPO/backend && env -i HOME=$HOME PATH=/usr/bin:/bin SUITE_B_WORK=$W SUITE_B_REPO=$REPO DATABASE_URL="sqlite:///$W/prodcopy.db" \

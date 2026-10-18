@@ -8,7 +8,7 @@ HERE=${0:A:h}
 W=${SUITE_B_WORK:-/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB}
 PORT=${SUITE_B_PORT:-8831}
 WHAPI_PORT=${SUITE_B_WHAPI_PORT:-8838}
-REPO=${SUITE_B_REPO:-/Users/sundar/spicetown-dev/website}
+REPO=${SUITE_B_REPO:-${HERE:h:h:h}}   # default: this repository
 mkdir -p $W/outbox $W/flyers $W/uploads/invoices $W/uploads/team $W/logs
 cd $W
 exec env -i HOME=$HOME PATH=/usr/bin:/bin \

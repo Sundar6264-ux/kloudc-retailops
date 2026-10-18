@@ -8,7 +8,7 @@ import pathlib
 import sys
 
 W = pathlib.Path(os.environ["SUITE_B_WORK"]).resolve()
-sys.path.insert(0, os.path.join(os.environ.get("SUITE_B_REPO", "/Users/sundar/spicetown-dev/website"), "backend"))
+sys.path.insert(0, os.path.join(os.environ.get("SUITE_B_REPO") or str(pathlib.Path(__file__).resolve().parents[3]), "backend"))
 from app.config import get_settings  # noqa: E402
 
 assert get_settings().database_url == f"sqlite:///{W}/prodcopy.db", get_settings().database_url

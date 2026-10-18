@@ -7,8 +7,9 @@ also swaps every WhatsApp group's chat id in the copy for a fake one.
 
 ```
 export SUITE_B_WORK=/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB   # default; everything is written here
-./setup.sh                # .backup of prod (mode=ro) -> alembic upgrade head -> temp users -> website from git HEAD
-                          # (+ a copy of ~/Spice Town Flyers so the existing flyers' thumbnails load)
+export SUITE_B_SOURCE_DB=/path/to/store.db           # required: the store database to copy (opened mode=ro)
+export SUITE_B_FLYERS_SRC=/path/to/flyers            # optional: its flyer folder, so existing thumbnails load
+./setup.sh                # .backup (mode=ro) -> alembic upgrade head -> temp users -> website from git HEAD of this repo
 python3 -I mock_whapi.py &                         # port 8838, logs to $SUITE_B_WORK/whapi_log.jsonl
 ./serve.sh &                                       # port 8831 (refuses to start on anything but the copy)
 ./run.sh                  # every flow at 1280 / 1024 / 375, then the sweep (all pages x 5 roles x 3 widths)
