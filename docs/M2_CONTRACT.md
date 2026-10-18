@@ -1538,3 +1538,199 @@ used); after MT7 the real ones are used.
 - Deferred: Insights pages' own explanatory text still says Toast (only
   stores with `analytics_reports`, i.e. Toast, can open them); `/me` has no
   `timezone`, so the zone comes from branding only.
+
+---
+
+## As built - MT11 (app: store-code login, tenant config, switch store)
+
+Repository `storeops-app`, branch `m2/mt11-mt12` fast-forwarded into `main`
+and pushed: `197fc76` (store time), `bbd2212` (MT11), `6f7dfe2` (MT12),
+`1809961` (merge of MT7a's identity work), `fb25016` (store links,
+post-merge fixes), `ba945b3` (branding fixture test). Interfaces as in sections 5.1-5.5,
+with these additions and differences:
+
+**Build-time (5.1).** `EnvConfig` (`lib/core/config/env_config.dart`) holds
+`APP_ENV`, `PRODUCT_NAME`, `PLATFORM_DOMAIN`, `DIRECTORY_URL`,
+`STATIC_DIRECTORY_URL`, `EXTRA_ALLOWED_API_HOSTS`, `DEV_API_BASE_URL`
+(ignored outside development). `apiBaseUrl` / `labelsBaseUrl` are gone. A
+compile-time `appDisplayName` (= `PRODUCT_NAME`) is used where the OS shows
+the app's name ("Settings > StoreOps").
+
+**Tenant layer (`lib/core/tenant/`).**
+- `tenant_config.dart`: `TenantConfig` (fields of 5.2, plus `posLabel`,
+  `publicUrl()`, `copyWith`), `DirectoryRecord`, `LegalLinks`,
+  `parseHexColor`. `fromSources(directory, apiBaseUrl, branding,
+  labelsBaseUrl, serverMinBuild*)`; `toStored()` / `fromStored()` round-trip.
+  Min build = max(directory, `/api/app/config`, branding `min_build`).
+- `store_code.dart`: `validStoreCode()` (trim, upper, `-`->`_`, pattern of
+  4.2); `storeCodeFromScan()` accepts only `https://<PLATFORM_DOMAIN>/s/<CODE>`
+  (port 443, exactly two path segments) or a bare code.
+- `api_host_policy.dart`: `ApiHostPolicy` - https, no path/query/userinfo,
+  host ends with `.<PLATFORM_DOMAIN>` or is in `EXTRA_ALLOWED_API_HOSTS`;
+  development also `localhost`, `127.0.0.1`, `10.0.2.2` over http. Applied to
+  `api_base_url` (refused before any request) and to branding `labels_url`
+  (a refused labels URL = no labels for that store).
+- `tenant_http.dart`: `TenantHttp` (unauthenticated GET/POST, no cookies, no
+  redirects, every status returned) - directory, branding, app config and
+  cross-store push unregister. `tenantHttpProvider` is the test seam.
+- `store_resolver.dart`: the 8 steps of 5.3. Differences: a static-copy 404
+  is treated as "not reachable" (saved record, else "Can't reach StoreOps"),
+  not "No store with that code", because the static copy may lag a new store;
+  a directory answer whose `code` differs from the asked code is refused; with
+  the directory down and a saved record, the saved record's own server is
+  still asked for fresh branding (offline only when that fails too).
+- `tenant_storage.dart`: `TenantStorage` (`DeviceTenantStorage`,
+  `MemoryTenantStorage` for tests) with the keys of 5.4; known stores capped
+  at 8; `deleteLegacyKeys()` runs at every launch (cheap, defensive).
+- `tenant_providers.dart`: `envConfigProvider` (moved here; re-exported from
+  `auth_providers.dart`), `tenantConfigProvider`
+  (`TenantConfigNotifier`: `restore`, `resolve`, `activate(config, offline)`,
+  `refreshBranding()` -> `bool moved`, `switchStore({toCode})`,
+  `clearActive`), `storeScopeProvider`, `tenantOfflineProvider`,
+  `tenantStorageProvider`, `storeResolverProvider`.
+- `active_store.dart`: `ActiveStore` - a synchronous mirror of the active
+  `TenantConfig` for code that can't watch providers (models, device-pref
+  keys via `ActiveStore.scopedKey(base)` = `base.<CODE>`, `StoreTime`).
+- `store_switcher.dart`: `StoreSwitcher.switchStore({toCode})` and
+  `resetSession({keepStore})`; `appRestartProvider`;
+  `storeTempCleanerProvider`; `StoreSwitcher.pendingCodes` (a
+  `ValueNotifier`) carries a code to open across the restart.
+
+**Switch / sign-out (5.5).** Order as specified (tested with a recording fake
+in `test/core/tenant/store_switch_test.dart`); the only reordering is inside
+step 2-3: `push_last_registered_token.<OLD>` is deleted before the unregister
+call (as before M2, so a failed unregister is queued, not lost). Step 5 goes
+further than the contract: after clearing, **the app starts over in a new
+ProviderContainer** (`StoreOpsRoot` in `lib/app/bootstrap.dart` owns the
+container; `appRestartProvider` replaces it). Every provider - including
+plain `StateProvider` selections and kept-alive lists that don't watch
+`storeScopeProvider` - every tab's navigation stack and the Team poll timer
+are disposed. Plain sign-out (More > Sign Out) does the same but keeps the
+store. `ProviderCache.clearAll()` exists (`provider_cache.dart`) and is
+called too. `<temp>/store/<CODE>/` is real: every temp file the app writes
+(document viewer, PO PDF share, flyer share, invoice scans, voice notes) now
+goes there (`lib/core/storage/store_temp_dir.dart`). A 401 still only
+signs out (no restart), so its "session expired" message survives.
+
+**Clients and tokens.** `ApiClient(baseUrl:)` (was `env:`) with `close()`;
+`apiClientProvider` watches `(storeCode, apiBaseUrl)`, throws `StateError`
+with no store, and closes the old client when replaced. `AuthInterceptor`
+attaches the bearer token only when the request host == the tenant's API
+host (and removes a stray header otherwise); `LabelsAuthInterceptor` only
+for the labels host. `labelsApiClientProvider` is `null` without a labels
+site; `storeHasLabelsProvider` drives the Scan tab and the `/scan` route.
+Server moved (a refresh finds a new `api_base_url`): the token is forgotten
+locally, nothing is sent to the new host, "Your store moved to a new server.
+Please sign in again."
+
+**Per store on the device.** Besides 5.4's keys, these shared_preferences
+keys are now `<key>.<CODE>`: `recent_vendors_v1`, `cart_open_vendors`,
+`store_section`, `invoice_learned_vendors_v1`,
+`team_rules_accepted_version_<userId>`.
+
+**Screens.** `StoreCodeScreen` (`/store-code`, code field, Scan QR code via
+`storeQrScannerProvider` -> `StoreQrScanScreen`, recent stores, a
+development note with the directory URL), branded `LoginScreen`
+(`StoreBrandHeader`: store logo with an icon fallback, store name; offline
+and maintenance notices; maintenance disables Sign In; "Not <short name>?
+Change store"), `LoginFooter` ("For <store> staff", the store's privacy
+link), `SplashScreen` (store logo, or the product wordmark), More > Switch
+store (confirm "Sign out of <name> and switch store?") and a `switch_store`
+search entry, About (store, code, POS, the store's legal links). Router:
+unauthenticated with no store -> `/store-code`; `/s/<CODE>` app links set the
+pending code when no store is chosen. The update gate uses the higher of the
+directory's and the server's minimum and re-checks when the store changes.
+
+**Fixtures.** `test/fixtures/tenants.dart`: `testToastTenant`,
+`testCloverTenant`, `demoTenant` (section 7 values), `tenantOverrides()`,
+`FixedTenantNotifier`, and `legacyFixtureStore` (only for the old invoice /
+public-link fixtures, which were captured at the origin store).
+`test/fixtures/branding/<CODE>.branding.json` are copies of MT7's
+`backend/tests/fixtures/stores/<CODE>.branding.json` (taken from the MT7
+branch); `branding_fixtures_test.dart` builds each `TenantConfig` from them
+and requires it to equal the fixture, and checks the key set.
+
+**Tests (MT11):** `test/core/tenant/` (store_code 9, tenant_config 7,
+store_resolver 16, store_switch 5 incl. the StoreOpsRoot "no previous store
+data" widget test), `test/core/storage/per_store_keys_test.dart` (5),
+interceptor host tests (auth +2, labels +1),
+`test/features/authentication/store_code_screen_test.dart` (12, incl. a
+device matrix 320x568 / 375x667 / 390x844 / 320x1024 split / 1024x1366 at
+2x text), `test/features/account/switch_store_tile_test.dart` (7), update
+gate +2.
+
+**Deferred (MT11):** universal links / app links need the owner's
+Associated Domains + `FlutterDeepLinkingEnabled` (MT7a/owner); `/c/...`
+public checklist links are not opened in the app. A link for another store
+while a store is chosen just opens the app (no switch prompt).
+
+## As built - MT12 (app: store time, brand theme, gating, push store, names)
+
+**Store time (5.8).** `StoreTime` keeps its API; zone from
+`StoreTime.setTimezone()` (called on every tenant activation), tz database
+`package:timezone` `latest.dart` (full range, ~1.1 MB source), loaded in
+`bootstrap()` and lazily elsewhere. New: `offsetAt()`, `fromStoreWallClock()`,
+`timezone`. `endOfStoreDay` uses the offset at that midnight. Task create /
+schedule requests send `StoreTime.timezone`.
+
+**Theme.** `AppTheme.forBrand(primary, secondary, brightness)` (MT11 wiring
+in `app.dart`); `BrandColors` keeps text on brand colour and brand-coloured
+text on the surfaces at >= 4.5:1 (white/near-black, else the seed's
+`onPrimary`; accents lightened/darkened step-wise). `AppColors.primary` is
+now the product default teal `#0F766E`; FABs and the More avatar use the
+theme's primary.
+
+**Gating (6).** `lib/core/tenant/capability_gate.dart`:
+`featureRequirements` (open_orders, insights + every `insights_<screen>`,
+inventory_from_toast, upload_inventory, price_change_log, scan /
+print_labels / manual_lookup, ask_bot), `storeAllowsFeature(id, store)` (no
+store known = nothing hidden), `StoreParts` partial getters (`whatsapp`,
+`apInbox`, `liveTodaySales`, `receivingRecords`, `dayTotals`, `posLabel`),
+`NotAvailableScreen`, `StoreFeatureGate`. `FeatureEntry.visibleFor(user)`
+(grant AND store) replaces `access.allows` in search, Store sections and More
+> Setup; `canOpenInsights` and `InsightScreen.allows` check the store too.
+Push routes to open orders, inventory from POS, loss watch and insights are
+wrapped in `StoreFeatureGate` (`pushScreenContent()` unwraps for tests).
+"Also in <pos>" and "Inventory from <pos>" (`FeatureEntry.displayTitle`).
+The three hard-coded checklist search entries (`checklist_spice_town`, ...)
+are removed: a store's checklists are reached through Daily Checklists,
+which lists the server's schemas.
+
+**Push (5.6).** `PushTarget.store` (upper case). AppShell: another store's
+push -> dialog "This alert is for <saved name or code>. Switch store?"; Yes
+-> `switchStore(toCode:)` (lands on that store's sign-in, route not carried);
+No -> dismissed. The Team poller ignores another store's foreground push.
+
+**Names (9.2).** `test/identity/no_spicetown_names_test.dart` over `lib/`
+(pattern of 9.2; the package name `spicetown_app` and `_`-separated legacy
+checklist type ids are not hits); `test/identity/allowlist.txt` is empty.
+Changes: OS-permission hints use `appDisplayName`; Home title = store short
+name; PO share caption / scanned-PDF creator; invoice parser's own-store
+names come from the tenant (`ActiveStore`), not a literal; neutral glossary
+and help text; generic flyer default categories (`groceries`, `others`) and
+checklist-builder WhatsApp groups (`store`, `kitchen`); no staff names in
+public-link suggestions or search keywords; comments name "the backend" /
+"the labels app" instead of the old repos.
+
+**Tests (MT12):** store_time_zones 20 (NY/Chicago/LA: offsets, spring
+forward, fall back, local midnight, round trip, end of day across DST),
+capability_gate 12 (section 6 rows, visible sets per fake store, Store
+sections, insights, "Also in <pos>", partial gates, "Not available" for
+pushes), push_store_routing 5, app_theme_buttons 9 (each fake store's theme
+and arbitrary colours at 4.5:1), names 2.
+
+**Also (MT12):** public checklist links no longer prefill built-in names;
+with no server suggestion a new link starts on "Type their name".
+
+**Totals (both batches):** `flutter analyze` no issues;
+`flutter test --concurrency=2` (heavy queue, at `fb25016`): **5454 passed,
+6 skipped, 0 failed**; plus 4 in `branding_fixtures_test.dart` at
+`ba945b3`. No simulator run (Regression stage).
+
+**Deferred (MT12):** the partial gates of section 6 are available as
+`StoreParts` getters but not yet wired into the individual screens (Items
+Sold "Today", "received" evidence, Home's accuracy badge, AP inbox actions,
+WhatsApp send options); the server's 409 / its own channel switches remain
+the backstop. Glossary/help text still says "Toast" in POS explanations (the
+server's `/api/glossary` replaces the bundled copy; MT9 substitutes
+`pos_name` there). Chat bubble colour is the product teal, not the store's.
