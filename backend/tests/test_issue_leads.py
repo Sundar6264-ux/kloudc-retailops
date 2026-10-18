@@ -145,12 +145,14 @@ def test_match_user_by_first_name(db, people):
 # --- Rows -----------------------------------------------------------------------------
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_rows_carry_section_and_no_lead_until_saved(db, store, people):
     r = row(db, "rice1")
     assert r["po_section"] == "Oils & Ghee"
     assert r["lead"] is None and r["lead_task"] is None
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_section_then_vendor_then_fallback(db, store, people, admin):
     p = people
     save(
@@ -174,6 +176,7 @@ def test_saved_no_lead_falls_through(db, store, people, admin):
     assert row(db, "odd2")["lead"] is None  # no fallback saved
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_summary_counts_by_lead(db, store, people, admin, ):
     save(db, admin, sections=[("Oils & Ghee", people["sai"].id)])
     c = client_for(db, people["sundar"])
@@ -193,6 +196,7 @@ def test_admin_only(db, people, staff_client):
     assert staff_client.post("/api/issue-leads/run-now").status_code == 403
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_page_proposal_and_accept(db, store, people, admin_client):
     page = admin_client.get("/api/issue-leads").json()
     assert page["saved"] is False
@@ -276,6 +280,7 @@ def test_no_run_before_time_or_without_leads(db, store, people, admin, pushes):
     assert lead_tasks(db) == []
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_daily_task_created_once_per_lead(db, store, people, admin, pushes):
     only_missing(db, admin)
     p = people
@@ -305,6 +310,7 @@ def test_daily_task_created_once_per_lead(db, store, people, admin, pushes):
     assert r["lead_task"]["task_id"] == sai.id and r["lead_task"]["status"] == "open"
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_rerun_same_day_updates_not_duplicates(db, store, people, admin, pushes):
     only_missing(db, admin)
     save(db, admin, sections=[("Oils & Ghee", people["sai"].id)])
@@ -319,6 +325,7 @@ def test_rerun_same_day_updates_not_duplicates(db, store, people, admin, pushes)
     assert run.item_count == 2 and "missing_barcode:rice2" in json.loads(run.items_json)
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_next_day_replaces_and_empty_lead_closes(db, store, people, admin, pushes):
     p = people
     save(db, admin, sections=[("Oils & Ghee", p["sai"].id)], vendors=[("Shata Traders", p["amandeep"].id)])
@@ -334,6 +341,7 @@ def test_next_day_replaces_and_empty_lead_closes(db, store, people, admin, pushe
     assert [(t.status, t.completion_note) for t in aman] == [("done", "Nothing left on the Fix Issues list")]
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_tick_hook_runs_inside_auto_tasks(db, store, people, admin, pushes, monkeypatch):
     from app.team import auto_tasks
 
@@ -343,6 +351,7 @@ def test_tick_hook_runs_inside_auto_tasks(db, store, people, admin, pushes, monk
     assert len(lead_tasks(db)) == 1
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_run_now_endpoint(db, store, people, admin, admin_client, pushes):
     only_missing(db, admin)
     save(db, admin, sections=[("Oils & Ghee", people["sai"].id)])

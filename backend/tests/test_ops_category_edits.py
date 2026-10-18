@@ -57,6 +57,7 @@ def test_admin_api_records_who(store, admin_client):
     assert r.json()["updated_by"] == "boss" and r.json()["updated_at"]
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_correction_shows_in_supplier_projection_and_fix_issues(store, admin_client):
     for item_id, cat, sub in (("atta", "Bakery", "Rusk"), ("parle", "Tea, Coffee & Hot Beverages", "Rusk")):
         assert admin_client.post("/api/admin/category-overrides", json={

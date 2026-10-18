@@ -236,7 +236,7 @@ def test_preview_shows_recipients_subject_body_and_pdf(db, buyer, gmail):
     assert len(p["contacts"]) == 4
     assert p["item_count"] == 2 and p["zero_qty_lines"] == 1 and p["total_qty"] == 7
     assert [i["name"] for i in p["items"]] == ["Toor Dal 4lb", "Rice 20lb"]
-    assert p["subject"].startswith("Purchase Order - Spice Town - Raja Foods - ")
+    assert p["subject"].startswith("Purchase Order - StoreOps - Raja Foods - ")  # STORE_NAME unset: the product
     assert "Hello Raja Foods team," in p["body_template"]
     assert "2 items, 7 cases in total" in p["body_template"]
     assert p["note_marker"] in p["body_template"]
@@ -601,3 +601,65 @@ def test_migration_0050_matches_the_models_and_downgrades(tmp_path):
         assert "po_sends" not in names and "vendor_contacts" not in names
     finally:
         con.close()
+
+
+def test_po_text_uses_the_store_settings(monkeypatch):
+    """StoreOps M2: name, address and phone come from the store settings;
+    blank lines are left out."""
+    from app.services import po_send
+    from tests.store_fixtures import use_store
+
+    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    subject, body = po_send.compose("Acme Foods", [{"name": "x", "qty": 2}])
+    assert subject.startswith("Purchase Order - Test Toast Market - Acme Foods - ")
+    assert "Please find attached Test Toast Market's purchase order" in body
+    assert body.endswith("Thank you,\nTest Toast Market\n100 Example Ave, Springfield, IL 62701\n(555) 010-0100")
+    assert po_send.whatsapp_caption("Acme Foods", [{"qty": 2}]).endswith("Please confirm. (555) 010-0100")
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "store_phone", "")
+    monkeypatch.setattr(get_settings(), "store_address", "")
+    subject, body = po_send.compose("Acme Foods", [{"name": "x", "qty": 2}])
+    assert body.endswith("Thank you,\nTest Toast Market")
+    assert po_send.whatsapp_caption("Acme Foods", [{"qty": 2}]).endswith("Please confirm.")
+
+
+def test_po_email_headers_use_the_smtp_settings(monkeypatch):
+    """SMTP_HOST / SMTP_PORT / SMTP_SSL, EMAIL_FROM_NAME, STORE_EMAIL (Reply-To)
+    and EMAIL_FALLBACK_DOMAIN; nothing leaves the process."""
+    import email
+
+    from app.config import get_settings
+    from app.services import po_send
+
+    s = get_settings()
+    for name, value in (("smtp_username", "orders"), ("smtp_password", "pw"), ("smtp_host", "mail.example.invalid"),
+                        ("smtp_port", 2525), ("smtp_ssl", False), ("email_from_name", "Main Store Orders"),
+                        ("store_email", "buyer@example.invalid"), ("email_fallback_domain", "mail.example.invalid")):
+        monkeypatch.setattr(s, name, value)
+    seen = {}
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout=None):
+            seen["connect"] = (host, port)
+
+        def starttls(self):
+            seen["starttls"] = True
+
+        def login(self, user, password):
+            seen["login"] = (user, password)
+
+        def sendmail(self, sender, to, raw):
+            seen["msg"] = email.message_from_string(raw)
+            return {}
+
+        def quit(self):
+            pass
+
+    monkeypatch.setattr(po_send.smtplib, "SMTP", FakeSMTP)
+    monkeypatch.setattr(po_send.smtplib, "SMTP_SSL", lambda *a, **k: (_ for _ in ()).throw(AssertionError("SSL used")))
+    message_id = po_send.send_email(["v@example.invalid"], "Subject", "Body", b"%PDF-1.4", "po.pdf")
+    assert seen["connect"] == ("mail.example.invalid", 2525) and seen["starttls"] and seen["login"] == ("orders", "pw")
+    msg = seen["msg"]
+    assert msg["From"] == "Main Store Orders <orders>" and msg["Reply-To"] == "buyer@example.invalid"
+    assert message_id.endswith("@mail.example.invalid>")

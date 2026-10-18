@@ -501,6 +501,7 @@ def test_action_field(db, admin_client, staff):
 # --- 15. Lead live progress ---------------------------------------------------------------------
 
 
+@pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_lead_task_counts_down_and_closes_itself(db, admin, admin_client, pushes):
     from app.services import issue_leads
     from tests.test_issue_leads import at, only_missing, save, snap

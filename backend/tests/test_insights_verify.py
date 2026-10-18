@@ -6,6 +6,8 @@ WhatsApp).
 
 import datetime as dt
 
+import pytest
+
 from app.insights_models import AnalyticsCache
 from app.services import insights, insights_data
 from tests.test_insights import (  # noqa: F401 - pytest fixtures
@@ -17,6 +19,9 @@ from tests.test_insights import (  # noqa: F401 - pytest fixtures
     fake,
     filled,
 )
+
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
 
 
 def _hourly_rows(db, d):
@@ -185,7 +190,7 @@ def test_addons_split_choices_toast_files_under_another_modifiers_guid(db, fake)
         "lastUpdated": "2026-10-11T15:41:42.977+0000",
         "menus": [
             {
-                "name": "STREET KITCHEN",
+                "name": "KITCHEN",
                 "menuGroups": [
                     {"name": "Curries", "menuItems": [{"guid": "k1", "name": "Chicken Curry", "modifierGroupReferences": [1]}]},
                     {"name": "Chaat Bar", "menuItems": [{"guid": "k2", "name": "Samosa Chaat", "modifierGroupReferences": [3]}]},
@@ -244,7 +249,7 @@ def test_addons_place_a_misfiled_choice_with_the_option_on_the_same_item(db, fak
     wings sauce - the option offered on the same item."""
     menus = {
         "lastUpdated": "2026-10-11T15:41:42.977+0000",
-        "menus": [{"name": "STREET KITCHEN", "menuGroups": [
+        "menus": [{"name": "KITCHEN", "menuGroups": [
             {"name": "Curries", "menuItems": [{"guid": "k1", "name": "Chicken Curry", "modifierGroupReferences": [1]}]},
             {"name": "Appetizers", "menuItems": [{"guid": "k2", "name": "Wings", "modifierGroupReferences": [2, 3]}]},
         ]}],
@@ -287,7 +292,7 @@ def test_prep_forecast_shows_the_items_current_name(db, fake):
     def menus(name):
         return {
             "lastUpdated": "2026-10-11T15:41:42.977+0000",
-            "menus": [{"name": "STREET KITCHEN", "menuGroups": [
+            "menus": [{"name": "KITCHEN", "menuGroups": [
                 {"name": "Street Snacks", "menuItems": [{"guid": "s1", "name": name}]},
             ]}],
         }

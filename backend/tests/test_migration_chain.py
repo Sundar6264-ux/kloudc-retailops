@@ -49,9 +49,15 @@ def test_oct15_batch_chain_order():
 
 
 def test_multistore_m1_chain_order():
-    # Multi-store M1: pos-neutral ids 0060 (MT4) -> item vendors 0061 (MT5), the head.
+    # Multi-store M1: pos-neutral ids 0060 (MT4) -> item vendors 0061 (MT5).
     scripts = _scripts()
     expected = [("0060", "0059"), ("0061", "0060")]
     for revision, down in expected:
         assert scripts.get_revision(revision).down_revision == down, revision
-    assert scripts.get_heads() == ["0061"]
+
+
+def test_storeops_m2_chain_order():
+    # StoreOps M2 adds exactly one migration: the store identity stamp (MT8).
+    scripts = _scripts()
+    assert scripts.get_revision("0062").down_revision == "0061"
+    assert scripts.get_heads() == ["0062"]

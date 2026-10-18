@@ -18,6 +18,10 @@ from app.team.tasks_models import Task
 
 from tests.conftest import add_member, client_for, make_user
 
+# Two WhatsApp roles (store, kitchen) like the checklists these tests use:
+# tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 NY = zoneinfo.ZoneInfo("America/New_York")
 
 
@@ -124,7 +128,7 @@ def test_checklist_tasks_created_once_for_the_team(db, manager, managers, pushes
         # Normal priority, and due no later than quiet hours start (10 PM):
         # nothing about it pushes at night.
         assert t.priority == "normal"
-        assert t.created_by_name == "Spice Town"
+        assert t.created_by_name == "StoreOps"  # the store name (STORE_NAME unset: the product)
         assert t.due_at == ny(2026, 9, 28, 22, 0).astimezone(dt.timezone.utc)
     # Silent: the single 9:30 PM closing-checklist alert covers them.
     assert pushes == []
@@ -146,7 +150,7 @@ def test_checklist_task_closes_when_submitted(db, manager):
     by_source = {t.source_id: t for t in auto(db)}
     done = by_source["street_kitchen_closing:2026-09-28"]
     assert done.status == "done"
-    assert done.completed_by_name == "Spice Town"
+    assert done.completed_by_name == "StoreOps"  # the store name (STORE_NAME unset: the product)
     assert done.completion_note == "Checklist submitted by ravi"
     assert by_source["spice_town_closing:2026-09-28"].status == "open"
     # Closed stays closed - a later run doesn't recreate it.
@@ -162,7 +166,7 @@ def test_team_members_see_auto_tasks_in_the_api(db, manager):
     titles = [t["title"] for t in r.json()["items"]]
     assert "Submit the Spice Town closing checklist" in titles
     item = r.json()["items"][0]
-    assert item["created_by"]["name"] == "Spice Town"
+    assert item["created_by"]["name"] == "StoreOps"  # the store name (STORE_NAME unset: the product)
     assert item["can"]["complete"] is True
     # A member can complete it by hand too.
     r = client.post(f"/api/team/tasks/{item['id']}/complete")
@@ -474,8 +478,8 @@ def test_auto_closed_task_shows_spice_town_as_finisher(db, manager):
     auto_tasks.auto_tasks_tick(db, ny(2026, 9, 28, 21, 55))
     done = [t for t in auto(db) if t.status == "done"][0]
     out = client_for(db, manager).get(f"/api/team/tasks/{done.id}").json()
-    assert out["completed_by"] == {"id": None, "name": "Spice Town"}
-    assert out["events"][-1]["user_name"] == "Spice Town"
+    assert out["completed_by"] == {"id": None, "name": "StoreOps"}
+    assert out["events"][-1]["user_name"] == "StoreOps"
 
 
 def test_order_below_vendor_minimum_gets_no_task(db, manager, calendar, monkeypatch):

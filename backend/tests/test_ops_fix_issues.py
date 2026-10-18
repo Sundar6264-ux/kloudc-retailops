@@ -14,6 +14,9 @@ from app.services import stock_issues
 from app.services.fix_issues import ISSUE_TYPES, get_issue_list, get_summary
 from app.services.supplier_projection import compute_supplier_projection
 
+# Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
+pytestmark = pytest.mark.suite_pack
+
 TODAY = dt.date.today()  # the forecast's "today", same as Supplier Projection
 LATEST = TODAY
 EARLY = TODAY - dt.timedelta(days=25)  # an older upload, so "first seen" means something
@@ -90,7 +93,7 @@ def store(db):
 
     # Negative inventory (retail yes, kitchen no).
     snap(db, "neg", "Negative Dal", -3)
-    snap(db, "neg-kitchen", "Kitchen Samosa", -1, group="STREET KITCHEN")
+    snap(db, "neg-kitchen", "Kitchen Samosa", -1, group="KITCHEN")
 
     # Refill from container: shelf 3 + container 20 -> flagged; shelf 8 -> not;
     # container empty -> not.
@@ -122,8 +125,8 @@ def store(db):
     # zero stock; kitchen -> neither.
     snap(db, "dead", "Dusty Tin", 12, inventory_value=48.0)
     snap(db, "dead-empty", "Empty Tin", 0, inventory_last_received=received(70))
-    snap(db, "dead-kitchen", "Kitchen Paste", 9, group="STREET KITCHEN")
-    snap(db, "dead-kitchen-empty", "Kitchen Empty", 0, group="STREET KITCHEN")
+    snap(db, "dead-kitchen", "Kitchen Paste", 9, group="KITCHEN")
+    snap(db, "dead-kitchen-empty", "Kitchen Empty", 0, group="KITCHEN")
     # Dead at 0 on the shelf but the Container row is negative -> Negative
     # inventory's (the container row), not Dead - zero stock.
     snap(db, "dead-negc", "Odd Tin", 0)
@@ -433,7 +436,7 @@ def daily_store(db):
     _daily(db, "zs-new", "Brand New Tin", 0, first=20)  # brand new, never received
     _daily(db, "zs-rcv-new", "Fresh Tin", 0, first=20, inventory_last_received=received(10))
     _daily(db, "zs-nocount", "Uncounted Tin", None)  # no count in Toast
-    _daily(db, "zs-kitchen", "Kitchen Tin", 0, group="STREET KITCHEN")
+    _daily(db, "zs-kitchen", "Kitchen Tin", 0, group="KITCHEN")
 
     # Negative inventory: a negative shelf, a negative container row, and a
     # shelf + container that adds up to 0 only because the container is
@@ -964,7 +967,7 @@ def test_cache_miss_uses_category_rules_committed_after_latest_was_loaded(store)
     latest = latest_inventory_by_item(store)  # loaded (with rules) before the edit
     store.add(
         CategoryOverride(
-            match_type="item_id", match_value="dead", category_group="STREET KITCHEN",
+            match_type="item_id", match_value="dead", category_group="KITCHEN",
             category="Kitchen", subcategory=None, active=True,
         )
     )
