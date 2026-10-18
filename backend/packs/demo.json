@@ -1,0 +1,175 @@
+{
+  "pack_version": 1,
+  "pack_id": "demo",
+  "label": "DEMO store (placeholder until MT13 writes it)",
+  "menu": {
+    "excluded_category_groups": [],
+    "kitchen_groups": [],
+    "grocery_menus": [],
+    "kitchen_menu_prefixes": [],
+    "kitchen_label": "Kitchen"
+  },
+  "po_sections": {
+    "other_section": "Other",
+    "extra_sections": [],
+    "rules": [
+      {
+        "section_from": "category"
+      }
+    ]
+  },
+  "house_vendors": {
+    "prefixes": []
+  },
+  "channels": {
+    "empty": "Other",
+    "rules": [
+      {
+        "equals": [
+          "no dining option"
+        ],
+        "channel": "Other"
+      },
+      {
+        "starts_with": [
+          "in-store",
+          "in store"
+        ],
+        "channel": "In-store"
+      },
+      {
+        "equals": [
+          "pick up",
+          "pickup",
+          "take out",
+          "takeout"
+        ],
+        "channel": "Pick up"
+      }
+    ],
+    "split_on": " - ",
+    "rename": {
+      "online ordering": "Online ordering"
+    },
+    "default": "Other"
+  },
+  "issue_leads": {
+    "document_title": "Suggested leads",
+    "leads": [],
+    "fallback": {
+      "key": "admin",
+      "name": "Store admin",
+      "title": "Inventory & Purchase"
+    },
+    "section_proposals": {},
+    "section_notes": {}
+  },
+  "checklists": [
+    {
+      "checklist_type": "daily_closing",
+      "title": "Daily Closing Checklist",
+      "short_name": "Closing",
+      "description": "Complete before leaving for the night.",
+      "sort_order": 1,
+      "settings": {
+        "closing": true,
+        "whatsapp_group": "store",
+        "all_as_usual": false
+      },
+      "schema": {
+        "sections": [
+          {
+            "id": "s_closing",
+            "title": "Closing",
+            "description": null,
+            "items": [
+              {
+                "id": "q_doors",
+                "type": "multiple_choice",
+                "title": "Front and back doors locked?",
+                "description": null,
+                "required": true,
+                "options": [
+                  {
+                    "value": "Yes",
+                    "issue_tag": null
+                  },
+                  {
+                    "value": "No",
+                    "issue_tag": "issue"
+                  }
+                ]
+              },
+              {
+                "id": "q_lights",
+                "type": "multiple_choice",
+                "title": "Lights and equipment turned off?",
+                "description": null,
+                "required": true,
+                "options": [
+                  {
+                    "value": "Yes",
+                    "issue_tag": null
+                  },
+                  {
+                    "value": "No",
+                    "issue_tag": "not_turned_off"
+                  }
+                ]
+              },
+              {
+                "id": "q_cash",
+                "type": "multiple_choice",
+                "title": "Cash counted and put away?",
+                "description": null,
+                "required": true,
+                "options": [
+                  {
+                    "value": "Yes",
+                    "issue_tag": null
+                  },
+                  {
+                    "value": "No",
+                    "issue_tag": "issue"
+                  }
+                ]
+              },
+              {
+                "id": "q_notes",
+                "type": "paragraph",
+                "title": "Anything unusual tonight?",
+                "description": null,
+                "required": false,
+                "flag_if_answered": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "whatsapp_roles": [
+    {
+      "key": "store",
+      "label": "Store staff group"
+    }
+  ],
+  "flyer_categories": [
+    {
+      "key": "groceries",
+      "label": "Groceries",
+      "folder": "Groceries"
+    },
+    {
+      "key": "offers",
+      "label": "Offers",
+      "folder": "Offers"
+    },
+    {
+      "key": "others",
+      "label": "Others",
+      "folder": "Others"
+    }
+  ],
+  "category_rules": []
+}
