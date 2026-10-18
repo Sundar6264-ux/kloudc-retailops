@@ -194,6 +194,15 @@ Server side, `features_for_store` (M1, `app/pos/gating.py`) also drops a
 feature whose store feature is off: new map
 `FEATURE_STORE_FEATURES = {"ask_bot": {"ai"}}` next to `FEATURE_CAPABILITIES`.
 
+Invoices (verify pass, see "As built - M2 backend verify"): with `whatsapp`
+or `ap_inbox` off, a send that fails as "not configured" is recorded as
+`WHATSAPP_OFF` / `AP_EMAIL_OFF` (`invoice_submission.py`) and is **not
+applicable**, never failed: no "Invoice failed to send" alert, the invoice is
+done once the store's own channels are done, `toast_applicable` /
+`ap_applicable` are `false` when the AP channel is off, and "Mark AP closed"
+needs only the AP email when WhatsApp is off. A channel the store does use but
+that is misconfigured still fails as before.
+
 ### 1.4 `.env.example` (MT7 writes it; blank secrets)
 
 `backend/.env.example` lists every field in 1.1 grouped as above, secrets
@@ -1086,7 +1095,13 @@ stock_negative_counts, item_cost, employees`.
 `"csv": ("CSV upload", CSV_CAPABILITIES)` as fallback entries (no adapter in
 M2 for clover; MT13 registers the csv-only adapter). With these, every Toast
 POS job (`run_daily_sales_sync` needs `orders_by_business_date`, etc.) is
-dropped for the Clover and DEMO stores by the M1 job gating.
+dropped for the Clover and DEMO stores by the M1 job gating. (Verify pass:)
+a provider with only a fallback entry has no connector, so the server's own
+gates - `require_capability`, `has_capability`, the job gating - use
+`gating.usable_capabilities()`: the advertised set when the POS has an
+adapter, else only `OFFLINE_CAPABILITIES` (`csv_catalog_import`). Branding,
+`/me` `capabilities` and `allowed_features` still carry the advertised set;
+a POS route answers 409 "isn't connected" and no POS job is registered.
 
 `test_clover.json` differs from `test_toast.json` in: no `kitchen_groups` /
 `excluded_category_groups`, `grocery_menus: []`, `house_vendors.prefixes:
@@ -1156,7 +1171,11 @@ Docker images are built and tested only by GitHub Actions.
 - Server: `backend/tests/test_no_spicetown_names.py` searches `backend/app`
   (not `alembic/versions`, not `app/services/checklist_builtin.py`),
   `frontend/src`, `frontend/index.html`, `frontend/capacitor.config.json` for
-  `spice ?town|street kitchen|vernon|spicetown\.shop` (case-insensitive).
+  `spice ?town|street kitchen|vernon|spicetown\.shop|shaz international`
+  (case-insensitive; the last added by the verify pass - the fresh-store
+  test's list). Where `$STOREOPS_PRIVATE_DIR/forbidden_tokens.txt` exists, its
+  words (staff names) must not appear at all in `backend/app` or
+  `frontend/src` (skips in CI).
   Every hit must be on the allowlist `backend/tests/data/spicetown_name_allowlist.txt`
   (`<path>:<exact substring>` per line, e.g. the legacy setting names in
   `config.py`). MT7, MT8 and MT9 each shrink the list for their files; at the
@@ -2208,3 +2227,38 @@ verifier's app commits) and fast-forwarded into `main`. Each fix has a test that
 5454 + 4 at `ba945b3`; +18 new). No simulator run (Regression stage).
 After the rebase: `flutter analyze` clean and test/core, test/identity and
 the touched feature tests (447) pass. `main` = `8534e98`, pushed.
+
+
+
+
+## As built - M2 backend verify (adversarial pass over MT7 + MT8)
+
+Run on `main` @ `81e4f1d` (MT7a, MT7, MT8, MT9, MT11/MT12 docs merged; MT10
+and MT13 still on their branches), rebased onto the website and identity
+verify passes (`2aed034`), whose website name fixes it kept. Every finding below has a failing test
+first, in `backend/tests/test_m2_backend_verify.py` unless noted.
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | A Clover store (fallback entry, no adapter) kept `open_orders`, `stock_levels`... as usable: `/api/orders/open` and `/api/orders/employees` raised `UnknownPosProvider` (500), and the open-orders scans, the 16:00/21:30 open-checks summaries and the inventory snapshot stayed scheduled, failing on every run | `gating.usable_capabilities()` (section 7 note): routes 409 "Not available for this store yet: its point of sale (Clover) isn't connected.", those jobs are not registered, `has_capability` is false. Advertised capabilities unchanged (branding fixtures unchanged). Toast stores: identical |
+| 2 | `store-init` skipped the "store data" check whenever the database was already stamped, so running `init` again (no `--adopt`) on an adopted store deleted its migration-seeded rows - its WhatsApp roles with their chat ids, its checklists | the check runs whenever `--adopt` is absent (contract 3.5 step 2 as written). A fresh store's second init (no data) is still a no-op |
+| 3 | `Dockerfile` did not set `UPLOADS_ROOT`: a plain `docker run` (the command in its own header) put the identity marker in `/app/backend/uploads` - outside the volume and not writable by the `storeops` user, so `init` and the first start failed | found in parallel by the identity verify (`17e1f9c` sets `ENV UPLOADS_ROOT=/data/uploads`); this pass adds a test that every container path compose sets is the same in the Dockerfile |
+| 4 | `.dockerignore` did not exclude the private pack files, so a local `docker build` with `backend/packs/private/` present would bake a real store's pack into the image | `backend/packs/private`, `**/*.pack.json`, `**/legacy_cases.json`, `**/forbidden_tokens.txt` added |
+| 5 | Rule 0.3 bypasses: `//spicetown.shop`, `x@spicetown.shop`, `https://spicetown.shop\@example.com` (browsers read the host as the legacy domain), `%2e` | `refused_host` normalises backslashes, scheme-relative URLs, user-info and percent-escapes |
+| 6 | A store without WhatsApp and/or an AP inbox (both optional store features, 1.3) marked **every** invoice "failed" and pushed "Invoice failed to send" to every admin for each one; with WhatsApp off a bill could never be marked closed | section 1.3 note above (`WHATSAPP_OFF` / `AP_EMAIL_OFF`). Rows written before this, and every Spice Town-shaped row, read exactly as before |
+| 7 | Origin-store names left in code the name test did not cover: the supplier of migration 0034 in three backend comments, and staff/owner first names and origin vendors (private `forbidden_tokens.txt`) in backend comments (the website ones were fixed in parallel by the website verify, `97567d1`) | reworded / made-up names; `test_no_spicetown_names.py` now also matches `shaz international` (one allowlisted line: `store/__main__.py`'s `LEGACY_CATEGORY_SUPPLIER`, which removes that row) and checks the private staff names over `backend/app` and `frontend/src` when the file is present |
+
+Dismissed after checking:
+- Secrets: no key, token or private-key pattern in any of the 46 commits; both `.env.example` files have blank secrets.
+- Python 3.9: `compileall` with 3.9 over `app`, `scripts`, `alembic` is clean; no `X | Y` annotations.
+- Branding fixtures: the website's e2e fixtures and `frontend/src/test/fixtures` equal `backend/tests/fixtures/stores/*.branding.json` field for field.
+- Every GET route (parity list plus all parameterless `/api` routes) for the three fake stores with the pack checklists: no legacy store name or staff name in any response; the only 5xx left are M1's (a Toast store whose POS is unreachable: `/api/orders/open`, `/api/orders/employees` raise `ConnectError`; `/api/inventory-api/compare` answers 503 with no CSV) - unchanged from Spice Town, not M2.
+- Time zones: every scheduler, recurrence default, task column default, closeout and floor reads the store settings; no `America/New_York` left outside defaults and docstrings.
+- Parity: the fixes are no-ops for a Toast store with both channels configured (connector present; the off-sentinels are only written when a store feature is off), so the MT7/MT8 parity result (0 differences) stands; `test_store_pack_legacy.py` passes locally with the private pack.
+
+Deferred (other tracks / owner):
+- `storeops-app` (MT12's files, app tree had other uncommitted work so it was not touched): `lib/features/invoices/data/invoice_scan_parser.dart` holds a built-in table of the origin store's vendors **with their phone numbers**; `help_content.dart` and `ask_bot_screen.dart` name the origin store's vendors; staff first names in four doc comments.
+- MT10/MT13 merge: `docs/M2_CONTRACT.md` conflicts; MT13's `packs/demo.json` replaces main's copy; `DEMO_MODE` does nothing on `main` until MT13 merges.
+- Store codes may end with `_` (pattern of 1.1), which makes a host label ending in `-` (not a valid DNS label); left as the contract's pattern.
+- `SMTP_USERNAME` doubles as the From address; a provider whose login is not an email address (SES) needs a separate `EMAIL_FROM_ADDRESS` setting - a contract addition for later.
+
