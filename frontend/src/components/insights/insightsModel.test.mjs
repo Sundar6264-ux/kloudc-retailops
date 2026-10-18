@@ -46,7 +46,7 @@ import {
   storeTime,
   weekTitle,
 } from "./insightsModel.js";
-import { ALSO_IN_TOAST, ALSO_IN_TOAST_KEYS, FEATURE_ROUTES, insightsHomePath, NAV_GROUPS } from "../../featureRoutes.js";
+import { ALSO_IN_POS, ALSO_IN_POS_KEYS, FEATURE_ROUTES, insightsHomePath, NAV_GROUPS } from "../../featureRoutes.js";
 
 test("money formats", () => {
   assert.equal(fmtMoney(1234.4), "$1,234");
@@ -368,10 +368,10 @@ test("Insights sidebar: main section order, then Also in Toast", () => {
   );
   assert.equal(group.subgroups.length, 1);
   const sub = group.subgroups[0];
-  assert.equal(sub.label, "Also in Toast");
-  assert.equal(sub.note, "Same numbers as Toast's own reports - kept here for convenience.");
-  assert.equal(sub.label, ALSO_IN_TOAST.label);
-  assert.deepEqual(sub.features, ALSO_IN_TOAST_KEYS);
+  assert.equal(sub.label, "Also in {pos}");
+  assert.equal(sub.note, "Same numbers as {pos}'s own reports - kept here for convenience.");
+  assert.equal(sub.label, ALSO_IN_POS.label);
+  assert.deepEqual(sub.features, ALSO_IN_POS_KEYS);
   assert.deepEqual(
     sub.features.map((k) => byKey[k].label),
     ["Sales channels", "Check size & guests", "Busy hours", "Best & worst sellers"],

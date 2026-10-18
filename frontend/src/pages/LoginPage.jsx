@@ -2,9 +2,13 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import PasswordInput from "../components/PasswordInput.jsx";
+import StoreLogo from "../components/StoreLogo.jsx";
+import { useBranding } from "../store/StoreContext.jsx";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  // Branding is public and loaded before login: the store's own name and logo.
+  const store = useBranding();
   const [searchParams] = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -48,8 +52,10 @@ export default function LoginPage() {
         style={{ width: "320px", display: "flex", flexDirection: "column", gap: "0.9rem" }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.4rem" }}>
-          <img src="/logo-header.png" alt="StoreOps" style={{ width: 36, height: 36, borderRadius: 8 }} />
-          <strong style={{ fontSize: "1.1rem" }}>StoreOps</strong>
+          <StoreLogo store={store} size={36} className="login-logo" />
+          <strong style={{ fontSize: "1.1rem" }} data-testid="login-store-name">
+            {store.name}
+          </strong>
         </div>
 
         <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.85rem" }}>
@@ -76,6 +82,11 @@ export default function LoginPage() {
         <button type="submit" disabled={loading || !username || !password}>
           {loading ? "Signing in…" : "Sign in"}
         </button>
+        {store.name !== store.productName && (
+          <p className="muted" style={{ margin: 0, fontSize: "0.75rem", textAlign: "center" }}>
+            {store.productName} by {store.company}
+          </p>
+        )}
       </form>
     </div>
   );

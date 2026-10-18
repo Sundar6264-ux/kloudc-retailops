@@ -1,6 +1,9 @@
 import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext.jsx";
-import { firstAccessiblePath, insightsHomePath } from "./featureRoutes.js";
+import { FEATURE_ROUTES, firstAccessiblePath, insightsHomePath } from "./featureRoutes.js";
+import { StoreProvider } from "./store/StoreContext.jsx";
+import { featureAvailable, routeAvailable } from "./store/gating.js";
+import NotAvailablePage from "./pages/NotAvailablePage.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
 import CartButton from "./components/CartButton.jsx";
@@ -53,13 +56,37 @@ import { GlossaryProvider } from "./glossary.jsx";
 // accessible tab, or the no-access page) if they haven't been granted this
 // feature - mirrors the backend's own per-feature 403s (app/features.py),
 // just resolved client-side so it doesn't even flash the wrong page.
-function Protected({ feature, children }) {
-  const { hasFeature } = useAuth();
+//
+// Before the grant check: a page THIS STORE can't have (its POS lacks a
+// capability, or a store feature is off - store/gating.js) goes to "Not
+// available for this store" for everyone, admins included. `routeKey` is
+// the featureRoutes.js key when it differs from the feature.
+function Protected({ feature, routeKey, children }) {
+  const { hasFeature, store } = useAuth();
+  const key = routeKey || feature;
+  if (!storeHasPage(key, feature, store)) return <NotAvailableRedirect page={key} />;
   if (!hasFeature(feature)) {
-    return <Navigate to={firstAccessiblePath(hasFeature)} replace />;
+    return <Navigate to={firstAccessiblePath(hasFeature, store)} replace />;
   }
   return children;
 }
+
+function storeHasPage(routeKey, feature, store) {
+  return routeAvailable(routeKey, store) && (!feature || featureAvailable(feature, store));
+}
+
+function NotAvailableRedirect({ page }) {
+  return <Navigate to={`/not-available?page=${encodeURIComponent(page || "")}`} replace />;
+}
+
+// Admin-only setup pages (no grant): the store check, then admin.
+function AdminPage({ routeKey, fallback = "/", children }) {
+  const { user, store } = useAuth();
+  if (routeKey && !routeAvailable(routeKey, store)) return <NotAvailableRedirect page={routeKey} />;
+  return user?.is_admin ? children : <Navigate to={fallback} replace />;
+}
+
+const ROUTE_KEY_BY_PATH = Object.fromEntries(FEATURE_ROUTES.map((r) => [r.path, r.key || r.feature]));
 
 // Insights pages (docs/INSIGHTS_CONTRACT.md): the `sales_insights` grant;
 // admin-only pages send anyone else, and sales-only pages send a "Hide sales
@@ -72,15 +99,17 @@ const INSIGHTS_PAGES = [
   { path: "/insights/menu-trends", Page: MenuPerformancePage, props: { view: "trends" }, salesOnly: true },
   { path: "/insights/add-ons", Page: AddonsPage, salesOnly: true },
   { path: "/insights/returning-customers", Page: ReturningCustomersPage },
-  // "Also in Toast" (same numbers as Toast's own reports).
+  // "Also in <pos>" (same numbers as the POS's own reports).
   { path: "/insights/channels", Page: ChannelsPage, salesOnly: true },
   { path: "/insights/check-trends", Page: CheckTrendsPage, salesOnly: true },
   { path: "/insights/busy-hours", Page: HeatmapPage },
   { path: "/insights/best-sellers", Page: MenuPerformancePage, props: { view: "sellers" }, salesOnly: true },
 ];
 
-function InsightsRoute({ adminOnly, salesOnly, children }) {
-  const { user, canSeeSales } = useAuth();
+function InsightsRoute({ path, adminOnly, salesOnly, children }) {
+  const { user, canSeeSales, store } = useAuth();
+  const key = ROUTE_KEY_BY_PATH[path];
+  if (!storeHasPage(key, "sales_insights", store)) return <NotAvailableRedirect page={key} />;
   if (adminOnly && !user?.is_admin) return <Navigate to={insightsHomePath(canSeeSales)} replace />;
   // "Hide sales numbers" users: these pages are nothing but sales (the API 403s).
   if (salesOnly && !canSeeSales) return <Navigate to={insightsHomePath(false)} replace />;
@@ -88,7 +117,8 @@ function InsightsRoute({ adminOnly, salesOnly, children }) {
 }
 
 function InsightsHome() {
-  const { canSeeSales } = useAuth();
+  const { canSeeSales, store } = useAuth();
+  if (!featureAvailable("sales_insights", store)) return <NotAvailableRedirect page="insights_compare" />;
   return <Navigate to={insightsHomePath(canSeeSales)} replace />;
 }
 
@@ -214,7 +244,7 @@ function AppShell() {
           <Route
             path="/placed-orders"
             element={
-              <Protected feature="purchase_order_cart">
+              <Protected feature="purchase_order_cart" routeKey="placed_orders">
                 <PlacedOrdersPage />
               </Protected>
             }
@@ -223,7 +253,7 @@ function AppShell() {
           <Route
             path="/vendor-contacts"
             element={
-              <Protected feature="purchase_order_cart">
+              <Protected feature="purchase_order_cart" routeKey="vendor_contacts">
                 <VendorContactsPage />
               </Protected>
             }
@@ -251,7 +281,7 @@ function AppShell() {
           <Route
             path="/fix-issues"
             element={
-              <Protected feature="inventory_reports">
+              <Protected feature="inventory_reports" routeKey="fix_issues">
                 <FixIssuesPage />
               </Protected>
             }
@@ -329,7 +359,7 @@ function AppShell() {
               key={path}
               path={path}
               element={
-                <InsightsRoute adminOnly={adminOnly} salesOnly={salesOnly}>
+                <InsightsRoute path={path} adminOnly={adminOnly} salesOnly={salesOnly}>
                   <Page key={path} {...props} />
                 </InsightsRoute>
               }
@@ -356,9 +386,18 @@ function AppShell() {
           <Route path="/notifications" element={<NotificationSettingsPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/no-access" element={<NoAccessPage />} />
+          <Route path="/not-available" element={<NotAvailablePage />} />
           <Route path="/users" element={user.is_admin ? <UsersPage /> : <Navigate to="/" replace />} />
-          {/* Inventory from Toast: admins only (the API is require_admin). */}
-          <Route path="/inventory-api" element={user.is_admin ? <InventoryApiPage /> : <Navigate to="/" replace />} />
+          {/* Inventory from the POS: admins only (the API is require_admin), and
+              only when the POS has a catalog and stock levels. */}
+          <Route
+            path="/inventory-api"
+            element={
+              <AdminPage routeKey="setup_inventory_api">
+                <InventoryApiPage />
+              </AdminPage>
+            }
+          />
           {/* Fix Issues category & vendor leads (W4): admins only (the API is require_admin). */}
           <Route path="/issue-leads" element={user.is_admin ? <IssueLeadsPage /> : <Navigate to="/" replace />} />
           <Route path="/teams" element={user.is_admin ? <TeamsPage /> : <Navigate to="/" replace />} />
@@ -372,12 +411,14 @@ function AppShell() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <GlossaryProvider>
-        <HashRouter>
-          <AppShell />
-        </HashRouter>
-      </GlossaryProvider>
-    </AuthProvider>
+    <StoreProvider>
+      <AuthProvider>
+        <GlossaryProvider>
+          <HashRouter>
+            <AppShell />
+          </HashRouter>
+        </GlossaryProvider>
+      </AuthProvider>
+    </StoreProvider>
   );
 }

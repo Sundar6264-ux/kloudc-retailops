@@ -1,10 +1,22 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { getMe, login as apiLogin, logout as apiLogout, restoreToken } from "./api";
+import { UserStoreContext, useBranding } from "./store/StoreContext.jsx";
+import { storeView } from "./store/branding.js";
+import { featureAvailable, setCurrentPosName } from "./store/gating.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const branding = useBranding();
+  // The store as this user sees it (branding + /me's pos_name, capabilities
+  // and store_features) - useStore() everywhere below this provider.
+  const store = useMemo(() => {
+    const view = storeView(branding, user);
+    // Text built outside React (store/gating.js currentPosName) follows /me too.
+    setCurrentPosName(view.posName);
+    return view;
+  }, [branding, user]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -48,9 +60,12 @@ export function AuthProvider({ children }) {
   // allowed_features (set by an admin on the Users page). Same rule the
   // backend enforces per-endpoint (app/features.py) - this is purely for
   // hiding nav/routes the API would 403 on anyway, not a security boundary
-  // of its own.
+  // of its own. On top, for everyone including admins: a feature this
+  // store's POS or settings can't support is off (store/gating.js
+  // FEATURE_REQUIREMENTS; the server answers 409 for those).
   function hasFeature(key) {
     if (!user) return false;
+    if (!featureAvailable(key, store)) return false;
     if (user.is_admin) return true;
     // Items Sold is nothing but sales numbers - off for a "Hide sales
     // numbers" user even if granted (the server's /me already drops it).
@@ -64,8 +79,8 @@ export function AuthProvider({ children }) {
   const canSeeSales = !!user && (user.is_admin || !user.hide_sales);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh, hasFeature, canSeeSales }}>
-      {children}
+    <AuthContext.Provider value={{ user, loading, login, logout, refresh, hasFeature, canSeeSales, store }}>
+      <UserStoreContext.Provider value={store}>{children}</UserStoreContext.Provider>
     </AuthContext.Provider>
   );
 }

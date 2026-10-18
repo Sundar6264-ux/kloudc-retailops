@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getPublicChecklist, submitPublicChecklist, uploadPublicChecklistPhoto } from "../api";
 import ChecklistForm from "../components/checklists/ChecklistForm.jsx";
 import { ChecklistUploadContext } from "../components/checklists/uploadContext.js";
+import StoreLogo from "../components/StoreLogo.jsx";
+import { useBranding } from "../store/StoreContext.jsx";
 
 // The logged-out checklist page: /c/{slug}-{code}, e.g. /c/kitchen-4821
 // (docs/PUBLIC_CHECKLIST_LINK_CONTRACT.md). main.jsx renders ONLY this for /c/
@@ -22,13 +24,15 @@ export function tokenFromPath(pathname) {
   return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?-(?:[0-9]{4}|[A-Za-z0-9]{22})$/.test(last) && last.length <= 70 ? last : null;
 }
 
-// Product name + logo on top of every public checklist page (owner's ask:
-// part-time staff open these links without the app, so show whose page it is).
+// The store's name + logo (public branding) on top of every public checklist
+// page (owner's ask: part-time staff open these links without the app, so
+// show whose page it is).
 function BrandHeader() {
+  const store = useBranding();
   return (
     <header className="clp-brand">
-      <img src="/logo-header.png" alt="" width="36" height="36" />
-      <span>StoreOps</span>
+      <StoreLogo store={store} size={36} />
+      <span data-testid="store-name">{store.name}</span>
     </header>
   );
 }
