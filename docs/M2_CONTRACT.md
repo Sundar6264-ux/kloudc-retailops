@@ -76,7 +76,7 @@ the field name in upper case unless the table says otherwise.
 | `store_short_name` | `STORE_SHORT_NAME` | str | `""` | Short name (tab bar, push titles). Blank -> effective `store_name`. |
 | `store_address` | `STORE_ADDRESS` | str | `""` | One line, printed as is (PO PDF header/footer, PO email/WhatsApp). Blank -> line omitted. |
 | `store_phone` | `STORE_PHONE` | str | `""` | Printed as is. Blank -> omitted. |
-| `store_email` | `STORE_EMAIL` | str | `""` | Reply-To on PO emails. Blank -> no Reply-To header (today's behaviour). |
+| `store_email` | `STORE_EMAIL` | str | `""` | Reply-To on PO emails. Blank -> the sending address (today's behaviour; MT7 corrected this row). |
 | `store_description` | `STORE_DESCRIPTION` | str | `""` | One sentence for the Ask bot and weekly digest prompts ("a ... store in ..."). Blank -> `"a retail store"`. |
 | `product_name` | `PRODUCT_NAME` | str | `"StoreOps"` | Product name: PDF producer tag, old-app message, web shell fallback. |
 | `company_name` | `COMPANY_NAME` | str | `"KloudC LLC"` | Legal footer / About. |
@@ -84,6 +84,7 @@ the field name in upper case unless the table says otherwise.
 | `public_host` | `PUBLIC_HOST` | str | `""` | This store's public origin (`https://...`, no trailing slash). Blank -> `https://<host-label>.<platform_domain>` where host-label = `store_code` lower-cased with `_` -> `-`; blank and no `store_code` -> the request's own base URL (dev). |
 | `logo_url` | `LOGO_URL` | str | `""` | Absolute `https://` URL or a path on this server. Blank -> `/branding/logo.png` (bundled StoreOps logo). |
 | `icon_url` | `ICON_URL` | str | `""` | Same rules. Blank -> `/branding/icon.png`. |
+| `document_logo_file` | `DOCUMENT_LOGO_FILE` | str | `""` | (MT7 addition) Local image on the PO PDF letterhead. Blank -> the bundled `assets/branding/logo-128.png`. |
 | `brand_color` | `BRAND_COLOR` | str | `"#0F766E"` | Primary colour, `^#[0-9A-Fa-f]{6}$`. |
 | `brand_secondary_color` | `BRAND_SECONDARY_COLOR` | str | `"#334155"` | Secondary colour, same pattern. |
 | `store_timezone` | `STORE_TIMEZONE` | str | `""` -> `TOAST_TIMEZONE` (default `"America/New_York"`) | Existing M1 field. Must be a valid IANA zone (`zoneinfo`). |
@@ -511,7 +512,12 @@ top-level keys are an error; every section is optional and falls back to the
 **`menu`** - category-group names compared upper-cased and trimmed
 (`excluded_category_groups`, `kitchen_groups`); `grocery_menus` compared
 lower-cased and trimmed. Generic: all three empty lists (nothing excluded,
-every menu counts as grocery).
+every menu counts as grocery). MT8 additions: `kitchen_menu_prefixes` (POS
+menus whose lower-cased name starts with one are the kitchen's - Insights
+kitchen items; generic `[]`) and `kitchen_label` (generic `"Kitchen"`, used in
+the menu map's `kitchen_rule` text). `po_sections.other_section` must be
+`"Other"` in version 1. `issue_leads.document_title` (generic `"Suggested
+leads"`) is the Leads page's document title.
 
 **`po_sections`** - replaces `section_for` and `_builtin_sections`
 (`po_sections.py`). Input: `(category_group, category, subcategory, name)`.
@@ -1734,3 +1740,235 @@ WhatsApp send options); the server's 409 / its own channel switches remain
 the backstop. Glossary/help text still says "Toast" in POS explanations (the
 server's `/api/glossary` replaces the bundled copy; MT9 substitutes
 `pos_name` there). Chat bubble colour is the product teal, not the store's.
+
+## As built - MT7 (store settings, branding) and MT8 (store pack, identity)
+
+Branch `m2-mt7-mt8` (worktree `/Users/sundar/storeops/wt-mt7-mt8`), rebased on `main` after MT7a part 2 and MT9, merged fast-forward.
+
+### MT7 - store settings, de-hardcode, branding
+
+**Settings** (`backend/app/config.py`): every field of 1.1, with the validators
+of 1.2 (store code pattern + upper-casing, hex colours, IANA zone,
+`FIRST_SALES_DATE`, cutoff 0-23, and the refused legacy domain on
+`PLATFORM_DOMAIN` / `PUBLIC_HOST` / `PUBLIC_BASE_URL` / `LABELS_URL` /
+`SESSION_COOKIE_DOMAIN`). Defaults changed as marked in 1.1 (`./storeops.db`,
+`uploads/flyers`, blank AP inbox, blank public base URL, blank app-store URLs).
+**Interface addition:** `DOCUMENT_LOGO_FILE` (local image for the PO PDF
+letterhead; blank = the bundled StoreOps icon `assets/branding/logo-128.png`).
+`backend/.env.example` lists every setting (generated from `Settings`, secrets
+blank); `tests/test_store_settings.py` fails if one is missing.
+
+**Derived values** (`app/store/settings_view.py`): the functions of 1.2 plus
+`store_slug` (file-name prefix), `sales_floor` / `first_sales_date`,
+`business_day_cutoff_hour`, `store_timezone_name`, `ap_inbox_address`,
+`play_store_url` / `app_store_url`, `logo_url` / `icon_url`, `store_email`,
+`email_fallback_domain`.
+
+**Sites moved to settings** (the 1.6 settings rows, plus what a full grep of
+`backend/app` found):
+
+| Was | Now |
+|---|---|
+| PO PDF header/footer name, address, phone, icon (`po_export`) | `STORE_NAME` / `STORE_ADDRESS` / `STORE_PHONE` (blank lines left out), `DOCUMENT_LOGO_FILE`; text is XML-escaped |
+| PO email subject/body/signature, WhatsApp caption, From name, Message-ID domain, Reply-To (`po_send`) | same settings; `EMAIL_FROM_NAME`; `EMAIL_FALLBACK_DOMAIN`; Reply-To = `STORE_EMAIL` or (blank, today's behaviour) the sending address - **the contract said "no Reply-To" for blank; today's code always set it, so that is kept** |
+| SMTP host/port/TLS + Gmail names (`po_send`, `toast_email`) | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SSL` (STARTTLS when false), `SMTP_USERNAME` / `SMTP_PASSWORD` falling back to `GMAIL_*` |
+| Public checklist "not active" page brand (`routers/checklist_public`) | store name + `LOGO_URL` (CSP `img-src` adds the logo's origin when absolute) |
+| Old-app margin message (`routers/reports`), PDF producer (`toast_pdf`), FastAPI title | `PRODUCT_NAME` |
+| Transfer default vendor (`invoice_submission`), automatic-task actor `SYSTEM_NAME` (`team/tasks_service`, `auto_tasks`, `issue_leads`), removed-account task event (`team/bootstrap`) | effective store name |
+| Team rules text (`team/rules`) | store name; "call <STORE_PHONE>" only when set |
+| Ask bot + weekly digest prompts | `STORE_NAME` + `STORE_DESCRIPTION` (blank = "a retail store") |
+| Sales export file name `spicetown-sales-...` (`routers/sales`) | `<store_slug>-sales-...` |
+| `FIRST_REAL_SALES_DATE` (`pos/sync/accuracy`, `pos/sync/open_orders`, `insights_data`, `insights`) | `FIRST_SALES_DATE` via `sales_floor()`; blank = no floor. Open-checks full scan without a floor starts at the oldest stored business date (max 365 days back) |
+| `CLOSEOUT_HOUR` (`accuracy`, `insights_data`, `insights`), delivery-suggestion snapshot fallback time | `BUSINESS_DAY_CUTOFF_HOUR` |
+| Recurring-task default zone (`team/recurrence`, `team/tasks_models` column default) | effective store time zone |
+| WhatsApp role chat ids (`whatsapp_groups._env_chat_id`) | `whatsapp_role_chat_ids()` (`WHATSAPP_GROUP_CHAT_IDS` over the two legacy settings) |
+| `public_base_url` reads (`main` invoice login redirect, `invoice_submission`, `checklist_public`, `issue_leads`, `inventory_api_readiness`) | `effective_public_base_url()` |
+| `/api/app/config` `store_url` | blank `APP_STORE_URL` -> `null`; blank `PLAY_STORE_URL` -> Play listing of `APP_BUNDLE_ID` (shape unchanged) |
+| Push app name `spicetown-notifications` | `storeops-notifications` (internal Firebase app name) |
+
+The old module-level names stay readable for existing imports and tests
+through module `__getattr__` (PEP 562), always reading the current settings or
+pack: `accuracy/sales_accuracy/open_orders/insights_data.FIRST_REAL_SALES_DATE`
+and `CLOSEOUT_HOUR`, `invoice_submission.TRANSFER_DEFAULT_VENDOR`,
+`tasks_service.SYSTEM_NAME`, `recurrence.DEFAULT_TIMEZONE`, `rules.RULES_TEXT`,
+`reports.MARGIN_REMOVED_DETAIL`. `sales_accuracy` forwards the two names
+explicitly (they are no longer module globals).
+
+**Store features** (1.3): `settings_view.store_features()`;
+`gating.FEATURE_STORE_FEATURES = {"ask_bot": {"ai"}}` used by
+`features_for_store`; new `gating.require_store_feature("ai")` on `/api/ask`
+(409 "Not available for this store."). Weekly digest with `AI_ENABLED=false`:
+the numbers with a fixed headline and the additive key `"ai_off": true`, no
+Anthropic call.
+
+**Capabilities** (section 7): `CLOVER_CAPABILITIES`, `CSV_CAPABILITIES` in
+`app/pos/capabilities.py`; `gating.PROVIDERS` gains `clover` ("Clover") and
+`csv` ("CSV upload") fallback entries.
+
+**Branding** (section 2): `app/store/branding.py` (`branding_payload`,
+`compact_json`, `etag_for`) and `app/routers/branding.py` (`/api/app/branding`
+with ETag/304/`Vary`, no cookie; `/branding/logo.png` and `/branding/icon.png`
+serve MT7a's bundled `assets/branding/logo-512.png` and `app-icon-1024.png`).
+Legal page URLs are returned as written (the KloudC pages end with `/`);
+origins (`public_host`, `labels_url`) never end with `/`. `/api/auth/me` gains
+`store_code` and `store_features`; `push.send_to_tokens` adds `store` through
+`push.with_store` when `STORE_CODE` is set.
+
+**Fake stores** (section 7): `backend/tests/fixtures/stores/{STOREOPS_TEST_TOAST,STOREOPS_TEST_CLOVER,DEMO}.env`
+and `<code>.branding.json` (generated with `python -m app.store branding --env
+<file>`; the Toast body is byte-for-byte the section 2 example);
+`tests/store_fixtures.py` (`use_store`, `fake_store`, `use_legacy_pack`,
+`legacy_checklist_seeds`).
+
+### MT8 - store pack and store identity
+
+**Pack** (`app/store/pack.py`): pydantic models with `extra="forbid"`,
+readable `PackError` lines, section-level fallback to `generic.json`, compiled
+rule closures (regexes compiled once per pack), the precedence of 3.3
+(`STORE_PACK_FILE` > newest `setting_changes` `store_pack` row > generic; a
+stored pack that no longer validates logs an error and falls back to generic),
+`set_override` for tests. JSON Schema committed as
+`backend/packs/store_pack.v1.schema.json` (a test keeps it in sync).
+**Interface changes (additive):**
+- `menu.kitchen_menu_prefixes` (list) and `menu.kitchen_label` (string): the
+  Insights kitchen-menu rule (`insights_data.is_kitchen_path`, the legacy
+  `KITCHEN_MENU_PREFIX`) and its `kitchen_rule` text. Generic: none / "Kitchen".
+- `issue_leads.document_title`: the Leads page's document title (was a literal).
+- `po_sections.other_section` must be `"Other"` in pack version 1 (the PO code
+  treats that name as fixed).
+- An empty `grocery_menus` means every non-kitchen menu is grocery.
+- `similar_products` excludes `rules.json`'s groups (now `[]`) plus the pack's
+  `excluded_category_groups`.
+
+**Rule sites now read the pack:** `po_sections.section_for` / `BUILTIN_SECTIONS`
+(-> `builtin_sections()`; `po_section_rules` calls it), `fix_issues`
+(`excluded_groups()`), `store_vs_container`, `delivery_suggestions`
+(`kitchen_groups`), `insights` (`GROCERY_MENUS`, `channel_of`),
+`insights_data` (kitchen menus), `schedule_suggestions` (house vendors,
+compared after the same normalisation as `vendor_key`), `issue_leads`
+(`DOC_LEADS`, `DOC_FALLBACK`, `SECTION_PROPOSALS`, `SECTION_NOTES`, document
+title), `flyers` (`categories()`), `whatsapp_groups` (`builtin_groups()`),
+`checklist_schemas` (fallback registry = `store_seed_definitions()`, the
+pack's checklists) and `checklist_admin.ensure_seeded` / `seed_rows` /
+`rows_for_seeds`. Old constant names stay readable (module `__getattr__`).
+
+**Packs:** `generic.json`, `test_toast.json`, `test_clover.json` (no channels or
+checklists section: shows the generic fallback), `demo.json` (copy of generic,
+`pack_id` `demo`, for MT13 to fill).
+
+**Commands** (`python -m app.store`): `init`, `pack validate|load|show|schema`,
+`identity show`, and `branding [--env FILE]` (prints the branding body; used to
+generate the fixtures).
+
+**store-init** (3.5): as specified, one transaction, then the marker. Removal
+is narrowed so a second run is a true no-op even though the pack re-adds a
+`store` role: 0034's rule only when `created_by IS NULL`, 0044's roles only when
+`created_by = 'migration 0044'`. Inserts skip existing `checklist_type` / `key`
+/ `(match_type, match_value)`. The pack row is written only when it differs from
+the newest one. Pack checklists are written with note "From the store pack
+(<pack_id>)".
+
+**Identity** (1.5): migration `0062_store_identity`, `app/store/identity.py`
+(model `StoreIdentity`, the functions of 1.5), called first in `main.lifespan`.
+
+**Other batches' files touched (one-liners):** `docker-compose.yml`
+(`UPLOADS_ROOT: /data/uploads`, so the identity marker lives in the store's
+volume) and `.github/workflows/ci.yml` (the compose boot step runs
+`alembic upgrade head && python -m app.store init --code CI --pack
+packs/generic.json` first - without a stamp the server now refuses to start).
+`backend/app/assets/spice-town-icon.jpg` removed (nothing uses it; the parity
+env points `DOCUMENT_LOGO_FILE` at a private copy).
+
+**Name allowlist:** one entry left, `config.py`'s `REFUSED_DOMAIN =
+"spicetown.shop"` (the refusal of rule 0.3); every other backend line was moved
+to settings / the pack or reworded (MT9 cleared the website and glossary).
+
+### Legacy values (1.6)
+
+`backend/scripts/packs/extract_legacy_pack.py --from-commit 56e095c --out-dir
+$STOREOPS_PRIVATE_DIR [--catalog-db <scratch copy>]` writes, outside git:
+`spicetown.pack.json`, `spicetown.env` (also `APP_STORE_URL`, `PLAY_STORE_URL`,
+`DOCUMENT_LOGO_FILE`; no `LABELS_URL` - refused domain), `legacy_cases.json`
+(the legacy functions' answers: 15,972 `section_for` cases incl. every
+catalog item of the Oct 18 copy, the 48 built-in sections, 23 dining options,
+9 vendor names, 28 menu/group pairs, the menu sets and the leads),
+`forbidden_tokens.txt` (staff names) and the legacy letterhead image. The
+script reads constants from the unpacked commit; the `section_for` if-chain is
+restated as 19 pack rules and checked against the oracle.
+
+### Tests
+
+| Run | Result |
+|---|---|
+| Full backend suite, Python 3.9 (after the rebase on `main`) | **2566 passed, 19 skipped, 0 failed** |
+| Full backend suite, Python 3.12 (same tree) | **2566 passed, 19 skipped, 0 failed** |
+| Same modules with no private pack (what CI sees) | the `legacy_pack` tests (29 functions, 31 cases) and `test_store_pack_legacy.py` (8) skip with a reason |
+
+New test files (78 tests): `test_store_settings` (12), `test_branding` (13),
+`test_store_identity` (12), `test_store_pack` (17), `test_store_pack_legacy`
+(8), `test_fresh_store` (7: `alembic upgrade head` on a new file +
+`python -m app.store init` in child processes, every text column searched for
+the five legacy names plus the private staff-name list: 0 hits; stamp, marker,
+no-op second init, other code refused, unmigrated database refused, store data
+refused unless `--adopt`), `test_blank_store_names` (9: every parity endpoint
+except the glossary, public pages, PO PDF text, PO email and WhatsApp text,
+prompts, team rules, export file name, checklist seeding - no legacy name with
+default settings). Plus 2 in `test_po_send` (store settings in the PO text,
+SMTP/Reply-To/From/Message-ID), 1 in `test_pos_gating` (Clover / CSV
+fallbacks), 1 in `test_pos_sync_neutral` (full-scan start without a floor).
+
+How the older suite runs on product defaults (`tests/conftest.py`):
+- the checklist fallback serves the legacy built-in fixtures
+  (`checklist_builtin`) unless a test is marked `pack_checklists`;
+- 14 modules (12 whole, 2 per test) written around two WhatsApp roles, six
+  flyer categories and kitchen groups use `suite_pack` (`tests/fixtures/packs/suite.json`,
+  made-up names; their test data now says "KITCHEN" / "MainStore");
+- tests of the origin store's own rules (PO section map, Fix Issues lead
+  document, category corrections) are marked `legacy_pack`: the private pack +
+  settings, skipped where those files are absent;
+- `AI_ENABLED=true` in the test environment (the Ask bot / digest tests
+  predate the switch); fake-store tests switch it per store.
+
+
+### Parity
+
+`scripts/parity` on a fresh read-only copy of the production database (Oct 18
+12:56, migration 0059, 128,561 order lines), migrated once to 0061 with the
+import commit's migrations so both sides start from the same rows (the
+0060/0061 backfills stamp `created_at` with the time they run; recording both
+sides with `--migrate` from 0059 showed only those timestamp columns).
+Baseline = import commit `56e095c` (= `multistore-m1`) with its own defaults;
+new = this branch with `spicetown.env` exported, `STORE_PACK_FILE` = the
+private pack, `STORE_CODE` blank, `--migrate` (0061 -> 0062).
+
+| Python | Files | DIFFERENCES | Additions (allowed) |
+|---|---|---|---|
+| 3.9 | 114 | **0** | `auth.me` `store_code`, `store_features`; table `store_identity` (both fingerprints) |
+| 3.12 | 114 | **0** | the same 4 |
+
+All 110 endpoints 200 on both sides, 0 network attempts, 0 background threads;
+`--strict` lists exactly the 4 additions. After rebasing on `main`, a third
+recording (3.9) differs from the baseline only in 10 `/api/glossary` text
+fields - MT9's store-neutral help wording (`glossary.py`, owned by MT9), not
+these batches. The database copies and recordings were deleted afterwards.
+
+
+### Deferred
+
+- `checklist_builtin.py` stays (migration 0039 imports it) and so do the
+  legacy fixtures the older checklist tests use; new checklist tests should use
+  `pack_checklists` + a fake store.
+- `tests/data/prod_category_combos_2026-09-30.json` (category combinations of
+  the origin store's catalog, from the import) is still committed; a made-up
+  replacement would let `test_every_prod_catalog_combo_has_a_section` stay.
+- The `legacy_pack` tests and `test_store_pack_legacy` skip in CI. CI could
+  generate the private files on the fly (`extract_legacy_pack.py
+  --from-commit 56e095c`, no catalog) if the owner wants them there.
+- `app/data/similar_products` vocabulary (brands, synonyms) is South Asian
+  grocery vocabulary from the origin catalog; not names, left as product data.
+- Website and app read `labels_url` / `store_features` from branding (MT9,
+  MT11/MT12); the server side is done.
+- Docker deploys: a new store needs `python -m app.store init --code <CODE>
+  --pack <pack.json>` once before its first start (CI does it); README
+  wording is MT7a's.
+
