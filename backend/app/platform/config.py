@@ -35,7 +35,7 @@ DEFAULTS: Dict[str, Any] = {
     "login_lockout_failures": 5,
     "login_lockout_minutes": 15,
     "login_ip_lockout_failures": 30,
-    "platform_require_totp": False,
+    "platform_require_totp": None,  # None = on in production (require_totp below)
     "dedicated_hosting_enabled": False,
     "dedicated_store_codes": "",
     "private_packs_dir": "",
@@ -117,3 +117,26 @@ def dedicated_store_codes() -> List[str]:
 def extra_api_hosts() -> List[str]:
     raw = str(pget("directory_extra_api_hosts") or "")
     return [h.strip().lower() for h in raw.split(",") if h.strip()]
+
+
+PRODUCTION_ENVS = ("production", "prod")
+
+
+def is_production() -> bool:
+    """APP_ENV is production (the Settings default)."""
+    return str(pget("app_env") or "production").strip().lower() in PRODUCTION_ENVS
+
+
+def require_totp() -> bool:
+    """Masters must use two-step sign-in: PLATFORM_REQUIRE_TOTP when set,
+    else ON in production and off elsewhere (dev, test, the preview)."""
+    value = pget("platform_require_totp")
+    if isinstance(value, str):
+        value = value.strip().lower()
+        if not value:
+            value = None
+        else:
+            value = value in _TRUE
+    if value is None:
+        return is_production()
+    return bool(value)

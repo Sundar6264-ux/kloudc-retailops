@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from app.auth import SESSION_COOKIE_NAME, extract_bearer_token, hash_password, verify_password
 from app.platform import crypto, totp
 from app.platform.audit import audit
-from app.platform.config import login_code, pget
+from app.platform.config import login_code, pget, require_totp
 from app.platform.errors import PlatformError
 from app.platform.models import PlatformSession, PlatformUser, SupportSession, utcnow
 
@@ -198,7 +198,7 @@ def require_master_any(user: PlatformUser = Depends(_master)) -> PlatformUser:
 
 
 def require_master(user: PlatformUser = Depends(_master)) -> PlatformUser:
-    if bool(pget("platform_require_totp")) and not user.totp_secret_enc:
+    if require_totp() and not user.totp_secret_enc:
         raise PlatformError(403, "totp_setup_required")
     return user
 

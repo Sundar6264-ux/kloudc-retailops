@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     # The DEMO store (plan 3.1a): every user is a demo user (nothing is sent
     # out) and the nightly reset runs.
     demo_mode: bool = False
+    # Pilot mode (onboarding a store that already runs on another system):
+    # the store syncs from its POS and works as usual, but NOTHING is sent
+    # out from it - no WhatsApp, no email, no push (app/ops/pilot.py).
+    pilot_mode: bool = False
 
     # --- Store rules that are settings (not pack) ---
     # The business day ends at this hour (store time): sales before it belong
@@ -460,13 +464,28 @@ class Settings(BaseSettings):
     login_lockout_failures: int = 5
     login_lockout_minutes: int = 15
     login_ip_lockout_failures: int = 30
-    platform_require_totp: bool = False
+    # Masters must use two-step sign-in. Blank (None) = ON when APP_ENV is
+    # production, off elsewhere (app/platform/config.py require_totp);
+    # production refuses to start with it set to false (app/ops/prod_checks.py).
+    platform_require_totp: Optional[bool] = None
     # --- DEDICATED HOSTING (owner approval required; DEDICATED_HOSTING_ENABLED) ---
     # See docs/DEDICATED_HOSTING_RUNBOOK.md. Off by default.
     dedicated_hosting_enabled: bool = False
     # Set only on a dedicated server: the store code(s) it serves (comma list).
     dedicated_store_codes: str = ""
     private_packs_dir: str = ""
+
+    # --- Operations (app/ops, docs/PILOT_RUNBOOK.md) ---
+    # "text" (one readable line) or "json" (one JSON object per line); both
+    # carry the request id and the store code.
+    log_format: str = "text"
+    log_level: str = "INFO"
+    # Blank = log to stdout/stderr only. Else this folder gets app.log (INFO+)
+    # and error.log (ERROR+, with tracebacks), rotated by size.
+    log_dir: str = ""
+    # Security headers on every answer (app/ops/http.py). "enforce" (default),
+    # "report-only" (CSP as Content-Security-Policy-Report-Only) or "off".
+    security_headers: str = "enforce"
 
     @field_validator("store_code")
     @classmethod
@@ -485,6 +504,29 @@ class Settings(BaseSettings):
         if not HEX_COLOR_RE.match(value):
             raise ValueError(f"{value!r} is not a colour like #004BAD")
         return value.upper()
+
+    @field_validator("platform_require_totp", mode="before")
+    @classmethod
+    def _blank_totp(cls, value):
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @field_validator("log_format")
+    @classmethod
+    def _log_format(cls, value: str) -> str:
+        value = (value or "text").strip().lower() or "text"
+        if value not in ("text", "json"):
+            raise ValueError(f"LOG_FORMAT {value!r} must be text or json")
+        return value
+
+    @field_validator("security_headers")
+    @classmethod
+    def _security_headers(cls, value: str) -> str:
+        value = (value or "enforce").strip().lower() or "enforce"
+        if value not in ("enforce", "report-only", "off"):
+            raise ValueError(f"SECURITY_HEADERS {value!r} must be enforce, report-only or off")
+        return value
 
     @field_validator("first_sales_date")
     @classmethod

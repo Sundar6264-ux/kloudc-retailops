@@ -209,9 +209,9 @@ def _platform_login(username, password, totp, client_ip, attempts: _Attempts) ->
 
 
 def _require_totp() -> bool:
-    from app.platform.config import pget
+    from app.platform.config import require_totp
 
-    return bool(pget("platform_require_totp"))
+    return require_totp()
 
 
 # --- stores -------------------------------------------------------------------------------------

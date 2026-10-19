@@ -12,6 +12,10 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings, frontend_dist_dir
 from app.demo_guard import demo_write_guard
+from app.ops.health import router as ops_health_router
+from app.ops.http import RequestContextMiddleware, server_error_handler
+from app.ops.logs import configure_logging
+from app.ops.prod_checks import enforce as enforce_production_config
 from app.routers import (
     ask,
     auth,
@@ -63,11 +67,31 @@ from app.scheduler import (
     start_team_scheduler,
 )
 
-logging.basicConfig(level=logging.INFO)
+# Request id + store code on every log line; LOG_FORMAT / LOG_DIR (app/ops/logs.py).
+configure_logging()
+logger = logging.getLogger("retailops.lifecycle")
+
+
+def _stop_steps(steps) -> None:
+    """Graceful shutdown: every step runs even when an earlier one fails, and
+    each is logged (uvicorn waits --timeout-graceful-shutdown seconds for
+    open requests first; launchd / Docker give the process 30 s)."""
+    import time
+
+    started = time.monotonic()
+    for name, fn in steps:
+        try:
+            fn()
+        except Exception:  # noqa: BLE001 - keep stopping the rest
+            logger.exception("shutdown step %s failed", name)
+    logger.info("stopped in %.1f s", time.monotonic() - started)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Production refuses an unsafe configuration before anything starts
+    # (app/ops/prod_checks.py); other environments only log the findings.
+    enforce_production_config()
     if is_multi_tenant():
         # Platform milestone (docs/PLATFORM_CONTRACT.md 5, 6): the identity
         # check runs per store on its engine's first open; the schedulers run
@@ -75,8 +99,10 @@ async def lifespan(app: FastAPI):
         from app.tenancy.boot import start_multi_tenant, stop_multi_tenant
 
         start_multi_tenant()
+        logger.info("started (multi-store)")
         yield
-        stop_multi_tenant()
+        logger.info("shutting down")
+        _stop_steps([("multi-store", stop_multi_tenant)])
         return
     # KloudC RetailOps M2: refuse to start against another store's database or upload
     # folder (app/store/identity.py) - before any job can write anything.
@@ -87,11 +113,17 @@ async def lifespan(app: FastAPI):
     # Marketing flyers: fail sends a previous run left stuck, start the
     # (idle) sender thread. Never raises.
     flyer_sender.start()
+    logger.info("started (single store)")
     yield
-    flyer_sender.stop()
-    shutdown_team_scheduler()
-    shutdown_notification_scheduler()
-    shutdown_scheduler()
+    logger.info("shutting down")
+    _stop_steps(
+        [
+            ("flyer sender", flyer_sender.stop),
+            ("team scheduler", shutdown_team_scheduler),
+            ("notification scheduler", shutdown_notification_scheduler),
+            ("scheduler", shutdown_scheduler),
+        ]
+    )
 
 
 # demo_write_guard: the App Review demo login is read-only except for an
@@ -110,6 +142,11 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,  # required for the session cookie to be sent/accepted
 )
+# Outermost: request id, access log, security headers (app/ops/http.py).
+app.add_middleware(RequestContextMiddleware)
+# An unhandled error: logged with its request id by the middleware, answered
+# here as JSON carrying the request id.
+app.add_exception_handler(Exception, server_error_handler)
 
 app.include_router(auth.router)
 app.include_router(legal_router.router)
@@ -164,7 +201,12 @@ _install_platform(app)
 
 @app.get("/api/health")
 def health():
+    """Liveness: the process answers (launchd / Docker restarts)."""
     return {"status": "ok"}
+
+
+# Readiness: databases answer and migrations are current (app/ops/health.py).
+app.include_router(ops_health_router)
 
 
 # A WhatsApp recipient tapping the invoice link (/public/invoices/{token})
