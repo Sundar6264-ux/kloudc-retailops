@@ -2301,3 +2301,112 @@ credentials and TOTP; sign-up per-IP and overall limits, honeypot.
 - The owner's sign-up password hash stays in `signup_requests` after
   approval (used only while the store is not ready).
 - `change-password` keeps the user's other sessions (pre-existing M2).
+
+## As built - Verifier: end-to-end flows
+
+Branch `verify/flows`, rebased on `main` and fast-forwarded. The whole
+journey was driven on PostgreSQL through the HTTP API, a real server process,
+the website (Playwright at 1280 and 375) and the app's controller. The path
+was: bootstrap a master with the CLI -> two sign-ups -> the master approves
+both -> both databases provisioned -> each owner signs in (Store ID + user +
+password) -> Settings > Integrations: Toast saved + Test connection (fake) ->
+that store's sync runs with its own keys -> staff added -> staff signs in ->
+the master suspends -> logins and live sessions refused, the other store
+carries on -> resume.
+
+### Problems found and fixed (each with a failing test first)
+
+| # | Problem | Fix |
+|---|---|---|
+| F1 | **Two approvals at once hung, then both failed at `migrate`.** Alembic's `context` / `op` proxies are process-global; two provisioning threads ran `command.upgrade` together and overwrote each other's proxy. | `app.migrate.ALEMBIC_LOCK`: one Alembic run at a time per process, around store and platform upgrades and downgrades (allowlisted). |
+| F2 | **An owner who tried the new Store ID while the request was pending made the approval fail** (`store_init: UnknownStore`): the registry caches "unknown" for 10 s. | `provision_store` calls `bridge.store_changed(code)` right after claiming the store. |
+| F3 | **A new store's data did not sync until the nightly job.** The catch-up jobs run when the scheduler first sees a store, which is at approval, before it has POS keys. On a single-store server the restart after editing `.env` does this. | Saving a POS credential (`toast`, `clover`) calls `tenancy.rerun_store_startup_jobs(code)`: that store's startup catch-ups run once more, and other stores are not touched. Same-process only (see Deferred). |
+| F4 | **A staff login added with a stray space ("Sam ") could never sign in.** Sign-in strips what is typed; `POST /api/auth/users` saved the name as sent. This predates the platform work (M2). | The username is saved trimmed; a blank one gets 400. |
+
+### New tests and tools
+
+- `backend/tests/platform/test_e2e_flows.py` (5 tests, PostgreSQL):
+  - two overlapping approvals (F1);
+  - a sign-in try before approval (F2);
+  - the full two-store flow over HTTP. This covers the CLI master, cookie and
+    bearer logins, integrations with a fake tester, and a paused real
+    APScheduler with the main per-store jobs. A recording fake of Toast's
+    HTTP shows ALPHA's job uses only ALPHA's client id, restaurant GUID and
+    token, and writes only to ALPHA's database (BRAVO's is untouched; then the
+    reverse). It also covers the staff login, and suspend: 403 on login and on
+    live sessions, the store's jobs removed, the other store unaffected.
+    Resume brings logins and jobs back;
+  - catch-up after saving POS keys, but not after saving an AI key (F3);
+  - trimmed staff usernames (F4).
+- `frontend/e2e/platform/run_flows.sh` + `flows_server.py` + `flows.mjs`
+  run the real server in multi mode, bootstrapped like a new deployment:
+  `migrate-platform` and `create-master` run as separate processes. The
+  schedulers are ON (leader election, per-store jobs). Every `httpx` client
+  answers from a fake Toast (calls logged to `toast_calls.jsonl`) or refuses
+  the call.
+
+  The browser runs at 1280 and 375 and checks these steps:
+  1. Website sign-up for two stores, and the master approves both in the
+     console.
+  2. The pending pages turn approved, and each owner signs in.
+  3. Toast keys are saved (last 4 shown only) and Test connection succeeds.
+  4. Each store's catch-up sync reaches the fake Toast with its own keys only,
+     and `/api/jobs/status` shows `toast_sales_sync` succeeded.
+  5. Staff is added on Users and signs in. Staff sees no Integrations, Users
+     or Notifications, and `/#/notifications` redirects.
+  6. Suspend: a page opened mid-session shows "This store is suspended". A
+     reload lands on the login page, and sign-in is refused ("paused"). The
+     other store still works.
+  7. Resume.
+  8. One browser with two tabs on two stores. The tab still showing store A
+     never shows store A's data after the cookie becomes store B's.
+
+  `E2E_FRONTEND_DIR`, `E2E_PYTHON` and `E2E_PLAYWRIGHT` let it run from a
+  worktree without `node_modules` / `.venv`.
+- App repo `test/live/platform_live_test.dart` (skipped unless
+  `STOREOPS_LIVE_API`). It runs the real `AuthController` against the real
+  server: real lookup, branding check, Dio `ApiClient` and error bodies. It
+  checks two stores on one shared server (sign in, switch from the login
+  screen and back; the old store's token goes and `/me` answers for the new
+  store), plus a wrong password, an unknown Store ID, PLATFORM refused on the
+  phone, a suspended store (maintenance from the lookup) and a locked user
+  (429 `retry_after`).
+
+### Results
+
+| Check | Result |
+|---|---|
+| `tests/platform/test_e2e_flows.py` (PostgreSQL) | 5 passed (F1-F4 failed before their fixes) |
+| Website flows, real server (`run_flows.sh`, 1280 + 375) | 104 checks, 0 failures; 148 fake-Toast calls, all with the calling store's own keys |
+| App live test against the real server | 3 passed |
+
+### Checked and fine (dismissed)
+
+- Suspended mid-session: the website and app keep the signed-in screen, and
+  every call answers 403 "This store is suspended. Contact support." A reload
+  or relaunch lands on the login page. The login line uses the master's
+  maintenance message ("paused"); the in-session 403 has a fixed text. This is
+  acceptable and was not changed.
+- Real server shapes the app reads were all parsed correctly:
+  - the lookup (`schema, code, api_base_url, status, message, branding`);
+  - `branding?store=` with `store_code`;
+  - mobile-login (`token, expires_at, scope, store_code, api_base_url`);
+  - 401 `detail`;
+  - 403 `{error, message, detail}`;
+  - 429 `retry_after`.
+
+  Branding for another store sent with a token answers 409
+  `store_mismatch`; the app's store lookups never carry a token.
+- Approval sets store name, timezone and POS from the sign-up. Two stores in
+  different timezones get their own cron triggers. Logout revokes the store
+  session (`/me` 401 after).
+
+### Deferred
+
+- F3 is in-process: with a separate web process (`SCHEDULER_ENABLED=false`)
+  saving the keys there does not reach the leader's scheduler. Its 5-minute
+  reconcile adds no catch-up for a store it has already seen, so the first
+  sync waits for the nightly job. Fix later with a platform-DB flag the
+  leader's reconcile reads. The default deployment (one process) is fine.
+- The in-session 403 for a suspended store could carry the master's
+  maintenance message and send the website to the login page.
