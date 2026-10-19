@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { changePassword } from "../api";
 import PasswordInput from "../components/PasswordInput.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -36,10 +37,9 @@ export default function ChangePasswordPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Change password</h1>
+      <PageHeader pageId="change_password">
         <p className="muted">Requires your current password. There's no "forgot password" option - ask an admin to reset it if you lose it.</p>
-      </div>
+      </PageHeader>
       <section className="card" style={{ maxWidth: "360px" }}>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
         <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.85rem" }}>

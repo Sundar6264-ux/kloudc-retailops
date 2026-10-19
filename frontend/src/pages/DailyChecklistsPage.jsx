@@ -1,11 +1,10 @@
 import DailyChecklists from "../components/DailyChecklists.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function DailyChecklistsPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>Daily Checklists</h1>
-      </div>
+      <PageHeader pageId="daily_checklists" />
       <DailyChecklists />
     </>
   );

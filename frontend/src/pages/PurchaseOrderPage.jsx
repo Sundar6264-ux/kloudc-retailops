@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
 import InfoBlock from "../components/InfoBlock.jsx";
 import PurchaseOrderCart from "../components/PurchaseOrderCart.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // One intro line under the title; "? More" is short and points to Help,
 // where the full cart guide lives.
 export default function PurchaseOrderPage() {
   return (
     <>
-      <div className="page-header po-cart-header">
-        <h1>Purchase Order Cart</h1>
+      <PageHeader pageId="cart" className="po-cart-header">
         <InfoBlock brief="A shared cart for every vendor - add items, check quantities, then email (Send PO) or download each vendor's PO.">
           Items stay here until the order is placed, so an order can be built over several days. When it has gone to
           the vendor, click <strong>Order placed</strong> (Send PO does that for you); the history is on{" "}
@@ -16,7 +16,7 @@ export default function PurchaseOrderPage() {
           <Link to="/vendor-contacts">Vendor contacts</Link>. The full guide is in{" "}
           <Link to="/help" state={{ section: "supplier-projection" }}>Help</Link> (New order, "Purchase Order Cart").
         </InfoBlock>
-      </div>
+      </PageHeader>
       <PurchaseOrderCart />
     </>
   );

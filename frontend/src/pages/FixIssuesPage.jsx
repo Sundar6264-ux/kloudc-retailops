@@ -1,11 +1,10 @@
 import FixIssues from "../components/FixIssues.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function FixIssuesPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>Fix Issues</h1>
-      </div>
+      <PageHeader pageId="fix_issues" />
       <FixIssues />
     </>
   );

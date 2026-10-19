@@ -23,6 +23,7 @@ import {
   WEEKDAYS,
   REQUIRES_LABELS,
 } from "../components/team/taskUtils";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Team hub recurring tasks (design §4.2, §5): a schedule describes when the
 // task is DUE (store time) and how long before that it appears. Admin-only
@@ -572,14 +573,13 @@ export default function TeamTemplatesPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Recurring tasks and templates</h1>
+      <PageHeader pageId="team_templates" title="Recurring tasks and templates">
         <p className="muted">
           Reusable tasks with steps (e.g. "Open store"). On a schedule they create tasks automatically ("due every Monday 3 PM,
           appears 8 AM"), optionally for someone else on some weekdays; any template can also be used with "Create task now".
           Times are store time ({storeZoneCity()}). Edits apply to future tasks only.
         </p>
-      </div>
+      </PageHeader>
 
       <section className="card">
         <div className="issue-toolbar">

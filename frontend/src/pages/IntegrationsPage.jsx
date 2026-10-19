@@ -14,6 +14,7 @@ import {
 } from "../settings/integrationsModel.js";
 import { useStore } from "../store/StoreContext.jsx";
 import "../platform/platform.css";
+import PageHeader from "../ui/PageHeader.jsx";
 
 function readOpen() {
   try {
@@ -67,10 +68,9 @@ export default function IntegrationsPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Integrations</h1>
+      <PageHeader pageId="integrations">
         <p className="muted">Connect your store's POS, messaging, email and AI. Saved keys are encrypted and never shown again.</p>
-      </div>
+      </PageHeader>
       {loadError && <div className="pf-banner bad" style={{ marginBottom: "0.8rem" }}>{loadError}</div>}
       <div className="int-tiles" role="tablist" aria-label="Integrations">
         {views.map((v) => (

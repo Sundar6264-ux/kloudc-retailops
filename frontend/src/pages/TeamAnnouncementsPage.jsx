@@ -15,6 +15,7 @@ import { refreshTeamBadges } from "../components/team/useTeamBadges";
 import { formatWhen } from "../components/team/taskUtils";
 import useDialogA11y from "../components/team/useDialogA11y";
 import { isPageVisible, onPageShown } from "../components/team/usePageActive";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Team hub Announcements (docs/TEAM_HUB_DESIGN.md §4.3): one-way posts from
 // a manager to one or more teams. Everyone sees what was sent to them
@@ -224,7 +225,7 @@ function AnnouncementCard({ announcement: a, isAdmin, onReplace, onRemove, onSho
                 {a.teams.map((t, i) => (
                   <span key={t.id}>
                     {i > 0 && ", "}
-                    <span className="task-team-dot" style={{ background: t.color || "#6b7280" }} aria-hidden="true" />
+                    <span className="task-team-dot" style={{ background: t.color || "var(--neutral-fill)" }} aria-hidden="true" />
                     {t.name}
                   </span>
                 ))}
@@ -388,12 +389,11 @@ export default function TeamAnnouncementsPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>News</h1>
+      <PageHeader pageId="team_news">
         <p className="muted">
           News and instructions for the team. {isAdmin ? "People who join a team later don't get older announcements." : ""}
         </p>
-      </div>
+      </PageHeader>
 
       {off && <p className="error">Announcements are switched off on the server right now.</p>}
 

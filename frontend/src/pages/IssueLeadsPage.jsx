@@ -10,6 +10,7 @@ import {
 import InfoBlock from "../components/InfoBlock.jsx";
 import { basisLabel, buildSaveBody, changeCount, pickerValue } from "../components/issueLeads/issueLeadsModel.js";
 import { formatRestaurantTime } from "../format.js";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Admin page: who leads each PO section and each vendor for Fix Issues, and
 // the daily Team task each lead gets (W4, docs/BATCH_OCT14_CONTRACT.md).
@@ -353,10 +354,9 @@ export default function IssueLeadsPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Category & vendor leads</h1>
+      <PageHeader pageId="issue_leads">
         <p className="muted">Who follows up each PO section and vendor in Fix Issues.</p>
-      </div>
+      </PageHeader>
       <InfoBlock brief="An item belongs to its PO section's lead; with no section lead, to its vendor's lead; otherwise to the everything-else lead (an admin).">
         PO sections are the store aisles the purchase order groups by (edit them on the PO sections page). Fix Issues
         groups every list by section and can be filtered by lead. Nothing is assigned until this page is saved: the

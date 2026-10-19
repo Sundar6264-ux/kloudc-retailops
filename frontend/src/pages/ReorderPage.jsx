@@ -1,11 +1,10 @@
 import ReorderCandidates from "../components/ReorderCandidates.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function ReorderPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>Reorder Candidates</h1>
-      </div>
+      <PageHeader pageId="reorder" />
       <ReorderCandidates />
     </>
   );

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import InfoBlock from "../components/InfoBlock.jsx";
 import VendorContacts from "../components/poSend/VendorContacts.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Vendor contacts (automation item 8): where Send PO in the cart emails each
 // vendor's purchase order. The demo login is refused by the server (and the
@@ -10,8 +11,7 @@ export default function VendorContactsPage() {
   const { user } = useAuth();
   return (
     <>
-      <div className="page-header">
-        <h1>Vendor contacts</h1>
+      <PageHeader pageId="vendor_contacts">
         <InfoBlock brief="Who gets each vendor's purchase order when you press Send PO in the cart.">
           Each vendor can have several contacts (a sales rep, the office). When someone presses{" "}
           <strong>Send PO</strong> on a vendor in the <Link to="/purchase-order">Purchase Order Cart</Link>, the
@@ -22,7 +22,7 @@ export default function VendorContactsPage() {
           only message 5 chats. Only an admin can add, change or delete contacts; everyone with the cart can see them.
           Every send is listed under <strong>Recent PO sends</strong>.
         </InfoBlock>
-      </div>
+      </PageHeader>
       {user?.demo ? (
         <section className="card">
           <p className="muted">The demo account can't see vendor contacts or send purchase orders.</p>

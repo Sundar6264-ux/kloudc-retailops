@@ -3,6 +3,7 @@ import SalesDownload from "../components/SalesDownload.jsx";
 import SalesAccuracy from "../components/SalesAccuracy.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { useStoreAllows } from "../store/StoreContext.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function ItemsSoldPage() {
   const { user, hasFeature } = useAuth();
@@ -10,9 +11,7 @@ export default function ItemsSoldPage() {
   const accuracy = useStoreAllows("sales_accuracy_badge");
   return (
     <>
-      <div className="page-header">
-        <h1>Items Sold</h1>
-      </div>
+      <PageHeader pageId="items_sold" />
       <ItemsSold />
       {/* The raw line-item export (was on Inventory Reports): sales things on
           the sales page. Its API is still gated on inventory_reports, so it

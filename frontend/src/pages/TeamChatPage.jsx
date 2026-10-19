@@ -21,6 +21,7 @@ import { storeDay, todayStoreDay } from "../components/team/taskUtils";
 import useDialogA11y from "../components/team/useDialogA11y";
 import { isPageVisible, onPageShown } from "../components/team/usePageActive";
 import { lazyStoreFormat } from "../format.js";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Team hub Chat on the website (docs/TEAM_HUB_DESIGN.md §4.4): team
 // channels (one per team, automatic) and direct messages. Two panes on a
@@ -53,7 +54,7 @@ function ChannelRow({ channel, active, meId, onOpen }) {
     >
       <span className="chat-channel-top">
         {channel.kind === "team" ? (
-          <span className="task-team-dot" style={{ background: channel.color || "#9ca3af" }} />
+          <span className="task-team-dot" style={{ background: channel.color || "var(--text-disabled)" }} />
         ) : (
           <span className="chat-avatar">{(channel.name || "?").slice(0, 1).toUpperCase()}</span>
         )}
@@ -278,10 +279,9 @@ export default function TeamChatPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Chat</h1>
+      <PageHeader pageId="team_chat">
         <p className="muted chat-page-intro">Team channels and direct messages. Hover a message (or tap ⋯) to copy, report or turn it into a task.</p>
-      </div>
+      </PageHeader>
 
       {off && <p className="error">Chat is switched off on the server right now.</p>}
       {error && <p className="error">{error}</p>}

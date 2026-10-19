@@ -1,11 +1,10 @@
 import OpenOrders from "../components/OpenOrders.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function OpenOrdersPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>Open Checks</h1>
-      </div>
+      <PageHeader pageId="open_checks" />
       <OpenOrders />
     </>
   );

@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../AuthContext.jsx";
 import PasswordInput from "../components/PasswordInput.jsx";
 import { Term } from "../glossary.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 function SetPasswordRow({ user, onDone }) {
   const [open, setOpen] = useState(false);
@@ -308,14 +309,13 @@ export default function UsersPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Users</h1>
+      <PageHeader pageId="users">
         <p className="muted">
           Admin-only: create dashboard logins, set/reset passwords, and choose which tabs each
           regular user can access. An admin always has full access to everything - the checklist
           below only applies to non-admin accounts.
         </p>
-      </div>
+      </PageHeader>
       <section className="card">
         <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>Add a user</h2>
         <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
