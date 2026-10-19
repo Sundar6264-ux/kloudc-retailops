@@ -59,7 +59,21 @@ async function noSideways(page, tag) {
   check(over <= 1, `${tag}: page scrolls sideways by ${over}px`);
 }
 
+// The origin store's name never shows on a StoreOps page (M2 name audit):
+// checked on every screen this suite photographs (text, title, alt text).
+const ORIGIN_NAME = new RegExp(["spice", "\\s*", "town"].join(""), "i");
+async function noOriginName(page, tag) {
+  const text = await page
+    .evaluate(() =>
+      [document.title, document.body ? document.body.innerText : "",
+       ...Array.from(document.querySelectorAll("[alt],[title],[placeholder],[aria-label]"), (e) =>
+         [e.getAttribute("alt"), e.getAttribute("title"), e.getAttribute("placeholder"), e.getAttribute("aria-label")].join(" "))].join("\n"))
+    .catch(() => "");
+  check(!ORIGIN_NAME.test(text), `${tag}: page shows the origin store's name`);
+}
+
 async function shot(page, name) {
+  await noOriginName(page, name);
   await page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage: false });
 }
 
