@@ -9,6 +9,7 @@ import FlyerUploadCard from "../components/flyers/FlyerUploadCard.jsx";
 import { withMetaDefaults } from "../components/flyers/flyerModel.js";
 import useFlyerLibrary from "../components/flyers/useFlyerLibrary.js";
 import { useStoreAllows } from "../store/StoreContext.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Marketing flyers (docs/MARKETING_FLYERS_CONTRACT.md, section 6): upload a
 // flyer, pick the marketing WhatsApp groups, send; plus the library of every
@@ -47,13 +48,12 @@ export default function FlyersPage() {
   }, []);
 
   const header = (
-    <div className="page-header">
-      <h1>Flyers</h1>
+    <PageHeader pageId="flyers">
       <p className="muted">
         Upload a marketing flyer, pick the WhatsApp groups and send it. Every flyer stays in the library below, filed by
         type in the store's flyers folder on the server.
       </p>
-    </div>
+    </PageHeader>
   );
 
   if (user?.demo) {

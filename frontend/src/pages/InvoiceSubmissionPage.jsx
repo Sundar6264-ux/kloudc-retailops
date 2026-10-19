@@ -1,11 +1,10 @@
 import InvoiceSubmission from "../components/InvoiceSubmission.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function InvoiceSubmissionPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>Invoices</h1>
-      </div>
+      <PageHeader pageId="invoices" />
       <InvoiceSubmission />
     </>
   );

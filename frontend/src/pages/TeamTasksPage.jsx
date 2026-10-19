@@ -21,6 +21,7 @@ import {
 import { TermInfo } from "../glossary.jsx";
 import "../components/team/teamTasks.css";
 import { storeZoneCity } from "../format.js";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Team hub Tasks (docs/TEAM_HUB_DESIGN.md §4.2): what's assigned to me or my
 // teams, grouped Overdue / Can't do / Today / Upcoming, plus what's been
@@ -94,7 +95,7 @@ function TaskRow({ task, onOpen, selectable, selected, onToggle }) {
       <td>
         {task.assignee?.type === "team" ? (
           <span>
-            <span className="task-team-dot" style={{ background: task.assignee.color || "#6b7280" }} aria-hidden="true" />
+            <span className="task-team-dot" style={{ background: task.assignee.color || "var(--neutral-fill)" }} aria-hidden="true" />
             {task.assignee.name}
           </span>
         ) : (
@@ -373,13 +374,12 @@ export default function TeamTasksPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Tasks</h1>
+      <PageHeader pageId="team_tasks">
         <p className="muted">
           Work assigned to you or your teams. Times are store time ({storeZoneCity()}). Team tasks are done once anyone on the team finishes
           them.
         </p>
-      </div>
+      </PageHeader>
 
       {tasksOff && <p className="error">Tasks are switched off on the server right now.</p>}
 

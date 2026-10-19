@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
+import AreaChip from "../ui/AreaChip.jsx";
+import Icon from "../ui/icons.jsx";
+import { InfoButton } from "../ui/helpBridge.jsx";
 import JobStatusWidget from "../components/JobStatusWidget.jsx";
 import InventoryUpload from "../components/InventoryUpload.jsx";
 import WeeklyDigest from "../components/WeeklyDigest.jsx";
@@ -16,7 +20,7 @@ function greeting() {
 }
 
 export default function Overview() {
-  const { user } = useAuth();
+  const { user, hasFeature, store } = useAuth();
   const [refreshSignal, setRefreshSignal] = useState(0);
   // The inventory file upload is for a POS that exports one (csv_catalog_import).
   const canUpload = useStoreAllows("inventory_upload");
@@ -24,16 +28,35 @@ export default function Overview() {
 
   return (
     <>
-      <div className="page-header overview-header">
-        <h1>
-          {greeting()}
-          {user?.username ? `, ${user.username}` : ""}
-        </h1>
-        <div className="overview-subline">
-          <span className="muted">{today}</span>
-          <JobStatusWidget refreshSignal={refreshSignal} inline />
+      {/* Greeting band (DESIGN_SYSTEM 2.1/3.1): the store's own colour, softly. */}
+      <header className="page-header overview-header kc-greeting" data-area="home">
+        <div className="kc-greeting-main">
+          <AreaChip area="home" label={store.shortName} />
+          <div className="kc-page-title-row">
+            <h1>
+              {greeting()}
+              {user?.username ? `, ${user.username}` : ""}
+            </h1>
+            <InfoButton pageId="home" />
+          </div>
+          <div className="overview-subline">
+            <span className="muted">{today}</span>
+            <JobStatusWidget refreshSignal={refreshSignal} inline />
+          </div>
         </div>
-      </div>
+        <div className="kc-greeting-actions">
+          {hasFeature("invoice_submission") && (
+            <Link to="/invoices" className="btn-secondary kc-quick" data-area="stock">
+              <Icon name="upload" size={16} /> Upload invoice
+            </Link>
+          )}
+          {hasFeature("supplier_projection") && (
+            <Link to="/supplier-projection" className="button-link kc-quick-primary">
+              <Icon name="plus" size={16} /> New order
+            </Link>
+          )}
+        </div>
+      </header>
 
       <StatTiles />
 

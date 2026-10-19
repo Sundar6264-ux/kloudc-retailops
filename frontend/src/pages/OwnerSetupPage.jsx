@@ -4,7 +4,7 @@ import { redeemOwnerSetup } from "../api";
 import PasswordInput from "../components/PasswordInput.jsx";
 import { ownerSetupParams, ownerSetupProblem } from "../signup/signupModel.js";
 import "../platform/platform.css";
-import ProductLockup from "../components/ProductLockup.jsx";
+import AuthLayout from "../components/AuthLayout.jsx";
 
 // A store owner's one-time set-up link (docs/PLATFORM_CONTRACT.md "As built -
 // C": POST /api/signup/owner-setup). A master makes the link for a store
@@ -41,11 +41,10 @@ export default function OwnerSetupPage() {
   }
 
   return (
-    <div className="signup-page">
-      <div className="card signup-card" data-testid="owner-setup" data-state={done ? "done" : link ? "form" : "invalid"}>
-        <div className="page-header" style={{ paddingRight: 0, marginBottom: "0.6rem" }}>
-          <ProductLockup height={40} className="signup-lockup" />
-          <h1>Set your password</h1>
+    <AuthLayout>
+      <div className="auth-card signup-card" data-testid="owner-setup" data-state={done ? "done" : link ? "form" : "invalid"}>
+        <div className="auth-head">
+          <h1 className="auth-title">Set your password</h1>
         </div>
         {!link ? (
           <>
@@ -100,6 +99,6 @@ export default function OwnerSetupPage() {
           </form>
         )}
       </div>
-    </div>
+    </AuthLayout>
   );
 }

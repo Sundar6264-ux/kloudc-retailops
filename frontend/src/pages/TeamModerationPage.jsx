@@ -3,6 +3,7 @@ import { dismissReport, listAllBlocks, listReports, resolveReport } from "../api
 import TeamMediaImage from "../components/team/TeamMediaImage.jsx";
 import { DocumentChip, VoiceNote } from "../components/team/ChatExtras.jsx";
 import { formatWhen } from "../components/team/taskUtils";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Team hub moderation (docs/TEAM_HUB_DESIGN.md §4.5, admin only): chat
 // messages people reported, with the original text even if it was deleted
@@ -211,10 +212,9 @@ export default function TeamModerationPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Reported messages</h1>
+      <PageHeader pageId="team_moderation">
         <p className="muted">Chat messages people reported. Deal with open reports promptly - app store rules expect it.</p>
-      </div>
+      </PageHeader>
 
       <section className="card">
         <div className="issue-toolbar">

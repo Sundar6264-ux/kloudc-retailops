@@ -17,6 +17,8 @@ import { INVOICE_STATUS_TERMS, TermInfo } from "../glossary.jsx";
 import { currentPosName } from "../store/gating.js";
 import { useStoreAllows } from "../store/StoreContext.jsx";
 import { closingTileGroups } from "./closingChecklists.js";
+import Icon from "../ui/icons.jsx";
+import { routeForPath } from "../featureRoutes.js";
 
 // Overview dashboard widgets. Every tile/panel is shown only when the user
 // has that feature (its endpoint would 403 otherwise), loads on its own, and
@@ -69,7 +71,17 @@ function EyeIcon({ crossedOut }) {
   );
 }
 
+const TONE_STATUS = {
+  good: { icon: "circle-check", word: "Good" },
+  warn: { icon: "triangle-alert", word: "Needs attention" },
+  bad: { icon: "octagon-alert", word: "Problem" },
+};
+
 function StatTile({ to, label, state, value, sub, tone, small = false, maskable = false, termKey }) {
+  // The tile's top edge is the area it opens (identity); its status is an
+  // icon + word beside the label (never colour alone).
+  const area = routeForPath(to)?.area;
+  const status = !state.loading && !state.error ? TONE_STATUS[tone] : null;
   const [hidden, setHidden] = useState(maskable);
   let shown = value;
   let subShown = sub;
@@ -83,7 +95,7 @@ function StatTile({ to, label, state, value, sub, tone, small = false, maskable 
     shown = "••••••";
   }
   return (
-    <Link to={to} className={`stat-tile stat-tile-${state.loading || state.error ? "neutral" : tone || "neutral"}`}>
+    <Link to={to} className={`stat-tile stat-tile-${state.loading || state.error ? "neutral" : tone || "neutral"}`} data-area={area || undefined}>
       {maskable && !state.loading && (
         <button
           type="button"
@@ -102,6 +114,12 @@ function StatTile({ to, label, state, value, sub, tone, small = false, maskable 
         {label}
         {termKey && <TermInfo k={termKey} label={label} />}
       </span>
+      {status && (
+        <span className={`stat-tile-status stat-tile-status-${tone}${maskable ? " with-eye" : ""}`} title={status.word}>
+          <Icon name={status.icon} size={14} />
+          <span className="sr-only">{status.word}</span>
+        </span>
+      )}
       <span className={`stat-tile-value${small ? " stat-tile-value-sm" : ""}`} title={small && typeof shown === "string" ? shown : undefined}>
         {shown}
       </span>

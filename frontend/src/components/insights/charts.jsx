@@ -7,7 +7,7 @@
 // identity never rests on colour alone - also in print), and a "Show as
 // table" view so every value is reachable without hovering.
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { heatInk, heatStep, HEAT_RAMP, isNum, labelEvery, niceTicks, showXLabel } from "./insightsModel.js";
+import { heatInk, heatStep, HEAT_RAMP, isNum, labelEvery, niceTicks, SERIES_COLORS, showXLabel } from "./insightsModel.js";
 
 export function useElementWidth() {
   const ref = useRef(null);
@@ -248,7 +248,7 @@ export function LineChart({ labels, series, format, axisFormat, height = 220, ar
         {active != null &&
           series.map((s) =>
             isNum(s.values[active]) ? (
-              <circle key={s.key} cx={x(active)} cy={y(s.values[active])} r="4.5" fill={s.color} stroke="#fff" strokeWidth="2" />
+              <circle key={s.key} cx={x(active)} cy={y(s.values[active])} r="4.5" fill={s.color} style={{ stroke: "var(--surface)" }} strokeWidth="2" />
             ) : null,
           )}
       </svg>
@@ -489,7 +489,7 @@ export function MiniBars({ data, hours, barWidth = 4, height = 18 }) {
       {list.map((h, i) => {
         const v = byHour.get(h) || 0;
         const bh = v > 0 ? Math.max(1.5, (v / max) * height) : 0;
-        return <rect key={h} x={i * (w + gap)} y={height - bh} width={w} height={bh} rx="1" fill="#2a78d6" />;
+        return <rect key={h} x={i * (w + gap)} y={height - bh} width={w} height={bh} rx="1" fill={SERIES_COLORS[0]} />;
       })}
     </svg>
   );

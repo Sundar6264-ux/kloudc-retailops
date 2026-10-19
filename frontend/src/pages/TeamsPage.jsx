@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listTeams, createTeam, updateTeam, setTeamMembers, listUsers } from "../api";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Team hub (docs/TEAM_HUB_DESIGN.md): the groups tasks, announcements and
 // chat are sent to. Admin-only, like Users. "Everyone" always contains every
@@ -48,7 +49,7 @@ function Swatch({ color }) {
         width: "0.8rem",
         height: "0.8rem",
         borderRadius: "50%",
-        background: color || "#6b7280",
+        background: color || "var(--neutral-fill)",
         marginRight: "0.45rem",
         verticalAlign: "middle",
       }}
@@ -284,13 +285,12 @@ export default function TeamsPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Teams</h1>
+      <PageHeader pageId="teams">
         <p className="muted">
           Admin-only: the groups that tasks, announcements and chat are sent to. "Everyone" always
           includes every user. Add people to the other teams here; a person can be in several teams.
         </p>
-      </div>
+      </PageHeader>
 
       <section className="card">
         <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>Add a team</h2>

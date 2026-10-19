@@ -151,7 +151,9 @@ async function runStore(browser, store) {
           check(href.startsWith(brand.labels_url), `${tag}: Label Scanner href ${href}`);
         }
         if (role === "e2e_admin") {
-          check(internal.includes("#/insights/daily") && /Also in Toast/i.test(menuText), `${tag}: Insights / Also in Toast missing`);
+          // Final pass: one Insights link (the hub); its tiles hold the pages,
+          // the "Also in Toast" row last.
+          check(internal.includes("#/insights"), `${tag}: Insights missing from the menu`);
           check(internal.includes("#/inventory-api") && /Inventory from Toast/.test(menuText), `${tag}: Inventory from Toast missing`);
         }
       }
@@ -195,7 +197,17 @@ async function runStore(browser, store) {
 
       // ---- sweep every page in this role's menu ----
       // (#/notifications is gone from the website: it redirects to the dashboard.)
-      const sweep = [...internal, "#/glossary", "#/help"];
+      // The Insights hub's tiles are pages too (they left the menu in the final pass).
+      const hubTiles = [];
+      if (internal.includes("#/insights")) {
+        await page.goto(`${base}/#/insights`);
+        await settle(page);
+        hubTiles.push(...(await page.$$eval(".ins-hub a", (as) => as.map((a) => a.getAttribute("href") || ""))));
+        const hubText = await page.innerText(".ins-hub").catch(() => "");
+        if (role === "e2e_admin" && !notToast) check(/Also in Toast/i.test(hubText) && hubTiles.includes("#/insights/daily"), `${tag}: hub has no Daily compare / Also in Toast`);
+        check(!hasOriginName(hubText), `${tag}: origin-store name in the Insights hub`);
+      }
+      const sweep = [...new Set([...internal, ...hubTiles])].concat(["#/glossary", "#/help"]);
       for (const hash of sweep) {
         apiText = [];
         await page.goto(`${base}/${hash}`);

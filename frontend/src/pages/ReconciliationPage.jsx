@@ -1,11 +1,10 @@
 import Reconciliation from "../components/Reconciliation.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function ReconciliationPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>Reconciliation</h1>
-      </div>
+      <PageHeader pageId="reconciliation" />
       <Reconciliation />
     </>
   );

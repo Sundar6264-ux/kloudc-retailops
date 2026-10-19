@@ -46,7 +46,7 @@ import {
   storeTime,
   weekTitle,
 } from "./insightsModel.js";
-import { ALSO_IN_POS, ALSO_IN_POS_KEYS, FEATURE_ROUTES, insightsHomePath, NAV_GROUPS } from "../../featureRoutes.js";
+import { ALSO_IN_POS, ALSO_IN_POS_KEYS, FEATURE_ROUTES, INSIGHTS_HUB, INSIGHTS_MAIN_KEYS, insightsHomePath, NAV_GROUPS } from "../../featureRoutes.js";
 
 test("money formats", () => {
   assert.equal(fmtMoney(1234.4), "$1,234");
@@ -357,29 +357,27 @@ test("old Menu performance links redirect to the right page and tab", () => {
   assert.ok(!paths.includes("/insights/menu"));
 });
 
-test("Insights sidebar: main section order, then Also in Toast", () => {
+test("Insights hub (final pass): one menu link; main tiles, then Also in Toast", () => {
   const byKey = Object.fromEntries(FEATURE_ROUTES.map((r) => [r.key || r.feature, r]));
-  // Oct 15: Insights is the second half of the "Sales & Insights" group.
-  const group = NAV_GROUPS.find((g) => g.key === "sales_insights");
-  const insightsFeatures = group.features.filter((k) => byKey[k].feature === "sales_insights");
+  // One "Insights" link in the Sales group; the pages are the hub's tiles.
+  const group = NAV_GROUPS.find((g) => g.key === "sales");
+  assert.ok(group.features.includes(INSIGHTS_HUB.key));
+  assert.ok(!group.features.some((k) => byKey[k]?.feature === "sales_insights"));
   assert.deepEqual(
-    insightsFeatures.map((k) => byKey[k].label),
+    INSIGHTS_MAIN_KEYS.map((k) => byKey[k].label),
     ["Daily compare", "Loss watch", "Odd checks", "Prep forecast", "Menu trends", "Add-ons", "Returning customers"],
   );
-  assert.equal(group.subgroups.length, 1);
-  const sub = group.subgroups[0];
-  assert.equal(sub.label, "Also in {pos}");
-  assert.equal(sub.note, "Same numbers as {pos}'s own reports - kept here for convenience.");
-  assert.equal(sub.label, ALSO_IN_POS.label);
-  assert.deepEqual(sub.features, ALSO_IN_POS_KEYS);
+  assert.equal(ALSO_IN_POS.label, "Also in {pos}");
+  assert.equal(ALSO_IN_POS.note, "Same numbers as {pos}'s own reports - kept here for convenience.");
   assert.deepEqual(
-    sub.features.map((k) => byKey[k].label),
+    ALSO_IN_POS_KEYS.map((k) => byKey[k].label),
     ["Sales channels", "Check size & guests", "Busy hours", "Best & worst sellers"],
   );
-  // Every Insights page is in the sidebar exactly once.
-  const listed = [...insightsFeatures, ...sub.features].sort();
+  // Every Insights page is on the hub exactly once.
+  const listed = [...INSIGHTS_MAIN_KEYS, ...ALSO_IN_POS_KEYS].sort();
   const insightRoutes = FEATURE_ROUTES.filter((r) => r.feature === "sales_insights").map((r) => r.key).sort();
   assert.deepEqual(listed, insightRoutes);
+  assert.deepEqual([...INSIGHTS_HUB.hubOf].sort(), insightRoutes);
   // Permissions unchanged: the same pages stay admin-only / sales-only.
   const flags = (k) => [!!byKey[k].adminOnly, !!byKey[k].salesOnly];
   assert.deepEqual(flags("insights_loss_watch"), [true, false]);

@@ -1,14 +1,11 @@
 import SupplierProjection from "../components/SupplierProjection.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function SupplierProjectionPage() {
   return (
     <>
-      <div className="page-header">
-        {/* "New order" everywhere (menu, the app's Home tile); its old name kept beside it. */}
-        <h1>
-          New order <span className="muted" style={{ fontSize: "0.9rem", fontWeight: 500 }}>Supplier Projection</span>
-        </h1>
-      </div>
+      {/* "New order" everywhere (menu, the app's Home tile); its old name kept beside it. */}
+      <PageHeader pageId="new_order" titleSuffix={<span className="kc-title-aside">Supplier Projection</span>} />
       <SupplierProjection />
     </>
   );

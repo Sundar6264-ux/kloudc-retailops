@@ -1,11 +1,10 @@
 import DeliveryReview from "../components/DeliveryReview.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 export default function DeliveryReviewPage() {
   return (
     <>
-      <div className="page-header">
-        <h1>Delivery Review</h1>
-      </div>
+      <PageHeader pageId="delivery_review" />
       <DeliveryReview />
     </>
   );

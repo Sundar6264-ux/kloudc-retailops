@@ -131,7 +131,7 @@ export default function TaskStats() {
                     {data.teams.map((t) => (
                       <tr key={t.team_id}>
                         <td className="cell-name">
-                          <span className="task-team-dot" style={{ background: t.color || "#6b7280" }} aria-hidden="true" />
+                          <span className="task-team-dot" style={{ background: t.color || "var(--neutral-fill)" }} aria-hidden="true" />
                           {t.name}
                         </td>
                         <td className="num">{t.total}</td>

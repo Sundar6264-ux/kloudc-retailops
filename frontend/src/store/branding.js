@@ -134,19 +134,94 @@ export function readableOnWhiteText(hex) {
   return c;
 }
 
-// CSS custom properties for the brand: --accent (buttons, active nav
-// marker), its hover / soft tints, an "r, g, b" triple for translucent
-// shadows, and the secondary colour.
+function rgbToHsl([r, g, b]) {
+  const [rr, gg, bb] = [r / 255, g / 255, b / 255];
+  const max = Math.max(rr, gg, bb);
+  const min = Math.min(rr, gg, bb);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === rr) h = (gg - bb) / d + (gg < bb ? 6 : 0);
+  else if (max === gg) h = (bb - rr) / d + 2;
+  else h = (rr - gg) / d + 4;
+  return [h / 6, s, l];
+}
+
+function hslToRgb([h, s, l]) {
+  if (s === 0) return [l * 255, l * 255, l * 255];
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const f = (t) => {
+    let x = t;
+    if (x < 0) x += 1;
+    if (x > 1) x -= 1;
+    if (x < 1 / 6) return p + (q - p) * 6 * x;
+    if (x < 1 / 2) return q;
+    if (x < 2 / 3) return p + (q - p) * (2 / 3 - x) * 6;
+    return p;
+  };
+  return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255];
+}
+
+// `hex` with its HSL lightness moved by `delta` (keeps the hue, so a deep
+// blue lightens to a clear sky blue rather than a washed-out grey-blue).
+export function shiftLightness(hex, delta) {
+  const [h, s, l] = rgbToHsl(hexToRgb(hex));
+  return rgbToHex(hslToRgb([h, s, Math.max(0, Math.min(1, l + delta))]));
+}
+
+// The colour lightened (or, toward "dark", darkened) until it reaches
+// `ratio` against `bg`: the brand as text on a theme's surface.
+export function readableOn(hex, bg, ratio = 4.5, direction = "light") {
+  let c = hex.toUpperCase();
+  const step = direction === "light" ? 0.03 : -0.03;
+  for (let i = 0; i < 40 && contrastRatio(c, bg) < ratio; i++) c = shiftLightness(c, step);
+  return c;
+}
+
+// Dark-theme surface (styles/tokens.css --surface, dark value).
+export const DARK_SURFACE = "#162130";
+export const LIGHT_SURFACE = "#FFFFFF";
+
+// The product's own dark-theme values (docs/DESIGN_SYSTEM.md 1.1).
+const PRODUCT_DARK = { fill: "#1F6FD1", text: "#6CB6F7" };
+
+// The fill for primary buttons on the dark theme: the brand lightened just
+// enough to stand off the dark page (3:1, a UI part), never so far that its
+// white label drops under 4.5:1.
+export function darkFill(accent) {
+  let c = accent.toUpperCase();
+  for (let i = 0; i < 30 && contrastRatio(c, DARK_SURFACE) < 3; i++) {
+    const next = shiftLightness(c, 0.02);
+    if (contrastRatio(next, "#FFFFFF") < 4.5) break;
+    c = next;
+  }
+  return c;
+}
+
+// CSS custom properties for the brand: --accent (light-theme fill: buttons,
+// the active nav marker) and --accent-dark (dark-theme fill), its hover, an
+// "r, g, b" triple for translucent shadows, the secondary colour, and the
+// brand as TEXT for each theme (--brand-text-light / -dark, 4.5:1 on that
+// theme's surface). styles/tokens.css picks the pair for the current theme
+// (--primary, --brand-text, --brand-soft).
 export function brandCssVars(primary, secondary) {
   const p = HEX.test(primary || "") ? primary : PRODUCT_DEFAULTS.primaryColor;
   const s = HEX.test(secondary || "") ? secondary : PRODUCT_DEFAULTS.secondaryColor;
   const accent = readableOnWhiteText(p.toUpperCase());
+  const isProduct = p.toUpperCase() === PRODUCT_DEFAULTS.primaryColor;
+  const textDark = isProduct ? PRODUCT_DARK.text : readableOn(p, DARK_SURFACE);
   return {
     "--brand": p.toUpperCase(),
     "--brand-secondary": s.toUpperCase(),
     "--accent": accent,
+    "--accent-dark": isProduct ? PRODUCT_DARK.fill : darkFill(accent),
     "--accent-hover": mix(accent, "#000000", 0.12),
-    "--accent-soft": mix(p, "#FFFFFF", 0.9),
     "--accent-rgb": hexToRgb(accent).join(", "),
+    "--brand-text-light": readableOn(accent, LIGHT_SURFACE, 4.5, "dark"),
+    "--brand-text-dark": textDark,
+    "--brand-text-dark-rgb": hexToRgb(textDark).join(", "),
   };
 }

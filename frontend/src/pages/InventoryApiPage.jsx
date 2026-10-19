@@ -12,6 +12,7 @@ import { formatRestaurantTime } from "../format.js";
 import { TermInfo } from "../glossary.jsx";
 import { currentPosName } from "../store/gating.js";
 import { useStoreAllows } from "../store/StoreContext.jsx";
+import PageHeader from "../ui/PageHeader.jsx";
 
 // Admin page for the inventory-from-Toast work (backend
 // services/inventory_api.py): the "Use Toast for inventory" switch and its
@@ -329,13 +330,12 @@ export default function InventoryApiPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Inventory from {currentPosName()}</h1>
+      <PageHeader pageId="inventory_from_pos" title={<>Inventory from {currentPosName()}</>}>
         <p className="muted">
           The inventory snapshot built from {currentPosName()}'s API, side by side with the CSV upload, and the switch that puts it
           to use.
         </p>
-      </div>
+      </PageHeader>
       {error && <p className="error">{error}</p>}
       <SwitchCard sw={sw} status={status} readiness={status?.readiness} when={when} onChange={handleSwitch} />
       {status?.readiness && <ReadinessCard readiness={status.readiness} when={when} />}

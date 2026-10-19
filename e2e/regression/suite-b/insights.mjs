@@ -1,4 +1,4 @@
-// Suite B - Insights: every page per role, "Also in Toast" group, hide_sales sees no dollars anywhere (pages + APIs),
+// Suite B - Insights: every page per role, the Insights hub (Also in Toast row), hide_sales sees no dollars anywhere (pages + APIs),
 // admin-only pages, Loss watch acknowledge, Prep forecast print layout. node insights.mjs [width ...]
 import { chromium, as, go, settle, hscroll, check, note, done, shot, api, mainText, sleep, BASE } from "./lib.mjs";
 
@@ -17,8 +17,8 @@ const MONEY_KEYS = /"(net_sales|avg_net_sales|max_net_sales|total_net|avg_check|
 const browser = await chromium.launch();
 
 async function sidebarOpenInsights(page) {
-  // "Sales & Insights" since the Oct 15 menu clean-up.
-  const toggle = page.locator(".sidebar button.sidebar-group-toggle", { hasText: /Insights$/ }).first();
+  // Final pass: the "Sales" group holds one "Insights" link (the hub).
+  const toggle = page.locator(".sidebar button.sidebar-group-toggle", { hasText: /Sales$/ }).first();
   if (await toggle.count() && (await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
 }
 
@@ -43,24 +43,22 @@ for (const width of WIDTHS) {
       }
       await shot(page, `ins-admin${p.replace("/insights", "").replace(/\//g, "-")}-${width}`);
     }
-    // sidebar: Also in Toast collapsed by default; opening shows the note + 4 links (desktop sidebar only)
+    // Insights hub (final pass): one menu link; every page is a tile, the
+    // "Also in Toast" row last; the open page is the selected tile, and the
+    // menu link comes back to the last one opened.
     if (width >= 1024) {
-      const fresh = await as(browser, "sb_admin", width);
-      await go(fresh.page, "/insights/daily");
-      await sidebarOpenInsights(fresh.page);
-      const sub0 = fresh.page.locator(".sidebar-subgroup-toggle", { hasText: "Also in Toast" });
-      check(await sub0.count() === 1 && (await sub0.getAttribute("aria-expanded")) === "false", `Also in Toast collapsed by default (fresh session) @${width}`);
-      await fresh.ctx.close();
       await go(page, "/insights/daily");
-      await sidebarOpenInsights(page);
-      const sub = page.locator(".sidebar-subgroup-toggle", { hasText: "Also in Toast" });
-      if ((await sub.getAttribute("aria-expanded")) === "true") await sub.click();
-      await sub.click();
-      const subTxt = await page.locator(".sidebar-subgroup").innerText();
-      check(/Same numbers as Toast's own reports/.test(subTxt) && /Sales channels/.test(subTxt) && /Best & worst sellers/.test(subTxt), `opening Also in Toast shows the note and its pages @${width}`);
+      const hubTxt = await page.locator(".ins-hub").innerText();
+      check(/Also in Toast/i.test(hubTxt) && /Sales channels/.test(hubTxt) && /Best & worst sellers/.test(hubTxt), `the Insights hub lists the Also in Toast pages @${width}`);
+      check((await page.locator('.ins-hub [aria-selected="true"]').first().innerText()).includes("Daily compare"), `the open page is the selected tile @${width}`);
       await go(page, "/insights/busy-hours");
-      check((await page.locator(".sidebar-subgroup-toggle").getAttribute("aria-expanded")) === "true", `a link into Also in Toast opens both levels @${width}`);
-      await shot(page, `ins-sidebar-${width}`);
+      check((await page.locator('.ins-hub [aria-selected="true"]').first().innerText()).includes("Busy hours"), `Busy hours selected on its page @${width}`);
+      await sidebarOpenInsights(page);
+      const links = await page.locator(".sidebar a", { hasText: /^Insights$/ }).count();
+      check(links === 1, `one Insights link in the menu (${links}) @${width}`);
+      await go(page, "/insights");
+      check(page.url().includes("/insights/busy-hours"), `the Insights link opens the last tile (${page.url().replace(BASE, "")}) @${width}`);
+      await shot(page, `ins-hub-${width}`);
       // old /insights/menu redirects
       await go(page, "/insights/menu?tab=top");
       check(page.url().includes("/insights/best-sellers"), `/insights/menu?tab=top -> Best & worst sellers (${page.url().replace(BASE, "")}) @${width}`);
@@ -114,9 +112,8 @@ for (const width of WIDTHS) {
       check(page.url().includes(p), `staff opens ${p} @${width}`);
     }
     if (width >= 1024) {
-      await sidebarOpenInsights(page);
-      const sb = await page.locator(".sidebar").innerText();
-      check(!/Loss watch|Odd checks/.test(sb), `staff sidebar has no Loss watch / Odd checks @${width}`);
+      const hub = await page.locator(".ins-hub").innerText();
+      check(!/Loss watch|Odd checks/.test(hub), `staff: the Insights hub has no Loss watch / Odd checks @${width}`);
     }
     await ctx.close();
   }

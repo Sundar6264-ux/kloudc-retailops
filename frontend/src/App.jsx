@@ -1,12 +1,17 @@
+import { useEffect, useState } from "react";
 import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext.jsx";
-import { FEATURE_ROUTES, firstAccessiblePath, insightsHomePath } from "./featureRoutes.js";
+import { FEATURE_ROUTES, firstAccessiblePath, insightsHomePath, insightsLandingPath, routeForPath } from "./featureRoutes.js";
 import { StoreProvider } from "./store/StoreContext.jsx";
 import { featureAvailable, routeAvailable } from "./store/gating.js";
 import NotAvailablePage from "./pages/NotAvailablePage.jsx";
-import Sidebar from "./components/Sidebar.jsx";
+import Sidebar, { readCollapsed, writeCollapsed } from "./components/Sidebar.jsx";
+import TopBar from "./components/TopBar.jsx";
+import HelpDrawer from "./components/HelpDrawer.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
-import CartButton from "./components/CartButton.jsx";
+import { HelpCenter, HelpPanel } from "./ui/helpBridge.jsx";
+import { readRemembered } from "./ui/useRemembered.js";
+import { INSIGHTS_TAB_KEY } from "./components/insights/InsightsHub.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import Overview from "./pages/Overview.jsx";
 import InvoiceSubmissionPage from "./pages/InvoiceSubmissionPage.jsx";
@@ -56,6 +61,12 @@ import OddChecksPage from "./pages/insights/OddChecksPage.jsx";
 import { menuPerformanceRedirect } from "./components/insights/insightsModel.js";
 import { GlossaryProvider } from "./glossary.jsx";
 import { isPlatformUser } from "./login/loginModel.js";
+// Styles last, so the design layer (styles/kc.css) wins over older rules:
+// index.css (tokens + legacy rules), then the KloudC layer. main.jsx's own
+// import of index.css is the same module (loaded once, here).
+import "./index.css";
+import "./styles/kc.css";
+import "./styles/brand.css";
 
 // Wraps a page element: 403-equivalent redirect (to the user's first
 // accessible tab, or the no-access page) if they haven't been granted this
@@ -121,10 +132,19 @@ function InsightsRoute({ path, adminOnly, salesOnly, children }) {
   return <Protected feature="sales_insights">{children}</Protected>;
 }
 
+// /insights (the menu's one Insights link): the tile this user opened last
+// on the hub (kc.tab.insights), else the first main-section page.
 function InsightsHome() {
-  const { canSeeSales, store } = useAuth();
+  const { user, hasFeature, canSeeSales, store } = useAuth();
   if (!featureAvailable("sales_insights", store)) return <NotAvailableRedirect page="insights_compare" />;
-  return <Navigate to={insightsHomePath(canSeeSales)} replace />;
+  const to = insightsLandingPath(readRemembered(INSIGHTS_TAB_KEY), { user, hasFeature, canSeeSales, store }) || insightsHomePath(canSeeSales);
+  return <Navigate to={to} replace />;
+}
+
+// Help Center: track H's (ui/help) when it is in this build, else the
+// older Help page. /glossary is its Glossary tab.
+function HelpRoute({ tab }) {
+  return HelpCenter ? <HelpCenter tab={tab} /> : <HelpPage tab={tab} />;
 }
 
 // Menu performance became Menu trends + Best & worst sellers: an old link
@@ -136,9 +156,15 @@ function OldMenuPerformance() {
 
 function AppShell() {
   const { user, loading, hasFeature } = useAuth();
+  const location = useLocation();
   // Team chat has its own composer at the bottom - the floating Inventory
   // Bot bubble would sit on top of its Send button on a phone.
-  const onTeamChat = useLocation().pathname.startsWith("/team/chat");
+  const onTeamChat = location.pathname.startsWith("/team/chat");
+  // Phone / tablet drawer (TopBar's ☰) and the desktop icon rail (remembered).
+  const [navOpen, setNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  useEffect(() => setNavOpen(false), [location.pathname]);
+  const area = routeForPath(location.pathname)?.area;
 
   if (loading) {
     return (
@@ -180,9 +206,24 @@ function AppShell() {
   }
 
   return (
-    <div className="app">
-      <Sidebar />
-      <main className="main">
+    <div className={`app${collapsed ? " app-nav-collapsed" : ""}`}>
+      <a className="kc-skip-link" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>
+        Skip to content
+      </a>
+      <Sidebar
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapsed={() =>
+          setCollapsed((v) => {
+            writeCollapsed(!v);
+            return !v;
+          })
+        }
+      />
+      <div className="app-body">
+        <TopBar navOpen={navOpen} onToggleNav={() => setNavOpen((v) => !v)} />
+      <main className="main" id="main" tabIndex={-1} data-area={area || undefined}>
         <Routes>
           <Route
             path="/"
@@ -398,14 +439,14 @@ function AppShell() {
             path="/help"
             element={
               <Protected feature="help">
-                <HelpPage />
+                <HelpRoute />
               </Protected>
             }
           />
           {/* Glossary is a tab of Help; /glossary opens that tab (and is the
               whole page for anyone without Help). Same address as before, so
               every "All definitions" link and bookmark still works. */}
-          <Route path="/glossary" element={<HelpPage tab="glossary" />} />
+          <Route path="/glossary" element={<HelpRoute tab="glossary" />} />
           {/* The Notifications page is gone from the website (alerts are
               chosen in the app; the API stays for it): an old link or
               bookmark lands on the dashboard. */}
@@ -438,7 +479,8 @@ function AppShell() {
           <Route path="/teams" element={user.is_admin ? <TeamsPage /> : <Navigate to="/" replace />} />
         </Routes>
       </main>
-      {hasFeature("purchase_order_cart") && <CartButton />}
+      </div>
+      {HelpPanel ? <HelpPanel /> : <HelpDrawer />}
       {hasFeature("ask_bot") && !onTeamChat && <ChatWidget />}
     </div>
   );

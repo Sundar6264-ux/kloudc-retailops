@@ -91,14 +91,17 @@ async function openMenu(page, width) {
   }
 }
 
+// Sign out lives in the top bar's user menu (final pass, DESIGN_SYSTEM 2.1),
+// the same on a phone and a desktop, and in the master console's band.
+async function signOut(page) {
+  await page.click('[data-testid="user-menu"]');
+  await page.click('[data-testid="sign-out"]');
+}
+
 async function logout(page, width) {
   await page.goto(`${BASE}/#/`);
   await settle(page);
-  if (width < 900) {
-    const t = page.locator(".sidebar-toggle");
-    if (await t.isVisible()) await t.click();
-  }
-  await page.click(".sidebar-logout");
+  await signOut(page);
   await page.waitForSelector('[data-testid="login-store-id"]');
 }
 
@@ -395,7 +398,7 @@ async function realOnly(browser) {
     await settle(page, 300);
     check((await page.textContent('[data-testid="pf-totp"]'))?.includes("Two-step sign-in is on"), T("two-step switched on"));
     await shot(page, "platform-totp-1280");
-    await page.click('button:has-text("Log out")');
+    await signOut(page);
     await page.waitForSelector('[data-testid="login-store-id"]');
     await login(page, "PLATFORM", "owner", MASTER_PW);
     await page.waitForSelector('[data-testid="login-totp"]', { timeout: 8000 }).catch(() => {});
