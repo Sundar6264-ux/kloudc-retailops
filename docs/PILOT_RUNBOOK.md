@@ -159,16 +159,18 @@ loaded; on this Mac:
            [--uploads /path/to/current/uploads] [--workdir /roomy/scratch/folder]
 
    It snapshots the source (read-only), upgrades the snapshot to this
-   release's schema, recreates the store's database, copies every table and
-   compares every table's row count and a checksum of every column (any
-   difference fails the import), re-stamps the store identity, removes the
-   old system's sign-in sessions and phone tokens (people sign in again on
-   the new app), adds the provisioned owner login back, and records
-   `store.imported` in the audit log. A store that already has data needs
+   release's schema, copies every table into a new staging database and
+   compares every table's row count and a checksum of every column, re-stamps
+   the store identity, removes the old system's sign-in sessions and phone
+   tokens (people sign in again on the new app), adds the provisioned owner
+   login back, and only then swaps the staging database in for the store's
+   database and records `store.imported` in the audit log. Any difference
+   fails the import with the store's database untouched (`store.import_failed`
+   in the audit log). A store that already has data needs
    `--replace --confirm STORE_CODE`.
 4. **Load the store's private pack** (its own rules - kept outside git):
    `$PY -m app.platform load-pack STORE_CODE --file ~/somewhere-private/store.pack.json`
-   (a file inside a git checkout is refused).
+   (a file inside a git checkout, or a hard link, is refused).
 5. **Resume** the store in the console and restart the server (section 7).
 6. **Daily parity.** Create `~/kloudc-retailops/config/parity.env`:
 
@@ -193,15 +195,23 @@ dev cluster, everything dropped afterwards; the source is only read):
 
     backend/scripts/onboarding/dry_run.sh --source /path/to/store.db [--pack /outside/git/store.pack.json]
 
+It ends with `DRY RUN OK` only when every step passed (pilot mode still on
+after the import, parity clean, ready, backup and drill OK); otherwise
+`DRY RUN FAILED: <steps>` and exit code 1.
+
 ## 5. Backups, restore drill and restoring a store
 
 - **Nightly** (`backup_all.py backup`): `pg_dump` of the platform database and
   every store database on the cluster, each checked with `pg_restore --list`,
   kept 30 days (never the newest). One store failing never stops the others;
   `backups/last_backup_all.json` says what happened.
+- Each dump is taken from one database snapshot, and every table's row count
+  in that same snapshot is saved next to it (`<CODE>-<stamp>.dump.counts.json`).
 - **Monthly drill** (`backup_all.py drill`): the newest dump of each database is
-  restored into a scratch database, its row counts compared with the live
-  one, and the scratch database dropped. `backups/last_drill.json`.
+  restored into a scratch database, its row counts compared with the counts
+  saved at backup time (exact, even though the store kept working since -
+  tables that changed since are only listed), and the scratch database
+  dropped. `backups/last_drill.json`.
 - **Not in the dumps**: the key ring (`secrets/retailops.env`) - keep it offline.
 
 **Restore one store** (on this Mac, from `~/kloudc-retailops/app/backend` with
@@ -220,8 +230,11 @@ then `sudo launchctl bootstrap system /Library/LaunchDaemons/com.kloudc.retailop
 
 ## 6. Start-up checks, health, readiness and logs
 
-With `APP_ENV=production` the server **refuses to start** when:
-- `SESSION_COOKIE_SECURE=false`, or `CORS_ORIGINS` contains `*`;
+With `APP_ENV=production` the server **refuses to start** when (only
+`development`, `dev` and `test` are not production: a typo or any other value,
+such as `staging`, counts as production and is warned about):
+- `SESSION_COOKIE_SECURE=false`, or `CORS_ORIGINS` contains `*` or `null`;
+- `PRIVATE_PACKS_DIR` is inside a git checkout;
 - multi-store mode and the platform database is not PostgreSQL;
 - no key ring, or a development key ring (an id starting `dev`, or a key from
   the local dev ring file);
@@ -229,7 +242,7 @@ With `APP_ENV=production` the server **refuses to start** when:
 - `SIGNUP_ENABLED=true` with no master who could approve a sign-up (sign-ups
   always wait for a master; there is no auto-approve).
 
-Warnings (logged): placeholder domain, no Firebase file (push is a dry run),
+Warnings (logged): unknown `APP_ENV`, `SECURITY_HEADERS=off`, placeholder domain, no Firebase file (push is a dry run),
 no client-IP header behind a proxy, no website build, no `LOG_DIR`.
 `python -m app.ops check-config` prints them without starting anything.
 

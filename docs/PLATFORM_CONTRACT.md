@@ -3015,3 +3015,113 @@ integrated build: 282 shots, no sideways scroll at 375, no crashes
 (`~/storeops/screenshots/final/integrated/`). App: `flutter analyze` clean,
 `flutter test --concurrency=2` 5651 passed / 8 skipped / 0 failed.
 Regression suites A and B were not run (they need a store database copy).
+
+## As built - Final pass: security + ops + onboarding verifier
+
+Attacks on track S's hardening: real `uvicorn` start-ups against scratch
+`ksv_*` databases on the dev cluster (all dropped afterwards), PostgreSQL
+platform tests, and the onboarding dry run on a fresh read-only copy of the
+live store database (copy deleted, `ksv_dry_*` databases dropped).
+
+**Held up (no change needed).** Production refuses to start with
+`SESSION_COOKIE_SECURE=false`/`0`, `CORS_ORIGINS=*`, a `dev*` key id, no key
+ring, `PLATFORM_REQUIRE_TOTP=false`/`no`, a SQLite platform database, or
+sign-ups open with no master; a safe config starts. A master without TOTP
+gets only `require_master_any` routes (TOTP set-up, own password, config).
+Security headers (nosniff, Referrer-Policy, X-Frame-Options, Permissions-
+Policy, COOP, HSTS, CSP on HTML, request id) are on 200/401/404 answers and
+the website; a cross-site CORS preflight gets no allow-origin. `/api/ready`
+answers 503 for a database that is down, behind, or never migrated. The
+import's row-count + per-column checksum verification caught every
+deliberate corruption of the copy (changed number, deleted row, changed
+text, timestamp +1 us). `pg_restore` fails a bit-flipped or truncated dump.
+The pack loader refuses files in a checkout, through a symlink (file or
+folder), `..` paths and git worktrees (`.git` file). Parity found and logged
+every planted difference (missing line, changed price, extra void) to
+`parity-CODE.jsonl` + `parity.run`, exit 1. Pilot mode's transport-level
+block covers every send entry point (invoice WhatsApp/email, checklist
+WhatsApp, flyers, PO email/WhatsApp, auto-task and readiness WhatsApp,
+push for alerts/chat/announcements): all go through the four guarded
+transports.
+
+**Fixed.**
+- **Invoice sends never ran in multi mode** (`invoice_submission.
+  send_invoice_notifications`): its two worker threads came from a plain
+  `ThreadPoolExecutor`, which does not carry context variables, so the
+  workers had no store and failed opening the store database; the invoice
+  stayed "sending" forever. Each worker now runs in
+  `contextvars.copy_context().run`. A source scan
+  (`test_thread_pool_work_keeps_the_callers_context`) fails any new
+  `.submit(` in `app/` without a copied context.
+- **APP_ENV fails closed** (`platform.config.env_is_production`): only
+  `development`, `dev`, `test` are not production; a typo (`producton`),
+  `staging` or anything else is production (and warned about), so it can no
+  longer switch off the start-up checks and the TOTP default. The refusal
+  names the actual value.
+- New start-up errors: `CORS_ORIGINS` containing `null`; `PRIVATE_PACKS_DIR`
+  inside a git checkout. New warning: `SECURITY_HEADERS=off`.
+- **Readiness** (`ops/health.py`, multi): a check that raised after the
+  platform database answered was dropped and the answer was 200; the check
+  that was running now reports `fail: <Error>` (503).
+- **Import is all-or-nothing** (`ops/store_import.py`): the copy goes into a
+  staging database `<db_name>__import`; only after verification, re-stamp,
+  session/token clearing and the owner login does it replace the store's
+  database (new connections to the old one refused, old renamed
+  `<db_name>__replaced`, staging renamed into place, old dropped; waits up
+  to 10 s for this process's own pooled connections). Before, a failed
+  verification left the store's database dropped and refilled with the
+  unverified copy (old stamp, no owner login). A failed import now changes
+  nothing, drops the staging database and writes `store.import_failed`.
+  The uploads folder is checked before anything starts. Timing key
+  `recreate_database` -> `staging_database` (+ `switch`).
+- **Backups record their own row counts** (`scripts/backup/pg_backup.py`):
+  `pg_dump --snapshot` from a psql session holding a REPEATABLE READ
+  transaction, every table counted in that same snapshot and saved as
+  `<dump>.counts.json` (pruned with the dump). The drill compares the
+  restored counts with those (`compared_with: "recorded at backup time"`)
+  and only lists live tables changed since (`live_tables_changed_since`).
+  Before, the drill compared with the live database, so the pilot's drill
+  (1st at 05:00, two hours after the 03:15 backup) would have failed on any
+  store that synced or signed someone in meanwhile. A server that can't
+  export a snapshot falls back to the old behaviour (`snapshot_note`).
+- **Pilot mode fails closed without a store** (`ops/pilot.py`): in multi
+  mode a send with no store context (a raw thread) is refused
+  (`No store is selected: nothing is sent`, counted as `-:<channel>`, logged
+  as an error) instead of reading the platform-level "not in pilot";
+  `push.is_configured()` uses `pilot.sends_blocked()`.
+- **Pack loader** refuses a hard-linked file (its content may also live in a
+  checkout).
+- **Parity** with a reference that has no sales lines in the window is
+  `ok: false` with `problems` (was a vacuous "clean").
+- **Dry run** (`scripts/onboarding/dry_run.sh`) printed `DRY RUN OK` even when
+  parity, readiness, backup or drill failed; it now also checks pilot mode
+  is still on after the import, and ends `DRY RUN FAILED: <steps>` (exit 1)
+  when any step failed.
+
+**Onboarding dry run on the live store database** (fresh read-only
+`.backup`, 451 MB, revision 0059; pack loaded from outside git):
+provision 1.6 s, pilot mode 0.6 s, read-only snapshot 4.4 s, import 89.6 s
+(snapshot 4.4, upgrade 0059->0062 27.0, copy + verify 56.8, switch 0.6; 63
+tables, 849,080 rows, 0 differences; 63 old sessions and 5 phone tokens
+cleared, owner login added), pilot mode still ON, private pack 0.9 s,
+parity 14 days clean (12,163 lines each side), ready 200, backup_all 5.4 s
+(store dump 63 MB), drill 10.3 s, `DRY RUN OK`; databases dropped, copy and
+work folder deleted.
+
+**Tests.** New: `tests/platform/test_ops_hardening_verify.py` (8, multi mode
+on PostgreSQL: pilot store vs normal store on every transport via
+`for_each_store`, `spawn_in_store`, the invoice request + its background
+send; no-store refusal; pilot store still syncs sales; corrupted import
+leaves the store untouched then a clean import works; backup counts from
+the dump's snapshot while writing, exact drill, tampered counts fail,
+pruning; readiness; empty-reference parity) and
+`tests/test_ops_hardening_static.py` (21: APP_ENV values, CORS null, packs
+dir, headers off, hard link, thread-pool scan).
+Full suites: PostgreSQL 2990 passed / 18 skipped / 0 failed; SQLite 2981
+passed / 27 skipped / 0 failed.
+
+**Decisions (reversible).** Unknown `APP_ENV` = production; staging import
+then swap (needs CREATEDB + database ownership, as provisioning already
+does); backups without a snapshot still succeed (old live comparison);
+multi-mode sends with no store are refused; hard-linked packs refused;
+an empty parity reference is a failure, not a pass.
