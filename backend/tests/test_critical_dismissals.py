@@ -717,7 +717,7 @@ def _tables(con):
 def test_migration_0047_up_down_up(tmp_path, which):
     db_file = tmp_path / f"{which}.db"
     if which == "dev":
-        src = BACKEND / "spicetown-dev.db"
+        src = BACKEND / "origin-dev.db"
         if not src.exists():
             pytest.skip("no dev database here")
         _copy(src, db_file)

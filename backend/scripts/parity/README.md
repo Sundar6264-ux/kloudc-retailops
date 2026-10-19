@@ -1,6 +1,6 @@
 # Parity harness (multi-store plan, batch MT1)
 
-M1's golden rule is **zero behaviour change for Spice Town**. This harness
+M1's golden rule is **zero behaviour change for the pilot store**. This harness
 is how every M1 batch proves it: record what the app answers on a copy of
 the production database before the change, record again after, diff. The
 batch may ship only with **0 differences**.
@@ -78,7 +78,7 @@ baseline is a 3.12 recording.
 ## Baseline
 
 The baseline for the Oct 15 production copy is outside git (it holds
-business data): `/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m1/baseline/`
+business data): `$M/baseline/`, where `$M` is a private scratch folder outside git
 (Python 3.12), plus `baseline-py39/` for quick checks with the dev venv.
 
 ## Checking a batch
@@ -86,7 +86,7 @@ business data): `/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m1/baseline
 From `website/backend` (or the worktree's `backend`):
 
     PY=.venv312/bin/python          # the prod runtime; the baseline is 3.12
-    M=/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m1
+    M=${PARITY_WORK:?a private scratch folder outside git}
     nice -n 15 $PY scripts/parity/parity_record.py --db $M/prodcopy.db --out $M/after-MTn --force
     $PY scripts/parity/parity_diff.py $M/baseline $M/after-MTn
 
@@ -110,12 +110,12 @@ SQLite values are stored in an older text form (same instant, e.g. a
 timestamp without microseconds) under `postgres_copy`.
 
     PG=/opt/homebrew/opt/postgresql@16/bin
-    $PG/createdb -h 127.0.0.1 -p 5433 -U storeops -T template0 -l C -E UTF8 so_a_parity
+    $PG/createdb -h 127.0.0.1 -p 5433 -U retailops -T template0 -l C -E UTF8 so_a_parity
     nice -n 15 $PY scripts/parity/parity_record.py --db $M/prodcopy.db --migrate --out $M/rec-sqlite --force
     nice -n 15 $PY scripts/parity/parity_record.py --db $M/prodcopy.db --migrate --out $M/rec-pg --force \
         --pg-url postgresql+psycopg://storeops@127.0.0.1:5433/so_a_parity
     $PY scripts/parity/parity_diff.py $M/rec-sqlite $M/rec-pg
-    $PG/dropdb -h 127.0.0.1 -p 5433 -U storeops so_a_parity
+    $PG/dropdb -h 127.0.0.1 -p 5433 -U retailops so_a_parity
 
 Result on the Oct 18 production copy (0059, migrated to 0062): 110 endpoints,
 all 200, **12 differences, all explained** (docs/PLATFORM_CONTRACT.md,
@@ -129,8 +129,8 @@ fingerprint_after columns holding second-precision timestamp text in SQLite.
 Only on a fresh production copy, and only from code that is known-good
 (the deployed commit), never from a batch under test:
 
-    M=/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m1
-    sqlite3 "file:/Users/sundar/spicetown-backend/backend/spicetown.db?mode=ro" ".backup $M/prodcopy.db"
+    M=${PARITY_WORK:?a private scratch folder outside git}
+    sqlite3 "file:$ORIGIN_DB?mode=ro" ".backup $M/prodcopy.db"   # ORIGIN_DB: the live SQLite file (read-only)
     git checkout <deployed commit>
     nice -n 15 .venv312/bin/python scripts/parity/parity_record.py --db $M/prodcopy.db --out $M/baseline --force
     nice -n 15 .venv312/bin/python scripts/parity/parity_record.py --db $M/prodcopy.db --out $M/baseline-check --force
@@ -145,7 +145,7 @@ changes how the POS sync *writes* (MT3 moved it to `app/pos/sync/`) is also
 checked by running the old and the new sync code over the same recorded
 Toast answers on the same prod copy and comparing every row they write:
 
-    M=/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m1
+    M=${PARITY_WORK:?a private scratch folder outside git}
     git archive <old commit> backend/app | tar -x -C $M/old_tree
     .venv312/bin/python scripts/parity/sync_compare.py run --db $M/prodcopy.db --code $M/old_tree/backend --out $M/cmp/old
     .venv312/bin/python scripts/parity/sync_compare.py run --db $M/prodcopy.db --code . --out $M/cmp/new

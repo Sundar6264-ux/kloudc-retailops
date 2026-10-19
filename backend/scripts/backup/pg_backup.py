@@ -3,10 +3,10 @@
 pg_dump, checked, kept 30 days - and a restore drill that proves a dump
 restores.
 
-    python3 pg_backup.py backup --url postgresql://storeops_admin@db:5432/so_store_x \\
-                                --dest ~/storeops-backups/so_store_x [--name STORE_X]
-    python3 pg_backup.py drill  --url postgresql://storeops_admin@db:5432/so_store_x \\
-                                --dump ~/storeops-backups/so_store_x/STORE_X-20261018-033000.dump
+    python3 pg_backup.py backup --url postgresql://retailops_admin@db:5432/so_store_x \\
+                                --dest ~/retailops-backups/so_store_x [--name STORE_X]
+    python3 pg_backup.py drill  --url postgresql://retailops_admin@db:5432/so_store_x \\
+                                --dump ~/retailops-backups/so_store_x/STORE_X-20261018-033000.dump
 
 Standard library only (needs the PostgreSQL client programs pg_dump /
 pg_restore / psql of the SERVER's major version or newer; --pg-bin points at

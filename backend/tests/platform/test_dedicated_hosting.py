@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.platform.models import AuditLog, Store
 from tests.platform.conftest import provision, store_login
 
-NEW_URL = "https://alpha.storeops.test"
+NEW_URL = "https://alpha.retailops.test"
 
 
 def _hosting_routes(client, req_id=1):
@@ -62,7 +62,7 @@ def test_flag_on_request_approve_complete_moves_the_store(master_client, client,
     rb = master_client.post(f"/api/platform/hosting-requests/{rid}/rollback", json={"note": "slow"})
     assert rb.json()["status"] == "rolled_back"
     assert store_login(client, "ALPHA", "ann", "alpha-owner-pass").status_code == 200
-    assert client.get("/api/public/stores/ALPHA").json()["api_base_url"] == "https://app.storeops.test"
+    assert client.get("/api/public/stores/ALPHA").json()["api_base_url"] == "https://app.retailops.test"
     acts = list(pdb.execute(select(AuditLog.action).where(AuditLog.action.like("hosting.%")).order_by(AuditLog.id)).scalars())
     assert acts == ["hosting.requested", "hosting.approved", "hosting.migrating", "hosting.completed", "hosting.rolled_back"]
 
@@ -76,7 +76,7 @@ def test_dedicated_node_serves_only_its_store(client, pdb, platform_env, monkeyp
     assert store_login(client, "ALPHA", "ann", "alpha-owner-pass").status_code == 200
     r = store_login(client, "BRAVO", "bob", "bravo-owner-pass")
     assert r.status_code == 409 and r.json()["error"] == "store_moved"
-    assert r.json()["api_base_url"] == "https://app.storeops.test"
+    assert r.json()["api_base_url"] == "https://app.retailops.test"
 
 
 def test_rejected_and_cancelled(master_client, platform_env, monkeypatch):

@@ -3,17 +3,17 @@
 // (MT7 generates those; store/branding.test.mjs compares the field names).
 // Made-up values only: 555 numbers, .invalid hosts.
 export const BRANDING = {
-  "STOREOPS_TEST_TOAST": {
+  "RETAILOPS_TEST_TOAST": {
     "schema": 1,
-    "store_code": "STOREOPS_TEST_TOAST",
+    "store_code": "RETAILOPS_TEST_TOAST",
     "name": "Test Toast Market",
     "short_name": "Toast Test",
     "product": {
-      "name": "StoreOps",
+      "name": "KloudC RetailOps",
       "company": "KloudC LLC"
     },
-    "logo_url": "https://storeops-test-toast.storeops.invalid/branding/logo.png",
-    "icon_url": "https://storeops-test-toast.storeops.invalid/branding/icon.png",
+    "logo_url": "https://retailops-test-toast.retailops.invalid/branding/logo.png",
+    "icon_url": "https://retailops-test-toast.retailops.invalid/branding/icon.png",
     "primary_color": "#1D4ED8",
     "secondary_color": "#93C5FD",
     "timezone": "America/Chicago",
@@ -43,8 +43,8 @@ export const BRANDING = {
       "whatsapp",
       "ai"
     ],
-    "labels_url": "https://labels-storeops-test-toast.storeops.invalid",
-    "public_host": "https://storeops-test-toast.storeops.invalid",
+    "labels_url": "https://labels-retailops-test-toast.retailops.invalid",
+    "public_host": "https://retailops-test-toast.retailops.invalid",
     "legal": {
       "company": "KloudC LLC",
       "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
@@ -57,21 +57,21 @@ export const BRANDING = {
     },
     "store_url": {
       "ios": null,
-      "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
+      "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
     },
     "demo": false
   },
-  "STOREOPS_TEST_CLOVER": {
+  "RETAILOPS_TEST_CLOVER": {
     "schema": 1,
-    "store_code": "STOREOPS_TEST_CLOVER",
+    "store_code": "RETAILOPS_TEST_CLOVER",
     "name": "Test Clover Grocery",
     "short_name": "Clover Test",
     "product": {
-      "name": "StoreOps",
+      "name": "KloudC RetailOps",
       "company": "KloudC LLC"
     },
-    "logo_url": "https://storeops-test-clover.storeops.invalid/branding/logo.png",
-    "icon_url": "https://storeops-test-clover.storeops.invalid/branding/icon.png",
+    "logo_url": "https://retailops-test-clover.retailops.invalid/branding/logo.png",
+    "icon_url": "https://retailops-test-clover.retailops.invalid/branding/icon.png",
     "primary_color": "#15803D",
     "secondary_color": "#86EFAC",
     "timezone": "America/Los_Angeles",
@@ -92,7 +92,7 @@ export const BRANDING = {
     ],
     "store_features": [],
     "labels_url": null,
-    "public_host": "https://storeops-test-clover.storeops.invalid",
+    "public_host": "https://retailops-test-clover.retailops.invalid",
     "legal": {
       "company": "KloudC LLC",
       "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
@@ -105,23 +105,23 @@ export const BRANDING = {
     },
     "store_url": {
       "ios": null,
-      "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
+      "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
     },
     "demo": false
   },
   "DEMO": {
     "schema": 1,
     "store_code": "DEMO",
-    "name": "StoreOps Demo Market",
+    "name": "KloudC RetailOps Demo Market",
     "short_name": "Demo",
     "product": {
-      "name": "StoreOps",
+      "name": "KloudC RetailOps",
       "company": "KloudC LLC"
     },
-    "logo_url": "https://demo.storeops.invalid/branding/logo.png",
-    "icon_url": "https://demo.storeops.invalid/branding/icon.png",
-    "primary_color": "#0F766E",
-    "secondary_color": "#334155",
+    "logo_url": "https://demo.retailops.invalid/branding/logo.png",
+    "icon_url": "https://demo.retailops.invalid/branding/icon.png",
+    "primary_color": "#004BAD",
+    "secondary_color": "#2EA3F2",
     "timezone": "America/New_York",
     "currency": "USD",
     "locale": "en-US",
@@ -133,7 +133,7 @@ export const BRANDING = {
     ],
     "store_features": [],
     "labels_url": null,
-    "public_host": "https://demo.storeops.invalid",
+    "public_host": "https://demo.retailops.invalid",
     "legal": {
       "company": "KloudC LLC",
       "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
@@ -146,7 +146,7 @@ export const BRANDING = {
     },
     "store_url": {
       "ios": null,
-      "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
+      "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
     },
     "demo": true
   }

@@ -1,0 +1,5 @@
+# The only tracked line allowed to hit the origin-name guard
+# (tests/test_no_origin_names.py): the blocked-domain constant, which the
+# product needs in order to refuse that domain (rule 0.3). One entry per line,
+# <path>:<substring of the line>. Entries that no longer match fail the test.
+backend/app/config.py:REFUSED_DOMAIN = "

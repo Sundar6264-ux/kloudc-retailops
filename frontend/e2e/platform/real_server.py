@@ -1,4 +1,4 @@
-"""The REAL StoreOps server in multi mode for the website platform checks
+"""The REAL KloudC RetailOps server in multi mode for the website platform checks
 (platform.mjs), instead of mock_server.mjs: a throwaway platform database and
 one PostgreSQL database per store on a local cluster, the stores the checks
 expect, and fakes for every outside service.
@@ -14,7 +14,7 @@ Environment (run_real.sh sets these):
   MOCK_STORE_PASSWORD / MOCK_MASTER_PASSWORD   random passwords from run_real.sh
 
 Stores: DEMO_GROCERY (Toast; users owner (admin) + staff), PAUSED_MART
-(suspended), MOVED_MART (moved to https://moved.storeops.invalid; needs
+(suspended), MOVED_MART (moved to https://moved.retailops.invalid; needs
 DEDICATED_HOSTING_ENABLED, so the Hosting tab is "on" in this run),
 CLOVER_MART (Clover). Master: owner. Nothing here calls Toast, Clover,
 WhatsApp, SMTP, push or Anthropic: credentials are blank, the schedulers are
@@ -45,7 +45,7 @@ if not PREFIX.startswith("so_") or not PREFIX.replace("_", "").isalnum():
 
 PLATFORM_DB = f"{PREFIX}_platform"
 STORE_PREFIX = f"{PREFIX}_s_"
-TMP = pathlib.Path(tempfile.mkdtemp(prefix="storeops-platform-e2e-"))
+TMP = pathlib.Path(tempfile.mkdtemp(prefix="retailops-platform-e2e-"))
 
 
 def _url(db_name: str) -> str:
@@ -61,10 +61,10 @@ os.environ.update(
         "PG_ADMIN_URL": PG_URL,
         "STORE_DB_PREFIX": STORE_PREFIX,
         # A throwaway key ring for this run only (never written to disk).
-        "STOREOPS_SECRET_KEYS": "e2e1:" + base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
+        "RETAILOPS_SECRET_KEYS": "e2e1:" + base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
         "UPLOADS_ROOT": str(TMP / "uploads"),
         "PLATFORM_PUBLIC_URL": f"http://127.0.0.1:{PORT}",
-        "PLATFORM_DOMAIN": "storeops.invalid",
+        "PLATFORM_DOMAIN": "retailops.invalid",
         "DEDICATED_HOSTING_ENABLED": "true",
         "SIGNUP_ENABLED": "true",
         "SCHEDULER_ENABLED": "false",
@@ -156,7 +156,7 @@ def seed() -> None:
         stores.suspend(pdb, "PAUSED_MART", actor="platform:e2e", reason="e2e: a paused store")
         moved = pdb.query(Store).filter(Store.code == "MOVED_MART").one()
         moved.hosting = "dedicated"
-        moved.api_base_url = "https://moved.storeops.invalid"
+        moved.api_base_url = "https://moved.retailops.invalid"
         pdb.commit()
     from app.platform.bridge import store_changed
 

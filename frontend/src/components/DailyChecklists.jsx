@@ -23,7 +23,7 @@ import ChecklistAnswers from "./checklists/ChecklistAnswers.jsx";
 // ./checklists/ (shared with the Checklist builder's live preview).
 
 // Extra "who/what" answers the backend lists next to "Submitted by"
-// (submission `details`, e.g. [{label: "Chef", value: "RK"}]) as "Chef: RK".
+// (submission `details`, e.g. [{label: "Chef", value: "JL"}]) as "Chef: JL".
 function detailsText(item) {
   return (item.details || []).map((d) => `${d.label}: ${d.value}`).join(" · ");
 }

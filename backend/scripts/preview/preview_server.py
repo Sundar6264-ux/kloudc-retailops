@@ -1,13 +1,13 @@
-"""Local preview of the shared StoreOps service (one server, a database per store).
+"""Local preview of the shared KloudC RetailOps service (one server, a database per store).
 
     backend/.venv/bin/python scripts/preview/preview_server.py [--port 8870] [--reset] [--build-only]
 
-/Users/sundar/storeops/preview.sh wraps this (starts PostgreSQL, builds the
+~/storeops/preview.sh wraps this (starts PostgreSQL, builds the
 website, then runs this). What it gives you on http://127.0.0.1:<port>:
 
 - the platform (control plane) database and a master login (Store ID
   ``PLATFORM``) for the master console;
-- STOREOPS_TEST_TOAST and STOREOPS_TEST_CLOVER, the two fake test stores,
+- RETAILOPS_TEST_TOAST and RETAILOPS_TEST_CLOVER, the two fake test stores,
   provisioned the way an approved store is (database, migrations, store-init
   with their pack, the owner's admin login) plus a staff login on the Toast
   store; they have no sales (their POS keys are blank, like a store that has
@@ -48,8 +48,8 @@ DISCARD = "http://127.0.0.1:9"
 
 # code -> (pack id, POS, owner login)
 TEST_STORES = {
-    "STOREOPS_TEST_TOAST": ("test_toast", "toast", "owner"),
-    "STOREOPS_TEST_CLOVER": ("test_clover", "clover", "owner"),
+    "RETAILOPS_TEST_TOAST": ("test_toast", "toast", "owner"),
+    "RETAILOPS_TEST_CLOVER": ("test_clover", "clover", "owner"),
 }
 DEMO_CODE = "DEMO"
 DEMO_ADMIN = "store_manager"  # the demo data's own store admin (scripts/demo/demo_catalog.py)
@@ -90,7 +90,7 @@ def parse_args():
     p.add_argument("--port", type=int, default=8870)
     p.add_argument("--pg-url", default="postgresql+psycopg://storeops@127.0.0.1:5433/postgres",
                    help="admin URL of the local cluster (must allow CREATE DATABASE)")
-    p.add_argument("--state", default=str(pathlib.Path.home() / "storeops" / ".preview"))
+    p.add_argument("--state", default=str(pathlib.Path.home() / "retailops" / ".preview"))
     p.add_argument("--dist", default="", help="the built website (default <state>/dist)")
     p.add_argument("--reset", action="store_true", help="drop the preview databases and files, build again")
     p.add_argument("--build-only", action="store_true", help="build (if needed), print the logins, do not serve")
@@ -136,10 +136,10 @@ os.environ.update(
         "STORE_DATABASE_URL_TEMPLATE": _url("{db_name}"),
         "PG_ADMIN_URL": ARGS.pg_url,
         "STORE_DB_PREFIX": STORE_PREFIX,
-        "STOREOPS_SECRET_KEYS": _keyring(),
+        "RETAILOPS_SECRET_KEYS": _keyring(),
         "UPLOADS_ROOT": str(UPLOADS),
         "PLATFORM_PUBLIC_URL": f"http://127.0.0.1:{ARGS.port}",
-        "PLATFORM_DOMAIN": "storeops.invalid",
+        "PLATFORM_DOMAIN": "retailops.invalid",
         "SIGNUP_ENABLED": "true",
         "SCHEDULER_ENABLED": "false",
         "NOTIFICATIONS_ENABLED": "false",
@@ -240,7 +240,7 @@ def _build_demo(logins: dict) -> None:
         c.execute(text(f'CREATE DATABASE "{db_name}" TEMPLATE template0 ENCODING \'UTF8\' LC_COLLATE \'C\' LC_CTYPE \'C\''))
     eng.dispose()
     review_pw, admin_pw = _password(), _password()
-    with tempfile.TemporaryDirectory(prefix="storeops-preview-demo-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="retailops-preview-demo-") as tmp:
         tmp_path = pathlib.Path(tmp)
         pw_file = tmp_path / "review_password"
         _write_private(pw_file, review_pw)
@@ -328,12 +328,12 @@ def build() -> dict:
             pdb.commit()
         logins[code] = [{"username": owner, "password": pw, "role": "store admin (owner)"}]
     staff_pw = _password()
-    with tenant_session("STOREOPS_TEST_TOAST") as db:
+    with tenant_session("RETAILOPS_TEST_TOAST") as db:
         db.add(User(username="staff", password_hash=hash_password(staff_pw), is_admin=False,
                     allowed_features=json.dumps(["overview", "items_sold", "reorder_candidates", "vendor_calendar",
                                                  "team_tasks", "team_chat", "daily_checklists", "help"])))
         db.commit()
-    logins["STOREOPS_TEST_TOAST"].append({"username": "staff", "password": staff_pw, "role": "staff"})
+    logins["RETAILOPS_TEST_TOAST"].append({"username": "staff", "password": staff_pw, "role": "staff"})
 
     _build_demo(logins)
     for code in [*TEST_STORES, DEMO_CODE]:
@@ -344,7 +344,7 @@ def build() -> dict:
 
 def print_logins(logins: dict) -> None:
     url = f"http://127.0.0.1:{ARGS.port}"
-    print("\nStoreOps preview (one shared server, a PostgreSQL database per store)")
+    print("\nRetailOps preview (one shared server, a PostgreSQL database per store)")
     print(f"  Website:  {url}/   (one login page: Store ID + Username + Password)")
     print(f"  Sign-up:  {url}/#/signup   Master console: sign in with Store ID PLATFORM")
     for code, rows in logins.items():

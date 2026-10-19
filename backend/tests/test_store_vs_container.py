@@ -30,7 +30,7 @@ OLDER = TODAY - dt.timedelta(days=3)
 URL = "/api/reports/store-vs-container"
 
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
-DEV_DB = pathlib.Path(os.environ.get("SPICETOWN_DEV_DB", BACKEND / "spicetown-dev.db"))
+DEV_DB = pathlib.Path(os.environ.get("ORIGIN_DEV_DB", BACKEND / "origin-dev.db"))
 
 
 @pytest.fixture(autouse=True)

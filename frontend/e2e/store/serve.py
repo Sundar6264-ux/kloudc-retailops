@@ -1,6 +1,6 @@
 """Throwaway store server for the per-store website checks (MT9).
 
-    STORE_E2E_WORK=<dir> STORE_E2E_CODE=STOREOPS_TEST_TOAST STORE_E2E_PORT=8861 \\
+    STORE_E2E_WORK=<dir> STORE_E2E_CODE=RETAILOPS_TEST_TOAST STORE_E2E_PORT=8861 \\
         python -I serve.py
 
 One fake store (docs/M2_CONTRACT.md section 7) on a FRESH database under the
@@ -49,7 +49,7 @@ env = {
     "POS_PROVIDER": PROVIDER,
     "PUBLIC_HOST": f"http://127.0.0.1:{PORT}",
     "LABELS_URL": FIXTURE["labels_url"] or "",
-    "AP_INBOX_EMAIL": "ap@storeops-test-toast.storeops.invalid" if "ap_inbox" in feats else "",
+    "AP_INBOX_EMAIL": "ap@retailops-test-toast.retailops.invalid" if "ap_inbox" in feats else "",
     "TOAST_INVOICE_EMAIL": "",
     "AI_ENABLED": "true" if "ai" in feats else "false",
     "DEMO_MODE": "true" if FIXTURE["demo"] else "false",

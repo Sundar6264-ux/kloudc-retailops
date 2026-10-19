@@ -1,9 +1,0 @@
-# Allowed legacy store names in code (backend/app, frontend/src), one per line:
-#   <path>:<exact substring of the line>
-# Read by tests/test_no_spicetown_names.py (M2 contract 9.2). Entries that no
-# longer match anything fail the test, so this list only shrinks: MT7
-# (settings), MT8 (store pack) and MT9 (website) remove their files' lines as
-# they move the values out. At the M2 exit it holds only legacy setting names
-# and the comments that explain them.
-backend/app/config.py:REFUSED_DOMAIN = "spicetown.shop"
-backend/app/store/__main__.py:LEGACY_CATEGORY_SUPPLIER = "Shaz International"

@@ -41,12 +41,12 @@ from tests.store_fixtures import private_data
 NY = zoneinfo.ZoneInfo("America/New_York")
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 
-ST, SK, FSA = "spice_town_closing", "street_kitchen_closing", "street_kitchen_fsa"
+ST, SK, FSA = "store_closing", "kitchen_closing", "kitchen_fsa"
 ORIGINAL = {
-    (ST, 1): checklist_builtin.SPICE_TOWN_CLOSING,
-    (SK, 1): checklist_builtin.STREET_KITCHEN_CLOSING,
-    (FSA, 1): checklist_builtin.STREET_KITCHEN_FSA_CLOSING_V1,
-    (FSA, 2): checklist_builtin.STREET_KITCHEN_FSA_CLOSING,
+    (ST, 1): checklist_builtin.STORE_CLOSING,
+    (SK, 1): checklist_builtin.KITCHEN_CLOSING,
+    (FSA, 1): checklist_builtin.KITCHEN_FSA_CLOSING_V1,
+    (FSA, 2): checklist_builtin.KITCHEN_FSA_CLOSING,
 }
 
 
@@ -74,7 +74,7 @@ def _is_str(v, nullable=False):
 
 
 def build5_parse(schema: dict) -> list:
-    """Python port of how app build 5 (spicetown-mobile 9985842,
+    """Python port of how app build 5 (the origin app, commit 9985842,
     checklist_schema.dart) casts a schema - an assert fails exactly where
     the Dart `as` cast would throw. Returns build 5's allRequiredIds."""
     assert _is_str(schema["checklist_type"]) and _is_str(schema["title"])
@@ -230,18 +230,19 @@ def checker_client(db, checker):
 
 
 def test_builtin_schemas_are_frozen():
-    """checklist_builtin holds the schemas exactly as at 854165d (prod) - never
-    edit them; stored submissions render with them."""
+    """checklist_builtin holds the schemas exactly as at 854165d (prod), with
+    only the KloudC RetailOps final pass's neutral ids and titles - never edit
+    them; stored submissions render with them."""
     expected = {
-        "SPICE_TOWN_CLOSING": "5eb395247daca394c7ce530a3ba491d21de2110c58e7e03bb5aeb3e4e3b549f3",
-        "STREET_KITCHEN_CLOSING": "3970cc36f71cc663818f3b0471ccb8d64b45b6fff986340b7f85230ecfc86cb8",
-        "STREET_KITCHEN_FSA_CLOSING_V1": "5f24915f2ddab2e42aa1db45870aa1262751b931f9f5a400ca66e08aa5f441d3",
+        "STORE_CLOSING": "758fdc1412faa7eca0f0b0ea8c565af3bcf4be43aa095b38a5886b30f33ed7e7",
+        "KITCHEN_CLOSING": "8243182a0145d4b34def0afa8741932f8aba4c9a4513a2ad524f66a6ba33ba72",
+        "KITCHEN_FSA_CLOSING_V1": "9fc9243dd8e71592c1f7df653d4c4e0d5a4d6a6fda7c7587bf89cf0659c66830",
     }
     for name, digest in expected.items():
         value = getattr(checklist_builtin, name)
         assert hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest() == digest, name
-    fsa_v2 = checklist_builtin.STREET_KITCHEN_FSA_CLOSING
-    assert fsa_v2["sections"] == checklist_builtin.STREET_KITCHEN_FSA_CLOSING_V1["sections"][1:]
+    fsa_v2 = checklist_builtin.KITCHEN_FSA_CLOSING
+    assert fsa_v2["sections"] == checklist_builtin.KITCHEN_FSA_CLOSING_V1["sections"][1:]
     assert "chef_name" not in json.dumps(fsa_v2)
 
 
@@ -264,7 +265,7 @@ def test_seeded_checklists_are_served_exactly_as_before(db, seeded_db):
     # The current versions: FSA is version 2 (no Chef Name).
     assert [checklist_schemas.get_schema(t)["version"] for t in (ST, SK, FSA)] == [1, 1, 2]
     served = checklist_schemas.get_schema(ST)
-    assert served["short_name"] == "Spice Town"
+    assert served["short_name"] == "Main Store"
     assert served["settings"] == {"closing": True, "whatsapp_group": "store", "all_as_usual": True}
     assert checklist_schemas.get_schema(SK)["settings"]["whatsapp_group"] == "kitchen"
     assert checklist_schemas.get_schema(FSA)["settings"]["whatsapp_group"] == "kitchen"
@@ -294,11 +295,11 @@ def test_items_form_round_trip_emits_the_same_legacy_blocks(key):
 
 
 def test_items_are_answer_compatible_with_legacy_keys():
-    items = engine.legacy_to_items(checklist_builtin.STREET_KITCHEN_FSA_CLOSING)
+    items = engine.legacy_to_items(checklist_builtin.KITCHEN_FSA_CLOSING)
     keys = set()
     for _, item in engine.iter_items(items):
         keys.update(engine.answer_keys(item))
-    assert keys == old.all_row_ids(checklist_builtin.STREET_KITCHEN_FSA_CLOSING) | {
+    assert keys == old.all_row_ids(checklist_builtin.KITCHEN_FSA_CLOSING) | {
         f"c{g}_{i}" for g, n in ((0, 6), (1, 10), (2, 2)) for i in range(n)
     } | {"issues_text"}
 
@@ -352,7 +353,7 @@ def test_generated_answers_give_the_same_results(key):
     trip through the editor."""
     ctype, version = key
     original, stored_view, round_trip = _engines(ctype, version)
-    rng = random.Random(f"{ctype}-{version}")
+    rng = random.Random(f"{ctype}-{version}-answers")
     samples = [good_answers(original)] + [random_answers(original, rng) for _ in range(1500)]
     valid = 0
     for answers in samples:
@@ -368,9 +369,9 @@ def test_generated_answers_give_the_same_results(key):
 
 def test_old_fsa_submission_still_shows_its_chef(db, admin_client):
     """Stored before Sep 30 (definition_version NULL = 1): history, detail
-    and the WhatsApp text keep "Chef: RK"; a new one has no chef line."""
-    answers = good_answers(checklist_builtin.STREET_KITCHEN_FSA_CLOSING_V1)
-    assert answers["chef_name"] == "Amandeep"
+    and the WhatsApp text keep "Chef: JL"; a new one has no chef line."""
+    answers = good_answers(checklist_builtin.KITCHEN_FSA_CLOSING_V1)
+    assert answers["chef_name"] == "Avery"
     old_row = ChecklistSubmission(
         checklist_type=FSA, submitted_by_user_id=1, submitted_by_name="asha",
         answers_json=json.dumps(answers), all_clear=True, answers_hash="h1",
@@ -379,16 +380,16 @@ def test_old_fsa_submission_still_shows_its_chef(db, admin_client):
     db.add(old_row)
     db.commit()
     body = admin_client.get(f"/api/checklists/{old_row.id}").json()
-    assert body["details"] == [{"label": "Chef", "value": "Amandeep"}]
+    assert body["details"] == [{"label": "Chef", "value": "Avery"}]
     assert body["definition_version"] == 1
-    assert "\nasha · Sep 28, 9:00 PM\nChef: Amandeep\n\n" in checklist_submission._whatsapp_text(old_row)
+    assert "\nasha · Sep 28, 9:00 PM\nChef: Avery\n\n" in checklist_submission._whatsapp_text(old_row)
     # Its version renders with the chef question.
     schema = admin_client.get(f"/api/checklists/schema/{FSA}?version=1").json()
     assert schema["sections"][0]["questions"][0]["id"] == "chef_name"
 
 
 def test_new_fsa_submission_has_no_chef(db, checker_client, no_send):
-    answers = good_answers(checklist_builtin.STREET_KITCHEN_FSA_CLOSING)
+    answers = good_answers(checklist_builtin.KITCHEN_FSA_CLOSING)
     r = checker_client.post(f"/api/checklists/{FSA}/submit", json={"answers": answers})
     assert r.status_code == 200, r.text
     body = r.json()
@@ -432,7 +433,7 @@ def test_short_text_and_validation_rules():
     email = _one({"id": "e", "type": "short_text", "title": "Email", "validation": {"kind": "text", "rule": "email"}})
     assert _err(email, {"e": "a@b.co"}) is None and _err(email, {"e": "nope"}) == "Email: must be an email address"
     url = _one({"id": "u", "type": "short_text", "title": "Link", "validation": {"kind": "text", "rule": "url"}})
-    assert _err(url, {"u": "https://spicetown.shop/x"}) is None and _err(url, {"u": "not a url"})
+    assert _err(url, {"u": "https://mainstore.example/x"}) is None and _err(url, {"u": "not a url"})
     contains = _one({"id": "c", "type": "short_text", "title": "Code", "validation": {"kind": "text", "rule": "contains", "value": "ST-"}})
     assert _err(contains, {"c": "ST-12"}) is None and _err(contains, {"c": "12"}) == "Code: must contain 'ST-'"
     regex = _one({"id": "r", "type": "short_text", "title": "Code", "validation": {"kind": "regex", "rule": "matches", "value": "[A-Z]{2}\\d+"}})
@@ -470,10 +471,10 @@ def test_multiple_choice_other_and_issue_tags():
 
 def test_dropdown_and_summary_label():
     s = _one({"id": "who", "type": "dropdown", "title": "Manager on duty", "required": True, "summary_label": "Manager",
-              "options": [{"value": "RK"}, {"value": "Sadia"}]})
-    assert _err(s, {"who": "RK"}) is None
+              "options": [{"value": "JL"}, {"value": "Dana"}]})
+    assert _err(s, {"who": "JL"}) is None
     assert _err(s, {"who": "Other: Bob"}) == "Invalid answer 'Other: Bob' for 'Manager on duty'"
-    assert engine.summary_details(s, {"who": "RK"}) == [{"label": "Manager", "value": "RK"}]
+    assert engine.summary_details(s, {"who": "JL"}) == [{"label": "Manager", "value": "JL"}]
 
 
 def test_checkboxes():
@@ -732,7 +733,7 @@ def test_admin_list_and_detail_of_the_seeded_three(db, admin_client):
     assert detail["draft"] is None and detail["problems"] == []
     editable = detail["editable"]
     assert editable["format"] == "items" and editable["legacy_order"] is True
-    assert editable["title"] == "Street Kitchen - Food Service Associate Closing"
+    assert editable["title"] == "Market Kitchen - Food Service Associate Closing"
     v1 = admin_client.get(f"/api/checklists/admin/definitions/{FSA}/versions/1").json()
     assert v1["schema"]["sections"][0]["questions"][0]["id"] == "chef_name"
     assert admin_client.get(f"/api/checklists/admin/definitions/{FSA}/versions/9").status_code == 404
@@ -882,7 +883,7 @@ def test_patch_settings_title_active_and_order(db, admin_client, checker_client)
 
 
 def test_editing_a_seeded_checklist_keeps_build5_working(db, admin_client, checker_client, no_send):
-    """The owner edits Spice Town's checklist in the editor (items form now).
+    """The owner edits Main Store's checklist in the editor (items form now).
     Build 5 still gets the same `grid` blocks and answer keys, a stored
     real submission's answers still validate and flag the same way - even if
     the editor dropped the legacy keys it doesn't understand."""
@@ -898,7 +899,7 @@ def test_editing_a_seeded_checklist_keeps_build5_working(db, admin_client, check
     assert r.status_code == 200, r.text
     served = checker_client.get(f"/api/checklists/schema/{ST}").json()
     assert served["version"] == 2 and "min_app_build" not in served
-    expected = copy.deepcopy(checklist_builtin.SPICE_TOWN_CLOSING)
+    expected = copy.deepcopy(checklist_builtin.STORE_CLOSING)
     expected["sections"][0]["grid"]["rows"][0]["label"] = "All freezers below 0°F?"
     deep_superset(served, expected)
     rows = json.loads(private_data("checklist_real_answers_2026-09-30.json").read_text())["submissions"]
@@ -977,15 +978,15 @@ def test_closing_alert_is_still_one_notification_driven_by_settings(db, admin_cl
     alerts = closing_checklist_alerts(db, NIGHT)
     assert len(alerts) == 1
     assert alerts[0].body == (
-        "Not submitted yet: Spice Town - Daily Closing Checklist, Street Kitchen – Chef Closing Checklist, "
-        "Street Kitchen - Food Service Associate Closing and Deli Closing"
+        "Not submitted yet: Main Store - Daily Closing Checklist, Market Kitchen – Chef Closing Checklist, "
+        "Market Kitchen - Food Service Associate Closing and Deli Closing"
     )
     assert alerts[0].dedupe_keys == ["closing_checklist:2026-09-28"]
     admin_client.patch(f"/api/checklists/admin/definitions/{FSA}", json={"settings": {"closing": False}})
     admin_client.patch(f"/api/checklists/admin/definitions/{ST}", json={"active": False})
     _row(db, deli, dt.datetime(2026, 9, 28, 21, 0, tzinfo=NY))
     alerts = closing_checklist_alerts(db, NIGHT)
-    assert len(alerts) == 1 and alerts[0].body == "Not submitted yet: Street Kitchen – Chef Closing Checklist"
+    assert len(alerts) == 1 and alerts[0].body == "Not submitted yet: Market Kitchen – Chef Closing Checklist"
     _row(db, SK, dt.datetime(2026, 9, 28, 21, 5, tzinfo=NY))
     assert closing_checklist_alerts(db, NIGHT) == []
 
@@ -997,8 +998,8 @@ def managers_team(db, monkeypatch):
     monkeypatch.setattr(s, "team_autotask_invoice_enabled", False)
     monkeypatch.setattr(s, "team_autotask_order_enabled", False)
     monkeypatch.setattr(s, "team_whatsapp_fallback", True)
-    monkeypatch.setattr(s, "whapi_spice_town_checklist_group_id", "st-group@g.us")
-    monkeypatch.setattr(s, "whapi_street_kitchen_checklist_group_id", "sk-group@g.us")
+    monkeypatch.setattr(s, "whapi_store_checklist_group_id", "st-group@g.us")
+    monkeypatch.setattr(s, "whapi_kitchen_checklist_group_id", "sk-group@g.us")
     monkeypatch.setattr(tasks_svc, "_quiet", lambda now: False)
     team = db.query(Team).filter(Team.name == "Managers").one()
     add_member(db, team, make_user(db, "meena", features=["team_tasks"]))
@@ -1020,7 +1021,7 @@ def test_nightly_tasks_and_their_whatsapp_group_follow_settings(db, admin_client
     tasks = db.query(Task).filter(Task.source_type == "checklist").order_by(Task.id).all()
     assert [t.title for t in tasks] == [
         "Submit the Store Closing checklist",
-        "Submit the Street Kitchen FSA closing checklist",
+        "Submit the Market Kitchen FSA closing checklist",
         "Submit the Deli Closing checklist",
     ]
     assert [to for to, _ in sent] == ["st-group@g.us", "sk-group@g.us", "st-group@g.us"]
@@ -1033,8 +1034,8 @@ def test_nightly_tasks_and_their_whatsapp_group_follow_settings(db, admin_client
 
 
 def test_submission_whatsapp_group_follows_settings(db, admin_client, monkeypatch):
-    monkeypatch.setattr(get_settings(), "whapi_spice_town_checklist_group_id", "st-group@g.us")
-    monkeypatch.setattr(get_settings(), "whapi_street_kitchen_checklist_group_id", "")
+    monkeypatch.setattr(get_settings(), "whapi_store_checklist_group_id", "st-group@g.us")
+    monkeypatch.setattr(get_settings(), "whapi_kitchen_checklist_group_id", "")
     monkeypatch.setattr(get_settings(), "whapi_chat_id", "invoice-group@g.us")
     sent = []
     monkeypatch.setattr(checklist_submission, "send_whatsapp_message", lambda text, to=None: sent.append(to))
@@ -1079,7 +1080,7 @@ def test_overview_lists_every_checklist_with_its_latest(db, admin_client, checke
     assert by_type[ST]["submitted_on_date"] is True and by_type[ST]["latest"]["checklist_type"] == ST
     assert by_type[SK]["submitted_on_date"] is True and by_type[SK]["latest"]["all_clear"] is False
     assert by_type[FSA]["submitted_on_date"] is False and by_type[FSA]["latest"] is None
-    assert by_type[ST]["settings"]["closing"] is True and by_type[ST]["short_name"] == "Spice Town"
+    assert by_type[ST]["settings"]["closing"] is True and by_type[ST]["short_name"] == "Main Store"
     # A non-admin sees only their own.
     mine = {c["checklist_type"]: c for c in checker_client.get("/api/checklists/overview?date=2026-09-28").json()["checklists"]}
     assert mine[ST]["latest"] is None and mine[SK]["latest"] is not None
@@ -1096,7 +1097,7 @@ def test_registry_falls_back_to_builtins_without_tables(db):
 
 def test_registry_notices_changes_made_by_another_process(db, admin_client, monkeypatch):
     checklist_admin.ensure_seeded(db)
-    assert checklist_schemas.get_schema(SK)["title"] == "Street Kitchen – Chef Closing Checklist"
+    assert checklist_schemas.get_schema(SK)["title"] == "Market Kitchen – Chef Closing Checklist"
     # Another worker renames it (direct write, no clear_cache here).
     row = db.query(ChecklistDefinition).filter_by(checklist_type=SK).one()
     row.title = "Kitchen Closing - Chef"
@@ -1127,7 +1128,7 @@ def _check_migrated(db_file, expected_submissions=None):
             "checklist_definitions ORDER BY sort_order"
         ).fetchall()
         assert [(d[0], d[2], d[4], d[6]) for d in defs] == [
-            (ST, "Spice Town", 1, 1), (SK, "Street Kitchen", 2, 1), (FSA, "Street Kitchen FSA", 3, 2)
+            (ST, "Main Store", 1, 1), (SK, "Market Kitchen", 2, 1), (FSA, "Market Kitchen FSA", 3, 2)
         ]
         assert all(json.loads(d[5])["closing"] for d in defs)
         versions = con.execute(
@@ -1167,7 +1168,7 @@ def test_migration_0039_up_and_down_on_a_fresh_database(tmp_path):
     con.execute(
         "INSERT INTO checklist_submissions (checklist_type, submitted_by_user_id, submitted_by_name, answers_json, "
         "all_clear, answers_hash, whatsapp_sent, whatsapp_ambiguous, created_at) VALUES "
-        "('street_kitchen_fsa', 1, 'asha', '{\"chef_name\": \"RK\"}', 1, 'h', 0, 0, '2026-09-29 01:00:00')"
+        "('kitchen_fsa', 1, 'asha', '{\"chef_name\": \"JL\"}', 1, 'h', 0, 0, '2026-09-29 01:00:00')"
     )
     con.commit()
     con.close()
@@ -1285,7 +1286,7 @@ def test_created_and_duplicated_drafts_carry_title_and_description(db, admin_cli
     for key in ("draft", "editable"):
         assert (body[key]["title"], body[key]["short_name"], body[key]["description"]) == ("Deli Opening", "Deli", "Mornings")
     dup = admin_client.post(f"/api/checklists/admin/definitions/{FSA}/duplicate", json={}).json()
-    assert dup["draft"]["title"] == "Street Kitchen - Food Service Associate Closing (copy)"
+    assert dup["draft"]["title"] == "Market Kitchen - Food Service Associate Closing (copy)"
     assert dup["draft"]["description"].startswith("Complete all closing tasks")
     # A draft save without meta keeps the definition's.
     r = admin_client.put("/api/checklists/admin/definitions/deli_opening", json={"sections": NEW_SECTIONS})

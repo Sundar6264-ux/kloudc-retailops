@@ -9,10 +9,10 @@ TestClient is never used as a context manager, so the app's lifespan (the
 schedulers) never starts.
 
 Run (PostgreSQL, the real suite; tests/pg_harness.py):
-     cd backend && STOREOPS_TEST_PG_URL=postgresql+psycopg://storeops@127.0.0.1:5433/postgres \
-         STOREOPS_TEST_DB_PREFIX=so_<track> .venv/bin/python -m pytest -q
+     cd backend && RETAILOPS_TEST_PG_URL=postgresql+psycopg://storeops@127.0.0.1:5433/postgres \
+         RETAILOPS_TEST_DB_PREFIX=so_<track> .venv/bin/python -m pytest -q
 Quick SQLite run (a fresh SQLite file per test, as before):
-     STOREOPS_TEST_DB=sqlite .venv/bin/python -m pytest -q
+     RETAILOPS_TEST_DB=sqlite .venv/bin/python -m pytest -q
 """
 
 import atexit
@@ -22,12 +22,12 @@ import tempfile
 
 from tests import pg_harness
 
-_TMP = pathlib.Path(tempfile.mkdtemp(prefix="spicetown-tests-"))
-TEST_DB_KIND = (os.environ.get("STOREOPS_TEST_DB") or "postgres").strip().lower()
+_TMP = pathlib.Path(tempfile.mkdtemp(prefix="retailops-tests-"))
+TEST_DB_KIND = (os.environ.get("RETAILOPS_TEST_DB") or "postgres").strip().lower()
 if TEST_DB_KIND in ("pg", "postgresql"):
     TEST_DB_KIND = "postgres"
 if TEST_DB_KIND not in ("postgres", "sqlite"):
-    raise SystemExit(f"STOREOPS_TEST_DB={TEST_DB_KIND!r}: use 'postgres' (default) or 'sqlite'")
+    raise SystemExit(f"RETAILOPS_TEST_DB={TEST_DB_KIND!r}: use 'postgres' (default) or 'sqlite'")
 IS_PG = TEST_DB_KIND == "postgres"
 if IS_PG:
     _TEST_DB = pg_harness.run_db_name()
@@ -45,7 +45,7 @@ os.environ.update(
         "FIREBASE_CREDENTIALS_FILE": "",
         "TEAM_UPLOADS_DIR": str(_TMP / "uploads" / "team"),
         "INVOICE_UPLOADS_DIR": str(_TMP / "uploads" / "invoices"),
-        # Never the real ~/Spice Town Flyers.
+        # Never the real ~/Main Store Flyers.
         "FLYERS_DIR": str(_TMP / "flyers"),
         "WHAPI_API_TOKEN": "",
         "GMAIL_APP_PASSWORD": "",
@@ -59,7 +59,7 @@ os.environ.update(
         # the live store's Toast. Tests that need "configured" set fake values.
         "TOAST_CLIENT_ID": "",
         "TOAST_CLIENT_SECRET": "",
-        # The per-store AI switch (StoreOps M2) is off by default; the Ask bot
+        # The per-store AI switch (KloudC RetailOps M2) is off by default; the Ask bot
         # and digest tests predate it. Fake-store tests switch it per store.
         "AI_ENABLED": "true",
     }
@@ -304,7 +304,7 @@ def _no_outside_network():
     socket.getaddrinfo = _real_getaddrinfo
 
 
-# --- Store pack (StoreOps M2) -------------------------------------------------
+# --- Store pack (KloudC RetailOps M2) -------------------------------------------------
 # Every test starts with the default pack (packs/generic.json) and no pinned
 # pack. The suite's checklist tests were written against the legacy built-in
 # checklists (services/checklist_builtin.py, what migration 0039 seeds), so

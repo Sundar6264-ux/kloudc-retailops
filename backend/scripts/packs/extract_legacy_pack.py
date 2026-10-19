@@ -1,6 +1,6 @@
 """Export the legacy single-store rules and settings into PRIVATE files.
 
-StoreOps M2 (docs/M2_CONTRACT.md section 1.6). Before M2 the store's own
+KloudC RetailOps M2 (docs/M2_CONTRACT.md section 1.6). Before M2 the store's own
 rules and contact details were Python constants. M2 moved them into store
 settings (.env) and a store pack (JSON). The values of the store the code was
 written for are needed only to prove, with the parity harness, that the
@@ -9,9 +9,9 @@ de-hardcoded code still gives that store's answers - they are never committed.
 This script reads the constants from an unpacked copy of the import commit
 (never from another repository) and writes, into --out-dir (outside git):
 
-- spicetown.pack.json  a store pack (pack_id "spicetown_legacy") with every
+- origin.pack.json  a store pack (pack_id "origin_legacy") with every
                        rule constant;
-- spicetown.env        the non-secret settings (no tokens, no passwords,
+- origin.env        the non-secret settings (no tokens, no passwords,
                        nothing read from any production .env);
 - legacy_cases.json    an oracle: the legacy functions' answers over synthetic
                        inputs (and, with --catalog-db, every catalog item of a
@@ -19,7 +19,7 @@ This script reads the constants from an unpacked copy of the import commit
 
     cd backend
     python scripts/packs/extract_legacy_pack.py --from-commit 56e095c \
-        --out-dir "$STOREOPS_PRIVATE_DIR" [--catalog-db /path/to/scratch-copy.db]
+        --out-dir "$RETAILOPS_PRIVATE_DIR" [--catalog-db /path/to/scratch-copy.db]
 
 --from-commit runs `git archive <commit> backend` into a temporary folder;
 --legacy-backend <dir> uses an already unpacked `backend` folder instead.
@@ -218,8 +218,8 @@ def build_pack(m) -> dict:
     il = m["issue_leads"]
     return {
         "pack_version": 1,
-        "pack_id": "spicetown_legacy",
-        "label": "Legacy rules from the StoreOps import commit (parity only - never commit)",
+        "pack_id": "origin_legacy",
+        "label": "Legacy rules from the KloudC RetailOps import commit (parity only - never commit)",
         "menu": {
             "excluded_category_groups": sorted(m["fix_issues"].EXCLUDED_CATEGORY_GROUPS),
             "kitchen_groups": sorted(m["delivery_suggestions"].KITCHEN_GROUPS),
@@ -314,7 +314,7 @@ def build_env(m) -> List[str]:
         "# PRIVATE - never commit. No secrets: tokens and passwords are not here.",
         f"# Written {dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')} by scripts/packs/extract_legacy_pack.py",
         "# LABELS_URL is left out on purpose: the legacy labels site is under a",
-        "# domain StoreOps refuses (contract rule 0.3).",
+        "# domain KloudC RetailOps refuses (contract rule 0.3).",
     ]
     for key, value in values:
         lines.append(f"{key}={json.dumps(value)}" if any(ch in value for ch in " #'\"$") else f"{key}={value}")
@@ -428,11 +428,11 @@ def main(argv=None) -> int:
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--from-commit", help="unpack `backend` from this commit of this repository (e.g. 56e095c)")
     src.add_argument("--legacy-backend", help="an unpacked legacy `backend` folder")
-    ap.add_argument("--out-dir", default=os.environ.get("STOREOPS_PRIVATE_DIR", ""))
+    ap.add_argument("--out-dir", default=os.environ.get("RETAILOPS_PRIVATE_DIR") or os.environ.get("STOREOPS_PRIVATE_DIR") or "")
     ap.add_argument("--catalog-db", default="", help="a scratch copy of a database to take catalog items from")
     args = ap.parse_args(argv)
     if not args.out_dir:
-        raise SystemExit("--out-dir (or STOREOPS_PRIVATE_DIR) is required")
+        raise SystemExit("--out-dir (or RETAILOPS_PRIVATE_DIR) is required")
     out = pathlib.Path(args.out_dir).expanduser().resolve()
     if BACKEND.parent in out.parents or out == BACKEND.parent:
         if out != BACKEND / "packs" / "private" and (BACKEND / "packs" / "private") not in out.parents:
@@ -453,13 +453,13 @@ def main(argv=None) -> int:
     if legacy_icon is not None:
         env_lines.append(f"DOCUMENT_LOGO_FILE={json.dumps(str(out / 'document_logo.jpg'))}")
         (out / "document_logo.jpg").write_bytes(legacy_icon)
-    (out / "spicetown.pack.json").write_text(json.dumps(pack, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    (out / "spicetown.env").write_text("\n".join(env_lines) + "\n", encoding="utf-8")
+    (out / "origin.pack.json").write_text(json.dumps(pack, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    (out / "origin.env").write_text("\n".join(env_lines) + "\n", encoding="utf-8")
     (out / "legacy_cases.json").write_text(json.dumps(cases, ensure_ascii=False) + "\n", encoding="utf-8")
     # Staff names for the fresh-store test (docs/M2_CONTRACT.md 3.6).
     names = sorted({d["name"] for d in pack["issue_leads"]["leads"]} | {pack["issue_leads"]["fallback"]["name"]})
     (out / "forbidden_tokens.txt").write_text("\n".join(names) + "\n", encoding="utf-8")
-    for name in ("spicetown.pack.json", "spicetown.env", "legacy_cases.json", "forbidden_tokens.txt", "document_logo.jpg"):
+    for name in ("origin.pack.json", "origin.env", "legacy_cases.json", "forbidden_tokens.txt", "document_logo.jpg"):
         if not (out / name).exists():
             continue
         os.chmod(out / name, 0o600)

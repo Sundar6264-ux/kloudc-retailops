@@ -6,8 +6,8 @@
 app/config.py:@lru_cache process_settings  # the process (platform-level) settings; per-store values come from app.tenancy.settings
 app/config.py:global _tenancy_settings  # a module reference (lazy import), not state
 app/demo_guard.py:ALLOWLIST  # constant table (code)
-app/directory/build_static.py:_BRANDING_FROM_SERVER  # constant table (directory service, not StoreOps)
-app/directory/stores.py:ERROR_MESSAGES  # constant table (directory service, not StoreOps)
+app/directory/build_static.py:_BRANDING_FROM_SERVER  # constant table (directory service, not KloudC RetailOps)
+app/directory/stores.py:ERROR_MESSAGES  # constant table (directory service, not KloudC RetailOps)
 app/features.py:FEATURES  # constant table (never changed at run time)
 app/features.py:FEATURE_KEYS  # constant table (never changed at run time)
 app/glossary.py:CATEGORIES  # constant table (never changed at run time)
@@ -46,9 +46,9 @@ app/scheduler.py:global _scheduler  # process scheduler handle (one per process;
 app/scheduler.py:global _team_scheduler  # process scheduler handle (one per process; jobs inside are per store)
 app/services/barcode_report.py:_GS1_FORMATS_BY_LENGTH  # constant table (never changed at run time)
 app/services/checklist_builtin.py:SEED_DEFINITIONS  # constant table (never changed at run time)
-app/services/checklist_builtin.py:SPICE_TOWN_CLOSING  # constant table (never changed at run time)
-app/services/checklist_builtin.py:STREET_KITCHEN_CLOSING  # constant table (never changed at run time)
-app/services/checklist_builtin.py:STREET_KITCHEN_FSA_CLOSING_V1  # constant table (never changed at run time)
+app/services/checklist_builtin.py:STORE_CLOSING  # constant table (never changed at run time)
+app/services/checklist_builtin.py:KITCHEN_CLOSING  # constant table (never changed at run time)
+app/services/checklist_builtin.py:KITCHEN_FSA_CLOSING_V1  # constant table (never changed at run time)
 app/services/checklist_engine.py:BRANCHING_TYPES  # constant table (never changed at run time)
 app/services/checklist_engine.py:CHOICE_TYPES  # constant table (never changed at run time)
 app/services/checklist_engine.py:DEFAULT_SETTINGS  # constant table (never changed at run time)
@@ -178,7 +178,7 @@ app/platform/connector_tests.py:TESTERS  # constant table (connector test functi
 app/platform/credentials.py:ADDRESS_FIELDS  # constant table (credential kind -> address fields)
 app/platform/credentials.py:KINDS  # constant table (credential kinds -> Settings fields)
 app/platform/crypto.py:_lock  # guards the one process key ring
-app/platform/crypto.py:global _ring  # the process key ring (STOREOPS_SECRET_KEYS); one for the whole platform
+app/platform/crypto.py:global _ring  # the process key ring (RETAILOPS_SECRET_KEYS); one for the whole platform
 app/platform/db.py:_lock  # guards the platform DB engine
 app/platform/db.py:global _engine  # the one platform (control-plane) DB engine
 app/platform/db.py:global _engine_url  # the platform DB URL the engine was built for

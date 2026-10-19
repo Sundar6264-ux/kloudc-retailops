@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  StoreOps DEMO store - LaunchDaemon TEMPLATE (M2 batch MT13, plan 3.1a).
+  KloudC RetailOps DEMO store - LaunchDaemon TEMPLATE (M2 batch MT13, plan 3.1a).
 
   One process runs the DEMO API server AND its nightly made-up-data reset
   (backend/scripts/demo/run_demo.py). It never calls a POS (POS_PROVIDER=csv),
   and every outside channel is forced off, whatever the .env says.
 
   Replace every __PLACEHOLDER__ before installing (docs/DEMO_STORE.md, "Mac mini"):
-    __STOREOPS_BACKEND__  a StoreOps checkout's backend folder, e.g. /Users/you/storeops-demo/backend
+    __RETAILOPS_BACKEND__  a KloudC RetailOps checkout's backend folder, e.g. /Users/you/retailops-demo/backend
                           (its own checkout, with its own .env from deploy/demo/demo.env.example)
-    __PYTHON__            that checkout's venv python, e.g. __STOREOPS_BACKEND__/.venv/bin/python
-    __DEMO_DATA__         the DEMO data folder (new/empty the first time), e.g. /Users/you/storeops-demo-data
+    __PYTHON__            that checkout's venv python, e.g. __RETAILOPS_BACKEND__/.venv/bin/python
+    __DEMO_DATA__         the DEMO data folder (new/empty the first time), e.g. /Users/you/retailops-demo-data
     __RUN_AS__            the macOS user that owns those folders
     __PORT__              a free local port, e.g. 8030 (the tunnel / proxy points the DEMO host here)
 
   Install (as an admin):
-    sudo cp com.kloudc.storeops.demo.plist /Library/LaunchDaemons/
-    sudo chown root:wheel /Library/LaunchDaemons/com.kloudc.storeops.demo.plist
-    sudo launchctl bootstrap system /Library/LaunchDaemons/com.kloudc.storeops.demo.plist
+    sudo cp com.kloudc.retailops.demo.plist /Library/LaunchDaemons/
+    sudo chown root:wheel /Library/LaunchDaemons/com.kloudc.retailops.demo.plist
+    sudo launchctl bootstrap system /Library/LaunchDaemons/com.kloudc.retailops.demo.plist
   Stop / remove:
-    sudo launchctl bootout system /Library/LaunchDaemons/com.kloudc.storeops.demo.plist
+    sudo launchctl bootout system /Library/LaunchDaemons/com.kloudc.retailops.demo.plist
 
   Plan note (D11): the plan prefers the DEMO store NOT to share a machine with a
   real store's server. If it does, keep it on its own port, user folder and data
@@ -29,7 +29,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.kloudc.storeops.demo</string>
+    <string>com.kloudc.retailops.demo</string>
 
     <key>ProgramArguments</key>
     <array>
@@ -46,7 +46,7 @@
     </array>
 
     <key>WorkingDirectory</key>
-    <string>__STOREOPS_BACKEND__</string>
+    <string>__RETAILOPS_BACKEND__</string>
 
     <key>UserName</key>
     <string>__RUN_AS__</string>

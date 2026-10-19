@@ -1,8 +1,8 @@
 {
-  "name": "storeops-e2e",
+  "name": "retailops-e2e",
   "private": true,
   "type": "module",
-  "description": "Read-only browser smoke test for the StoreOps website.",
+  "description": "Read-only browser smoke test for the KloudC RetailOps website.",
   "scripts": {
     "smoke": "node smoke.mjs",
     "install-browser": "playwright install chromium"

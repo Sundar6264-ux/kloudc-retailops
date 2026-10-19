@@ -32,13 +32,13 @@ sys.path.insert(0, str(BACKEND))
 os.chdir(BACKEND)
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--pg-url", default=os.environ.get("STOREOPS_TEST_PG_URL", "postgresql+psycopg://storeops@127.0.0.1:5433/postgres"))
+ap.add_argument("--pg-url", default=os.environ.get("RETAILOPS_TEST_PG_URL") or os.environ.get("STOREOPS_TEST_PG_URL") or "postgresql+psycopg://storeops@127.0.0.1:5433/postgres")
 ap.add_argument("--prefix", default="so_mig")
 args = ap.parse_args()
 PREFIX = args.prefix
 if not PREFIX.startswith("so_") or not PREFIX.replace("_", "").isalnum():
     raise SystemExit("--prefix must look like so_<letters/digits>")
-TMP = pathlib.Path(tempfile.mkdtemp(prefix="storeops-migcheck-"))
+TMP = pathlib.Path(tempfile.mkdtemp(prefix="retailops-migcheck-"))
 
 
 def url(db: str) -> str:
@@ -54,7 +54,7 @@ os.environ.update(
         "STORE_DATABASE_URL_TEMPLATE": url("{db_name}"),
         "PG_ADMIN_URL": args.pg_url,
         "STORE_DB_PREFIX": f"{PREFIX}_s_",
-        "STOREOPS_SECRET_KEYS": "mig1:" + __import__("base64").b64encode(os.urandom(32)).decode(),
+        "RETAILOPS_SECRET_KEYS": "mig1:" + __import__("base64").b64encode(os.urandom(32)).decode(),
         "UPLOADS_ROOT": str(TMP / "uploads"),
         "SCHEDULER_ENABLED": "false",
         "NOTIFICATIONS_ENABLED": "false",

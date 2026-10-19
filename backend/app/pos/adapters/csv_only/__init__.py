@@ -7,7 +7,7 @@ orders, open-checks, employees, day-totals or analytics API, so every one of
 those methods raises ``NotSupported`` (HTTP 409) and the M1 gating hides the
 matching pages and drops the matching scheduled jobs.
 
-    template.py   the StoreOps catalog CSV template: canonical headers (the
+    template.py   the KloudC RetailOps catalog CSV template: canonical headers (the
                   same names the upload page already reads) + common aliases
     connector.py  CsvOnlyConnector (the PosConnector for POS_PROVIDER=csv)
 

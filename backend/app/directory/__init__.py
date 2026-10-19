@@ -1,4 +1,4 @@
-"""StoreOps store directory (multi-store MT10, docs/M2_CONTRACT.md section 4).
+"""KloudC RetailOps store directory (multi-store MT10, docs/M2_CONTRACT.md section 4).
 
 Tells the one public app which server a store code belongs to. It is never
 mounted in a store server. Three forms, all built from one stores file and

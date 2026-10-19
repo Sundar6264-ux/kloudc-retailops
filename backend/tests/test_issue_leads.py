@@ -64,17 +64,17 @@ def snap(db, item_id, name, category="Oils & Fats", supplier="Chetak", barcode=N
 @pytest.fixture
 def people(db):
     return {
-        "amandeep": make_user(db, "Amandeep", features=["team_tasks", "inventory_reports"]),
-        "sai": make_user(db, "Sai Durga", features=["team_tasks", "inventory_reports"]),
-        "harshitha": make_user(db, "Harshitha", features=["team_tasks"]),
-        "sundar": make_user(db, "Sundar", is_admin=True),
+        "avery": make_user(db, "Avery", features=["team_tasks", "inventory_reports"]),
+        "sasha": make_user(db, "Sasha Durga", features=["team_tasks", "inventory_reports"]),
+        "hayden": make_user(db, "Hayden", features=["team_tasks"]),
+        "sutton": make_user(db, "Sutton", is_admin=True),
     }
 
 
 @pytest.fixture
 def store(db):
     # Missing barcodes (the barcode is blank): one per lead path.
-    snap(db, "rice1", "Sona Masoori 20lb", category="Oils & Fats", supplier="Chetak")  # section Oils & Ghee -> Sai
+    snap(db, "rice1", "Sona Masoori 20lb", category="Oils & Fats", supplier="Chetak")  # section Oils & Ghee -> Sasha
     snap(db, "frz1", "Veg Puff", category="Beverages (Non-Alcoholic)", supplier="Shata Traders")
     snap(db, "odd1", "Mystery Thing", category="Weird", supplier="Shata Traders")  # Other -> vendor lead
     snap(db, "odd2", "Unknown Item", category="Weird", supplier="Vdyas")  # Other, no vendor lead -> fallback
@@ -111,7 +111,7 @@ def row(db, item_id, issue_type="missing_barcode"):
 
 VENDORS = [
     "Shata Traders", "Prestige Concept LLC", "Concept Foods", "House of Spices", "Aldis", "Indigenous Foods",
-    "Raja Foods", "Sri Sai Imports, Inc", "SHAHI KULFI USA", "Chandigarh Distributors Inc.", "Vdyas",
+    "Raja Foods", "Sri Sasha Imports, Inc", "SHAHI KULFI USA", "Chandigarh Distributors Inc.", "Vdyas",
 ]
 
 
@@ -127,7 +127,7 @@ VENDORS = [
         ("Rajafoods", ["Raja Foods"]),
         ("Shahi Kulfi", ["SHAHI KULFI USA"]),
         ("Chandigarh", ["Chandigarh Distributors Inc."]),
-        ("Sai Florals", []),
+        ("Sasha Florals", []),
     ],
 )
 def test_vendor_candidates(doc, expected):
@@ -136,10 +136,10 @@ def test_vendor_candidates(doc, expected):
 
 def test_match_user_by_first_name(db, people):
     users = svc._eligible_users(db)
-    assert svc.match_user(users, "Sai").username == "Sai Durga"
-    assert svc.match_user(users, "Amandeep").username == "Amandeep"
-    make_user(db, "Sai Kumar")
-    assert svc.match_user(svc._eligible_users(db), "Sai") is None  # ambiguous
+    assert svc.match_user(users, "Sasha").username == "Sasha Durga"
+    assert svc.match_user(users, "Avery").username == "Avery"
+    make_user(db, "Sasha Kumar")
+    assert svc.match_user(svc._eligible_users(db), "Sasha") is None  # ambiguous
 
 
 # --- Rows -----------------------------------------------------------------------------
@@ -157,34 +157,34 @@ def test_section_then_vendor_then_fallback(db, store, people, admin):
     p = people
     save(
         db, admin,
-        sections=[("Oils & Ghee", p["sai"].id), ("Beverages", p["amandeep"].id)],
-        vendors=[("Shata Traders", p["harshitha"].id)],
-        fallback=p["sundar"].id,
+        sections=[("Oils & Ghee", p["sasha"].id), ("Beverages", p["avery"].id)],
+        vendors=[("Shata Traders", p["hayden"].id)],
+        fallback=p["sutton"].id,
     )
-    assert row(db, "rice1")["lead"] == {"user_id": p["sai"].id, "name": "Sai Durga", "via": "section", "via_name": "Oils & Ghee"}
+    assert row(db, "rice1")["lead"] == {"user_id": p["sasha"].id, "name": "Sasha Durga", "via": "section", "via_name": "Oils & Ghee"}
     frz = row(db, "frz1")
-    assert (frz["lead"]["name"], frz["lead"]["via"]) == ("Amandeep", "section")  # section beats the vendor lead
+    assert (frz["lead"]["name"], frz["lead"]["via"]) == ("Avery", "section")  # section beats the vendor lead
     odd = row(db, "odd1")
-    assert (odd["po_section"], odd["lead"]["name"], odd["lead"]["via"]) == ("Other", "Harshitha", "vendor")
-    assert (row(db, "odd2")["lead"]["name"], row(db, "odd2")["lead"]["via"]) == ("Sundar", "fallback")
+    assert (odd["po_section"], odd["lead"]["name"], odd["lead"]["via"]) == ("Other", "Hayden", "vendor")
+    assert (row(db, "odd2")["lead"]["name"], row(db, "odd2")["lead"]["via"]) == ("Sutton", "fallback")
 
 
 def test_saved_no_lead_falls_through(db, store, people, admin):
-    save(db, admin, sections=[("Oils & Ghee", None)], vendors=[("Chetak", people["sai"].id)])
+    save(db, admin, sections=[("Oils & Ghee", None)], vendors=[("Chetak", people["sasha"].id)])
     r = row(db, "rice1")
-    assert (r["lead"]["name"], r["lead"]["via"]) == ("Sai Durga", "vendor")
+    assert (r["lead"]["name"], r["lead"]["via"]) == ("Sasha Durga", "vendor")
     assert row(db, "odd2")["lead"] is None  # no fallback saved
 
 
 @pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_summary_counts_by_lead(db, store, people, admin, ):
-    save(db, admin, sections=[("Oils & Ghee", people["sai"].id)])
-    c = client_for(db, people["sundar"])
+    save(db, admin, sections=[("Oils & Ghee", people["sasha"].id)])
+    c = client_for(db, people["sutton"])
     body = c.get("/api/issues/summary").json()
     mb = next(i for i in body["items"] if i["issue_type"] == "missing_barcode")
-    assert mb["open_by_lead"] == {str(people["sai"].id): 1}
+    assert mb["open_by_lead"] == {str(people["sasha"].id): 1}
     assert mb["open_no_lead"] == 3
-    assert body["leads"] == [{"user_id": people["sai"].id, "name": "Sai Durga"}]
+    assert body["leads"] == [{"user_id": people["sasha"].id, "name": "Sasha Durga"}]
 
 
 # --- Admin API --------------------------------------------------------------------------
@@ -202,22 +202,22 @@ def test_page_proposal_and_accept(db, store, people, admin_client):
     assert page["saved"] is False
     rice = next(s for s in page["sections"] if s["section"] == "Oils & Ghee")
     assert rice["lead"] is None and rice["saved"] is False
-    assert rice["proposal"]["doc_lead"] == "Sai" and rice["proposal"]["name"] == "Sai Durga"
+    assert rice["proposal"]["doc_lead"] == "Sasha" and rice["proposal"]["name"] == "Sasha Durga"
     assert rice["proposal"]["basis"] == "document"
     shata = next(v for v in page["vendors"] if v["vendor"] == "Shata Traders")
-    assert shata["proposal"]["name"] == "Amandeep"
+    assert shata["proposal"]["name"] == "Avery"
     assert next(v for v in page["vendors"] if v["vendor"] == "Vdyas")["proposal"] is None
-    assert {"name": "Sai Florals", "lead": "Harshitha"} in page["document"]["unmatched_vendors"]
-    assert page["fallback"]["proposal"]["name"] == "Sundar"
+    assert {"name": "Sasha Florals", "lead": "Hayden"} in page["document"]["unmatched_vendors"]
+    assert page["fallback"]["proposal"]["name"] == "Sutton"
 
     # A hand-set row is kept by accept-proposal.
-    r = admin_client.put("/api/issue-leads", json={"sections": [{"name": "Oils & Ghee", "user_id": people["amandeep"].id}]})
+    r = admin_client.put("/api/issue-leads", json={"sections": [{"name": "Oils & Ghee", "user_id": people["avery"].id}]})
     assert r.status_code == 200
     page = admin_client.post("/api/issue-leads/accept-proposal").json()
     rice = next(s for s in page["sections"] if s["section"] == "Oils & Ghee")
-    assert rice["lead"]["name"] == "Amandeep" and rice["saved"]
-    assert next(v for v in page["vendors"] if v["vendor"] == "Shata Traders")["lead"]["name"] == "Amandeep"
-    assert page["fallback"]["lead"]["name"] == "Sundar"
+    assert rice["lead"]["name"] == "Avery" and rice["saved"]
+    assert next(v for v in page["vendors"] if v["vendor"] == "Shata Traders")["lead"]["name"] == "Avery"
+    assert page["fallback"]["lead"]["name"] == "Sutton"
     assert db.query(IssueLead).filter(IssueLead.source == "proposal").count() > 0
 
 
@@ -273,7 +273,7 @@ def lead_tasks(db):
 
 def test_no_run_before_time_or_without_leads(db, store, people, admin, pushes):
     assert svc.run_daily_tasks(db, at(11)) is None  # nothing saved yet
-    save(db, admin, sections=[("Oils & Ghee", people["sai"].id)])
+    save(db, admin, sections=[("Oils & Ghee", people["sasha"].id)])
     assert svc.run_daily_tasks(db, at(9, 59)) is None
     svc.save_task_settings(db, {"enabled": False}, admin)
     assert svc.run_daily_tasks(db, at(11)) is None
@@ -284,20 +284,20 @@ def test_no_run_before_time_or_without_leads(db, store, people, admin, pushes):
 def test_daily_task_created_once_per_lead(db, store, people, admin, pushes):
     only_missing(db, admin)
     p = people
-    save(db, admin, sections=[("Oils & Ghee", p["sai"].id)], vendors=[("Shata Traders", p["amandeep"].id)],
-         fallback=p["sundar"].id)
-    svc.save_task_settings(db, {"hours_by_user": {str(p["amandeep"].id): 3}}, admin)
+    save(db, admin, sections=[("Oils & Ghee", p["sasha"].id)], vendors=[("Shata Traders", p["avery"].id)],
+         fallback=p["sutton"].id)
+    svc.save_task_settings(db, {"hours_by_user": {str(p["avery"].id): 3}}, admin)
     result = svc.run_daily_tasks(db, at(10, 5))
     assert result["created"] == 3
     tasks = {t.assignee_user_id: t for t in lead_tasks(db)}
-    assert set(tasks) == {p["sai"].id, p["amandeep"].id, p["sundar"].id}
-    sai = tasks[p["sai"].id]
-    assert sai.title == "Fix Issues: 1 left of 1"  # Oct 15: live "N left of M"
-    assert (sai.progress_total, sai.progress_done) == (1, 0)
-    assert "Missing barcodes: 1" in sai.description and f"#/fix-issues?lead={p['sai'].id}" in sai.description
-    assert sai.assignee_team_id is None and sai.created_by_user_id == tasks_service.SYSTEM_USER_ID
-    assert (sai.due_at - sai.created_at) == dt.timedelta(hours=6)
-    aman = tasks[p["amandeep"].id]
+    assert set(tasks) == {p["sasha"].id, p["avery"].id, p["sutton"].id}
+    sasha = tasks[p["sasha"].id]
+    assert sasha.title == "Fix Issues: 1 left of 1"  # Oct 15: live "N left of M"
+    assert (sasha.progress_total, sasha.progress_done) == (1, 0)
+    assert "Missing barcodes: 1" in sasha.description and f"#/fix-issues?lead={p['sasha'].id}" in sasha.description
+    assert sasha.assignee_team_id is None and sasha.created_by_user_id == tasks_service.SYSTEM_USER_ID
+    assert (sasha.due_at - sasha.created_at) == dt.timedelta(hours=6)
+    aman = tasks[p["avery"].id]
     assert (aman.due_at - aman.created_at) == dt.timedelta(hours=3)
     assert aman.title == "Fix Issues: 2 left of 2"  # frz1 + odd1 via the vendor
     # Pushed once per new task.
@@ -307,13 +307,13 @@ def test_daily_task_created_once_per_lead(db, store, people, admin, pushes):
     assert db.query(JobRun).filter(JobRun.job_name == "issue_lead_tasks").count() == 1
     # The rows now say a task covers them.
     r = row(db, "rice1")
-    assert r["lead_task"]["task_id"] == sai.id and r["lead_task"]["status"] == "open"
+    assert r["lead_task"]["task_id"] == sasha.id and r["lead_task"]["status"] == "open"
 
 
 @pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_rerun_same_day_updates_not_duplicates(db, store, people, admin, pushes):
     only_missing(db, admin)
-    save(db, admin, sections=[("Oils & Ghee", people["sai"].id)])
+    save(db, admin, sections=[("Oils & Ghee", people["sasha"].id)])
     svc.run_daily_tasks(db, at(10, 5))
     snap(db, "rice2", "Basmati 10lb", category="Oils & Fats", supplier="Chetak")
     db.commit()
@@ -328,16 +328,16 @@ def test_rerun_same_day_updates_not_duplicates(db, store, people, admin, pushes)
 @pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_next_day_replaces_and_empty_lead_closes(db, store, people, admin, pushes):
     p = people
-    save(db, admin, sections=[("Oils & Ghee", p["sai"].id)], vendors=[("Shata Traders", p["amandeep"].id)])
+    save(db, admin, sections=[("Oils & Ghee", p["sasha"].id)], vendors=[("Shata Traders", p["avery"].id)])
     svc.run_daily_tasks(db, at(10, 5))
-    # Next day: Amandeep's items are no longer his (vendor lead removed).
+    # Next day: Avery's items are no longer his (vendor lead removed).
     save(db, admin, vendors=[("Shata Traders", None)])
     svc.run_daily_tasks(db, at(10, 5, day=1))
     tasks = lead_tasks(db)
-    sai = [t for t in tasks if t.assignee_user_id == p["sai"].id]
-    assert [t.status for t in sai] == ["cancelled", "open"]
-    assert sai[0].completion_note.startswith("Replaced by")
-    aman = [t for t in tasks if t.assignee_user_id == p["amandeep"].id]
+    sasha = [t for t in tasks if t.assignee_user_id == p["sasha"].id]
+    assert [t.status for t in sasha] == ["cancelled", "open"]
+    assert sasha[0].completion_note.startswith("Replaced by")
+    aman = [t for t in tasks if t.assignee_user_id == p["avery"].id]
     assert [(t.status, t.completion_note) for t in aman] == [("done", "Nothing left on the Fix Issues list")]
 
 
@@ -346,7 +346,7 @@ def test_tick_hook_runs_inside_auto_tasks(db, store, people, admin, pushes, monk
     from app.team import auto_tasks
 
     monkeypatch.setattr(get_settings(), "team_autotask_checklist_enabled", False)
-    save(db, admin, sections=[("Oils & Ghee", people["sai"].id)])
+    save(db, admin, sections=[("Oils & Ghee", people["sasha"].id)])
     auto_tasks.auto_tasks_tick(db, at(10, 1))
     assert len(lead_tasks(db)) == 1
 
@@ -354,11 +354,11 @@ def test_tick_hook_runs_inside_auto_tasks(db, store, people, admin, pushes, monk
 @pytest.mark.legacy_pack  # the original store's own rules (private pack)
 def test_run_now_endpoint(db, store, people, admin, admin_client, pushes):
     only_missing(db, admin)
-    save(db, admin, sections=[("Oils & Ghee", people["sai"].id)])
+    save(db, admin, sections=[("Oils & Ghee", people["sasha"].id)])
     r = admin_client.post("/api/issue-leads/run-now")
     assert r.status_code == 200 and r.json()["created"] == 1
     prev = admin_client.get("/api/issue-leads/preview").json()
-    assert prev["leads"][0]["name"] == "Sai Durga" and prev["leads"][0]["count"] == 1
+    assert prev["leads"][0]["name"] == "Sasha Durga" and prev["leads"][0]["count"] == 1
     assert prev["unassigned"] == 3
 
 

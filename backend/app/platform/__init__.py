@@ -1,4 +1,4 @@
-"""The StoreOps platform (control plane; docs/PLATFORM_CONTRACT.md, track C).
+"""The KloudC RetailOps platform (control plane; docs/PLATFORM_CONTRACT.md, track C).
 
 - ``models`` / ``db``: the platform database (``alembic -n platform``)
 - ``signup`` / ``provisioning`` / ``stores``: sign-up by request, master

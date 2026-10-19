@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  TEMPLATE - run one StoreOps store directly on a Mac (no Docker).
+  TEMPLATE - run one KloudC RetailOps store directly on a Mac (no Docker).
   Docker (repo-root Dockerfile + docker-compose.yml) is the default way to
   run a store; use this only for a bare-metal Mac install. Replace every
   __PLACEHOLDER__ first (see README.md next to this file), then install as a
@@ -11,11 +11,11 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.kloudc.storeops.backend</string>
+    <string>com.kloudc.retailops.backend</string>
 
     <key>ProgramArguments</key>
     <array>
-        <string>__STOREOPS_DIR__/backend/.venv/bin/uvicorn</string>
+        <string>__RETAILOPS_DIR__/backend/.venv/bin/uvicorn</string>
         <string>app.main:app</string>
         <string>--host</string>
         <string>127.0.0.1</string>
@@ -24,7 +24,7 @@
     </array>
 
     <key>WorkingDirectory</key>
-    <string>__STOREOPS_DIR__/backend</string>
+    <string>__RETAILOPS_DIR__/backend</string>
 
     <!-- Runs as a normal user (not root) so it owns the SQLite file, uploads and .env. -->
     <key>UserName</key>
@@ -36,9 +36,9 @@
     <true/>
 
     <key>StandardOutPath</key>
-    <string>__STOREOPS_DIR__/backend/logs/backend.log</string>
+    <string>__RETAILOPS_DIR__/backend/logs/backend.log</string>
     <key>StandardErrorPath</key>
-    <string>__STOREOPS_DIR__/backend/logs/backend.error.log</string>
+    <string>__RETAILOPS_DIR__/backend/logs/backend.error.log</string>
 
     <key>EnvironmentVariables</key>
     <dict>

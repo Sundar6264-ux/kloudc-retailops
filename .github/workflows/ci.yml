@@ -32,20 +32,20 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: storeops
+          POSTGRES_USER: retailops
           POSTGRES_DB: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U storeops"
+          --health-cmd "pg_isready -U retailops"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
     env:
-      STOREOPS_TEST_DB: postgres
-      STOREOPS_TEST_PG_URL: postgresql+psycopg://storeops@127.0.0.1:5432/postgres
-      STOREOPS_TEST_DB_PREFIX: so_ci
+      RETAILOPS_TEST_DB: postgres
+      RETAILOPS_TEST_PG_URL: postgresql+psycopg://retailops@127.0.0.1:5432/postgres
+      RETAILOPS_TEST_DB_PREFIX: so_ci
       PGTZ: America/New_York
       # The process clock in the test store's zone: some ordering routes
       # default to the server's date (dt.date.today()), so between 00:00 and
@@ -70,14 +70,14 @@ jobs:
       - name: Store migrations on PostgreSQL (baseline 0062 + chain to head, twice)
         run: |
           set -eux
-          psql "postgresql://storeops@127.0.0.1:5432/postgres" -c "CREATE DATABASE so_ci_chain TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'"
-          alembic -x db_url=postgresql+psycopg://storeops@127.0.0.1:5432/so_ci_chain upgrade head
-          alembic -x db_url=postgresql+psycopg://storeops@127.0.0.1:5432/so_ci_chain upgrade head
-          alembic -x db_url=postgresql+psycopg://storeops@127.0.0.1:5432/so_ci_chain current | grep "(head)"
+          psql "postgresql://retailops@127.0.0.1:5432/postgres" -c "CREATE DATABASE so_ci_chain TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'"
+          alembic -x db_url=postgresql+psycopg://retailops@127.0.0.1:5432/so_ci_chain upgrade head
+          alembic -x db_url=postgresql+psycopg://retailops@127.0.0.1:5432/so_ci_chain upgrade head
+          alembic -x db_url=postgresql+psycopg://retailops@127.0.0.1:5432/so_ci_chain current | grep "(head)"
       - name: The PostgreSQL baseline matches the SQLite chain at 0062
         run: python scripts/pg/make_baseline.py --check
       - name: Migration round trip (platform DB, store DBs, provisioning, migrate-all)
-        run: python scripts/pg/migration_roundtrip.py --pg-url "$STOREOPS_TEST_PG_URL" --prefix so_ci_mig
+        run: python scripts/pg/migration_roundtrip.py --pg-url "$RETAILOPS_TEST_PG_URL" --prefix so_ci_mig
       - name: pytest (PostgreSQL)
         run: python -m pytest -q -p no:cacheprovider
 
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      STOREOPS_TEST_DB: sqlite
+      RETAILOPS_TEST_DB: sqlite
       TZ: America/New_York  # the test store's zone (see the PostgreSQL job)
     defaults:
       run:
@@ -132,7 +132,7 @@ jobs:
       - name: vite build
         run: npx vite build
       - name: Built page carries the product name
-        run: grep -q "<title>StoreOps</title>" dist/index.html
+        run: grep -q "<title>KloudC RetailOps</title>" dist/index.html
 
   docker:
     name: Docker image build and smoke test
@@ -146,18 +146,18 @@ jobs:
         with:
           context: .
           load: true
-          tags: storeops:ci
+          tags: kloudc-retailops:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Image holds no secrets or store data and runs as non-root
         run: |
           set -eux
-          test "$(docker run --rm --entrypoint id storeops:ci -u)" != "0"
-          found=$(docker run --rm --entrypoint sh storeops:ci -c 'find /app /data \( -name ".env" -o -name "*.db" -o -name "*.key" -o -name "*.pem" -o -name "*.p8" -o -name "*.p12" -o -name "google-services.json" -o -name "GoogleService-Info.plist" -o -name "firebase-service-account*.json" -o -name "*.csv" -o -name "*.tsv" \) 2>/dev/null')
+          test "$(docker run --rm --entrypoint id kloudc-retailops:ci -u)" != "0"
+          found=$(docker run --rm --entrypoint sh kloudc-retailops:ci -c 'find /app /data \( -name ".env" -o -name "*.db" -o -name "*.key" -o -name "*.pem" -o -name "*.p8" -o -name "*.p12" -o -name "google-services.json" -o -name "GoogleService-Info.plist" -o -name "firebase-service-account*.json" -o -name "*.csv" -o -name "*.tsv" \) 2>/dev/null')
           echo "found: ${found:-none}"
           test -z "$found"
-          docker run --rm --entrypoint sh storeops:ci -c 'test ! -e /app/backend/tests && test -f /app/frontend/dist/index.html && command -v tesseract && tesseract --version | head -1'
+          docker run --rm --entrypoint sh kloudc-retailops:ci -c 'test ! -e /app/backend/tests && test -f /app/frontend/dist/index.html && command -v tesseract && tesseract --version | head -1'
 
       - name: Compose config is valid
         run: |
@@ -169,9 +169,9 @@ jobs:
         run: |
           set -eux
           {
-            echo "COMPOSE_PROJECT_NAME=storeops-ci"
-            echo "STORE_CODE=STOREOPS_CI"
-            echo "STOREOPS_IMAGE=storeops:ci"
+            echo "COMPOSE_PROJECT_NAME=retailops-ci"
+            echo "STORE_CODE=RETAILOPS_CI"
+            echo "RETAILOPS_IMAGE=kloudc-retailops:ci"
             echo "TOAST_API_BASE=http://127.0.0.1:9"
             echo "TOAST_ANALYTICS_BASE=http://127.0.0.1:9"
             echo "WHAPI_BASE_URL=http://127.0.0.1:9"
@@ -179,14 +179,14 @@ jobs:
           # A new store is set up once (store pack + identity stamp) before
           # its first start; the server refuses to start without the stamp.
           docker compose run --rm --no-deps store sh -c \
-            "alembic upgrade head && python -m app.store init --code STOREOPS_CI --pack packs/generic.json"
+            "alembic upgrade head && python -m app.store init --code RETAILOPS_CI --pack packs/generic.json"
           docker compose up -d --no-build store
           for i in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:8000/api/health; then break; fi
             sleep 2
           done
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/health)" = "200"
-          curl -fsS http://127.0.0.1:8000/ | grep -q "<title>StoreOps</title>"
+          curl -fsS http://127.0.0.1:8000/ | grep -q "<title>KloudC RetailOps</title>"
           docker compose exec -T store alembic current | tee /tmp/alembic.txt
           grep -q "(head)" /tmp/alembic.txt
           # Docker's own health check turns healthy (start period 60 s).
@@ -220,6 +220,6 @@ jobs:
         run: |
           docker run --rm --user root --entrypoint sh \
             -e TOAST_API_BASE -e TOAST_ANALYTICS_BASE -e WHAPI_BASE_URL \
-            -e STOREOPS_TEST_DB=sqlite -e TZ=America/New_York \
-            -v "$PWD:/repo" -w /repo/backend storeops:ci \
+            -e RETAILOPS_TEST_DB=sqlite -e TZ=America/New_York \
+            -v "$PWD:/repo" -w /repo/backend kloudc-retailops:ci \
             -c "pip install -q pytest==8.3.3 && python -m pytest -q -p no:cacheprovider"

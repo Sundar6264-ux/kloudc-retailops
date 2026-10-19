@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1
 #
-# StoreOps store image: the API, the website and the scheduled jobs for ONE
+# KloudC RetailOps store image: the API, the website and the scheduled jobs for ONE
 # store, in one process. Every store runs the same image with its own volume
 # (/data: SQLite database, uploads, flyers) and its own environment (.env via
 # docker-compose.yml). The image holds no secrets and no store data.
 #
-#   docker build -t storeops .
-#   docker run --rm -p 127.0.0.1:8000:8000 -v storeops-data:/data --env-file .env storeops
+#   docker build -t kloudc-retailops .
+#   docker run --rm -p 127.0.0.1:8000:8000 -v retailops-data:/data --env-file .env kloudc-retailops
 
 # --- 1. Website build ------------------------------------------------------------------------
 FROM node:22-bookworm-slim AS web
@@ -31,10 +31,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # A fixed non-root user; it owns /data (the store's volume) and nothing else.
-RUN groupadd --system --gid 10001 storeops \
-    && useradd --system --uid 10001 --gid storeops --home-dir /data --shell /usr/sbin/nologin storeops \
+RUN groupadd --system --gid 10001 retailops \
+    && useradd --system --uid 10001 --gid retailops --home-dir /data --shell /usr/sbin/nologin retailops \
     && mkdir -p /data \
-    && chown storeops:storeops /data
+    && chown retailops:retailops /data
 
 WORKDIR /app/backend
 COPY backend/requirements.txt ./requirements.txt
@@ -42,14 +42,14 @@ RUN pip install -r requirements.txt
 
 COPY backend/ ./
 COPY --from=web /src/frontend/dist /app/frontend/dist
-COPY docker/entrypoint.sh /usr/local/bin/storeops-entrypoint
-RUN chmod 0755 /usr/local/bin/storeops-entrypoint \
+COPY docker/entrypoint.sh /usr/local/bin/retailops-entrypoint
+RUN chmod 0755 /usr/local/bin/retailops-entrypoint \
     && python -m compileall -q app \
     && test ! -e .env
 
 # Container paths. docker-compose.yml sets the same values so a store's .env
 # cannot point them somewhere outside the volume by accident.
-ENV DATABASE_URL=sqlite:////data/storeops.db \
+ENV DATABASE_URL=sqlite:////data/retailops.db \
     UPLOADS_ROOT=/data/uploads \
     INVOICE_UPLOADS_DIR=/data/uploads/invoices \
     TEAM_UPLOADS_DIR=/data/uploads/team \
@@ -58,11 +58,11 @@ ENV DATABASE_URL=sqlite:////data/storeops.db \
     FRONTEND_DIST_DIR=/app/frontend/dist \
     PORT=8000
 
-USER storeops
+USER retailops
 VOLUME ["/data"]
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD ["python", "-c", "import os, sys, urllib.request; r = urllib.request.urlopen('http://127.0.0.1:%s/api/health' % os.environ.get('PORT', '8000'), timeout=4); sys.exit(0 if r.status == 200 else 1)"]
 
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/storeops-entrypoint"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/retailops-entrypoint"]

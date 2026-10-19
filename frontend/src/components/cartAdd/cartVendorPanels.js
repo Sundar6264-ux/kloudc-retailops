@@ -6,7 +6,7 @@
 import { canonicalVendor, formatQty, norm, plural } from "./cartAddModel.js";
 
 // localStorage key: a JSON list of the vendor names whose panels are open.
-export const OPEN_VENDORS_KEY = "storeops_cart_open_vendors";
+export const OPEN_VENDORS_KEY = "retailops_cart_open_vendors";
 // A cart never has more vendors than inventory does (55 on prod); anything
 // longer is junk and is cut, so a bad value can't grow without limit.
 export const MAX_REMEMBERED = 200;

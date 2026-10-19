@@ -10,7 +10,7 @@ no subcategory, NULL = keep Toast's.
 The owner already moved every current item in these combos with per-item
 corrections (item rules win over mapping rules), so today nothing changes;
 the rules catch items Toast files under the old names from now on. Like 0034
-seeding the Shaz rule, the rows are inserted here. Downgrade removes only the
+seeding the example supplier rule, the rows are inserted here. Downgrade removes only the
 rows this migration added (created_by = SEEDED_BY).
 
 Revision ID: 0037

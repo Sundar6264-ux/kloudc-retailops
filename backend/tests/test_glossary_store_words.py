@@ -9,7 +9,7 @@ import types
 from app import glossary as g
 from app.services import fix_issues
 
-NAMES = re.compile(r"spice ?town|street kitchen|vernon|spicetown\.shop", re.I)
+from tests.origin_names import find_origin_names, has_origin_name
 
 
 def _settings(tz):
@@ -54,7 +54,7 @@ def test_reason_terms_are_filled_too(monkeypatch):
 def test_no_store_names_in_the_glossary(monkeypatch):
     monkeypatch.setattr("app.pos.gating.pos_name", lambda: "Toast")
     monkeypatch.setattr("app.config.get_settings", lambda: _settings(""))
-    hits = sorted(set(m.group(0) for m in NAMES.finditer(_body())))
+    hits = [line for _, line in find_origin_names(_body())]
     assert hits == [], hits
     source = open(g.__file__, encoding="utf-8").read()
-    assert NAMES.search(source) is None
+    assert not has_origin_name(source)

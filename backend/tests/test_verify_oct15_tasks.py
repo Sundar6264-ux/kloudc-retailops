@@ -24,13 +24,13 @@ def _lead_setup(db, admin, items):
     from app.services import issue_leads
     from tests.test_issue_leads import only_missing, save, snap
 
-    sai = make_user(db, "Sai Durga", features=["team_tasks", "inventory_reports"])
+    sasha = make_user(db, "Sasha Durga", features=["team_tasks", "inventory_reports"])
     for item_id, name in items:
         snap(db, item_id, name, category="Oils & Fats", supplier="Chetak")
     db.commit()
     only_missing(db, admin)
-    save(db, admin, sections=[("Oils & Ghee", sai.id)])
-    return sai, issue_leads
+    save(db, admin, sections=[("Oils & Ghee", sasha.id)])
+    return sasha, issue_leads
 
 
 def _came_back(db, item_id):
@@ -40,7 +40,7 @@ def _came_back(db, item_id):
     db.add(
         IssueResolution(
             issue_type="missing_barcode", issue_key=item_id, item_id=item_id, reason="fixed",
-            closed_by_name="Sai Durga", closed_at=dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2),
+            closed_by_name="Sasha Durga", closed_at=dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2),
         )
     )
     db.commit()
@@ -50,7 +50,7 @@ def _came_back(db, item_id):
 def test_lead_progress_does_not_count_an_item_that_came_back_as_done(db, admin):
     from tests.test_issue_leads import at
 
-    sai, issue_leads = _lead_setup(db, admin, [("rice1", "Sona Masoori 20lb"), ("rice2", "Basmati 10lb")])
+    sasha, issue_leads = _lead_setup(db, admin, [("rice1", "Sona Masoori 20lb"), ("rice2", "Basmati 10lb")])
     _came_back(db, "rice1")
     issue_leads.run_daily_tasks(db, at(10, 5))
     task = db.query(Task).filter(Task.source_type == "issue_leads").one()
@@ -60,7 +60,7 @@ def test_lead_progress_does_not_count_an_item_that_came_back_as_done(db, admin):
     assert (task.title, task.progress_done, task.status) == ("Fix Issues: 2 left of 2", 0, "open")
     # Closing it again today does count.
     body = {"issue_type": "missing_barcode", "issue_keys": ["rice1"], "reason": "fixed"}
-    assert client_for(db, sai).post("/api/issues/close", json=body).status_code == 200
+    assert client_for(db, sasha).post("/api/issues/close", json=body).status_code == 200
     db.refresh(task)
     assert (task.title, task.progress_done) == ("Fix Issues: 1 left of 2", 1)
 
@@ -69,7 +69,7 @@ def test_lead_progress_does_not_count_an_item_that_came_back_as_done(db, admin):
 def test_a_lead_list_of_only_came_back_items_does_not_close_itself_at_once(db, admin):
     from tests.test_issue_leads import at
 
-    sai, issue_leads = _lead_setup(db, admin, [("rice1", "Sona Masoori 20lb")])
+    sasha, issue_leads = _lead_setup(db, admin, [("rice1", "Sona Masoori 20lb")])
     _came_back(db, "rice1")
     issue_leads.run_daily_tasks(db, at(10, 5))
     task = db.query(Task).filter(Task.source_type == "issue_leads").one()
@@ -86,13 +86,13 @@ def test_a_reopened_lead_task_still_shows_its_live_count(db, admin):
     from app.team.tasks_models import TaskEvent
     from tests.test_issue_leads import at
 
-    sai, issue_leads = _lead_setup(db, admin, [("rice1", "Sona Masoori 20lb")])
+    sasha, issue_leads = _lead_setup(db, admin, [("rice1", "Sona Masoori 20lb")])
     issue_leads.run_daily_tasks(db, at(10, 5))
     task = db.query(Task).filter(Task.source_type == "issue_leads").one()
-    db.add(TaskEvent(task_id=task.id, kind="reopened", user_name="Sai Durga", created_at=task.created_at))
+    db.add(TaskEvent(task_id=task.id, kind="reopened", user_name="Sasha Durga", created_at=task.created_at))
     db.commit()
     body = {"issue_type": "missing_barcode", "issue_keys": ["rice1"], "reason": "fixed"}
-    assert client_for(db, sai).post("/api/issues/close", json=body).status_code == 200
+    assert client_for(db, sasha).post("/api/issues/close", json=body).status_code == 200
     db.refresh(task)
     assert task.status == "open"  # reopened by a person: stays open
     assert (task.title, task.progress_done) == ("Fix Issues: 0 left of 1", 1)

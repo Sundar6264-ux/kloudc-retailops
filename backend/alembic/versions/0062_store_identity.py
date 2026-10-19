@@ -1,4 +1,4 @@
-"""Store identity stamp (StoreOps M2, MT8; docs/M2_CONTRACT.md 1.5, plan 9.1).
+"""Store identity stamp (KloudC RetailOps M2, MT8; docs/M2_CONTRACT.md 1.5, plan 9.1).
 
 One row says which store this database belongs to. The server refuses to
 start when it doesn't match STORE_CODE (app/store/identity.py), so a

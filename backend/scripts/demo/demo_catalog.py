@@ -7,7 +7,7 @@ vendors are visibly fictitious ("Demo Produce Supply"), staff are roles
 and phone numbers the 555-01xx fiction range.
 """
 
-STORE_NAME = "StoreOps Demo Market"
+STORE_NAME = "KloudC RetailOps Demo Market"
 STORE_CODE = "DEMO"
 
 # vendor -> (delivery weekdays Mon=0..Sun=6, lead days, contact email)
@@ -262,7 +262,7 @@ TASK_TITLES = [
 ]
 
 ANNOUNCEMENTS = [
-    ("Welcome to StoreOps Demo Market", "This is a demo store with made-up data. Look around!"),
+    ("Welcome to KloudC RetailOps Demo Market", "This is a demo store with made-up data. Look around!"),
     ("Weekend sale", "Rice, lentils and spices are 10% off Saturday and Sunday."),
     ("Safety reminder", "Use the step stool for top shelves - never climb the racks."),
 ]

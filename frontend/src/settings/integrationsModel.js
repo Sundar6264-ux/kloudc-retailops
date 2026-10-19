@@ -71,7 +71,7 @@ export const INTEGRATIONS = [
 
 export const INTEGRATIONS_BY_KIND = Object.fromEntries(INTEGRATIONS.map((i) => [i.kind, i]));
 
-export const OPEN_CARD_KEY = "storeops_integrations_open";
+export const OPEN_CARD_KEY = "retailops_integrations_open";
 
 const STATUS = {
   ok: { label: "Connected", tone: "good" },

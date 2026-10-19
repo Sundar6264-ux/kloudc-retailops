@@ -25,7 +25,7 @@ const read = (rel) => readFileSync(join(here, rel), "utf8");
 
 // The fake Toast store (every capability and store feature): the menu is the
 // pre-M2 one. Per-store differences are in store/gating.test.mjs.
-const TOAST_STORE = storeView(normalizeBranding(BRANDING.STOREOPS_TEST_TOAST), null);
+const TOAST_STORE = storeView(normalizeBranding(BRANDING.RETAILOPS_TEST_TOAST), null);
 
 // The same rules as AuthContext.hasFeature / canSeeSales.
 function ctxFor(user, store = TOAST_STORE) {

@@ -75,7 +75,7 @@ def store(db):
         add_snap(db, item_id, name, supplier, category, sub, day=YESTERDAY, price=3.49)
         add_snap(db, item_id, name, supplier, category, sub, supplier_item_id=f"SZ-{item_id}")
     add_snap(db, "other", "Parle-G Biscuits 800g", "Raja Foods", "Snacks & Savories", "Biscuits & Cookies")
-    add_snap(db, "samosa", "Veg Samosa", None, "Snacks", None, group="STREET KITCHEN", price=None)
+    add_snap(db, "samosa", "Veg Samosa", None, "Snacks", None, group="MARKET KITCHEN", price=None)
     db.commit()
     add_rule(db, "supplier", "Shaz International")
     return db
@@ -108,7 +108,7 @@ def test_supplier_rule_covers_every_shaz_item_incl_multi_vendor(store):
     # Non-Shaz items are the plain ORM rows, untouched.
     assert isinstance(latest["other"], InventorySnapshot)
     assert latest["other"].subcategory == "Biscuits & Cookies"
-    assert latest["samosa"].category_group == "STREET KITCHEN"
+    assert latest["samosa"].category_group == "MARKET KITCHEN"
     # Raw values on request.
     raw = latest_inventory_by_item(store, apply_category_overrides=False)
     assert raw["shaz-toast"].category == "Pantry Staples"
@@ -328,7 +328,7 @@ def test_migration_0034_upgrade_seed_downgrade(tmp_path):
         seeded = con.execute(
             "SELECT match_type, match_value, category_group, category, subcategory, active FROM category_overrides"
         ).fetchall()
-        assert seeded == [("supplier", "Shaz International", *TARGET, 1)]
+        assert seeded == [("supplier", "Sample Biscuit Supplier", *TARGET, 1)]
     finally:
         con.close()
     run("downgrade", "0033")
@@ -355,6 +355,12 @@ def test_fix_list_script_reads_only(tmp_path):
         "supplier, uploaded_at) VALUES (?, 'done', 'KCB Already Right', 'RETAIL', 'Snacks & Savories', "
         "'Biscuits, Cookies & Rusk', 'Shaz International', '2026-09-22')",
         (TODAY.isoformat(),),
+    )
+    # The seeded rule is the example supplier's; these items need their own.
+    con.execute(
+        "INSERT INTO category_overrides (match_type, match_value, category_group, category, subcategory, "
+        "created_at, active) VALUES ('supplier', 'Shaz International', 'RETAIL', 'Snacks & Savories', "
+        "'Biscuits, Cookies & Rusk', '2026-09-22', 1)"
     )
     con.commit()
     con.close()

@@ -1,4 +1,4 @@
-"""Per-store configuration (StoreOps M2, docs/M2_CONTRACT.md sections 1-3).
+"""Per-store configuration (KloudC RetailOps M2, docs/M2_CONTRACT.md sections 1-3).
 
 - ``settings_view``: values derived from the store settings in
   ``app.config.Settings`` (display name, public host, store features, SMTP...).

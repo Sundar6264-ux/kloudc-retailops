@@ -1,4 +1,4 @@
-"""The store identity stamp (StoreOps M2, MT8; docs/M2_CONTRACT.md 1.5).
+"""The store identity stamp (KloudC RetailOps M2, MT8; docs/M2_CONTRACT.md 1.5).
 Every row of the startup table plus the upload-folder marker cases."""
 
 import json

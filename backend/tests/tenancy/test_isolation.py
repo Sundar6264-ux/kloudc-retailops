@@ -84,7 +84,7 @@ def test_public_store_route_takes_store_query(multi):
     r = TestClient(app).get("/api/app/branding", params={"store": "beta"})
     assert r.status_code == 200
     body = r.json()
-    assert (body["store_code"], body["name"], body["public_host"]) == ("BETA", "Beta Market", "https://app.storeops.test")
+    assert (body["store_code"], body["name"], body["public_host"]) == ("BETA", "Beta Market", "https://app.retailops.test")
     # No store: product branding (store fields null).
     assert TestClient(app).get("/api/app/branding").json()["store_code"] is None
     # ?store= on a non-public route is ignored without a token (still 401).
@@ -96,7 +96,7 @@ def test_dedicated_store_answers_store_moved_only_with_the_flag(multi, monkeypat
     from app.tenancy.testing import update_test_store
 
     a = seed_users("ALPHA", "alice")
-    update_test_store("ALPHA", hosting="dedicated", api_base_url="https://alpha.storeops.test")
+    update_test_store("ALPHA", hosting="dedicated", api_base_url="https://alpha.retailops.test")
     # Flag off: a dedicated row is treated as shared.
     assert _client(a["alice"][1]).get("/api/auth/me").status_code == 200
     monkeypatch.setattr(process_settings(), "dedicated_hosting_enabled", True)
@@ -106,7 +106,7 @@ def test_dedicated_store_answers_store_moved_only_with_the_flag(multi, monkeypat
         "error": "store_moved",
         "message": r.json()["message"],
         "store_code": "ALPHA",
-        "api_base_url": "https://alpha.storeops.test",
+        "api_base_url": "https://alpha.retailops.test",
     }
 
 
@@ -117,7 +117,7 @@ def test_dedicated_node_serves_only_its_own_store(multi, monkeypatch):
     b = seed_users("BETA", "bob")
     monkeypatch.setattr(process_settings(), "dedicated_store_codes", "BETA")
     r = _client(a["alice"][1]).get("/api/auth/me")
-    assert r.status_code == 409 and r.json()["api_base_url"] == "https://app.storeops.test"
+    assert r.status_code == 409 and r.json()["api_base_url"] == "https://app.retailops.test"
     assert _client(b["bob"][1]).get("/api/auth/me").json()["username"] == "bob"
 
 

@@ -655,31 +655,31 @@ def test_block_is_not_revealed_to_the_blocked_person_in_the_feed(db, staff_clien
     [
         ("thanks @ravi.", {"ravi"}),
         ("@RAVI can you check", {"ravi"}),
-        ("ping @Sai Durga please", {"Sai Durga"}),
-        ("@Sai look", {"Sai"}),  # "Sai" alone is a different person
+        ("ping @Sasha Durga please", {"Sasha Durga"}),
+        ("@Sasha look", {"Sasha"}),  # "Sasha" alone is a different person
         ("@ravikumar is not ravi", set()),
         ("mail me at x@ravi", set()),
-        ("@ravi, @Sai Durga!", {"ravi", "Sai Durga"}),
+        ("@ravi, @Sasha Durga!", {"ravi", "Sasha Durga"}),
     ],
 )
 def test_mentions_match_real_usernames(body, expected):
-    users = [(1, "ravi"), (2, "Sai Durga"), (3, "Sai")]
+    users = [(1, "ravi"), (2, "Sasha Durga"), (3, "Sasha")]
     ids = {uid for uid, _ in users if _ in expected}
     assert set(chat.find_mentions(body, users)) == ids
 
 
 def test_mention_with_space_in_username_reaches_muted_member(db, team, pushes):
     ravi = chatter(db, "ravi")
-    sai = chatter(db, "Sai Durga")
-    for u in (ravi, sai):
+    sasha = chatter(db, "Sasha Durga")
+    for u in (ravi, sasha):
         add_member(db, team, u)
         device(db, u, token=f"tok-{u.id}")
-    ravi_c, sai_c = client_for(db, ravi), client_for(db, sai)
+    ravi_c, sasha_c = client_for(db, ravi), client_for(db, sasha)
     kitchen = kitchen_channel(ravi_c, team)
-    sai_c.patch(f"/api/team/channels/{kitchen['id']}/me", json={"muted": True})
-    msg = send(ravi_c, kitchen["id"], "@Sai Durga, cooler is open").json()
-    assert msg["mentions"] == [sai.id]
-    assert pushes[-1]["tokens"] == [f"tok-{sai.id}"]
+    sasha_c.patch(f"/api/team/channels/{kitchen['id']}/me", json={"muted": True})
+    msg = send(ravi_c, kitchen["id"], "@Sasha Durga, cooler is open").json()
+    assert msg["mentions"] == [sasha.id]
+    assert pushes[-1]["tokens"] == [f"tok-{sasha.id}"]
 
 
 def test_archiving_a_team_stops_sends_immediately(db, staff_client, staff, team, admin_client):

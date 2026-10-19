@@ -1,7 +1,7 @@
 {
   "pack_version": 1,
-  "pack_id": "storeops_test_toast",
-  "label": "Fake Toast store for tests (STOREOPS_TEST_TOAST)",
+  "pack_id": "retailops_test_toast",
+  "label": "Fake Toast store for tests (RETAILOPS_TEST_TOAST)",
 
   "menu": {
     "excluded_category_groups": ["KITCHEN", "CATERING"],

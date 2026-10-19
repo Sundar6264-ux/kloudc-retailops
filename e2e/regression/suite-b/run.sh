@@ -2,7 +2,7 @@
 # Run all of Suite B against the throwaway server (start it first: setup.sh, mock_whapi.py, serve.sh - see README.md).
 # Usage: run.sh [script ...]   (default: every flow at 1280 1024 375, then the sweep)
 HERE=${0:A:h}
-W=${SUITE_B_WORK:-/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB}
+W=${SUITE_B_WORK:-/tmp/retailops-suiteB}
 mkdir -p $W/logs
 [[ -f $W/fixtures/voice.m4a ]] || $HERE/fixtures.sh
 # (zsh does not split a ${@:-...} default into words - it ran one script named "team chat ... sweep")

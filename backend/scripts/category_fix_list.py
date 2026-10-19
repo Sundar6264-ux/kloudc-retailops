@@ -8,13 +8,13 @@ where a read-only open can't create the WAL index), never through the app's
 engine, and never writes anything.
 
 Rules come from the database's `category_overrides` table (active rows);
-a database from before migration 0034 has no table, so the built-in Shaz
-International rule is used instead. Items are taken from the latest upload.
+a database from before migration 0034 has no table, so the built-in example
+supplier rule is used instead. Items are taken from the latest upload.
 Category mapping rules (match_type "category") count too: they list the items
 Toast still files under an old category name.
 
-    python scripts/category_fix_list.py /path/to/storeops.db > fix.csv
-    python scripts/category_fix_list.py /path/to/storeops.db --all   # also items already right
+    python scripts/category_fix_list.py /path/to/retailops.db > fix.csv
+    python scripts/category_fix_list.py /path/to/retailops.db --all   # also items already right
 """
 
 import argparse
@@ -26,7 +26,7 @@ from pathlib import Path
 
 DEFAULT_RULES = [
     # (id, match_type, match_value, category_group, category, subcategory)
-    (0, "supplier", "Shaz International", "RETAIL", "Snacks & Savories", "Biscuits, Cookies & Rusk"),
+    (0, "supplier", "Sample Biscuit Supplier", "RETAIL", "Snacks & Savories", "Biscuits, Cookies & Rusk"),
 ]
 
 COLUMNS = [

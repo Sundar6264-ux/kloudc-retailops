@@ -4,9 +4,9 @@ Used by tests/conftest.py before anything from `app` is imported, so this
 module must never import `app`.
 
 - One throwaway database per test run: `<prefix>_test_<pid>` (prefix from
-  STOREOPS_TEST_DB_PREFIX, default `so_a`), created from template0 with C
+  RETAILOPS_TEST_DB_PREFIX, default `so_a`), created from template0 with C
   collation (like every store database, contract 1.4 / 11.3) on the server
-  in STOREOPS_TEST_PG_URL (default: the local dev cluster). Dropped at the
+  in RETAILOPS_TEST_PG_URL (default: the local dev cluster). Dropped at the
   end of the run; databases of earlier runs whose process is gone (a killed
   run) are dropped at the start of the next one. Only names with this run's
   prefix are ever touched.
@@ -61,13 +61,13 @@ $fn$;
 
 
 def admin_url() -> str:
-    return os.environ.get("STOREOPS_TEST_PG_URL") or DEFAULT_ADMIN_URL
+    return os.environ.get("RETAILOPS_TEST_PG_URL") or DEFAULT_ADMIN_URL
 
 
 def db_prefix() -> str:
-    prefix = os.environ.get("STOREOPS_TEST_DB_PREFIX") or "so_a"
+    prefix = os.environ.get("RETAILOPS_TEST_DB_PREFIX") or "so_a"
     if not re.fullmatch(r"[a-z][a-z0-9_]{1,30}", prefix):
-        raise SystemExit(f"STOREOPS_TEST_DB_PREFIX={prefix!r}: lower-case letters, digits and _ only")
+        raise SystemExit(f"RETAILOPS_TEST_DB_PREFIX={prefix!r}: lower-case letters, digits and _ only")
     return prefix
 
 
@@ -141,7 +141,7 @@ def create_run_database() -> str:
     except psycopg.OperationalError as exc:
         raise SystemExit(
             f"PostgreSQL test server not reachable at {admin_url()!r} ({exc}). Start it, set "
-            "STOREOPS_TEST_PG_URL, or run the quick SQLite harness with STOREOPS_TEST_DB=sqlite."
+            "RETAILOPS_TEST_PG_URL, or run the quick SQLite harness with RETAILOPS_TEST_DB=sqlite."
         ) from None
     try:
         drop_stale_databases(conn)

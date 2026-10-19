@@ -180,7 +180,7 @@ def test_open_checks_cache_writes_the_neutral_order_id(db):
 # --- MT6 gating <- MT2 registry --------------------------------------------------------------------
 
 
-def test_spice_town_gating_comes_from_the_toast_connector():
+def test_main_store_gating_comes_from_the_toast_connector():
     assert gating.pos_provider() == "toast"
     assert gating.pos_name() == registry.get_connector().display_name == "Toast"
     assert gating.store_capabilities() == registry.get_connector().capabilities == TOAST_CAPABILITIES

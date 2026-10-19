@@ -372,7 +372,8 @@ def compose(supplier: str, items: list, day: Optional[dt.date] = None) -> Tuple[
         f"{NOTE_MARKER}\n\n"
         "Please reply to this email to confirm the order, and let us know if anything is unavailable.\n\n"
         "Thank you,\n"
-        f"{signature}"
+        f"{signature}\n\n"
+        f"--\nSent with {sv.product_credit()}"
     )
     return subject, body
 

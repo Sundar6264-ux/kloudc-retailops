@@ -1,4 +1,4 @@
-"""Legacy equivalence (StoreOps M2, MT8; docs/M2_CONTRACT.md 3.6).
+"""Legacy equivalence (KloudC RetailOps M2, MT8; docs/M2_CONTRACT.md 3.6).
 
 The private legacy pack (scripts/packs/extract_legacy_pack.py, never
 committed) must reproduce the rule functions of the import commit exactly:
@@ -16,7 +16,7 @@ import pytest
 from app.store import pack as store_pack
 from tests.store_fixtures import PRIVATE_DIR
 
-PACK = PRIVATE_DIR / "spicetown.pack.json"
+PACK = PRIVATE_DIR / "origin.pack.json"
 CASES = PRIVATE_DIR / "legacy_cases.json"
 
 pytestmark = pytest.mark.skipif(
@@ -94,6 +94,6 @@ def test_legacy_settings_reproduce_the_legacy_strings():
 
     subject, body = po_send.compose("Acme Foods", [{"name": "x", "qty": 2}])
     assert sv.store_display_name() in subject
-    assert body.endswith("\n".join([sv.store_display_name(), sv.store_address(), sv.store_phone()]))
+    assert body.endswith("\n".join([sv.store_display_name(), sv.store_address(), sv.store_phone()]) + "\n\n--\nSent with KloudC RetailOps by KloudC LLC")
     assert po_send.whatsapp_caption("Acme Foods", [{"qty": 1}]).endswith(sv.store_phone())
     assert sv.first_sales_date() is not None and sv.ai_enabled()

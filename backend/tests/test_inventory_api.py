@@ -123,7 +123,7 @@ def menus_json(last_updated="2026-10-11T15:41:42.977+0000", tea_sku=GOOD2, rice_
             },
             {"name": "CONTAINER", "menuGroups": [{"name": "Back", "menuItems": [_item(RICE_C, "Rice 20lb - Container", 0.0, product="p1", option="Container")]}]},
             {
-                "name": "STREET KITCHEN",
+                "name": "MARKET KITCHEN",
                 "menuGroups": [
                     {
                         "name": "Mains",
@@ -134,7 +134,7 @@ def menus_json(last_updated="2026-10-11T15:41:42.977+0000", tea_sku=GOOD2, rice_
                     }
                 ],
             },
-            {"name": "STREET KITCHEN (GH)", "menuGroups": [{"name": "Mains", "menuItems": [_item(UNTRACKED, "Paneer Wrap", 10.95, strategy="MENU_SPECIFIC_PRICE"), _item(GH_ONLY, "GH Only Dish", 5.0)]}]},
+            {"name": "MARKET KITCHEN (GH)", "menuGroups": [{"name": "Mains", "menuItems": [_item(UNTRACKED, "Paneer Wrap", 10.95, strategy="MENU_SPECIFIC_PRICE"), _item(GH_ONLY, "GH Only Dish", 5.0)]}]},
             {"name": "Test Menu", "menuGroups": [{"name": "X", "menuItems": [_item("test-thing", "Test", 1.0)]}]},
         ],
     }
@@ -205,8 +205,8 @@ def store(db):
     csv_row(db, DAL_C, "Dal 4lb", 20, price=None, supplier=None, category="Grains", sub="Rice", barcode=None)
     csv_row(db, TEA, "Tea 1kg", 14, price=9.99, barcode=f"{GOOD2};{GOOD}", cost=5.0)
     csv_row(db, NEG, "Negative Thing", -3, price=2.49)
-    csv_row(db, UNTRACKED, "Paneer Wrap", None, price=None, supplier=None, group="STREET KITCHEN", category="Mains", barcode=None)
-    csv_row(db, BIRYANI, "Chicken Biryani", None, price=None, supplier=None, group="STREET KITCHEN", category="Mains", barcode=None)
+    csv_row(db, UNTRACKED, "Paneer Wrap", None, price=None, supplier=None, group="MARKET KITCHEN", category="Mains", barcode=None)
+    csv_row(db, BIRYANI, "Chicken Biryani", None, price=None, supplier=None, group="MARKET KITCHEN", category="Mains", barcode=None)
     for day in range(1, 95, 3):
         sale(db, TEA, TODAY - dt.timedelta(days=day), qty=1.0, net=9.99)
     sale(db, TEA, TODAY - dt.timedelta(days=1), qty=5.0, net=5 * 9.99, modifier=True)  # modifier: never counted

@@ -1,4 +1,4 @@
-"""The store pack (StoreOps M2, MT8; docs/M2_CONTRACT.md section 3)."""
+"""The store pack (KloudC RetailOps M2, MT8; docs/M2_CONTRACT.md section 3)."""
 
 import json
 
@@ -161,13 +161,13 @@ def test_active_pack_precedence_file_then_database_then_generic(db, monkeypatch,
     write_pack_row(db, clover, "test")
     db.commit()
     store_pack.reload_pack()
-    assert store_pack.current_pack().pack_id == "storeops_test_clover"
+    assert store_pack.current_pack().pack_id == "retailops_test_clover"
     assert store_pack.current_source().startswith("database")
     # The same pack again writes nothing.
     assert write_pack_row(db, clover, "test") is False
     monkeypatch.setattr(get_settings(), "store_pack_file", str(PACKS / "test_toast.json"))
     store_pack.reload_pack()
-    assert store_pack.current_pack().pack_id == "storeops_test_toast"
+    assert store_pack.current_pack().pack_id == "retailops_test_toast"
     assert "STORE_PACK_FILE" in store_pack.current_source()
 
 
@@ -182,7 +182,7 @@ def test_a_broken_stored_pack_falls_back_to_generic(db, caplog):
 
 
 def test_po_sections_page_lists_the_pack_sections(admin_client, monkeypatch):
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     names = [row["section"] for row in admin_client.get("/api/categories/sections").json()["items"]]
     for section in store_pack.builtin_sections():
         assert section in names
@@ -192,7 +192,7 @@ def test_fake_store_rules_reach_the_services(monkeypatch):
     from app.services import delivery_suggestions, fix_issues, flyers, insights, insights_data, po_sections
     from app.services import schedule_suggestions, whatsapp_groups
 
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     assert fix_issues.excluded_groups() == {"KITCHEN", "CATERING"} == fix_issues.EXCLUDED_CATEGORY_GROUPS
     assert delivery_suggestions.KITCHEN_GROUPS == {"KITCHEN", "CATERING"}
     assert insights.GROCERY_MENUS == {"retail", "produce"}
@@ -211,7 +211,7 @@ def test_fake_store_rules_reach_the_services(monkeypatch):
 def test_checklist_fallback_serves_the_pack_checklists(monkeypatch):
     from app.services import checklist_schemas
 
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     schemas = checklist_schemas.list_schemas()
     assert list(schemas) == ["daily_closing"]
     assert checklist_schemas.short_name("daily_closing") == "Closing"
@@ -224,7 +224,7 @@ def test_admin_seeding_writes_the_pack_checklists(db, monkeypatch):
     from app.models import ChecklistDefinition
     from app.services.checklist_admin import ensure_seeded
 
-    use_store(monkeypatch, "STOREOPS_TEST_CLOVER")  # no checklists section -> generic's
+    use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")  # no checklists section -> generic's
     assert ensure_seeded(db) is True
     rows = db.query(ChecklistDefinition).all()
     assert [(r.checklist_type, r.created_by) for r in rows] == [("daily_closing", "store pack")]
@@ -243,4 +243,4 @@ def test_pack_commands(tmp_path, capsys):
     shown = json.loads(capsys.readouterr().out)
     assert shown["pack"]["pack_id"] == "generic"
     assert main(["pack", "schema"]) == 0
-    assert json.loads(capsys.readouterr().out)["title"].startswith("StoreOps store pack")
+    assert json.loads(capsys.readouterr().out)["title"].startswith("KloudC RetailOps store pack")

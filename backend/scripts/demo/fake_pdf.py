@@ -30,7 +30,7 @@ def text_pdf(lines: Sequence[str], title: str = "Demo document") -> bytes:
         b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
         b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream",
-        b"<< /Title (" + _escape(title).encode("latin-1") + b") /Producer (StoreOps demo data) >>",
+        b"<< /Title (" + _escape(title).encode("latin-1") + b") /Producer (KloudC RetailOps demo data) >>",
     ]
     out = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
     offsets = []

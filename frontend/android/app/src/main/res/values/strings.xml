@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">StoreOps</string>
-    <string name="title_activity_main">StoreOps</string>
-    <string name="package_name">com.kloudc.storeops</string>
-    <string name="custom_url_scheme">com.kloudc.storeops</string>
+    <string name="app_name">KloudC RetailOps</string>
+    <string name="title_activity_main">KloudC RetailOps</string>
+    <string name="package_name">com.kloudc.retailops</string>
+    <string name="custom_url_scheme">com.kloudc.retailops</string>
 </resources>

@@ -102,7 +102,7 @@ def _stale_schema():
                  "options": [{"value": "Yes ", "issue_tag": None}, {"value": " No", "issue_tag": "not_done"}],
                  "go_to_section": {"Yes ": "submit", " No": "s2"}},
                 {"id": "q_who", "type": "dropdown", "title": "Closer", "required": True,
-                 "options": [{"value": "RK ", "issue_tag": None}]},
+                 "options": [{"value": "JL ", "issue_tag": None}]},
                 {"id": "q_clean", "type": "checkboxes", "title": "Cleaned", "required": False,
                  "options": [{"value": "Counter ", "issue_tag": None}, {"value": "Glass", "issue_tag": None}]},
                 {"id": "q_grid", "type": "multiple_choice_grid", "title": "Fridges", "required": True,
@@ -118,14 +118,14 @@ def _stale_schema():
 
 def test_answers_match_options_ignoring_surrounding_spaces():
     schema = _stale_schema()
-    answers = {"q_door": "Yes", "q_who": "RK", "q_clean": '["Counter"]', "q_grid.r1": "OK"}
+    answers = {"q_door": "Yes", "q_who": "JL", "q_clean": '["Counter"]', "q_grid.r1": "OK"}
     engine.validate_answers(schema, answers)  # no "Invalid answer"
     canon = engine.canonical_answers(schema, answers)
-    assert canon == {"q_door": "Yes ", "q_who": "RK ", "q_clean": '["Counter "]', "q_grid.r1": "OK "}
+    assert canon == {"q_door": "Yes ", "q_who": "JL ", "q_clean": '["Counter "]', "q_grid.r1": "OK "}
     assert answers["q_door"] == "Yes"  # the caller's dict isn't changed
     # Flags and branching see the definition's own value.
     assert engine.compute_status(schema, canon) == (True, None)
-    no = engine.canonical_answers(schema, {"q_door": "No", "q_who": "RK", "q_grid.r1": "OK"})
+    no = engine.canonical_answers(schema, {"q_door": "No", "q_who": "JL", "q_grid.r1": "OK"})
     assert no["q_door"] == " No"
     assert engine.visited_sections(schema, no) == [0, 1]
     with pytest.raises(ValueError, match="Why not"):
@@ -141,7 +141,7 @@ def test_option_values_are_trimmed_when_saved():
     door, who, clean, grid = schema["sections"][0]["items"]
     assert [o["value"] for o in door["options"]] == ["Yes", "No"]
     assert door["go_to_section"] == {"Yes": "submit", "No": "s2"}
-    assert [o["value"] for o in who["options"]] == ["RK"]
+    assert [o["value"] for o in who["options"]] == ["JL"]
     assert [o["value"] for o in clean["options"]] == ["Counter", "Glass"]
     assert [o["value"] for o in grid["options"]] == ["OK", "Warm"]
     assert engine.validate_schema(schema) == []
@@ -175,7 +175,7 @@ def test_app_submission_against_a_published_definition_with_spaces(db, admin_cli
 
     staff = client_for(db, make_user(db, "closer", features=["daily_checklists"]))
     r = staff.post(f"/api/checklists/{ctype}/submit", json={"answers": {
-        "q_door": "Yes", "q_who": "RK", "q_clean": '["Counter"]', "q_grid.r1": "OK",
+        "q_door": "Yes", "q_who": "JL", "q_clean": '["Counter"]', "q_grid.r1": "OK",
     }})
     assert r.status_code == 200, r.text
     assert r.json()["all_clear"] is True

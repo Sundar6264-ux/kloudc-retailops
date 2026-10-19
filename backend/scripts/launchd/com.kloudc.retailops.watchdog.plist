@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  TEMPLATE - every 5 minutes, re-bootstraps any StoreOps LaunchDaemon that is
+  TEMPLATE - every 5 minutes, re-bootstraps any KloudC RetailOps LaunchDaemon that is
   not loaded (see watchdog.sh). Runs as root (no UserName key): only root can
-  bootstrap into the system domain. Replace __STOREOPS_DIR__ first.
+  bootstrap into the system domain. Replace __RETAILOPS_DIR__ first.
 -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.kloudc.storeops.watchdog</string>
+    <string>com.kloudc.retailops.watchdog</string>
 
     <key>ProgramArguments</key>
     <array>
-        <string>__STOREOPS_DIR__/backend/scripts/launchd/watchdog.sh</string>
+        <string>__RETAILOPS_DIR__/backend/scripts/launchd/watchdog.sh</string>
     </array>
 
     <key>StartInterval</key>
@@ -21,8 +21,8 @@
     <true/>
 
     <key>StandardOutPath</key>
-    <string>__STOREOPS_DIR__/backend/logs/watchdog.log</string>
+    <string>__RETAILOPS_DIR__/backend/logs/watchdog.log</string>
     <key>StandardErrorPath</key>
-    <string>__STOREOPS_DIR__/backend/logs/watchdog.error.log</string>
+    <string>__RETAILOPS_DIR__/backend/logs/watchdog.error.log</string>
 </dict>
 </plist>

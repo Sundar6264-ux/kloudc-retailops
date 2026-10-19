@@ -1,4 +1,4 @@
-"""The store identity stamp (StoreOps M2, docs/M2_CONTRACT.md 1.5; plan 9.1).
+"""The store identity stamp (KloudC RetailOps M2, docs/M2_CONTRACT.md 1.5; plan 9.1).
 
 Each store's database holds one ``store_identity`` row (its store code and a
 random instance id), and its upload folder holds a matching

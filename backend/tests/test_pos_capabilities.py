@@ -12,7 +12,7 @@ def test_seventeen_flags_with_stable_values():
         assert cap == cap.value  # str Enum: compares equal to its value
 
 
-def test_toast_set_is_what_spice_town_has_today():
+def test_toast_set_is_what_main_store_has_today():
     assert isinstance(TOAST_CAPABILITIES, frozenset)
     assert TOAST_CAPABILITIES <= set(Capability)
     missing = set(Capability) - TOAST_CAPABILITIES

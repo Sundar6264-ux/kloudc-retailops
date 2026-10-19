@@ -29,27 +29,27 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, "../../..");
 
 test("a store's branding becomes the store object", () => {
-  const s = normalizeBranding(BRANDING.STOREOPS_TEST_TOAST);
+  const s = normalizeBranding(BRANDING.RETAILOPS_TEST_TOAST);
   assert.equal(s.loaded, true);
-  assert.equal(s.code, "STOREOPS_TEST_TOAST");
+  assert.equal(s.code, "RETAILOPS_TEST_TOAST");
   assert.equal(s.name, "Test Toast Market");
   assert.equal(s.shortName, "Toast Test");
-  assert.equal(s.productName, "StoreOps");
+  assert.equal(s.productName, "KloudC RetailOps");
   assert.equal(s.company, "KloudC LLC");
   assert.equal(s.primaryColor, "#1D4ED8");
   assert.equal(s.timezone, "America/Chicago");
   assert.equal(s.posName, "Toast");
-  assert.equal(s.labelsUrl, "https://labels-storeops-test-toast.storeops.invalid");
+  assert.equal(s.labelsUrl, "https://labels-retailops-test-toast.retailops.invalid");
   assert.deepEqual(s.storeFeatures, ["ap_inbox", "labels", "whatsapp", "ai"]);
   assert.equal(normalizeBranding(BRANDING.DEMO).demo, true);
-  assert.equal(normalizeBranding(BRANDING.STOREOPS_TEST_CLOVER).labelsUrl, null);
+  assert.equal(normalizeBranding(BRANDING.RETAILOPS_TEST_CLOVER).labelsUrl, null);
 });
 
 test("no branding (older server, network error): product defaults, nothing assumed", () => {
   const s = normalizeBranding(null);
   assert.equal(s.loaded, false);
-  assert.equal(s.name, "StoreOps");
-  assert.equal(s.shortName, "StoreOps");
+  assert.equal(s.name, "KloudC RetailOps");
+  assert.equal(s.shortName, "KloudC RetailOps");
   assert.equal(s.primaryColor, PRODUCT_DEFAULTS.primaryColor);
   assert.equal(s.logoUrl, "/branding/logo.png");
   assert.equal(s.capabilities, null);
@@ -57,14 +57,14 @@ test("no branding (older server, network error): product defaults, nothing assum
   assert.equal(s.timezone, null);
   // Bad values fall back too.
   const bad = normalizeBranding({ name: "  ", primary_color: "red", capabilities: "all" });
-  assert.equal(bad.name, "StoreOps");
+  assert.equal(bad.name, "KloudC RetailOps");
   assert.equal(bad.primaryColor, PRODUCT_DEFAULTS.primaryColor);
   assert.equal(bad.capabilities, null);
 });
 
 test("document title: the store's name with the product, or the product alone", () => {
-  assert.equal(documentTitle(normalizeBranding(BRANDING.STOREOPS_TEST_CLOVER)), "Test Clover Grocery - StoreOps");
-  assert.equal(documentTitle(normalizeBranding(null)), "StoreOps");
+  assert.equal(documentTitle(normalizeBranding(BRANDING.RETAILOPS_TEST_CLOVER)), "Test Clover Grocery - KloudC RetailOps");
+  assert.equal(documentTitle(normalizeBranding(null)), "KloudC RetailOps");
 });
 
 test("brand colours: white button text always keeps 4.5:1", () => {
@@ -100,10 +100,10 @@ test("store time zone: set once, used by every formatter, bad zones ignored", ()
 });
 
 test("storeView: /me's POS facts on top of branding", () => {
-  const s = storeView(normalizeBranding(BRANDING.STOREOPS_TEST_TOAST), { store_code: "STOREOPS_TEST_TOAST", pos_name: "Toast" });
+  const s = storeView(normalizeBranding(BRANDING.RETAILOPS_TEST_TOAST), { store_code: "RETAILOPS_TEST_TOAST", pos_name: "Toast" });
   assert.equal(s.name, "Test Toast Market");
   assert.equal(s.posName, "Toast");
-  assert.equal(s.capabilities.length, BRANDING.STOREOPS_TEST_TOAST.capabilities.length);
+  assert.equal(s.capabilities.length, BRANDING.RETAILOPS_TEST_TOAST.capabilities.length);
 });
 
 test("web fixtures match the server's committed branding bodies (field names) and each other", () => {

@@ -14,6 +14,7 @@ import { chromium } from "playwright";
 import { createHmac } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { hasOriginName } from "../../src/test/originNames.mjs";
 
 const BASE = `http://127.0.0.1:${process.env.MOCK_PORT || 8871}`;
 const WORK = process.env.PLATFORM_E2E_WORK;
@@ -44,9 +45,8 @@ async function noSideways(page, tag) {
   check(over <= 1, `${tag}: page scrolls sideways by ${over}px`);
 }
 
-// The origin store's name never shows on a StoreOps page (M2 name audit):
+// The origin store's name never shows on a KloudC RetailOps page (M2 name audit):
 // checked on every screen this suite photographs (text, title, alt text).
-const ORIGIN_NAME = new RegExp(["spice", "\\s*", "town"].join(""), "i");
 async function noOriginName(page, tag) {
   const text = await page
     .evaluate(() =>
@@ -54,7 +54,7 @@ async function noOriginName(page, tag) {
        ...Array.from(document.querySelectorAll("[alt],[title],[placeholder],[aria-label]"), (e) =>
          [e.getAttribute("alt"), e.getAttribute("title"), e.getAttribute("placeholder"), e.getAttribute("aria-label")].join(" "))].join("\n"))
     .catch(() => "");
-  check(!ORIGIN_NAME.test(text), `${tag}: page shows the origin store's name`);
+  check(!hasOriginName(text), `${tag}: page shows the origin store's name`);
 }
 
 async function shot(page, name) {
@@ -128,10 +128,10 @@ async function run(browser, width) {
     check((await page.textContent('[data-testid="login-error"]'))?.includes("Incorrect store ID"), T("unknown store: same message"));
 
     // store moved: the browser goes to the store's own server
-    await page.route("https://moved.storeops.invalid/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<p>moved</p>" }));
+    await page.route("https://moved.retailops.invalid/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<p>moved</p>" }));
     await login(page, "MOVED_MART", "owner", STORE_PW);
-    await page.waitForURL(/moved\.storeops\.invalid/, { timeout: 5000 }).catch(() => {});
-    check(page.url() === "https://moved.storeops.invalid/#/login?store=MOVED_MART", T(`store_moved redirect (${page.url()})`));
+    await page.waitForURL(/moved\.retailops\.invalid/, { timeout: 5000 }).catch(() => {});
+    check(page.url() === "https://moved.retailops.invalid/#/login?store=MOVED_MART", T(`store_moved redirect (${page.url()})`));
     await page.goto(`${BASE}/#/login`);
     await page.waitForSelector('[data-testid="login-store-id"]');
 
@@ -139,7 +139,7 @@ async function run(browser, width) {
     await login(page, "DEMO_GROCERY", "owner", STORE_PW);
     await page.waitForSelector('[data-testid="store-name"]', { timeout: 10000 }).catch(() => {});
     check(await page.isVisible("nav.sidebar"), T("signed in: the dashboard"));
-    check((await page.evaluate(() => localStorage.getItem("storeops_last_store"))) === "DEMO_GROCERY", T("last Store ID remembered"));
+    check((await page.evaluate(() => localStorage.getItem("retailops_last_store"))) === "DEMO_GROCERY", T("last Store ID remembered"));
     await openMenu(page, width);
     const nav = await page.innerText("nav.sidebar");
     check(!/Notifications/.test(nav), T("no Notifications link in the menu"));

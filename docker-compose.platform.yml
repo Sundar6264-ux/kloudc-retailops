@@ -1,9 +1,9 @@
-# The shared StoreOps service (docs/PLATFORM_CONTRACT.md section 2):
+# The shared KloudC RetailOps service (docs/PLATFORM_CONTRACT.md section 2):
 # TENANCY_MODE=multi, one PostgreSQL 16 with the platform database
 # (so_platform) and one database per store.
 #
 #   cp backend/.env.example .env.platform    # fill the secrets (never in git):
-#                                            #   STOREOPS_SECRET_KEYS (python -m app.platform gen-key),
+#                                            #   RETAILOPS_SECRET_KEYS (python -m app.platform gen-key),
 #                                            #   POSTGRES_PASSWORD, PLATFORM_DOMAIN, ...
 #   docker compose -f docker-compose.platform.yml up -d db
 #   docker compose -f docker-compose.platform.yml run --rm app python -m app.platform migrate-platform
@@ -22,13 +22,13 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: storeops_admin          # CREATEDB: provisioning creates store databases
+      POSTGRES_USER: retailops_admin          # CREATEDB: provisioning creates store databases
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       POSTGRES_DB: so_platform
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U storeops_admin -d so_platform"]
+      test: ["CMD-SHELL", "pg_isready -U retailops_admin -d so_platform"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -36,14 +36,14 @@ services:
 
   app:
     build: .
-    image: ${STOREOPS_IMAGE:-storeops:local}
+    image: ${RETAILOPS_IMAGE:-kloudc-retailops:local}
     env_file:
       - .env.platform
     environment:
       TENANCY_MODE: multi
-      PLATFORM_DATABASE_URL: postgresql+psycopg://storeops_admin:${POSTGRES_PASSWORD}@db:5432/so_platform
-      STORE_DATABASE_URL_TEMPLATE: postgresql+psycopg://storeops_admin:${POSTGRES_PASSWORD}@db:5432/{db_name}
-      PG_ADMIN_URL: postgresql+psycopg://storeops_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      PLATFORM_DATABASE_URL: postgresql+psycopg://retailops_admin:${POSTGRES_PASSWORD}@db:5432/so_platform
+      STORE_DATABASE_URL_TEMPLATE: postgresql+psycopg://retailops_admin:${POSTGRES_PASSWORD}@db:5432/{db_name}
+      PG_ADMIN_URL: postgresql+psycopg://retailops_admin:${POSTGRES_PASSWORD}@db:5432/postgres
       # Each store's files: /data/uploads/<STORE_CODE>/...
       UPLOADS_ROOT: /data/uploads
       FRONTEND_DIST_DIR: /app/frontend/dist

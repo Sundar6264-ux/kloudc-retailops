@@ -1,7 +1,7 @@
 """Fake stores and the legacy pack for tests (docs/M2_CONTRACT.md section 7).
 
 - ``use_store(monkeypatch, code)``: switch this test to one of the fake stores
-  (STOREOPS_TEST_TOAST, STOREOPS_TEST_CLOVER, DEMO): its settings from
+  (RETAILOPS_TEST_TOAST, RETAILOPS_TEST_CLOVER, DEMO): its settings from
   ``tests/fixtures/stores/<code>.env`` and its pack. The database and upload
   folders stay the test run's own.
 - ``fake_store``: a fixture parametrised over the three (import it into a
@@ -21,9 +21,13 @@ import pytest
 
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 STORES_DIR = pathlib.Path(__file__).resolve().parent / "fixtures" / "stores"
-STORE_CODES = ("STOREOPS_TEST_TOAST", "STOREOPS_TEST_CLOVER", "DEMO")
+STORE_CODES = ("RETAILOPS_TEST_TOAST", "RETAILOPS_TEST_CLOVER", "DEMO")
+# The private folder outside git with the origin store's pack and recorded
+# data (never committed): RETAILOPS_PRIVATE_DIR (or the old
+# RETAILOPS_PRIVATE_DIR), default ~/.kloudc-retailops/private.
 PRIVATE_DIR = pathlib.Path(
-    os.environ.get("STOREOPS_PRIVATE_DIR") or "/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m2/private"
+    os.environ.get("RETAILOPS_PRIVATE_DIR")
+    or pathlib.Path.home() / ".kloudc-retailops" / "private"
 )
 # Settings a fixture file may never move: the run's own database and folders.
 _KEEP = {
@@ -131,7 +135,7 @@ def private_data(name: str) -> pathlib.Path:
 
 
 def legacy_private_files():
-    return PRIVATE_DIR / "spicetown.pack.json", PRIVATE_DIR / "spicetown.env"
+    return PRIVATE_DIR / "origin.pack.json", PRIVATE_DIR / "origin.env"
 
 
 def use_legacy_pack(monkeypatch) -> None:

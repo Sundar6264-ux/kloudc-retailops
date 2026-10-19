@@ -198,23 +198,23 @@ def test_holiday_gaps_and_a_moved_week_keep_the_weekday(db):
 
 
 def test_vendor_name_variants_are_one_vendor(db):
-    supplier_row(db, "Raja Foods;RBest Produce Inc;Sri Sai Imports, Inc")
+    supplier_row(db, "Raja Foods;RBest Produce Inc;Sri Sasha Imports, Inc")
     for day in weekly(0, 3):
         invoice(db, "RBest", day)  # short spelling on the invoice form
     for day in weekly(0, 6)[3:]:
         receipt(db, "RBest Produce Inc", day)
     manual_log(db, "rbest produce inc.", weekly(0, 7)[6])
     for day in weekly(4, 3):
-        invoice(db, "Sri Sai Imports Inc.", day)
+        invoice(db, "Sri Sasha Imports Inc.", day)
     db.commit()
     result = run(db)
     got = by_vendor(result)
-    assert set(got) == {"RBest Produce Inc", "Sri Sai Imports, Inc"}  # Toast's own spelling shown
+    assert set(got) == {"RBest Produce Inc", "Sri Sasha Imports, Inc"}  # Toast's own spelling shown
     assert got["RBest Produce Inc"]["evidence"]["total"] == 7 and got["RBest Produce Inc"]["delivery_weekdays"] == [0]
-    assert got["Sri Sai Imports, Inc"]["delivery_weekdays"] == [4]
+    assert got["Sri Sasha Imports, Inc"]["delivery_weekdays"] == [4]
     names = [s["vendor"] for s in result["suggestions"]] + [r["vendor"] for r in result["vendors_without_schedule"]]
     assert "RBest" not in names and len(names) == len(set(n.lower() for n in names))
-    assert ss.vendor_key("Sri Sai Imports, Inc") == ss.vendor_key("sri sai imports INC.") == "sri sai imports"
+    assert ss.vendor_key("Sri Sasha Imports, Inc") == ss.vendor_key("sri sasha imports INC.") == "sri sasha imports"
     assert ss.vendor_key("Singh & Singh") == "singh and singh"
 
 
@@ -436,10 +436,10 @@ def test_add_all_never_overwrites_an_admin_schedule(db, admin_client, monkeypatc
 
 
 def test_single_accept_refuses_another_spelling_of_a_scheduled_vendor(db, admin_client):
-    db.add(VendorSchedule(vendor="Sri Sai Imports, Inc", delivery_weekdays="[1]", lead_days=2, active=True))
+    db.add(VendorSchedule(vendor="Sri Sasha Imports, Inc", delivery_weekdays="[1]", lead_days=2, active=True))
     db.commit()
-    r = admin_client.post("/api/vendor-calendar/schedules", json={"vendor": "sri sai imports inc.", "delivery_weekdays": [3], "lead_days": 1})
-    assert r.status_code == 400 and "Sri Sai Imports, Inc already has a schedule" in r.json()["detail"]
+    r = admin_client.post("/api/vendor-calendar/schedules", json={"vendor": "sri sasha imports inc.", "delivery_weekdays": [3], "lead_days": 1})
+    assert r.status_code == 400 and "Sri Sasha Imports, Inc already has a schedule" in r.json()["detail"]
     assert db.query(VendorSchedule).count() == 1
 
 

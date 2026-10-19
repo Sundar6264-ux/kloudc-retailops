@@ -4,10 +4,10 @@
 
 Folder layout (``--data-dir``):
 
-    live/            what the DEMO server uses (storeops.db + uploads/)
+    live/            what the DEMO server uses (retailops.db + uploads/)
     next/            the next data set, built while the server keeps serving
     old/             the previous data set, removed after a swap
-    .storeops-demo-data  marks the folder as the DEMO store's (required)
+    .retailops-demo-data  marks the folder as the DEMO store's (required)
     review_password  the review login's password when DEMO_REVIEW_PASSWORD is
                      not set (created once with a random value, mode 600;
                      outside git, kept across resets so App Review's login
@@ -47,7 +47,7 @@ def is_demo_dataset(folder: pathlib.Path) -> bool:
     """True only for a folder the generator made: its demo_dataset.json says
     store DEMO and its database holds the demo_dataset marker row."""
     meta = folder / "demo_dataset.json"
-    db = folder / "storeops.db"
+    db = folder / "retailops.db"
     if not meta.is_file() or not db.is_file():
         return False
     try:
@@ -78,7 +78,7 @@ def check_replaceable(folder: pathlib.Path) -> None:
         )
 
 
-MARKER = ".storeops-demo-data"
+MARKER = ".retailops-demo-data"
 
 
 # Entries a new data folder may already hold (launchd creates the log folder
@@ -94,7 +94,7 @@ def prepare_data_dir(data_dir: pathlib.Path) -> None:
     )
     if fresh:
         data_dir.mkdir(parents=True, exist_ok=True)
-        (data_dir / MARKER).write_text("StoreOps DEMO store data folder (scripts/demo/reset_demo.py)\n")
+        (data_dir / MARKER).write_text("KloudC RetailOps DEMO store data folder (scripts/demo/reset_demo.py)\n")
         return
     if not (data_dir / MARKER).is_file():
         raise ResetError(f"{data_dir} is not a DEMO data folder (no {MARKER} file) - refusing to touch it.")

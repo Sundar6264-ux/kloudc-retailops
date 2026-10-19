@@ -5,7 +5,7 @@ Apps Script WhatsApp automation are no longer used for these two checklists
 at all - this module sends the equivalent WhatsApp summary itself, via the
 same Whapi account already used for Invoice Submission, just to two
 different, dedicated staff groups (see config.py's
-whapi_spice_town_checklist_group_id / whapi_street_kitchen_checklist_group_id).
+whapi_store_checklist_group_id / whapi_kitchen_checklist_group_id).
 
 Mirrors invoice_submission.py's established, hardened patterns on purpose
 (save first, notify after; a WhapiAmbiguousTimeout is reconciled against
@@ -310,7 +310,7 @@ def _details(entry: ChecklistSubmission) -> list:
     except ValueError:
         return []
     # With the version it was submitted against: an old FSA closing still
-    # shows its "Chef: RK"; one after the Chef question was removed doesn't.
+    # shows its "Chef: JL"; one after the Chef question was removed doesn't.
     return summary_details(entry.checklist_type, answers, submission_version(entry))
 
 
@@ -397,7 +397,7 @@ def _whatsapp_text(entry: ChecklistSubmission) -> str:
     when = entry.created_at.astimezone(restaurant_timezone()).strftime("%b %-d, %-I:%M %p")
     head = [f"{'✅' if entry.all_clear else '⚠️'} *{title}*", f"{_submitter_line(entry)} · {when}"]
     # Extra "who/what" answers a checklist asks for (the old FSA closing's
-    # "Chef: RK"), right under the name line.
+    # "Chef: JL"), right under the name line.
     head.extend(f"{d['label']}: {d['value']}" for d in _details(entry))
     parts = ["\n".join(head)]
 
@@ -614,7 +614,7 @@ def submission_out(entry: ChecklistSubmission, db: Optional[Session] = None) -> 
         "submitted_by_user_id": entry.submitted_by_user_id,
         "submitted_by_name": entry.submitted_by_name,
         "answers": json.loads(entry.answers_json),
-        # Additive: e.g. [{"label": "Chef", "value": "RK"}] for the FSA
+        # Additive: e.g. [{"label": "Chef", "value": "JL"}] for the FSA
         # closing ([] for the other checklists).
         "details": _details(entry),
         "all_clear": entry.all_clear,

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Restore drill: prove the latest backup actually restores.
 
-    python3 restore_drill.py --backup-dir ~/storeops-backups/nightly \\
-        [--compare-db __STOREOPS_DIR__/backend/storeops.db]
+    python3 restore_drill.py --backup-dir ~/retailops-backups/nightly \\
+        [--compare-db __RETAILOPS_DIR__/backend/retailops.db]
 
     python3 restore_drill.py --backup /tmp/restored-from-r2.db   # any one file
 
@@ -192,7 +192,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     src = p.add_mutually_exclusive_group(required=True)
     src.add_argument("--backup-dir", help="Folder of nightly backups; the newest is drilled")
     src.add_argument("--backup", help="One backup file (.db or .db.gz), e.g. a Litestream restore")
-    p.add_argument("--prefix", default="storeops", help="Backup file prefix (default storeops)")
+    p.add_argument("--prefix", default="retailops", help="Backup file prefix (default retailops)")
     p.add_argument("--compare-db", help="Live database to compare row counts with (opened read-only)")
     p.add_argument("--work-root", help="Where the temporary restore goes (default: system temp)")
     p.add_argument("--keep", action="store_true", help="Keep the restored copy")

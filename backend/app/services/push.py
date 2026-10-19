@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # A named app rather than firebase_admin's default one, so nothing else in
 # the process (a future Firebase use) can collide with this initialization.
-_APP_NAME = "storeops-notifications"
+_APP_NAME = "retailops-notifications"
 # FCM's per-request limit for send_each.
 _BATCH_SIZE = 500
 
@@ -102,7 +102,7 @@ def _is_invalid_token_error(exc: Exception) -> bool:
 
 
 def with_store(data: Dict[str, str]) -> Dict[str, str]:
-    """`data` plus "store": STORE_CODE (StoreOps M2, contract 5.6; in multi
+    """`data` plus "store": STORE_CODE (KloudC RetailOps M2, contract 5.6; in multi
     mode the current store's code, from its settings overlay), so an app
     signed in to another store can tell the alert isn't for it. Nothing is
     added while STORE_CODE is blank (dev, tests). Every other key unchanged."""

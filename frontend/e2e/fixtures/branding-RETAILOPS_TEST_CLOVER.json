@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "store_code": "STOREOPS_TEST_CLOVER",
+  "store_code": "RETAILOPS_TEST_CLOVER",
   "name": "Test Clover Grocery",
   "short_name": "Clover Test",
   "product": {
-    "name": "StoreOps",
+    "name": "KloudC RetailOps",
     "company": "KloudC LLC"
   },
-  "logo_url": "https://storeops-test-clover.storeops.invalid/branding/logo.png",
-  "icon_url": "https://storeops-test-clover.storeops.invalid/branding/icon.png",
+  "logo_url": "https://retailops-test-clover.retailops.invalid/branding/logo.png",
+  "icon_url": "https://retailops-test-clover.retailops.invalid/branding/icon.png",
   "primary_color": "#15803D",
   "secondary_color": "#86EFAC",
   "timezone": "America/Los_Angeles",
@@ -29,7 +29,7 @@
   ],
   "store_features": [],
   "labels_url": null,
-  "public_host": "https://storeops-test-clover.storeops.invalid",
+  "public_host": "https://retailops-test-clover.retailops.invalid",
   "legal": {
     "company": "KloudC LLC",
     "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
@@ -42,7 +42,7 @@
   },
   "store_url": {
     "ios": null,
-    "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
+    "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
   },
   "demo": false
 }

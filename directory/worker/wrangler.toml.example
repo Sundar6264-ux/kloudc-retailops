@@ -1,14 +1,14 @@
 # Copy to wrangler.toml (gitignored) and fill in the owner values.
 # Steps: directory/README.md. Nothing here is a secret.
-name = "storeops-directory"
+name = "retailops-directory"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 # account_id = "<your Cloudflare account id>"   # or set CLOUDFLARE_ACCOUNT_ID
 workers_dev = false
 
-# The directory host. Replace storeops.invalid with the real platform domain.
+# The directory host. Replace retailops.invalid with the real platform domain.
 routes = [
-  { pattern = "directory.storeops.invalid", custom_domain = true },
+  { pattern = "directory.retailops.invalid", custom_domain = true },
 ]
 
 # Optional: Cloudflare's Workers rate-limit binding (shared across isolates;

@@ -1,4 +1,4 @@
-"""The ``/s/{code}`` page: "Open this store in the StoreOps app" (M2 contract
+"""The ``/s/{code}`` page: "Open this store in the KloudC RetailOps app" (M2 contract
 4.2, 4.3).
 
 QR codes and store links point at ``https://<PLATFORM_DOMAIN>/s/<CODE>``.
@@ -35,7 +35,7 @@ _STYLE = (
     ".code{display:inline-block;font:600 1.25rem ui-monospace,Menlo,monospace;letter-spacing:.05em;"
     "background:#e2e8f0;border-radius:.375rem;padding:.25rem .5rem}"
     ".links{display:flex;flex-direction:column;gap:.75rem;margin-top:1.5rem}"
-    ".links a{display:block;text-align:center;padding:.75rem;border-radius:.5rem;background:#0f766e;"
+    ".links a{display:block;text-align:center;padding:.75rem;border-radius:.5rem;background:#004bad;"
     "color:#fff;text-decoration:none;font-weight:600}"
     "@media (prefers-color-scheme:dark){body{background:#0f172a;color:#e2e8f0}.code{background:#334155}}"
 )

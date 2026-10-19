@@ -43,7 +43,7 @@ def _owner_ids() -> Tuple[str, str, Tuple[str, ...]]:
     out with a warning (an empty list is safe; a wrong id is not)."""
     bundle = str(_setting("app_bundle_id", DEFAULT_BUNDLE_ID) or DEFAULT_BUNDLE_ID).strip()
     if not BUNDLE_RE.match(bundle):
-        log.warning("APP_BUNDLE_ID %r is not a bundle id; using com.kloudc.storeops", bundle)
+        log.warning("APP_BUNDLE_ID %r is not a bundle id; using com.kloudc.retailops", bundle)
         bundle = DEFAULT_BUNDLE_ID
     team = str(_setting("apple_team_id", "") or "").strip().upper()
     if team and not TEAM_ID_RE.match(team):

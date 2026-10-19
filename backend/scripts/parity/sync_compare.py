@@ -77,8 +77,10 @@ OPTIONAL_TABLES = {
     "pos_item_map": "source, external_id",
     "item_vendors": "item_id, vendor_name",
 }
-DEFAULT_MENUS = "/Users/sundar/.claude/jobs/e26a1611/tmp/b2inv/live_menus.json"
-DEFAULT_STOCK = "/Users/sundar/.claude/jobs/e26a1611/tmp/b2inv/live_stock.json"
+# Recorded Toast answers (business data, outside git): SYNC_COMPARE_MENUS /
+# SYNC_COMPARE_STOCK, or --menus / --stock.
+DEFAULT_MENUS = os.environ.get("SYNC_COMPARE_MENUS", "")
+DEFAULT_STOCK = os.environ.get("SYNC_COMPARE_STOCK", "")
 
 sys.path.insert(0, str(HERE))
 

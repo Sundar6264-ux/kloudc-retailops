@@ -434,7 +434,7 @@ def compute_status(checklist_type: str, answers: dict, version: Optional[int] = 
 
 
 def summary_details(checklist_type: str, answers: dict, version: Optional[int] = None) -> list:
-    """[{"label": "Chef", "value": "RK"}] for a version (default: current).
+    """[{"label": "Chef", "value": "JL"}] for a version (default: current).
     Unknown types / versions -> []."""
     try:
         schema = items_schema(checklist_type, version)

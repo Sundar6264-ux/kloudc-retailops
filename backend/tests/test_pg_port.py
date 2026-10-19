@@ -25,7 +25,7 @@ from tests import pg_harness
 
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 ON_PG = engine.dialect.name == "postgresql"
-pg_only = pytest.mark.skipif(not ON_PG, reason="PostgreSQL only (STOREOPS_TEST_DB=postgres)")
+pg_only = pytest.mark.skipif(not ON_PG, reason="PostgreSQL only (RETAILOPS_TEST_DB=postgres)")
 
 
 # --- dbcompat -----------------------------------------------------------------------------

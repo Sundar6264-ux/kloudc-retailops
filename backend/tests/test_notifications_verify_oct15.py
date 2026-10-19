@@ -21,7 +21,7 @@ from tests.conftest import client_for, make_user
 NY = zoneinfo.ZoneInfo("America/New_York")
 NINE = dt.datetime(2026, 10, 15, 9, 0, tzinfo=NY)
 
-# Prod staff (Harshitha / Sai Durga, read-only copy of users.allowed_features).
+# Prod staff (Hayden / Sasha Durga, read-only copy of users.allowed_features).
 PROD_STAFF_FEATURES = [
     "open_orders", "reorder_candidates", "supplier_projection", "vendor_calendar", "purchase_order_cart",
     "delivery_review", "transfer_review", "inventory_reports", "reconciliation", "invoice_submission",
@@ -72,7 +72,7 @@ def _sources(monkeypatch, alerts):
 
 
 def test_all_18_old_keys_effective_defaults_for_prod_shaped_logins(db, admin):
-    staff = make_user(db, "harshitha", features=PROD_STAFF_FEATURES)
+    staff = make_user(db, "hayden", features=PROD_STAFF_FEATURES)
     for user, expected_on in ((staff, STAFF_ON), (admin, ADMIN_ON)):
         items = {i["key"]: i for i in client_for(db, user).get("/api/notifications/prefs").json()["items"]}
         on = {k for k, i in items.items() if i["enabled"]}
@@ -107,7 +107,7 @@ def test_old_build_prefs_shape_and_toggles(db, staff_client):
 
 def test_explicit_choice_beats_store_default_in_the_morning_summary(db, admin, pushes, monkeypatch):
     admin2 = make_user(db, "rk", is_admin=True)
-    staff = make_user(db, "harshitha", features=PROD_STAFF_FEATURES)
+    staff = make_user(db, "hayden", features=PROD_STAFF_FEATURES)
     device(db, admin, admin2, staff)
     # Store: summary off for admins, on for staff. Choices: admin2 on, staff off.
     notif.set_store_default(db, admin, "morning_summary", "admin", False)

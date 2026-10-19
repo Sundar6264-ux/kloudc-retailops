@@ -11,7 +11,7 @@ set -e
 setopt no_bg_nice 2>/dev/null || true
 HERE=${0:A:h}
 REPO=${HERE:h:h:h}
-W=${PLATFORM_E2E_WORK:-/tmp/storeops-platform-e2e-flows}
+W=${PLATFORM_E2E_WORK:-/tmp/retailops-platform-e2e-flows}
 PORT=${MOCK_PORT:-8873}
 case "$W" in /|"$HOME"|"$REPO"*) echo "refusing PLATFORM_E2E_WORK=$W"; exit 2;; esac
 rm -rf "$W" && mkdir -p "$W"

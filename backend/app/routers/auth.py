@@ -118,7 +118,7 @@ def _me_out(user: User) -> dict:
     out["allowed_features"] = features_for_store(out["allowed_features"])
     out["pos_name"] = pos_name()
     out["capabilities"] = capability_values()
-    # StoreOps M2 (additive, contract 2): which store this server is, and its
+    # KloudC RetailOps M2 (additive, contract 2): which store this server is, and its
     # non-POS switches (ap_inbox / labels / whatsapp / ai).
     out["store_code"] = store_code() or None
     out["store_features"] = store_features()

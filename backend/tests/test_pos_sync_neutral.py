@@ -301,7 +301,7 @@ def test_open_checks_cache_refresh_today(db, pos, monkeypatch):
 def test_full_scan_asks_every_date_with_retries(db, pos, monkeypatch):
     from app.config import get_settings
 
-    monkeypatch.setattr(get_settings(), "first_sales_date", "2026-05-26")  # FIRST_SALES_DATE (StoreOps M2)
+    monkeypatch.setattr(get_settings(), "first_sales_date", "2026-05-26")  # FIRST_SALES_DATE (KloudC RetailOps M2)
     monkeypatch.setattr(open_orders, "restaurant_today", lambda: open_orders.FIRST_REAL_SALES_DATE + dt.timedelta(days=2))
     old_day = open_orders.FIRST_REAL_SALES_DATE
     pos.orders[old_day] = [_open("stuck", business_date=old_day)]
@@ -403,7 +403,7 @@ def _items():
             other_names=("Tea 1kg", "Tea 1kg"),
         ),
         Item("neg", "Negative Thing", barcodes=("999",), price=None, category=Category("RETAIL", "Tea")),
-        Item("dish", "Kitchen Dish", category=Category("STREET KITCHEN", "Mains")),
+        Item("dish", "Kitchen Dish", category=Category("MARKET KITCHEN", "Mains")),
     ]
 
 

@@ -2,7 +2,7 @@
 local PostgreSQL 16 cluster.
 
 - One platform database per run, ``<prefix>_platform_<pid>`` (prefix from
-  ``STOREOPS_TEST_DB_PREFIX``, default ``so_c``), upgraded with the platform
+  ``RETAILOPS_TEST_DB_PREFIX``, default ``so_c``), upgraded with the platform
   Alembic env; tables truncated between tests.
 - Store databases made by provisioning are ``<prefix>_t<pid>_<code>`` and
   dropped after each test that made them (and at the end of the run).
@@ -10,7 +10,7 @@ local PostgreSQL 16 cluster.
   settings and the platform registry/settings sources installed; the root
   conftest's SQLite harness (single mode) is untouched.
 
-``STOREOPS_TEST_PG_URL`` (default the local dev cluster) names the server;
+``RETAILOPS_TEST_PG_URL`` (default the local dev cluster) names the server;
 without a reachable server the whole package is skipped.
 """
 
@@ -20,8 +20,8 @@ import pathlib
 import pytest
 from sqlalchemy import create_engine, text
 
-PG_URL = os.environ.get("STOREOPS_TEST_PG_URL", "postgresql+psycopg://storeops@127.0.0.1:5433/postgres")
-PREFIX = os.environ.get("STOREOPS_TEST_DB_PREFIX", "so_c")
+PG_URL = os.environ.get("RETAILOPS_TEST_PG_URL", "postgresql+psycopg://storeops@127.0.0.1:5433/postgres")
+PREFIX = os.environ.get("RETAILOPS_TEST_DB_PREFIX", "so_c")
 PID = os.getpid()
 PLATFORM_DB = f"{PREFIX}_platform_{PID}"
 STORE_PREFIX = f"{PREFIX}_t{PID}_"
@@ -63,7 +63,7 @@ def drop_test_store_databases() -> None:
 @pytest.fixture(scope="session")
 def platform_db_url():
     if not _pg_up():
-        pytest.skip("PostgreSQL test cluster not reachable (STOREOPS_TEST_PG_URL)")
+        pytest.skip("PostgreSQL test cluster not reachable (RETAILOPS_TEST_PG_URL)")
     assert PLATFORM_DB.startswith(PREFIX + "_")
     eng = _admin()
     with eng.connect() as c:
@@ -109,10 +109,10 @@ def platform_env(platform_db_url, monkeypatch, tmp_path):
         "store_database_url_template": _url_for("{db_name}"),
         "pg_admin_url": PG_URL,
         "store_db_prefix": STORE_PREFIX,
-        "storeops_secret_keys": TEST_RING,
+        "retailops_secret_keys": TEST_RING,
         "uploads_root": str(tmp_path / "uploads"),
-        "platform_public_url": "https://app.storeops.test",
-        "platform_domain": "storeops.test",
+        "platform_public_url": "https://app.retailops.test",
+        "platform_domain": "retailops.test",
         "dedicated_hosting_enabled": False,
         "dedicated_store_codes": "",
         "signup_enabled": True,

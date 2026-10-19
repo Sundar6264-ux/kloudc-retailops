@@ -228,7 +228,7 @@ def test_settings_overlay_precedence(multi):
         assert s.store_phone == "555-0100" and s.sales_sync_hour == 5  # store_settings
         assert s.toast_client_id == "alpha-client" and s.smtp_password == "pw"  # credentials
         assert s.cors_origins == process_settings().cors_origins  # platform-only: ignored
-        assert s.public_host == "https://app.storeops.test"
+        assert s.public_host == "https://app.retailops.test"
         assert s.team_uploads_dir.endswith("/uploads/ALPHA/team")
     with store_context("BETA"):
         s = get_settings()
@@ -262,7 +262,7 @@ def test_bad_store_setting_is_dropped_not_fatal(multi):
     set_test_store_settings("GAMMA", {"brand_color": "red", "store_phone": "555-0177"})
     with store_context("GAMMA"):
         s = get_settings()
-        assert s.brand_color == "#0F766E" and s.store_phone == "555-0177"
+        assert s.brand_color == "#004BAD" and s.store_phone == "555-0177"
     with pytest.raises(ValueError):
         validate_store_setting("brand_color", "red")
     with pytest.raises(ValueError):

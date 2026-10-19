@@ -9,7 +9,7 @@ export const PLATFORM_TABS = [
   { key: "audit", label: "Audit" },
 ];
 
-export const LAST_TAB_KEY = "storeops_platform_tab";
+export const LAST_TAB_KEY = "retailops_platform_tab";
 
 export function readLastTab(storage) {
   try {

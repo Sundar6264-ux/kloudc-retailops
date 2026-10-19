@@ -202,16 +202,16 @@ def whapi(monkeypatch):
 
 @pytest.fixture
 def marketing(admin_client):
-    """Groups: "Customers Vernon" (A) and "Customers Manchester" (B) marked
+    """Groups: "Customers Windsor" (A) and "Customers Manchester" (B) marked
     for flyers, "Deli staff" (C) not; the built-ins untouched."""
-    for label, chat, flag in (("Customers Vernon", CHAT_A, True), ("Customers Manchester", CHAT_B, True),
+    for label, chat, flag in (("Customers Windsor", CHAT_A, True), ("Customers Manchester", CHAT_B, True),
                               ("Deli staff", CHAT_C, False)):
         r = admin_client.post(GROUPS, json={"chat_id": chat, "label": label})
         assert r.status_code == 200, r.text
         if flag:
             r = admin_client.patch(f"{GROUPS}/{r.json()['key']}", json={"marketing": True})
             assert r.status_code == 200 and r.json()["marketing"] is True, r.text
-    return {"a": "customers_vernon", "b": "customers_manchester", "c": "deli_staff"}
+    return {"a": "customers_windsor", "b": "customers_manchester", "c": "deli_staff"}
 
 
 # --- Files ------------------------------------------------------------------------------------
@@ -807,7 +807,7 @@ def test_meta_lists_only_active_marketing_groups(admin_client, marketing, monkey
     monkeypatch.setattr(get_settings(), "whapi_api_token", "")
     meta = admin_client.get(f"{API}/meta").json()
     assert meta["groups"] == [{"key": "customers_manchester", "label": "Customers Manchester"},
-                              {"key": "customers_vernon", "label": "Customers Vernon"}]
+                              {"key": "customers_windsor", "label": "Customers Windsor"}]
     assert meta["categories"] == [
         {"key": "groceries", "label": "Groceries"}, {"key": "kitchen", "label": "Kitchen"},
         {"key": "flowers", "label": "Flowers"}, {"key": "halal_meat", "label": "Halal Meat"},
@@ -824,7 +824,7 @@ def test_meta_lists_only_active_marketing_groups(admin_client, marketing, monkey
 
 def test_builtin_staff_groups_start_unmarked_but_can_be_ticked(admin_client, monkeypatch):
     s = get_settings()
-    monkeypatch.setattr(s, "whapi_spice_town_checklist_group_id", "120363099999999991@g.us")
+    monkeypatch.setattr(s, "whapi_store_checklist_group_id", "120363099999999991@g.us")
     items = {g["key"]: g for g in admin_client.get(GROUPS).json()["items"]}
     assert items["store"]["marketing"] is False and items["kitchen"]["marketing"] is False
     assert admin_client.get(f"{API}/meta").json()["groups"] == []
@@ -862,7 +862,7 @@ def test_send_happy_path(admin_client, db, whapi, marketing, pauses, pushes):
     assert len(pauses) == 1 and 2.9 <= pauses[0] <= 6
     detail = admin_client.get(f"{API}/{body['id']}").json()
     assert [s["status"] for s in detail["sends"]] == ["sent", "sent"]
-    assert [s["target_label"] for s in detail["sends"]] == ["Customers Manchester", "Customers Vernon"]
+    assert [s["target_label"] for s in detail["sends"]] == ["Customers Manchester", "Customers Windsor"]
     assert detail["send_counts"] == {"sent": 2, "failed": 0, "pending": 0}
     assert detail["last_sent_at"] == NOON.isoformat()
     rows = db.query(FlyerSend).order_by(FlyerSend.id).all()
@@ -989,7 +989,7 @@ def test_send_body_validation(admin_client, whapi, marketing):
     assert admin_client.post(url, json={"group_keys": [marketing["a"]]}).status_code == 400
     assert admin_client.post(url, json={"group_keys": [marketing["a"]], "idempotency_key": ""}).status_code == 400
     assert admin_client.post(url, json={"group_keys": [marketing["a"]], "idempotency_key": "k" * 101}).status_code == 400
-    assert admin_client.post(url, json={"group_keys": "customers_vernon", "idempotency_key": "k"}).status_code == 400
+    assert admin_client.post(url, json={"group_keys": "customers_windsor", "idempotency_key": "k"}).status_code == 400
     assert admin_client.post(url, json={"group_keys": [1], "idempotency_key": "k"}).status_code == 400
     assert admin_client.post(f"{API}/999/send", json={"group_keys": [marketing["a"]], "idempotency_key": "k"}).status_code == 404
     # Duplicates in the list are one group.
@@ -1439,7 +1439,7 @@ def test_a_queued_send_never_goes_to_a_chat_that_was_swapped_out(admin_client, d
     body = made(admin_client)
     assert send(admin_client, body["id"], [marketing["a"]]).status_code == 202
     assert admin_client.delete(f"{GROUPS}/{marketing['a']}").status_code == 204
-    r = admin_client.post(GROUPS, json={"chat_id": CHAT_D, "label": "Customers Vernon", "marketing": True})
+    r = admin_client.post(GROUPS, json={"chat_id": CHAT_D, "label": "Customers Windsor", "marketing": True})
     assert r.status_code == 200 and r.json()["key"] == marketing["a"]
     for send_id in held:
         flyer_sender.process_send(send_id)
@@ -1681,7 +1681,7 @@ def _copy(src, dst):
 def test_migration_0046_up_down_up(tmp_path, which):
     db_file = tmp_path / f"{which}.db"
     if which == "dev":
-        src = BACKEND / "spicetown-dev.db"
+        src = BACKEND / "origin-dev.db"
         if not src.exists():
             pytest.skip("no dev database here")
         _copy(src, db_file)

@@ -8,11 +8,11 @@ from tests.platform.conftest import provision
 
 
 def test_create_master_from_env(monkeypatch, pdb, capsys):
-    monkeypatch.setenv("STOREOPS_MASTER_PASSWORD", "cli-master-pass-1")
+    monkeypatch.setenv("RETAILOPS_MASTER_PASSWORD", "cli-master-pass-1")
     assert main(["create-master", "--username", "Boss", "--display-name", "The Boss"]) == 0
     user = pdb.execute(select(PlatformUser)).scalar_one()
     assert user.username == "boss" and user.password_hash.startswith("$2")
-    monkeypatch.setenv("STOREOPS_MASTER_PASSWORD", "short")
+    monkeypatch.setenv("RETAILOPS_MASTER_PASSWORD", "short")
     try:
         main(["create-master", "--username", "other"])
     except SystemExit as exc:
@@ -20,7 +20,7 @@ def test_create_master_from_env(monkeypatch, pdb, capsys):
 
 
 def test_provision_list_suspend_resume(monkeypatch, pdb, capsys):
-    monkeypatch.setenv("STOREOPS_OWNER_PASSWORD", "cli-owner-pass-1")
+    monkeypatch.setenv("RETAILOPS_OWNER_PASSWORD", "cli-owner-pass-1")
     assert main(["provision", "--code", "echo", "--name", "Echo Mart", "--pack", "test_toast", "--tz", "UTC",
                  "--owner-username", "eli"]) == 0
     assert pdb.execute(select(Store.status).where(Store.code == "ECHO")).scalar() == "active"

@@ -1,6 +1,6 @@
-# StoreOps store directory
+# KloudC RetailOps store directory
 
-The directory tells the StoreOps app which server a store code belongs to.
+The directory tells the KloudC RetailOps app which server a store code belongs to.
 Staff type a code (or scan a QR code), the app asks
 `GET https://directory.<PLATFORM_DOMAIN>/v1/stores/<CODE>`, and gets back the
 store's server address, name, colours, time zone and minimum app build.
@@ -61,14 +61,14 @@ settings fields are merged.
 
 | Variable | Default | Notes |
 |---|---|---|
-| `PLATFORM_DOMAIN` | `storeops.invalid` | A placeholder until you choose the real domain |
+| `PLATFORM_DOMAIN` | `retailops.invalid` | A placeholder until you choose the real domain |
 | `DIRECTORY_STORES_FILE` | `directory/stores.json` | |
 | `DIRECTORY_RATE_PER_MINUTE` / `_PER_HOUR` | `10` / `100` | Per client IP; `0` turns a window off |
 | `DIRECTORY_CLIENT_IP_HEADER` | blank | Set to `CF-Connecting-IP` behind Cloudflare. The Worker always uses it |
 | `DIRECTORY_EXTRA_API_HOSTS` | blank | A comma-separated list of extra allowed server hosts |
 | `APPLE_TEAM_ID` | blank | While blank, `apple-app-site-association` lists no app |
 | `ANDROID_CERT_SHA256` | blank | Comma-separated `AB:CD:...` fingerprints. While blank, `assetlinks.json` lists none |
-| `APP_BUNDLE_ID` | `com.kloudc.storeops` | |
+| `APP_BUNDLE_ID` | `com.kloudc.retailops` | |
 | `APP_STORE_URL` / `PLAY_STORE_URL` | blank / from the bundle id | Links on the `/s/<code>` page. The App Store URL must be a real listing (`.../id<N>`) |
 
 These values are baked into the static files and the Worker data when you
@@ -115,7 +115,7 @@ You need:
    ```sh
    cd directory/worker
    cp wrangler.toml.example wrangler.toml
-   # In wrangler.toml, replace storeops.invalid with your domain in `routes`,
+   # In wrangler.toml, replace retailops.invalid with your domain in `routes`,
    # and set account_id (or export CLOUDFLARE_ACCOUNT_ID).
    npx wrangler login
    npx wrangler deploy --dry-run   # check the bundle first
@@ -129,8 +129,8 @@ You need:
    per-copy limit and the rule in step 6 still apply.
 5. **Deploy the static fallback** to Cloudflare Pages:
    ```sh
-   npx wrangler pages project create storeops-directory-static   # first time only
-   npx wrangler pages deploy ../dist --project-name storeops-directory-static
+   npx wrangler pages project create retailops-directory-static   # first time only
+   npx wrangler pages deploy ../dist --project-name retailops-directory-static
    ```
    Then, in the Cloudflare dashboard, open the Pages project, go to Custom
    domains and add `static.<domain>`. `dist/404.html` must stay in the

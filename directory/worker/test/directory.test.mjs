@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SlidingWindowLimiter, createDirectory, normalizeCode } from "../src/directory.js";
 
-const BODY = '{"schema":1,"code":"DEMO","name":"StoreOps Demo Market"}';
+const BODY = '{"schema":1,"code":"DEMO","name":"KloudC RetailOps Demo Market"}';
 const DATA = {
   schema: 1,
   rate: { per_minute: 3, per_hour: 100 },
@@ -30,7 +30,7 @@ const DATA = {
 };
 
 function get(dir, path, { ip = "203.0.113.1", headers = {}, method = "GET", env = {} } = {}) {
-  const req = new Request(`https://directory.storeops.invalid${path}`, {
+  const req = new Request(`https://directory.retailops.invalid${path}`, {
     method,
     headers: { "CF-Connecting-IP": ip, ...headers },
   });
@@ -38,7 +38,7 @@ function get(dir, path, { ip = "203.0.113.1", headers = {}, method = "GET", env 
 }
 
 test("normalizeCode matches the Python rules", () => {
-  assert.equal(normalizeCode("  storeops-test-toast "), "STOREOPS_TEST_TOAST");
+  assert.equal(normalizeCode("  retailops-test-toast "), "RETAILOPS_TEST_TOAST");
   assert.equal(normalizeCode("demo"), "DEMO");
   for (const bad of ["ab", "A".repeat(25), "_ABC", "BAD!CODE", "", null, "DE MO"]) {
     assert.equal(normalizeCode(bad), null, String(bad));

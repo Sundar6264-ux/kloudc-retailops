@@ -38,7 +38,7 @@ PUBLIC = {
     ("GET", "/api/public/checklists/{token}/images/{media_token}"),
     ("GET", "/c/{path:path}"),
     ("GET", "/c"),
-    # StoreOps M2 public store branding (tests/test_branding.py): the store's
+    # KloudC RetailOps M2 public store branding (tests/test_branding.py): the store's
     # names, colours, POS, capabilities and legal links - nothing secret -
     # and the bundled placeholder images.
     ("GET", "/api/app/branding"),

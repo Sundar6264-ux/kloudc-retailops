@@ -38,14 +38,14 @@ def test_contact_default_cc_is_validated_and_listed(db, admin_client, buyer):
         json={
             "vendor": VENDOR,
             "email": "sales@raja.test",
-            "cc": ["Owner@SpiceTown.test", "owner@spicetown.test", "sales@raja.test", "ap@raja.test, books@raja.test"],
+            "cc": ["Owner@MainStore.test", "owner@mainstore.test", "sales@raja.test", "ap@raja.test, books@raja.test"],
         },
     )
     assert r.status_code == 200, r.text
     c = r.json()
     # Duplicates (any case) and the contact's own address are dropped; a
     # pasted "a, b" counts as two.
-    assert c["cc"] == ["Owner@SpiceTown.test", "ap@raja.test", "books@raja.test"]
+    assert c["cc"] == ["Owner@MainStore.test", "ap@raja.test", "books@raja.test"]
     assert buyer.get(CONTACTS).json()["items"][0]["cc"] == c["cc"]
 
     r = admin_client.patch(f"{CONTACTS}/{c['id']}", json={"cc": []})
@@ -80,7 +80,7 @@ def test_contact_cc_validation(db, admin_client, cc, fragment):
 def test_preview_prefills_default_cc_from_default_recipients(db, buyer):
     _cart(db)
     a = _contact(db)
-    a.cc_json = json.dumps(["owner@spicetown.test", "ap@raja.test"])
+    a.cc_json = json.dumps(["owner@mainstore.test", "ap@raja.test"])
     b = _contact(db, email="office@raja.test", name="Office")
     b.cc_json = json.dumps(["AP@raja.test", "sales@raja.test", "mgr@raja.test"])
     # Not a default recipient: its CCs aren't pre-filled.
@@ -89,7 +89,7 @@ def test_preview_prefills_default_cc_from_default_recipients(db, buyer):
     db.commit()
     p = buyer.get(PREVIEW, params={"supplier": VENDOR}).json()
     assert p["recipients"] == ["sales@raja.test", "office@raja.test"]
-    assert p["default_cc"] == ["owner@spicetown.test", "ap@raja.test", "mgr@raja.test"]
+    assert p["default_cc"] == ["owner@mainstore.test", "ap@raja.test", "mgr@raja.test"]
     assert p["max_cc"] == 10
     assert {x["email"]: x["cc"] for x in p["contacts"]}["old@raja.test"] == ["nobody@raja.test"]
 
@@ -97,18 +97,18 @@ def test_preview_prefills_default_cc_from_default_recipients(db, buyer):
 def test_send_with_cc_emails_to_and_cc_and_logs_it(db, buyer, gmail):
     _cart(db)
     _contact(db)
-    r = _send(buyer, cc=["owner@spicetown.test", "OWNER@spicetown.test", "sales@raja.test", "ap@raja.test"])
+    r = _send(buyer, cc=["owner@mainstore.test", "OWNER@mainstore.test", "sales@raja.test", "ap@raja.test"])
     assert r.status_code == 200, r.text
     send = r.json()["send"]
     assert send["email_to"] == ["sales@raja.test"]
-    assert send["email_cc"] == ["owner@spicetown.test", "ap@raja.test"]
+    assert send["email_cc"] == ["owner@mainstore.test", "ap@raja.test"]
     [mail] = gmail.sent
-    assert mail["to"] == ["sales@raja.test", "owner@spicetown.test", "ap@raja.test"]
+    assert mail["to"] == ["sales@raja.test", "owner@mainstore.test", "ap@raja.test"]
     msg = email.message_from_string(mail["message"])
     assert msg["To"] == "sales@raja.test"
-    assert msg["Cc"] == "owner@spicetown.test, ap@raja.test"
+    assert msg["Cc"] == "owner@mainstore.test, ap@raja.test"
     logged = buyer.get(SENDS, params={"supplier": VENDOR}).json()["items"][0]
-    assert logged["email_cc"] == ["owner@spicetown.test", "ap@raja.test"]
+    assert logged["email_cc"] == ["owner@mainstore.test", "ap@raja.test"]
 
 
 def test_send_without_cc_is_unchanged(db, buyer, gmail):
@@ -127,7 +127,7 @@ def test_send_without_cc_is_unchanged(db, buyer, gmail):
 @pytest.mark.parametrize(
     "cc, fragment",
     [
-        (["owner@spicetown"], "isn't an email"),
+        (["owner@mainstore"], "isn't an email"),
         (["a@b.test\nBcc: evil@x.test"], "isn't an email"),
         ([f"p{i}@x.test" for i in range(11)], "At most 10"),
     ],

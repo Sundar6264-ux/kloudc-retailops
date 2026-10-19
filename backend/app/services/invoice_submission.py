@@ -202,7 +202,7 @@ def is_demo_not_sent(sent: bool, error: Optional[str]) -> bool:
     return not sent and error == DEMO_NOT_SENT
 
 
-# --- Channels a store has switched off (StoreOps M2 store features, contract 1.3) ---
+# --- Channels a store has switched off (KloudC RetailOps M2 store features, contract 1.3) ---
 # A store without WhatsApp (no WHAPI_API_TOKEN) or without an AP inbox
 # (AP_INBOX_EMAIL blank) records that channel like this - not sent, this text
 # as the reason - and it never counts as failed: the invoice is done once the
@@ -615,7 +615,7 @@ def _processing_status(entry: InvoiceSubmission) -> str:
     a submission to "in_progress" - "completed" additionally requires
     `toast_closed_at`, a human's manual confirmation that Toast actually
     finished processing this into a real closed bill. There is no Toast PO/
-    Purchasing API access and no webhook (see the StoreOps skill notes, gotcha
+    Purchasing API access and no webhook (see the KloudC RetailOps skill notes, gotcha
     #15), so that event is genuinely unobservable automatically; guessing
     "completed" the moment the two sends succeed would be a real, honest
     claim this app can't back up (a real user report: "let me update the

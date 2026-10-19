@@ -14,12 +14,12 @@ from dataclasses import dataclass, field
 from typing import Any, Optional, Tuple
 from urllib.parse import urlsplit
 
-# Contract rule 0.3: nothing StoreOps serves or links to may live under the
+# Contract rule 0.3: nothing KloudC RetailOps serves or links to may live under the
 # legacy store's domain. The one literal lives in app.config (MT7).
 from app.config import REFUSED_DOMAIN as FORBIDDEN_DOMAIN
 
-DEFAULT_PLATFORM_DOMAIN = "storeops.invalid"
-DEFAULT_BUNDLE_ID = "com.kloudc.storeops"
+DEFAULT_PLATFORM_DOMAIN = "retailops.invalid"
+DEFAULT_BUNDLE_ID = "com.kloudc.retailops"
 
 _DOMAIN_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$")
 _HEADER_RE = re.compile(r"^[A-Za-z0-9-]{1,64}$")
@@ -108,7 +108,7 @@ class DirectoryConfig:
     rate_per_minute: int = 10
     rate_per_hour: int = 100
     client_ip_header: str = ""
-    product_name: str = "StoreOps"
+    product_name: str = "KloudC RetailOps"
     app_bundle_id: str = DEFAULT_BUNDLE_ID
     apple_team_id: str = ""
     android_cert_sha256: Tuple[str, ...] = field(default_factory=tuple)
@@ -184,7 +184,7 @@ class DirectoryConfig:
             rate_per_minute=_as_int("directory_rate_per_minute", _setting("directory_rate_per_minute", 10)),
             rate_per_hour=_as_int("directory_rate_per_hour", _setting("directory_rate_per_hour", 100)),
             client_ip_header=str(_setting("directory_client_ip_header", "") or "").strip(),
-            product_name=str(_setting("product_name", "StoreOps") or "StoreOps"),
+            product_name=str(_setting("product_name", "KloudC RetailOps") or "KloudC RetailOps"),
             app_bundle_id=str(_setting("app_bundle_id", DEFAULT_BUNDLE_ID) or DEFAULT_BUNDLE_ID),
             apple_team_id=str(_setting("apple_team_id", "") or ""),
             android_cert_sha256=_split_list(_setting("android_cert_sha256", "")),

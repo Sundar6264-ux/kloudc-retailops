@@ -1,15 +1,15 @@
 #!/bin/bash
-# Dumps every table in a StoreOps SQLite database to its own CSV file.
+# Dumps every table in a KloudC RetailOps SQLite database to its own CSV file.
 #
 # Usage:
 #   ./dump_db_to_csv.sh [db_path] [output_dir]
 #
-# Defaults to backend/storeops.db and a timestamped folder under your home
+# Defaults to backend/retailops.db and a timestamped folder under your home
 # directory, so repeated runs never overwrite a previous dump.
 set -euo pipefail
 
-DB_PATH="${1:-$(cd "$(dirname "$0")/.." && pwd)/storeops.db}"
-OUT_DIR="${2:-$HOME/storeops-db-dumps/$(date +%Y-%m-%d_%H%M%S)}"
+DB_PATH="${1:-$(cd "$(dirname "$0")/.." && pwd)/retailops.db}"
+OUT_DIR="${2:-$HOME/retailops-db-dumps/$(date +%Y-%m-%d_%H%M%S)}"
 
 if [ ! -f "$DB_PATH" ]; then
   echo "Database not found: $DB_PATH" >&2

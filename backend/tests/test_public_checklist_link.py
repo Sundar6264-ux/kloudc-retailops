@@ -43,7 +43,7 @@ from tests.conftest import client_for, make_user
 # Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
 pytestmark = pytest.mark.suite_pack
 
-FSA = "street_kitchen_fsa"
+FSA = "kitchen_fsa"
 NY = zoneinfo.ZoneInfo("America/New_York")
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 ADMIN_BASE = "/api/checklists/admin/definitions"
@@ -71,8 +71,8 @@ def _limits(monkeypatch):
 def sent(monkeypatch):
     """Fake WhatsApp: the kitchen/store groups are set, the sender records."""
     out = []
-    monkeypatch.setattr(get_settings(), "whapi_street_kitchen_checklist_group_id", "sk-group@g.us")
-    monkeypatch.setattr(get_settings(), "whapi_spice_town_checklist_group_id", "st-group@g.us")
+    monkeypatch.setattr(get_settings(), "whapi_kitchen_checklist_group_id", "sk-group@g.us")
+    monkeypatch.setattr(get_settings(), "whapi_store_checklist_group_id", "st-group@g.us")
     monkeypatch.setattr(checklist_submission, "send_whatsapp_message", lambda text, to=None: out.append((to, text)))
     return out
 
@@ -81,7 +81,7 @@ def sent(monkeypatch):
 def dist(tmp_path, monkeypatch):
     d = tmp_path / "dist"
     d.mkdir()
-    (d / "index.html").write_text("<!doctype html><title>Spice Town</title><div id=root></div>")
+    (d / "index.html").write_text("<!doctype html><title>Main Store</title><div id=root></div>")
     monkeypatch.setattr(get_settings(), "frontend_dist_dir", str(d))
     return d
 
@@ -117,7 +117,7 @@ def good_answers(checklist_type=FSA):
 
 # The product suggests no names (a new list link starts empty), so the tests
 # give the FSA link its two people explicitly.
-NAMES = ["Sadia", "Satinder"]
+NAMES = ["Dana", "Satinder"]
 
 
 def enable(admin_client, checklist_type=FSA, **fields):
@@ -192,7 +192,7 @@ def test_admin_validation(db, admin_client):
         ({"max_per_hour": True}, "hourly limit"),
         ({"name_mode": "anyone"}, "name_mode"),
         ({"allowed_names": ["<b>Boss</b>"]}, "Not a valid name"),
-        ({"allowed_names": "Sadia"}, "must be a list"),
+        ({"allowed_names": "Dana"}, "must be a list"),
         ({"enabled": "yes"}, "true or false"),
         ({"enabled": True, "allowed_names": []}, "at least one name"),
         ({"token": "x" * 22}, "Unknown field"),
@@ -204,10 +204,10 @@ def test_admin_validation(db, admin_client):
     assert db.query(ChecklistPublicLink).count() == 0
     # Free text with no names is fine; names are cleaned and de-duplicated.
     r = admin_client.put(f"{ADMIN_BASE}/{FSA}/public-link",
-                         json={"enabled": True, "name_mode": "free_text", "allowed_names": [" Sadia ", "sadia", "Satinder"]})
-    assert r.status_code == 200 and r.json()["allowed_names"] == ["Sadia", "Satinder"]
+                         json={"enabled": True, "name_mode": "free_text", "allowed_names": [" Dana ", "dana", "Satinder"]})
+    assert r.status_code == 200 and r.json()["allowed_names"] == ["Dana", "Satinder"]
     # Another checklist can't take the same slug.
-    r = admin_client.put(f"{ADMIN_BASE}/spice_town_closing/public-link", json={"slug": "kitchen"})
+    r = admin_client.put(f"{ADMIN_BASE}/store_closing/public-link", json={"slug": "kitchen"})
     assert r.status_code == 422 and "already uses" in r.json()["detail"]
     assert admin_client.put(f"{ADMIN_BASE}/nope/public-link", json={}).status_code == 404
 
@@ -264,14 +264,14 @@ def test_end_to_end_like_an_in_app_submission(db, admin_client, checker_client, 
     body = form.json()
     assert set(body) == {"checklist_type", "title", "description", "schema", "name_mode", "allowed_names"}
     assert body["checklist_type"] == FSA and body["name_mode"] == "list"
-    assert body["allowed_names"] == ["Sadia", "Satinder"]
+    assert body["allowed_names"] == ["Dana", "Satinder"]
     assert body["schema"]["version"] == get_schema(FSA)["version"]
     assert body["schema"]["sections"] == get_schema(FSA)["sections"]
     assert body["schema"]["settings"] == {"all_as_usual": True}
 
     answers = good_answers()
     answers["g0_0"] = "No"  # flags "Not Turned Off"
-    r = anon.post(f"{PUBLIC}/{token}/submit", json={"name": " sadia ", "answers": answers,
+    r = anon.post(f"{PUBLIC}/{token}/submit", json={"name": " dana ", "answers": answers,
                                                      "definition_version": body["schema"]["version"]})
     assert r.status_code == 200, r.text
     result = r.json()
@@ -280,13 +280,13 @@ def test_end_to_end_like_an_in_app_submission(db, admin_client, checker_client, 
     assert "Stoves of the Hot Food Stand" in result["issue_summary"]
 
     entry = db.query(ChecklistSubmission).one()
-    assert entry.submitted_by_user_id == 0 and entry.submitted_by_name == "Sadia"
-    assert entry.via_public_link is True and entry.public_name == "Sadia"
+    assert entry.submitted_by_user_id == 0 and entry.submitted_by_name == "Dana"
+    assert entry.via_public_link is True and entry.public_name == "Dana"
     assert entry.whatsapp_sent is True and entry.whatsapp_error is None
     assert len(sent) == 1
     to, text = sent[0]
     assert to == "sk-group@g.us"
-    assert text.split("\n")[1].startswith("Sadia (public link) · ")
+    assert text.split("\n")[1].startswith("Dana (public link) · ")
     assert "*1 issue*\n\n*Turn off Heat*\n❌ Stoves of the Hot Food Stand" in text
     db.refresh(db.query(ChecklistPublicLink).one())
     assert db.query(ChecklistPublicLink).one().last_used_at is not None
@@ -297,21 +297,21 @@ def test_end_to_end_like_an_in_app_submission(db, admin_client, checker_client, 
         items = client.get("/api/checklists", params={"checklist_type": FSA}).json()["items"]
         assert [i["id"] for i in items] == [entry.id]
         row = items[0]
-        assert row["via_public_link"] is True and row["public_name"] == "Sadia"
-        assert row["submitted_by_name"] == "Sadia" and row["submitted_by_user_id"] == 0
+        assert row["via_public_link"] is True and row["public_name"] == "Dana"
+        assert row["submitted_by_name"] == "Dana" and row["submitted_by_user_id"] == 0
         detail = client.get(f"/api/checklists/{entry.id}").json()
         assert detail["via_public_link"] is True and detail["answers"] == answers
         today = dt.datetime.now(NY).date().isoformat()
         tiles = {c["checklist_type"]: c for c in client.get(f"/api/checklists/overview?date={today}").json()["checklists"]}
-        assert tiles[FSA]["submitted_on_date"] is True and tiles[FSA]["latest"]["submitted_by_name"] == "Sadia"
+        assert tiles[FSA]["submitted_on_date"] is True and tiles[FSA]["latest"]["submitted_by_name"] == "Dana"
     # Someone else's in-app submission is still private to them (and admins).
     other = make_user(db, "asha", features=["daily_checklists"])
-    db.add(ChecklistSubmission(checklist_type="spice_town_closing", submitted_by_user_id=other.id,
+    db.add(ChecklistSubmission(checklist_type="store_closing", submitted_by_user_id=other.id,
                                submitted_by_name="asha", answers_json="{}", all_clear=True, answers_hash="h1",
                                created_at=dt.datetime.now(dt.timezone.utc)))
     db.commit()
     ids = [i["submitted_by_name"] for i in checker_client.get("/api/checklists").json()["items"]]
-    assert ids == ["Sadia"]
+    assert ids == ["Dana"]
     # Without Daily Checklists nobody sees anything (route gate).
     assert client_for(db, make_user(db, "nofeat", features=["team_chat"])).get("/api/checklists").status_code == 403
 
@@ -320,7 +320,7 @@ def test_end_to_end_like_an_in_app_submission(db, admin_client, checker_client, 
     alerts = closing_checklist_alerts(db, now)
     assert len(alerts) == 1 and "Chef" in alerts[0].body
     assert "Food Service Associate" not in alerts[0].body
-    assert auto_tasks._submitted_checklists(db, now.date())[FSA] == "Sadia"
+    assert auto_tasks._submitted_checklists(db, now.date())[FSA] == "Dana"
 
 
 def test_parity_with_an_in_app_submission(db, admin_client, anon, sent, monkeypatch):
@@ -373,7 +373,7 @@ def test_parity_with_an_in_app_submission(db, admin_client, anon, sent, monkeypa
 
 def test_a_replayed_submit_is_stored_and_sent_once(db, admin_client, anon, sent):
     token = token_of(enable(admin_client))
-    payload = {"name": "Sadia", "answers": good_answers()}
+    payload = {"name": "Dana", "answers": good_answers()}
     assert anon.post(f"{PUBLIC}/{token}/submit", json=payload).status_code == 200
     assert anon.post(f"{PUBLIC}/{token}/submit", json=payload).status_code == 200
     assert db.query(ChecklistSubmission).count() == 1 and len(sent) == 1
@@ -421,7 +421,7 @@ def test_display_name_cleans_a_bad_stored_name():
 def _responses(anon, token, path, answers):
     out = [
         anon.get(f"{PUBLIC}/{token}"),
-        anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Sadia", "answers": answers}),
+        anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Dana", "answers": answers}),
         anon.post(f"{PUBLIC}/{token}/media", files={"file": ("a.png", png_bytes(), "image/png")}),
         anon.get(f"{PUBLIC}/{token}/images/abcdefghijklmnopqrstuvwx"),
     ]
@@ -508,10 +508,10 @@ def test_page_limit(db, admin_client, anon, dist, monkeypatch):
 def test_hourly_submission_limit_per_link(db, admin_client, anon, sent):
     token = token_of(enable(admin_client, max_per_hour=2))
     url = f"{PUBLIC}/{token}/submit"
-    for i, name in enumerate(["Sadia", "Satinder"]):
+    for i, name in enumerate(["Dana", "Satinder"]):
         h = {"CF-Connecting-IP": f"203.0.113.{i}"}
         assert anon.post(url, json={"name": name, "answers": good_answers()}, headers=h).status_code == 200
-    r = anon.post(url, json={"name": "Sadia", "answers": dict(good_answers(), issues_text="x")},
+    r = anon.post(url, json={"name": "Dana", "answers": dict(good_answers(), issues_text="x")},
                   headers={"CF-Connecting-IP": "203.0.113.9"})
     assert r.status_code == 429 and "limit for this hour" in r.json()["detail"]
     assert db.query(ChecklistSubmission).count() == 2
@@ -525,13 +525,13 @@ def test_hourly_submission_limit_per_link(db, admin_client, anon, sent):
 def test_body_size_and_shape_limits(db, admin_client, anon):
     token = token_of(enable(admin_client))
     url = f"{PUBLIC}/{token}/submit"
-    huge = {"name": "Sadia", "answers": {"issues_text": "x" * (svc.MAX_SUBMIT_BYTES + 10)}}
+    huge = {"name": "Dana", "answers": {"issues_text": "x" * (svc.MAX_SUBMIT_BYTES + 10)}}
     assert anon.post(url, json=huge).status_code == 413
-    for body in ({"name": "Sadia", "answers": {"a": "x" * (svc.MAX_ANSWER_VALUE + 1)}},
-                 {"name": "Sadia", "answers": {"a": 5}},
-                 {"name": "Sadia", "answers": ["x"]},
-                 {"name": "Sadia", "answers": {}, "definition_version": "2"},
-                 {"name": "Sadia", "answers": {}, "media_keys": ["k"]}):
+    for body in ({"name": "Dana", "answers": {"a": "x" * (svc.MAX_ANSWER_VALUE + 1)}},
+                 {"name": "Dana", "answers": {"a": 5}},
+                 {"name": "Dana", "answers": ["x"]},
+                 {"name": "Dana", "answers": {}, "definition_version": "2"},
+                 {"name": "Dana", "answers": {}, "media_keys": ["k"]}):
         assert anon.post(url, json=body).status_code == 422, body
     r = anon.post(url, content=b"not json", headers={"Content-Type": "application/json"})
     assert r.status_code == 400
@@ -653,12 +653,12 @@ def test_stale_version_is_409(db, admin_client, anon, sent):
                                  "options": [{"value": "Yes"}]})
     assert admin_client.post(f"{ADMIN_BASE}/{FSA}/publish", json={"sections": sections}).status_code == 200
     r = anon.post(f"{PUBLIC}/{token}/submit",
-                  json={"name": "Sadia", "answers": good_answers(), "definition_version": old_version})
+                  json={"name": "Dana", "answers": good_answers(), "definition_version": old_version})
     assert r.status_code == 409 and "changed since you opened it" in r.json()["detail"]
     new = anon.get(f"{PUBLIC}/{token}").json()["schema"]["version"]
     assert new == old_version + 1
     r = anon.post(f"{PUBLIC}/{token}/submit",
-                  json={"name": "Sadia", "answers": dict(good_answers(), q_new="Yes"), "definition_version": new})
+                  json={"name": "Dana", "answers": dict(good_answers(), q_new="Yes"), "definition_version": new})
     assert r.status_code == 200, r.text
 
 
@@ -666,18 +666,18 @@ def test_errors_never_show_internals(db, admin_client, anon, monkeypatch):
     token = token_of(enable(admin_client))
 
     def boom(*a, **k):
-        raise RuntimeError("secret internals /Users/sundar")
+        raise RuntimeError("secret internals /Users/someone")
 
     monkeypatch.setattr(svc, "public_view", boom)
     r = anon.get(f"{PUBLIC}/{token}")
     assert r.status_code == 500 and r.json() == {"detail": "Something went wrong. Try again."}
     monkeypatch.setattr(public_router, "create_submission", boom)
-    r = anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Sadia", "answers": good_answers()})
+    r = anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Dana", "answers": good_answers()})
     assert r.status_code == 500 and "secret" not in r.text and "Traceback" not in r.text
 
 
 def test_public_responses_leak_nothing_else(db, admin_client, anon, sent):
-    other_link = enable(admin_client, "spice_town_closing", name_mode="free_text", slug="store-closing")
+    other_link = enable(admin_client, "store_closing", name_mode="free_text", slug="store-closing")
     link = enable(admin_client)
     token = token_of(link)
     db.add(ChecklistSubmission(checklist_type=FSA, submitted_by_user_id=1, submitted_by_name="secretchef",
@@ -685,9 +685,9 @@ def test_public_responses_leak_nothing_else(db, admin_client, anon, sent):
                                created_at=dt.datetime.now(dt.timezone.utc)))
     db.commit()
     texts = [anon.get(f"{PUBLIC}/{token}").text,
-             anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Sadia", "answers": good_answers()}).text,
+             anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Dana", "answers": good_answers()}).text,
              anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Nobody", "answers": {}}).text,
-             anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Sadia", "answers": {}}).text]
+             anon.post(f"{PUBLIC}/{token}/submit", json={"name": "Dana", "answers": {}}).text]
     for text in texts:
         for secret in ("secretchef", "private note", "boss", f"store-closing-{code_of(other_link)}", "whatsapp", "sk-group",
                        "submitted_by", "\"closing\"", "created_at"):
@@ -696,7 +696,7 @@ def test_public_responses_leak_nothing_else(db, admin_client, anon, sent):
     assert all(set(json.loads(t)) == {"detail"} for t in texts[2:])
     # The form is only this checklist's.
     form = json.loads(texts[0])
-    assert form["checklist_type"] == FSA and "spice_town" not in texts[0]
+    assert form["checklist_type"] == FSA and "store_closing" not in texts[0]
     # Every public JSON response is no-store / no-referrer.
     r = anon.get(f"{PUBLIC}/{token}")
     assert r.headers["cache-control"] == "no-store" and r.headers["referrer-policy"] == "no-referrer"
@@ -767,7 +767,7 @@ def test_migration_0041_up_and_down_on_a_fresh_database(tmp_path):
     con.execute(
         "INSERT INTO checklist_submissions (checklist_type, submitted_by_user_id, submitted_by_name, answers_json, "
         "all_clear, answers_hash, whatsapp_sent, whatsapp_ambiguous, created_at, definition_version) VALUES "
-        "('street_kitchen_fsa', 1, 'asha', '{\"a\": \"b\"}', 1, 'h', 0, 0, '2026-09-29 01:00:00', 2)"
+        "('kitchen_fsa', 1, 'asha', '{\"a\": \"b\"}', 1, 'h', 0, 0, '2026-09-29 01:00:00', 2)"
     )
     con.commit()
     con.close()
@@ -824,7 +824,7 @@ def test_page_paths_trailing_slash_and_nested(db, admin_client, anon, dist):
 
 def test_malformed_bodies_are_client_errors_not_500(db, admin_client, anon):
     token = token_of(enable(admin_client))
-    nested = b'{"name": "Sadia", "answers": ' + b"[" * 100000 + b"]" * 100000 + b"}"
+    nested = b'{"name": "Dana", "answers": ' + b"[" * 100000 + b"]" * 100000 + b"}"
     r = anon.post(f"{PUBLIC}/{token}/submit", content=nested, headers={"Content-Type": "application/json"})
     assert r.status_code in (400, 413), r.text
     ctype = make_photo_checklist(admin_client)
@@ -857,7 +857,7 @@ def test_codes_are_unique_and_rotate_changes_them(db, admin_client, monkeypatch)
     # The next code the generator draws is a's code: it's skipped.
     draws = iter([int(code_of(a)), 4821, 5930])
     monkeypatch.setattr(svc.secrets, "randbelow", lambda n: next(draws))
-    b = enable(admin_client, "spice_town_closing", name_mode="free_text")
+    b = enable(admin_client, "store_closing", name_mode="free_text")
     assert code_of(b) == ("4821" if code_of(a) != "4821" else "5930")
     assert b["slug"] == "store" and b["path"] == f"/c/store-{code_of(b)}"
     monkeypatch.undo()
@@ -869,7 +869,7 @@ def test_codes_are_unique_and_rotate_changes_them(db, admin_client, monkeypatch)
 
 def test_default_slug_is_one_word_and_avoids_a_taken_one(db, admin_client):
     assert enable(admin_client)["slug"] == "kitchen"
-    chef = admin_client.put(f"{ADMIN_BASE}/street_kitchen_closing/public-link", json={}).json()
+    chef = admin_client.put(f"{ADMIN_BASE}/kitchen_closing/public-link", json={}).json()
     assert chef["slug"] == "chef"
     # A builder checklist: its title's first word, or the next free word.
     r = admin_client.post(ADMIN_BASE, json={"title": "Chef Fridge Temps", "sections": [{"id": "s1", "items": [
@@ -877,7 +877,7 @@ def test_default_slug_is_one_word_and_avoids_a_taken_one(db, admin_client):
     ctype = r.json()["checklist_type"]
     fridge = admin_client.put(f"{ADMIN_BASE}/{ctype}/public-link", json={}).json()
     assert fridge["slug"] == "temps"
-    r = admin_client.put(f"{ADMIN_BASE}/street_kitchen_closing/public-link", json={"slug": "ab"})
+    r = admin_client.put(f"{ADMIN_BASE}/kitchen_closing/public-link", json={"slug": "ab"})
     assert r.status_code == 200 and r.json()["slug"] == "ab" and r.json()["path"].startswith("/c/ab-")
 
 
@@ -928,7 +928,7 @@ def test_old_long_token_links_keep_working_until_rotated(db, admin_client, anon,
     # The new page sends "{slug}-{token}"; the first page version sent the bare token.
     for key in (f"kitchen-service-{old}", old):
         assert anon.get(f"{PUBLIC}/{key}").status_code == 200, key
-    r = anon.post(f"{PUBLIC}/{old}/submit", json={"name": "Sadia", "answers": good_answers()})
+    r = anon.post(f"{PUBLIC}/{old}/submit", json={"name": "Dana", "answers": good_answers()})
     assert r.status_code == 200 and r.json()["ok"] is True
     # Wrong slug with the old token: no.
     assert anon.get(f"{PUBLIC}/store-{old}").status_code == 404
@@ -952,7 +952,7 @@ def test_failed_lookups_per_ip_are_limited(db, admin_client, anon, dist, monkeyp
     # submit / media / page routes either) ...
     r = anon.get(f"{PUBLIC}/{key}", headers=a)
     assert r.status_code == 429 and "Too many tries" in r.json()["detail"]
-    assert anon.post(f"{PUBLIC}/{key}/submit", json={"name": "Sadia", "answers": {}}, headers=a).status_code == 429
+    assert anon.post(f"{PUBLIC}/{key}/submit", json={"name": "Dana", "answers": {}}, headers=a).status_code == 429
     assert anon.get(link["path"], headers=a).status_code == 429
     # ... while another IP is fine.
     assert anon.get(f"{PUBLIC}/{key}", headers={"CF-Connecting-IP": "203.0.113.51"}).status_code == 200

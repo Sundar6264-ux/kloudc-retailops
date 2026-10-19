@@ -1,4 +1,4 @@
-// The website is StoreOps, not one store's dashboard (docs/M2_CONTRACT.md
+// The website is KloudC RetailOps, not one store's dashboard (docs/M2_CONTRACT.md
 // section 9.2, website part): no store's name, place or domain in the
 // source, and the store's time zone only ever comes from branding.
 //   node --test src/store/noStoreNames.test.mjs
@@ -7,12 +7,13 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { lineHasOriginName } from "../test/originNames.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const frontend = join(here, "../..");
-// Spelled in pieces so the server's name scan (M2 contract 9.2)
-// doesn't count this file.
-const NAMES = new RegExp(["spice[ _]?town", "stre" + "et[ _]kitchen", "ver" + "non", "spice" + "town\\.shop", "mac mini"].join("|"), "i");
+// Origin-store names are matched by hash (../test/originNames.mjs); the
+// machine it first ran on is a plain word.
+const MACHINE = /mac mini/i;
 
 function files(dir) {
   return readdirSync(dir).flatMap((name) => {
@@ -34,7 +35,7 @@ test("no store names, places or domains in the website source", () => {
     readFileSync(p, "utf8")
       .split("\n")
       .forEach((line, i) => {
-        if (NAMES.test(line)) hits.push(`${relative(frontend, p)}:${i + 1}: ${line.trim().slice(0, 100)}`);
+        if (lineHasOriginName(line) || MACHINE.test(line)) hits.push(`${relative(frontend, p)}:${i + 1}: ${line.trim().slice(0, 100)}`);
       });
   }
   assert.deepEqual(hits, []);

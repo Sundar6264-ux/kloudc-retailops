@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "store_code": "STOREOPS_TEST_TOAST",
+  "store_code": "RETAILOPS_TEST_TOAST",
   "name": "Test Toast Market",
   "short_name": "Toast Test",
   "product": {
-    "name": "StoreOps",
+    "name": "KloudC RetailOps",
     "company": "KloudC LLC"
   },
-  "logo_url": "https://storeops-test-toast.storeops.invalid/branding/logo.png",
-  "icon_url": "https://storeops-test-toast.storeops.invalid/branding/icon.png",
+  "logo_url": "https://retailops-test-toast.retailops.invalid/branding/logo.png",
+  "icon_url": "https://retailops-test-toast.retailops.invalid/branding/icon.png",
   "primary_color": "#1D4ED8",
   "secondary_color": "#93C5FD",
   "timezone": "America/Chicago",
@@ -38,8 +38,8 @@
     "whatsapp",
     "ai"
   ],
-  "labels_url": "https://labels-storeops-test-toast.storeops.invalid",
-  "public_host": "https://storeops-test-toast.storeops.invalid",
+  "labels_url": "https://labels-retailops-test-toast.retailops.invalid",
+  "public_host": "https://retailops-test-toast.retailops.invalid",
   "legal": {
     "company": "KloudC LLC",
     "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
@@ -52,7 +52,7 @@
   },
   "store_url": {
     "ios": null,
-    "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
+    "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
   },
   "demo": false
 }

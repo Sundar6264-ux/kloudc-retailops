@@ -3,22 +3,22 @@
 <!--
   TEMPLATE - not installed. Nightly database backup as a user LaunchAgent.
   Install steps (and the "nobody logged in" caveat) are in
-  scripts/backup/README.md. Replace __STOREOPS_DIR__ (the checkout) and
+  scripts/backup/README.md. Replace __RETAILOPS_DIR__ (the checkout) and
   __BACKUP_DIR__ (the backup folder, written out in full) first.
 -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.kloudc.storeops.backup</string>
+    <string>com.kloudc.retailops.backup</string>
 
     <!-- Standard-library-only script: any python3 works; the prod venv's
          is used so the runtime is the one the server already runs on. -->
     <key>ProgramArguments</key>
     <array>
-        <string>__STOREOPS_DIR__/backend/.venv/bin/python</string>
-        <string>__STOREOPS_DIR__/backend/scripts/backup/backup_db.py</string>
+        <string>__RETAILOPS_DIR__/backend/.venv/bin/python</string>
+        <string>__RETAILOPS_DIR__/backend/scripts/backup/backup_db.py</string>
         <string>--db</string>
-        <string>__STOREOPS_DIR__/backend/storeops.db</string>
+        <string>__RETAILOPS_DIR__/backend/retailops.db</string>
         <string>--dest</string>
         <string>__BACKUP_DIR__</string>
         <string>--keep-days</string>
@@ -47,8 +47,8 @@
     <!-- The script keeps its own one-line-per-run log in
          __BACKUP_DIR__/backup.log; these catch anything else. -->
     <key>StandardOutPath</key>
-    <string>__STOREOPS_DIR__/backend/logs/backup.launchd.log</string>
+    <string>__RETAILOPS_DIR__/backend/logs/backup.launchd.log</string>
     <key>StandardErrorPath</key>
-    <string>__STOREOPS_DIR__/backend/logs/backup.launchd.error.log</string>
+    <string>__RETAILOPS_DIR__/backend/logs/backup.launchd.error.log</string>
 </dict>
 </plist>

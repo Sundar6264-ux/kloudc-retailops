@@ -1,4 +1,4 @@
-# StoreOps DEMO store - Docker Compose service (M2 batch MT13, plan 3.1a / D11).
+# KloudC RetailOps DEMO store - Docker Compose service (M2 batch MT13, plan 3.1a / D11).
 #
 #   cp deploy/demo/demo.env.example deploy/demo/demo.env   # then fill it in (no secrets needed)
 #   docker compose -f deploy/demo/docker-compose.demo.yml up -d --build
@@ -15,14 +15,14 @@
 # lives in /data/demo inside the volume (the entrypoint makes /data/uploads,
 # which the DEMO data folder must not share).
 # Built and tested by GitHub Actions only (no Docker on the store's Mac).
-name: storeops-demo
+name: retailops-demo
 
 services:
   demo:
     build:
       context: ../..
       dockerfile: Dockerfile
-    image: storeops:demo
+    image: retailops:demo
     working_dir: /app/backend
     command:
       - python

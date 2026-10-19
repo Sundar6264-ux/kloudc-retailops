@@ -3,9 +3,9 @@
 # DISABLED until the owner has created the R2 bucket and an R2 API token
 # (scripts/backup/README.md, "Off-site: Litestream to Cloudflare R2").
 #
-# Copy to ~/.config/storeops/litestream.yml and replace every REPLACE_WITH_
+# Copy to ~/.config/retailops/litestream.yml and replace every REPLACE_WITH_
 # values. NO credentials go in this file: run_litestream.sh loads them from
-# ~/.config/storeops/litestream.env (chmod 600), as the environment
+# ~/.config/retailops/litestream.env (chmod 600), as the environment
 # variables LITESTREAM_ACCESS_KEY_ID and LITESTREAM_SECRET_ACCESS_KEY, which
 # Litestream reads by itself.
 #
@@ -13,7 +13,7 @@
 # against https://litestream.io/reference/config/ at install time.
 
 dbs:
-  - path: REPLACE_WITH_STOREOPS_DIR/backend/storeops.db
+  - path: REPLACE_WITH_RETAILOPS_DIR/backend/retailops.db
     replicas:
       - name: r2
         type: s3

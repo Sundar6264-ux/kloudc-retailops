@@ -575,7 +575,7 @@ class InvoiceSubmission(Base):
 
     # A human's manual confirmation that Toast actually finished processing
     # this into a real, closed bill - there is no Purchasing API access and
-    # no webhook (see the StoreOps skill notes), so that event is
+    # no webhook (see the KloudC RetailOps skill notes), so that event is
     # genuinely unobservable by this app on its own. NULL = not yet
     # confirmed. Set only via mark_toast_closed()/the matching route - never
     # inferred from whatsapp_sent/toast_email_sent, which only mean "we
@@ -668,8 +668,8 @@ class ChecklistSubmission(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    # A checklist_definitions.checklist_type ("spice_town_closing",
-    # "street_kitchen_closing", "street_kitchen_fsa", or one an admin created).
+    # A checklist_definitions.checklist_type ("store_closing",
+    # "kitchen_closing", "kitchen_fsa", or one an admin created).
     checklist_type: Mapped[str] = mapped_column(String, index=True)
 
     submitted_by_user_id: Mapped[int] = mapped_column(Integer, index=True)
@@ -973,7 +973,7 @@ class WhatsAppGroup(Base):
     """A WhatsApp group a checklist's summary can be posted to
     (settings.whatsapp_group = `key`; services/whatsapp_groups.py, migration
     0044). The two built-ins (store, kitchen) have chat_id NULL = use the
-    env setting (WHAPI_SPICE_TOWN_/STREET_KITCHEN_CHECKLIST_GROUP_ID); they
+    env setting (WHAPI_STORE_/KITCHEN_CHECKLIST_GROUP_ID); they
     can be renamed or turned off but never deleted. Admins add more from the
     groups the store's WhatsApp number belongs to."""
 

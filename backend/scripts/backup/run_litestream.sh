@@ -7,12 +7,12 @@
 #   run_litestream.sh --check   validate the setup and list what Litestream sees
 #
 # Setup: scripts/backup/README.md. Credentials live ONLY in
-# ~/.config/storeops/litestream.env (chmod 600), never in git or a plist:
+# ~/.config/retailops/litestream.env (chmod 600), never in git or a plist:
 #   LITESTREAM_ACCESS_KEY_ID=...
 #   LITESTREAM_SECRET_ACCESS_KEY=...
 set -euo pipefail
 
-CONF_DIR="${STOREOPS_LITESTREAM_DIR:-$HOME/.config/storeops}"
+CONF_DIR="${RETAILOPS_LITESTREAM_DIR:-${STOREOPS_LITESTREAM_DIR:-$HOME/.config/retailops}}"
 ENV_FILE="$CONF_DIR/litestream.env"
 CONFIG="$CONF_DIR/litestream.yml"
 

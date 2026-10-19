@@ -1,4 +1,4 @@
-"""GET /api/app/branding and the additive store keys (StoreOps M2, MT7;
+"""GET /api/app/branding and the additive store keys (KloudC RetailOps M2, MT7;
 docs/M2_CONTRACT.md section 2)."""
 
 import json
@@ -8,9 +8,9 @@ import re
 import pytest
 
 from tests.conftest import make_user, client_for
+from tests.origin_names import has_origin_name
 from tests.store_fixtures import STORE_CODES, STORES_DIR, fake_store, use_store  # noqa: F401
 
-LEGACY = re.compile(r"spice ?town|street kitchen|vernon|spicetown\.shop|tailcc", re.I)
 KEYS = [
     "schema", "store_code", "name", "short_name", "product", "logo_url", "icon_url", "primary_color",
     "secondary_color", "timezone", "currency", "locale", "address", "phone", "pos_name", "capabilities",
@@ -28,12 +28,12 @@ def test_branding_matches_the_committed_body_for_each_fake_store(anon_client, fa
     body = r.json()
     assert list(body) == KEYS
     assert body == _expected(fake_store)
-    assert not LEGACY.search(r.text)
+    assert not has_origin_name(r.text)
     assert "set-cookie" not in {k.lower() for k in r.headers}
 
 
 def test_branding_types_and_null_rules(anon_client, monkeypatch):
-    use_store(monkeypatch, "STOREOPS_TEST_CLOVER")
+    use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")
     body = anon_client.get("/api/app/branding").json()
     assert body["schema"] == 1 and isinstance(body["capabilities"], list)
     assert body["labels_url"] is None and body["legal"]["terms_url"] is None and body["store_url"]["ios"] is None
@@ -46,11 +46,11 @@ def test_branding_types_and_null_rules(anon_client, monkeypatch):
 
 def test_branding_without_a_store_code_is_the_product(anon_client):
     body = anon_client.get("/api/app/branding").json()
-    assert body["store_code"] is None and body["name"] == "StoreOps" and body["short_name"] == "StoreOps"
+    assert body["store_code"] is None and body["name"] == "KloudC RetailOps" and body["short_name"] == "KloudC RetailOps"
     # Dev: no PUBLIC_HOST and no code -> the request's own address.
     assert body["public_host"] == "http://testserver"
     assert body["logo_url"] == "http://testserver/branding/logo.png"
-    assert not LEGACY.search(json.dumps(body))
+    assert not has_origin_name(json.dumps(body))
 
 
 def test_branding_needs_no_login_and_reads_no_cookie(anon_client, admin_client):
@@ -60,7 +60,7 @@ def test_branding_needs_no_login_and_reads_no_cookie(anon_client, admin_client):
 
 
 def test_branding_etag_and_304(anon_client, monkeypatch):
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     r = anon_client.get("/api/app/branding")
     etag = r.headers["etag"]
     assert re.fullmatch(r'"[0-9a-f]{32}"', etag)
@@ -78,7 +78,7 @@ def test_branding_etag_and_304(anon_client, monkeypatch):
 
 
 def test_branding_never_carries_secrets(anon_client, monkeypatch):
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     from app.config import get_settings
 
     s = get_settings()
@@ -108,20 +108,20 @@ def test_bundled_branding_images(anon_client):
 
 
 def test_me_gains_store_code_and_store_features(db, monkeypatch):
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     admin = make_user(db, "boss2", is_admin=True)
     me = client_for(db, admin).get("/api/auth/me").json()
-    assert me["store_code"] == "STOREOPS_TEST_TOAST"
+    assert me["store_code"] == "RETAILOPS_TEST_TOAST"
     assert me["store_features"] == ["ap_inbox", "labels", "whatsapp", "ai"]
     assert me["pos_name"] == "Toast" and "analytics_reports" in me["capabilities"]
 
 
 def test_me_without_ai_drops_the_ask_bot(db, monkeypatch):
-    use_store(monkeypatch, "STOREOPS_TEST_CLOVER")
+    use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")
     user = make_user(db, "clerk", features=["ask_bot", "open_orders", "sales_insights", "invoice_submission"])
     client = client_for(db, user)
     me = client.get("/api/auth/me").json()
-    assert me["store_code"] == "STOREOPS_TEST_CLOVER" and me["store_features"] == []
+    assert me["store_code"] == "RETAILOPS_TEST_CLOVER" and me["store_features"] == []
     # ask_bot needs the "ai" store feature; sales_insights needs analytics
     # (Clover has none); open_orders is a Clover capability.
     assert me["allowed_features"] == ["open_orders", "invoice_submission"] or set(me["allowed_features"]) == {
@@ -134,16 +134,16 @@ def test_me_without_ai_drops_the_ask_bot(db, monkeypatch):
 def test_app_config_shape_is_unchanged(anon_client):
     body = anon_client.get("/api/app/config").json()
     assert list(body) == ["min_supported_build", "store_url", "pos_name", "capabilities"]
-    assert body["store_url"] == {"ios": None, "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"}
+    assert body["store_url"] == {"ios": None, "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"}
 
 
 def test_push_payload_gains_the_store_code(monkeypatch):
     from app.services import push
 
     assert push.with_store({"type": "x", "route": "reorder"}) == {"type": "x", "route": "reorder"}
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     assert push.with_store({"type": "x", "route": "reorder"}) == {
-        "type": "x", "route": "reorder", "store": "STOREOPS_TEST_TOAST"
+        "type": "x", "route": "reorder", "store": "RETAILOPS_TEST_TOAST"
     }
 
 
@@ -154,7 +154,7 @@ def test_push_send_adds_store_through_the_one_choke_point(monkeypatch):
 
     from app.services import push
 
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     sent = []
 
     class _Msg:
@@ -186,7 +186,7 @@ def test_push_send_adds_store_through_the_one_choke_point(monkeypatch):
     monkeypatch.setattr(push, "_get_app", lambda: object())
     push.send_to_tokens(["tok"], "Title", "Body", {"type": "critical_vendor", "route": "reorder", "vendor": "Acme"})
     assert sent and sent[0].kw["data"] == {
-        "type": "critical_vendor", "route": "reorder", "vendor": "Acme", "store": "STOREOPS_TEST_TOAST"
+        "type": "critical_vendor", "route": "reorder", "vendor": "Acme", "store": "RETAILOPS_TEST_TOAST"
     }
 
 
@@ -194,5 +194,5 @@ def test_committed_branding_fixtures_cover_every_fake_store():
     for code in STORE_CODES:
         body = _expected(code)
         assert list(body) == KEYS and body["store_code"] == code
-        assert not LEGACY.search(json.dumps(body))
-    assert pathlib.Path(STORES_DIR / "STOREOPS_TEST_TOAST.branding.json").is_file()
+        assert not has_origin_name(json.dumps(body))
+    assert pathlib.Path(STORES_DIR / "RETAILOPS_TEST_TOAST.branding.json").is_file()

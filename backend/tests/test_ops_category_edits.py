@@ -30,7 +30,7 @@ def store(db):
     add_snap(db, "parle", "Parle-G Biscuits 800g", "Raja Foods", "Snacks & Savories", "Biscuits & Cookies",
              barcode="8901719101038")
     add_snap(db, "atta", "Aashirvaad Atta 20lb", "Raja Foods", "Flours & Grains", "Atta", barcode=None)
-    add_snap(db, "samosa", "Veg Samosa", None, "Snacks", None, group="STREET KITCHEN", price=None)
+    add_snap(db, "samosa", "Veg Samosa", None, "Snacks", None, group="MARKET KITCHEN", price=None)
     db.commit()
     add_rule(db, "supplier", "Shaz International")
     return db
@@ -132,9 +132,9 @@ def test_migration_0036_adds_audit_columns(tmp_path):
     assert {"created_by", "updated_at", "updated_by"} <= cols()
     con = sqlite3.connect(db_file)
     try:
-        # The seeded Shaz rule survives, with no who (made before 0036).
+        # The seeded example rule survives, with no who (made before 0036).
         assert con.execute("SELECT match_value, created_by FROM category_overrides").fetchall() == [
-            ("Shaz International", None)]
+            ("Sample Biscuit Supplier", None)]
     finally:
         con.close()
     down = subprocess.run([str(alembic), "show", "0036"], cwd=BACKEND, env=env, check=True, capture_output=True,

@@ -39,11 +39,17 @@ def _clean(value) -> str:
 
 
 def product_name(s=None) -> str:
-    return _clean(_get(_s(s), "product_name", "StoreOps")) or "StoreOps"
+    return _clean(_get(_s(s), "product_name", "KloudC RetailOps")) or "KloudC RetailOps"
 
 
 def company_name(s=None) -> str:
     return _clean(_get(_s(s), "company_name", "KloudC LLC")) or "KloudC LLC"
+
+
+def product_credit(s=None) -> str:
+    """"KloudC RetailOps by KloudC LLC" - the small product line under emails
+    and PDFs the product sends for a store."""
+    return f"{product_name(s)} by {company_name(s)}"
 
 
 def store_display_name(s=None) -> str:
@@ -65,7 +71,7 @@ def store_description(s=None) -> str:
 def store_slug(s=None) -> str:
     """The display name as a file-name prefix: lower case, letters and digits
     only ("Test Toast Market" -> "testtoastmarket")."""
-    return re.sub(r"[^a-z0-9]+", "", store_display_name(s).lower()) or "storeops"
+    return re.sub(r"[^a-z0-9]+", "", store_display_name(s).lower()) or "retailops"
 
 
 def store_address(s=None) -> str:
@@ -84,12 +90,12 @@ def store_code(s=None) -> str:
 
 
 def store_host_label(s=None) -> str:
-    """"storeops-test-toast" for STOREOPS_TEST_TOAST; "" without a code."""
+    """"retailops-test-toast" for RETAILOPS_TEST_TOAST; "" without a code."""
     return store_code(s).lower().replace("_", "-")
 
 
 def platform_domain(s=None) -> str:
-    return _clean(_get(_s(s), "platform_domain", "storeops.invalid")).strip(".").lower() or "storeops.invalid"
+    return _clean(_get(_s(s), "platform_domain", "retailops.invalid")).strip(".").lower() or "retailops.invalid"
 
 
 def effective_public_host(s=None, request_base: Optional[str] = None) -> str:
@@ -149,7 +155,7 @@ def play_store_url(s=None) -> str:
     own = _clean(_get(s, "play_store_url"))
     if own:
         return own
-    bundle = _clean(_get(s, "app_bundle_id", "com.kloudc.storeops")) or "com.kloudc.storeops"
+    bundle = _clean(_get(s, "app_bundle_id", "com.kloudc.retailops")) or "com.kloudc.retailops"
     return f"https://play.google.com/store/apps/details?id={bundle}"
 
 
@@ -228,8 +234,8 @@ def whatsapp_role_chat_ids(s=None) -> Dict[str, str]:
     s = _s(s)
     out: Dict[str, str] = {}
     legacy = {
-        "store": _clean(_get(s, "whapi_spice_town_checklist_group_id")),
-        "kitchen": _clean(_get(s, "whapi_street_kitchen_checklist_group_id")),
+        "store": _clean(_get(s, "whapi_store_checklist_group_id")),
+        "kitchen": _clean(_get(s, "whapi_kitchen_checklist_group_id")),
     }
     out.update({k: v for k, v in legacy.items() if v})
     raw = _clean(_get(s, "whatsapp_group_chat_ids"))

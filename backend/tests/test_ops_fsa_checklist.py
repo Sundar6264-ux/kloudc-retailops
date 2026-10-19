@@ -1,4 +1,4 @@
-"""Third Daily Closing Checklist (ops fix S): "Street Kitchen - Food Service
+"""Third Daily Closing Checklist (ops fix S): "Market Kitchen - Food Service
 Associate Closing", built from the owner's Google Form
 (docs/FSA_CHECKLIST_FORM.md). Covers the schema (rows/options/required rules
 copied verbatim), validation (every grid row, at least one box per required
@@ -39,7 +39,7 @@ from tests.conftest import client_for, make_user
 # Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
 pytestmark = pytest.mark.suite_pack
 
-FSA = "street_kitchen_fsa"
+FSA = "kitchen_fsa"
 NY = zoneinfo.ZoneInfo("America/New_York")
 
 
@@ -77,7 +77,7 @@ def all_good_answers():
 def test_schema_matches_the_form():
     s = _schema()
     assert list_schemas()[FSA] is s
-    assert s["title"] == "Street Kitchen - Food Service Associate Closing"
+    assert s["title"] == "Market Kitchen - Food Service Associate Closing"
     assert s["description"].startswith("Complete all closing tasks before leaving.")
     assert s["version"] == 2
     # No "Chef Name" any more (Sep 30): the form starts at "Turn off Heat".
@@ -90,7 +90,7 @@ def test_schema_matches_the_form():
     assert chef["id"] == "chef_name" and chef["label"] == "Chef Name"
     assert chef["required"] is True and chef["input"] == "dropdown"
     assert chef["summary_label"] == "Chef"
-    assert [o["value"] for o in chef["options"]] == ["Amandeep", "Harshitha", "RK", "Sadia", "Other"]
+    assert [o["value"] for o in chef["options"]] == ["Avery", "Hayden", "JL", "Dana", "Other"]
     assert all(o["issue_tag"] is None for o in chef["options"])
     # Otherwise the same form.
     assert [x.get("grids") for x in v1["sections"][1:]] == [x.get("grids") for x in s["sections"]]
@@ -167,16 +167,16 @@ def test_schema_matches_the_form():
 
 
 def test_short_name_differs_from_the_chef_checklist():
-    assert short_name(FSA) == "Street Kitchen FSA"
-    assert short_name("street_kitchen_closing") == "Street Kitchen"
-    assert short_name("spice_town_closing") == "Spice Town"
+    assert short_name(FSA) == "Market Kitchen FSA"
+    assert short_name("kitchen_closing") == "Market Kitchen"
+    assert short_name("store_closing") == "Main Store"
 
 
 def test_schemas_endpoint_lists_it_and_answers_stay_strings(db):
     user = make_user(db, "asha", features=["daily_checklists"])
     r = client_for(db, user).get("/api/checklists/schemas")
     assert r.status_code == 200
-    assert list(r.json()["schemas"]) == ["spice_town_closing", "street_kitchen_closing", FSA]
+    assert list(r.json()["schemas"]) == ["store_closing", "kitchen_closing", FSA]
     r = client_for(db, user).get(f"/api/checklists/schema/{FSA}")
     assert r.status_code == 200 and r.json()["checklist_type"] == FSA
 
@@ -240,11 +240,11 @@ def test_version_1_still_requires_a_chef_from_the_list():
 
 
 def test_summary_details():
-    assert summary_details(FSA, {"chef_name": "RK"}, version=1) == [{"label": "Chef", "value": "RK"}]
-    assert summary_details(FSA, {"chef_name": "RK"}) == []
+    assert summary_details(FSA, {"chef_name": "JL"}, version=1) == [{"label": "Chef", "value": "JL"}]
+    assert summary_details(FSA, {"chef_name": "JL"}) == []
     assert summary_details(FSA, {}, version=1) == []
-    assert summary_details("spice_town_closing", {"chef_name": "RK"}) == []
-    assert summary_details("nope", {"chef_name": "RK"}) == []
+    assert summary_details("store_closing", {"chef_name": "JL"}) == []
+    assert summary_details("nope", {"chef_name": "JL"}) == []
 
 
 def test_invalid_grid_value_rejected():
@@ -320,16 +320,16 @@ def test_real_unusual_text_flags():
 
 
 def test_optional_issue_fields_on_other_checklists_unchanged():
-    """The "None" allowance is only for a REQUIRED text field - Spice Town's
+    """The "None" allowance is only for a REQUIRED text field - Main Store's
     optional one still flags anything typed, as before."""
-    st = get_schema("spice_town_closing")
+    st = get_schema("store_closing")
     answers = {}
     for section in st["sections"]:
         for row in section["grid"]["rows"]:
             answers[row["id"]] = "Yes"
     answers["final_confirmation"] = "x"
     answers["issues_text"] = "No"
-    assert compute_status("spice_town_closing", answers)[0] is False
+    assert compute_status("store_closing", answers)[0] is False
 
 
 # --- Submission, storage, WhatsApp ------------------------------------------------------
@@ -352,7 +352,7 @@ def test_submit_via_api_stores_and_flags(db, no_background_send):
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["checklist_type"] == FSA
-    assert body["checklist_title"] == "Street Kitchen - Food Service Associate Closing"
+    assert body["checklist_title"] == "Market Kitchen - Food Service Associate Closing"
     assert body["submitted_by_name"] == "asha"
     assert "chef_name" not in body["answers"]
     assert body["details"] == []
@@ -393,17 +393,17 @@ def test_submit_missing_checkbox_group_is_400(db, no_background_send):
     assert db.query(ChecklistSubmission).count() == 0
 
 
-def test_whatsapp_goes_to_the_street_kitchen_group(db, monkeypatch):
+def test_whatsapp_goes_to_the_market_kitchen_group(db, monkeypatch):
     """An FSA closing submitted before Sep 30 (no definition_version = version
     1, with the Chef question) still shows its chef."""
-    monkeypatch.setattr(get_settings(), "whapi_street_kitchen_checklist_group_id", "sk-group@g.us")
+    monkeypatch.setattr(get_settings(), "whapi_kitchen_checklist_group_id", "sk-group@g.us")
     sent = []
     monkeypatch.setattr(checklist_submission, "send_whatsapp_message", lambda text, to=None: sent.append((to, text)))
     entry = ChecklistSubmission(
         checklist_type=FSA,
         submitted_by_user_id=1,
         submitted_by_name="asha",
-        answers_json=json.dumps(dict(all_good_answers(), chef_name="RK")),
+        answers_json=json.dumps(dict(all_good_answers(), chef_name="JL")),
         all_clear=False,
         issue_summary="Not Turned Off:\n  - Oven (Have you Turned Off?)",
         answers_hash="h",
@@ -415,8 +415,8 @@ def test_whatsapp_goes_to_the_street_kitchen_group(db, monkeypatch):
     assert len(sent) == 1
     to, text = sent[0]
     assert to == "sk-group@g.us"
-    assert "Street Kitchen - Food Service Associate Closing" in text
-    assert "\nasha · Sep 28, 9:05 PM\nChef: RK\n\n" in text
+    assert "Market Kitchen - Food Service Associate Closing" in text
+    assert "\nasha · Sep 28, 9:05 PM\nChef: JL\n\n" in text
     # The answers don't flag anything, so the text falls back to the stored summary.
     assert text.endswith("\n\nNot Turned Off:\n  - Oven (Have you Turned Off?)")
     assert entry.whatsapp_sent is True
@@ -427,19 +427,19 @@ def test_whatsapp_all_clear_shows_chef_and_other_checklists_have_no_chef_line(db
         checklist_type=FSA,
         submitted_by_user_id=1,
         submitted_by_name="asha",
-        answers_json=json.dumps(dict(all_good_answers(), chef_name="RK")),
+        answers_json=json.dumps(dict(all_good_answers(), chef_name="JL")),
         all_clear=True,
         answers_hash="h",
         created_at=dt.datetime(2026, 9, 29, 1, 5, tzinfo=dt.timezone.utc),
     )
     text = checklist_submission._whatsapp_text(entry)
-    assert "asha · Sep 28, 9:05 PM\nChef: RK\n\n*All done - no issues.*" in text
+    assert "asha · Sep 28, 9:05 PM\nChef: JL\n\n*All done - no issues.*" in text
     # A new FSA closing (version 2) has no chef line, even if an old app sent one.
     entry.definition_version = 2
     text = checklist_submission._whatsapp_text(entry)
     assert "Chef:" not in text and "\nasha · Sep 28, 9:05 PM\n\n*All done" in text
     entry.definition_version = None
-    entry.checklist_type = "street_kitchen_closing"
+    entry.checklist_type = "kitchen_closing"
     assert "Chef:" not in checklist_submission._whatsapp_text(entry)
     assert checklist_submission.submission_out(entry)["details"] == []
 
@@ -474,18 +474,18 @@ def test_one_alert_lists_every_missing_checklist(db):
     assert len(alerts) == 1
     body = alerts[0].body
     assert body == (
-        "Not submitted yet: Spice Town - Daily Closing Checklist, "
-        "Street Kitchen – Chef Closing Checklist and "
-        "Street Kitchen - Food Service Associate Closing"
+        "Not submitted yet: Main Store - Daily Closing Checklist, "
+        "Market Kitchen – Chef Closing Checklist and "
+        "Market Kitchen - Food Service Associate Closing"
     )
 
 
 def test_alert_lists_only_the_fsa_when_it_alone_is_missing(db):
-    _submit_row(db, "spice_town_closing", dt.datetime(2026, 9, 28, 21, 0, tzinfo=NY))
-    _submit_row(db, "street_kitchen_closing", dt.datetime(2026, 9, 28, 21, 10, tzinfo=NY))
+    _submit_row(db, "store_closing", dt.datetime(2026, 9, 28, 21, 0, tzinfo=NY))
+    _submit_row(db, "kitchen_closing", dt.datetime(2026, 9, 28, 21, 10, tzinfo=NY))
     alerts = closing_checklist_alerts(db, NIGHT)
     assert len(alerts) == 1
-    assert alerts[0].body == "Not submitted yet: Street Kitchen - Food Service Associate Closing"
+    assert alerts[0].body == "Not submitted yet: Market Kitchen - Food Service Associate Closing"
 
 
 def test_no_alert_once_all_three_are_in(db):

@@ -17,7 +17,7 @@ depends_on = None
 
 def upgrade() -> None:
     # Unique constraint inline on create_table - SQLite can't ALTER one in
-    # afterwards (see the spicetown skill's alembic/SQLite gotcha).
+    # afterwards (see the origin store's operating notes' alembic/SQLite gotcha).
     op.create_table(
         "vendor_order_skips",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),

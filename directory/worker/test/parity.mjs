@@ -19,7 +19,7 @@ for (const step of cases.steps) {
     continue;
   }
   requests += 1;
-  const request = new Request(`https://directory.storeops.invalid${step.path}`, { headers: step.headers });
+  const request = new Request(`https://directory.retailops.invalid${step.path}`, { headers: step.headers });
   const response = await directory.fetch(request, {}, {});
   const body = await response.text();
   const where = `#${requests} ${step.path}`;

@@ -43,9 +43,9 @@ def upgrade() -> None:
     op.bulk_insert(
         table,
         [
-            {"key": "store", "label": "Spice Town staff group", "chat_id": None, "builtin": True,
+            {"key": "store", "label": "Main Store staff group", "chat_id": None, "builtin": True,
              "active": True, "created_at": now, "created_by": "migration 0044"},
-            {"key": "kitchen", "label": "Street Kitchen staff group", "chat_id": None, "builtin": True,
+            {"key": "kitchen", "label": "Market Kitchen staff group", "chat_id": None, "builtin": True,
              "active": True, "created_at": now, "created_by": "migration 0044"},
         ],
     )

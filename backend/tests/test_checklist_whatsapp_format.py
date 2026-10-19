@@ -12,9 +12,9 @@ from app.services import checklist_engine as engine
 from app.services import checklist_submission
 from app.services.checklist_schemas import checklist_title, items_schema
 
-FSA = "street_kitchen_fsa"
-CHEF = "street_kitchen_closing"
-STORE = "spice_town_closing"
+FSA = "kitchen_fsa"
+CHEF = "kitchen_closing"
+STORE = "store_closing"
 # Oct 1 05:40 UTC = Oct 1, 1:40 AM EDT
 CREATED = dt.datetime(2026, 10, 1, 5, 40, tzinfo=dt.timezone.utc)
 
@@ -25,7 +25,7 @@ def good(checklist_type: str, version=None) -> dict:
     for _, item in engine.iter_items(items_schema(checklist_type, version)):
         itype = item.get("type")
         if item.get("summary_label"):
-            answers[item["id"]] = "RK"
+            answers[item["id"]] = "JL"
         elif itype == "multiple_choice_grid":
             for row in item["rows"]:
                 answers[engine.row_answer_key(item, row)] = item["options"][0]["value"]
@@ -63,15 +63,15 @@ def text_of(entry: ChecklistSubmission) -> str:
 
 
 def test_prod_example_grouped_under_sections(db):
-    """Submission 9 in prod (Sadia, public link, Kitchen Closing - Service)."""
+    """Submission 9 in prod (Dana, public link, Kitchen Closing - Service)."""
     answers = {"g0_0": "Yes", "g0_1": "Yes", "g0_2": "Yes", "g0_3": "Yes", "g0_4": "Yes", "g0_5": "Yes",
                "g0_6": "Yes", "g0_7": "Yes", "g0_8": "Yes", "g1_0": "Done", "g1_1": "Not Applicable",
                "c2_1": "Done", "c0_1": "Done", "issues_text": "TEST", "c1_6": "Done"}
-    entry = submission(FSA, answers, version=2, public=True, name="Sadia")
+    entry = submission(FSA, answers, version=2, public=True, name="Dana")
     old_summary = entry.issue_summary
     assert text_of(entry) == (
         f"⚠️ *{checklist_title(FSA)}*\n"
-        "Sadia (public link) · Oct 1, 1:40 AM\n\n"
+        "Dana (public link) · Oct 1, 1:40 AM\n\n"
         "*15 items not done*\n\n"
         "*Wrap Up Leftovers & Sauce Bottles*\n"
         "❌ Discard old or mushy vegetables\n"
@@ -128,8 +128,8 @@ def test_all_clear(db):
     entry = submission(FSA, good(FSA, 2), version=2)
     assert entry.all_clear is True
     assert text_of(entry) == f"✅ *{checklist_title(FSA)}*\nasha · Oct 1, 1:40 AM\n\n*All done - no issues.*"
-    public = submission(STORE, good(STORE), public=True, name="Sai Durga")
-    assert text_of(public) == f"✅ *{checklist_title(STORE)}*\nSai Durga (public link) · Oct 1, 1:40 AM\n\n*All done - no issues.*"
+    public = submission(STORE, good(STORE), public=True, name="Sasha Durga")
+    assert text_of(public) == f"✅ *{checklist_title(STORE)}*\nSasha Durga (public link) · Oct 1, 1:40 AM\n\n*All done - no issues.*"
 
 
 def test_only_a_note(db):
@@ -144,11 +144,11 @@ def test_only_a_note(db):
 def test_old_fsa_shows_chef_under_the_name(db):
     """Version 1 of the FSA closing asked for the chef."""
     answers = good(FSA, 1)
-    assert answers["chef_name"] == "RK"
+    assert answers["chef_name"] == "JL"
     entry = submission(FSA, answers, version=None)  # NULL = version 1
     assert text_of(entry) == (
         f"✅ *{checklist_title(FSA)}*\n"
-        "asha · Oct 1, 1:40 AM\nChef: RK\n\n*All done - no issues.*"
+        "asha · Oct 1, 1:40 AM\nChef: JL\n\n*All done - no issues.*"
     )
 
 

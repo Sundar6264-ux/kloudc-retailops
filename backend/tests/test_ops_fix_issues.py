@@ -958,7 +958,7 @@ def test_stale_background_refresh_does_not_overwrite_a_newer_entry(store, monkey
 
 def test_cache_miss_uses_category_rules_committed_after_latest_was_loaded(store):
     """A request loads the inventory, then a category edit (in another
-    request) moves an item to Street Kitchen and clears the cache: the
+    request) moves an item to Market Kitchen and clears the cache: the
     forecast this request caches must already leave that item out."""
     from app.models import CategoryOverride
     from app.services.fix_issues import EXCLUDED_CATEGORY_GROUPS
@@ -980,7 +980,7 @@ def test_cache_miss_uses_category_rules_committed_after_latest_was_loaded(store)
 
 def test_event_menu_food_is_left_out_like_the_kitchen(store):
     """Toast's "Event Menu" group (in-store food for events, since Sep 28)
-    has no barcodes or shelf stock - like Street Kitchen / Catering Menu."""
+    has no barcodes or shelf stock - like Market Kitchen / Catering Menu."""
     snap(store, "ev-samosa", "Veg Samosa", None, group="Event Menu", barcode=None, supplier=None)
     for d in (1, 2):
         sale(store, "ev-samosa", ago(d), 30)

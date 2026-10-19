@@ -26,9 +26,9 @@ DEFAULTS: Dict[str, Any] = {
     "pg_admin_url": "",
     "platform_public_url": "",
     "platform_login_code": "PLATFORM",
-    "storeops_secret_keys": "",
-    "storeops_secret_key": "",
-    "storeops_secret_key_file": ".secrets/storeops_keyring",
+    "retailops_secret_keys": "",
+    "retailops_secret_key": "",
+    "retailops_secret_key_file": ".secrets/retailops_keyring",
     "signup_enabled": True,
     "signup_rate_per_hour": 5,
     "signup_rate_overall_per_hour": 50,
@@ -45,7 +45,7 @@ DEFAULTS: Dict[str, Any] = {
     "platform_write_rate_per_minute": 60,
     "integration_test_rate_per_minute": 5,
     # Existing Settings fields read here too (same rule).
-    "platform_domain": "storeops.invalid",
+    "platform_domain": "retailops.invalid",
     "directory_client_ip_header": "",
     "directory_rate_per_minute": 10,
     "directory_rate_per_hour": 100,
@@ -53,7 +53,7 @@ DEFAULTS: Dict[str, Any] = {
     "uploads_root": "uploads",
     "session_lifetime_days": 14,
     "terms_url": "",
-    "product_name": "StoreOps",
+    "product_name": "KloudC RetailOps",
 }
 
 _TRUE = {"1", "true", "yes", "on"}
@@ -102,7 +102,7 @@ def platform_public_url() -> str:
     url = str(pget("platform_public_url") or "").strip().rstrip("/")
     if url:
         return url
-    return f"https://app.{str(pget('platform_domain') or 'storeops.invalid').strip()}"
+    return f"https://app.{str(pget('platform_domain') or 'retailops.invalid').strip()}"
 
 
 def dedicated_enabled() -> bool:

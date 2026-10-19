@@ -44,7 +44,7 @@ const LAYOUTS = [
   { key: "board", label: "Board" },
   { key: "stats", label: "Stats", adminOnly: true },
 ];
-const LAYOUT_KEY = "storeops_tasks_layout";
+const LAYOUT_KEY = "retailops_tasks_layout";
 
 function savedLayout() {
   try {

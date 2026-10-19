@@ -1,6 +1,6 @@
 """Dialect helpers: the few places where SQLite and PostgreSQL SQL differ.
 
-StoreOps runs on PostgreSQL in production (platform contract P2); SQLite is
+KloudC RetailOps runs on PostgreSQL in production (platform contract P2); SQLite is
 kept for quick unit runs and for the M2 single-instance stores. App code
 stays dialect-neutral by going through these helpers instead of importing
 `sqlalchemy.dialects.sqlite` / `.postgresql` directly.

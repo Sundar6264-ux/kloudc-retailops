@@ -81,7 +81,7 @@ def no_real_sends(monkeypatch):
 @pytest.fixture
 def gmail(monkeypatch):
     settings = get_settings()
-    monkeypatch.setattr(settings, "gmail_address", "orders@spicetown.test")
+    monkeypatch.setattr(settings, "gmail_address", "orders@mainstore.test")
     monkeypatch.setattr(settings, "gmail_app_password", "app-password")
     monkeypatch.setattr(svc.smtplib, "SMTP_SSL", FakeSMTP)
     return FakeSMTP
@@ -236,12 +236,12 @@ def test_preview_shows_recipients_subject_body_and_pdf(db, buyer, gmail):
     assert len(p["contacts"]) == 4
     assert p["item_count"] == 2 and p["zero_qty_lines"] == 1 and p["total_qty"] == 7
     assert [i["name"] for i in p["items"]] == ["Toor Dal 4lb", "Rice 20lb"]
-    assert p["subject"].startswith("Purchase Order - StoreOps - Raja Foods - ")  # STORE_NAME unset: the product
+    assert p["subject"].startswith("Purchase Order - KloudC RetailOps - Raja Foods - ")  # STORE_NAME unset: the product
     assert "Hello Raja Foods team," in p["body_template"]
     assert "2 items, 7 cases in total" in p["body_template"]
     assert p["note_marker"] in p["body_template"]
     assert p["pdf_filename"].startswith("purchase-order-raja-foods-") and p["pdf_filename"].endswith(".pdf")
-    assert p["email_configured"] is True and p["from_address"] == "orders@spicetown.test"
+    assert p["email_configured"] is True and p["from_address"] == "orders@mainstore.test"
     assert p["whatsapp"]["enabled"] is False and "402" in p["whatsapp"]["reason"]
     assert p["whatsapp"]["contacts"][0]["label"] == "Ravi - +18605550101"
     assert p["can_manage_contacts"] is False
@@ -299,7 +299,7 @@ def test_send_emails_the_pdf_marks_placed_and_clears_only_that_vendor(db, admin_
 
     assert len(gmail.sent) == 1
     sent = gmail.sent[0]
-    assert sent["from"] == "orders@spicetown.test"
+    assert sent["from"] == "orders@mainstore.test"
     assert sent["to"] == ["sales@raja.test", "office@raja.test"]
     msg, text, pdfs = _email_parts(sent["message"])
     assert msg["Subject"] == s["subject"]
@@ -604,23 +604,23 @@ def test_migration_0050_matches_the_models_and_downgrades(tmp_path):
 
 
 def test_po_text_uses_the_store_settings(monkeypatch):
-    """StoreOps M2: name, address and phone come from the store settings;
+    """KloudC RetailOps M2: name, address and phone come from the store settings;
     blank lines are left out."""
     from app.services import po_send
     from tests.store_fixtures import use_store
 
-    use_store(monkeypatch, "STOREOPS_TEST_TOAST")
+    use_store(monkeypatch, "RETAILOPS_TEST_TOAST")
     subject, body = po_send.compose("Acme Foods", [{"name": "x", "qty": 2}])
     assert subject.startswith("Purchase Order - Test Toast Market - Acme Foods - ")
     assert "Please find attached Test Toast Market's purchase order" in body
-    assert body.endswith("Thank you,\nTest Toast Market\n100 Example Ave, Springfield, IL 62701\n(555) 010-0100")
+    assert body.endswith("Thank you,\nTest Toast Market\n100 Example Ave, Springfield, IL 62701\n(555) 010-0100" + "\n\n--\nSent with KloudC RetailOps by KloudC LLC")
     assert po_send.whatsapp_caption("Acme Foods", [{"qty": 2}]).endswith("Please confirm. (555) 010-0100")
     from app.config import get_settings
 
     monkeypatch.setattr(get_settings(), "store_phone", "")
     monkeypatch.setattr(get_settings(), "store_address", "")
     subject, body = po_send.compose("Acme Foods", [{"name": "x", "qty": 2}])
-    assert body.endswith("Thank you,\nTest Toast Market")
+    assert body.endswith("Thank you,\nTest Toast Market" + "\n\n--\nSent with KloudC RetailOps by KloudC LLC")
     assert po_send.whatsapp_caption("Acme Foods", [{"qty": 2}]).endswith("Please confirm.")
 
 

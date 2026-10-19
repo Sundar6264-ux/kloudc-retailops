@@ -12,7 +12,7 @@ WORK = pathlib.Path(os.environ["REG_WORK"]).resolve()
 from app.config import get_settings  # noqa: E402
 
 db_path = pathlib.Path(get_settings().database_url.replace("sqlite:///", "")).resolve()
-assert str(db_path).startswith(str(WORK) + "/") and "spicetown-backend" not in str(db_path), db_path
+assert str(db_path).startswith(str(WORK) + "/") and not (os.environ.get("ORIGIN_LIVE_DIR") and str(db_path).startswith(os.environ["ORIGIN_LIVE_DIR"])), db_path
 
 from app.auth import hash_password  # noqa: E402
 from app.db import SessionLocal  # noqa: E402

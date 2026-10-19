@@ -1,5 +1,5 @@
 """A "blank store" leaves no legacy store names in what the server sends out
-(StoreOps M2, MT7/MT8 grep test; docs/M2_CONTRACT.md 9.2).
+(KloudC RetailOps M2, MT7/MT8 grep test; docs/M2_CONTRACT.md 9.2).
 
 Default settings (nothing store-specific set) and the default store pack:
 every read endpoint the parity harness records, the public pages, and the
@@ -17,13 +17,13 @@ import re
 import pytest
 
 from tests.conftest import client_for, make_user
+from tests.origin_names import find_origin_names
 
-LEGACY = re.compile(r"spice ?town|street kitchen|vernon|spicetown\.shop|tailcc|860[-) ]+237", re.I)
 
 
 def _assert_clean(label, text):
-    m = LEGACY.search(text or "")
-    assert m is None, f"{label}: {m.group(0)!r} in {text[max(0, m.start() - 80): m.end() + 80]!r}"
+    hits = find_origin_names(text or "")
+    assert not hits, f"{label}: origin-store name on line {hits[0][0]}: {hits[0][1][:200]!r}"
 
 
 @pytest.mark.pack_checklists
@@ -74,11 +74,11 @@ def test_po_pdf_email_and_whatsapp_text():
 
     pdf = po_export.export_simple_po_pdf("Acme Foods", [{"name": "Rice 10 lb", "supplier_item_id": "R1", "qty": 2}])
     text = "\n".join(page.extract_text() for page in PdfReader(io.BytesIO(pdf)).pages)
-    assert "StoreOps" in text  # the effective store name (no STORE_NAME set)
+    assert "KloudC RetailOps" in text  # the effective store name (no STORE_NAME set)
     _assert_clean("PO PDF", text)
     subject, body = po_send.compose("Acme Foods", [{"name": "x", "qty": 1}])
     _assert_clean("PO email", subject + body)
-    assert body.rstrip().endswith("StoreOps")  # no blank address / phone lines
+    assert body.endswith("Thank you,\nKloudC RetailOps" + "\n\n--\nSent with KloudC RetailOps by KloudC LLC")  # no blank address / phone lines
     _assert_clean("PO WhatsApp", po_send.whatsapp_caption("Acme Foods", [{"qty": 1}]))
 
 
@@ -92,14 +92,14 @@ def test_prompts_rules_and_names():
     _assert_clean("digest prompt", weekly_digest.system_prompt())
     _assert_clean("team rules", rules.RULES_TEXT)
     assert rules.RULES_TEXT.endswith("ask your manager.")
-    assert tasks_service.SYSTEM_NAME == "StoreOps" == invoice_submission.TRANSFER_DEFAULT_VENDOR
-    assert "StoreOps app" in reports.MARGIN_REMOVED_DETAIL
+    assert tasks_service.SYSTEM_NAME == "KloudC RetailOps" == invoice_submission.TRANSFER_DEFAULT_VENDOR
+    assert "KloudC RetailOps app" in reports.MARGIN_REMOVED_DETAIL
     assert recurrence.DEFAULT_TIMEZONE == "America/New_York"  # the TOAST_TIMEZONE default
 
 
 def test_toast_pdf_producer_and_sales_export_name(admin_client):
     r = admin_client.get("/api/sales/export", params={"start": "2026-01-01", "end": "2026-01-02", "format": "csv"})
-    assert 'filename="storeops-sales-2026-01-01_to_2026-01-02.csv"' in r.headers["content-disposition"]
+    assert 'filename="kloudcretailops-sales-2026-01-01_to_2026-01-02.csv"' in r.headers["content-disposition"]
 
 
 def test_invoice_whatsapp_and_email_text(db):

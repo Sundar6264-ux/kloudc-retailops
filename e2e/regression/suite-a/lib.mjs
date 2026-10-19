@@ -39,7 +39,7 @@ export function done() {
 // ---------- the copy ----------
 // sqlite3 on the COPY only (refuses anything outside REG_WORK).
 export function sql(q) {
-  if (!DB.startsWith(WORK + "/") || DB.includes("spicetown-backend")) throw new Error("not the copy");
+  if (!DB.startsWith(WORK + "/") || (process.env.ORIGIN_LIVE_DIR && DB.startsWith(process.env.ORIGIN_LIVE_DIR))) throw new Error("not the copy");
   return execFileSync("sqlite3", ["-separator", "|", DB, q], { encoding: "utf8" }).trim();
 }
 export const q1 = (q) => sql(q).split("\n")[0] || "";

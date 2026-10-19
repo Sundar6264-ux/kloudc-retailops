@@ -75,7 +75,7 @@ test("the last Store ID is remembered, and storage errors never break the page",
 test("the field starts with ?store=, then the remembered one, then the server's own", () => {
   assert.equal(initialStoreId({ queryStore: "abc_1", remembered: "DEMO", brandingCode: "XYZ" }), "ABC_1");
   assert.equal(initialStoreId({ queryStore: "!", remembered: "DEMO", brandingCode: "XYZ" }), "DEMO");
-  assert.equal(initialStoreId({ brandingCode: "storeops-test-toast" }), "STOREOPS_TEST_TOAST");
+  assert.equal(initialStoreId({ brandingCode: "retailops-test-toast" }), "RETAILOPS_TEST_TOAST");
   assert.equal(initialStoreId({}), "");
   assert.equal(initialStoreId(), "");
 });
@@ -102,9 +102,9 @@ test("login errors: 401 / 403 suspended and not ready / 409 moved / 429 / networ
   assert.equal(loginErrorMessage(apiError(403, { detail: { error: "store_suspended" } })).message, LOGIN_MESSAGES.suspended);
   assert.equal(loginErrorMessage(apiError(403, { error: "store_not_ready" })).kind, "not_ready");
 
-  const moved = loginErrorMessage(apiError(409, { error: "store_moved", api_base_url: "https://xyz.storeops.example" }));
+  const moved = loginErrorMessage(apiError(409, { error: "store_moved", api_base_url: "https://xyz.retailops.example" }));
   assert.equal(moved.kind, "moved");
-  assert.equal(moved.apiBaseUrl, "https://xyz.storeops.example");
+  assert.equal(moved.apiBaseUrl, "https://xyz.retailops.example");
   assert.equal(loginErrorMessage(apiError(409, { error: "store_mismatch" })).kind, "mismatch");
 
   const locked = loginErrorMessage(apiError(429, { error: "locked", retry_after: 840 }));
@@ -119,10 +119,10 @@ test("login errors: 401 / 403 suspended and not ready / 409 moved / 429 / networ
 });
 
 test("a moved store's login link is only ever an https origin", () => {
-  assert.equal(movedLoginUrl("https://xyz.storeops.example", "xyz"), "https://xyz.storeops.example/#/login?store=XYZ");
-  assert.equal(movedLoginUrl("https://xyz.storeops.example/", "XYZ"), "https://xyz.storeops.example/#/login?store=XYZ");
+  assert.equal(movedLoginUrl("https://xyz.retailops.example", "xyz"), "https://xyz.retailops.example/#/login?store=XYZ");
+  assert.equal(movedLoginUrl("https://xyz.retailops.example/", "XYZ"), "https://xyz.retailops.example/#/login?store=XYZ");
   assert.equal(movedLoginUrl("http://127.0.0.1:8001", "XYZ"), "http://127.0.0.1:8001/#/login?store=XYZ");
-  assert.equal(movedLoginUrl("http://xyz.storeops.example", "XYZ"), null, "plain http");
+  assert.equal(movedLoginUrl("http://xyz.retailops.example", "XYZ"), null, "plain http");
   assert.equal(movedLoginUrl("javascript:alert(1)", "XYZ"), null);
   assert.equal(movedLoginUrl("https://u:p@xyz.example", "XYZ"), null);
   assert.equal(movedLoginUrl("https://xyz.example/evil", "XYZ"), null);

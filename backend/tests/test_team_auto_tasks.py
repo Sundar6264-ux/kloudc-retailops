@@ -114,45 +114,45 @@ def test_checklist_tasks_created_once_for_the_team(db, manager, managers, pushes
     auto_tasks.auto_tasks_tick(db, NIGHT + dt.timedelta(minutes=5))
     tasks = auto(db, "checklist")
     assert [t.title for t in tasks] == [
-        "Submit the Spice Town closing checklist",
-        "Submit the Street Kitchen closing checklist",
-        "Submit the Street Kitchen FSA closing checklist",
+        "Submit the Main Store closing checklist",
+        "Submit the Market Kitchen closing checklist",
+        "Submit the Market Kitchen FSA closing checklist",
     ]
     assert {t.source_id for t in tasks} == {
-        "spice_town_closing:2026-09-28",
-        "street_kitchen_closing:2026-09-28",
-        "street_kitchen_fsa:2026-09-28",
+        "store_closing:2026-09-28",
+        "kitchen_closing:2026-09-28",
+        "kitchen_fsa:2026-09-28",
     }
     for t in tasks:
         assert t.assignee_team_id == managers.id
         # Normal priority, and due no later than quiet hours start (10 PM):
         # nothing about it pushes at night.
         assert t.priority == "normal"
-        assert t.created_by_name == "StoreOps"  # the store name (STORE_NAME unset: the product)
+        assert t.created_by_name == "KloudC RetailOps"  # the store name (STORE_NAME unset: the product)
         assert t.due_at == ny(2026, 9, 28, 22, 0).astimezone(dt.timezone.utc)
     # Silent: the single 9:30 PM closing-checklist alert covers them.
     assert pushes == []
 
 
 def test_only_the_missing_checklist_gets_a_task(db, manager):
-    submit_checklist(db, "spice_town_closing", ny(2026, 9, 28, 21, 0))
+    submit_checklist(db, "store_closing", ny(2026, 9, 28, 21, 0))
     auto_tasks.auto_tasks_tick(db, NIGHT)
     assert [t.source_id for t in auto(db)] == [
-        "street_kitchen_closing:2026-09-28",
-        "street_kitchen_fsa:2026-09-28",
+        "kitchen_closing:2026-09-28",
+        "kitchen_fsa:2026-09-28",
     ]
 
 
 def test_checklist_task_closes_when_submitted(db, manager):
     auto_tasks.auto_tasks_tick(db, NIGHT)
-    submit_checklist(db, "street_kitchen_closing", ny(2026, 9, 28, 21, 50))
+    submit_checklist(db, "kitchen_closing", ny(2026, 9, 28, 21, 50))
     auto_tasks.auto_tasks_tick(db, ny(2026, 9, 28, 21, 55))
     by_source = {t.source_id: t for t in auto(db)}
-    done = by_source["street_kitchen_closing:2026-09-28"]
+    done = by_source["kitchen_closing:2026-09-28"]
     assert done.status == "done"
-    assert done.completed_by_name == "StoreOps"  # the store name (STORE_NAME unset: the product)
+    assert done.completed_by_name == "KloudC RetailOps"  # the store name (STORE_NAME unset: the product)
     assert done.completion_note == "Checklist submitted by ravi"
-    assert by_source["spice_town_closing:2026-09-28"].status == "open"
+    assert by_source["store_closing:2026-09-28"].status == "open"
     # Closed stays closed - a later run doesn't recreate it.
     auto_tasks.auto_tasks_tick(db, ny(2026, 9, 28, 22, 30))
     assert len(auto(db)) == 3
@@ -164,9 +164,9 @@ def test_team_members_see_auto_tasks_in_the_api(db, manager):
     r = client.get("/api/team/tasks", params={"view": "mine"})
     assert r.status_code == 200, r.text
     titles = [t["title"] for t in r.json()["items"]]
-    assert "Submit the Spice Town closing checklist" in titles
+    assert "Submit the Main Store closing checklist" in titles
     item = r.json()["items"][0]
-    assert item["created_by"]["name"] == "StoreOps"  # the store name (STORE_NAME unset: the product)
+    assert item["created_by"]["name"] == "KloudC RetailOps"  # the store name (STORE_NAME unset: the product)
     assert item["can"]["complete"] is True
     # A member can complete it by hand too.
     r = client.post(f"/api/team/tasks/{item['id']}/complete")
@@ -336,8 +336,8 @@ def test_order_already_placed_gets_no_task(db, manager, calendar, monkeypatch):
 @pytest.fixture
 def group(monkeypatch):
     s = get_settings()
-    monkeypatch.setattr(s, "whapi_spice_town_checklist_group_id", "st-group@g.us")
-    monkeypatch.setattr(s, "whapi_street_kitchen_checklist_group_id", "sk-group@g.us")
+    monkeypatch.setattr(s, "whapi_store_checklist_group_id", "st-group@g.us")
+    monkeypatch.setattr(s, "whapi_kitchen_checklist_group_id", "sk-group@g.us")
 
 
 def test_whatsapp_fallback_off_by_default(db, manager, group, whatsapp):
@@ -354,10 +354,10 @@ def test_whatsapp_fallback_when_a_member_has_no_phone(db, manager, managers, gro
     auto_tasks.auto_tasks_tick(db, NIGHT)
     auto_tasks.auto_tasks_tick(db, NIGHT + dt.timedelta(minutes=5))
     # One message per task (one per location), never repeated.
-    # The FSA closing is a Street Kitchen checklist - same group.
+    # The FSA closing is a Market Kitchen checklist - same group.
     assert [to for to, _ in whatsapp] == ["st-group@g.us", "sk-group@g.us", "sk-group@g.us"]
     text = whatsapp[0][1]
-    assert "Submit the Spice Town closing checklist" in text
+    assert "Submit the Main Store closing checklist" in text
     assert "meena" in text and "arun" not in text
 
 
@@ -371,8 +371,8 @@ def test_no_whatsapp_when_everyone_has_a_phone(db, manager, group, whatsapp, mon
 
 def test_no_whatsapp_without_a_group(db, manager, whatsapp, monkeypatch):
     monkeypatch.setattr(get_settings(), "team_whatsapp_fallback", True)
-    monkeypatch.setattr(get_settings(), "whapi_spice_town_checklist_group_id", "")
-    monkeypatch.setattr(get_settings(), "whapi_street_kitchen_checklist_group_id", "")
+    monkeypatch.setattr(get_settings(), "whapi_store_checklist_group_id", "")
+    monkeypatch.setattr(get_settings(), "whapi_kitchen_checklist_group_id", "")
     auto_tasks.auto_tasks_tick(db, NIGHT)
     assert whatsapp == []
     assert len(auto(db)) == 3, "tasks are still created"
@@ -463,7 +463,7 @@ def test_cant_do_on_auto_task_goes_to_admins_and_team_leads(db, manager, manager
 def test_admin_reopened_auto_task_is_not_closed_again(db, manager):
     boss = make_user(db, "boss", is_admin=True)
     auto_tasks.auto_tasks_tick(db, NIGHT)
-    submit_checklist(db, "street_kitchen_closing", ny(2026, 9, 28, 21, 50))
+    submit_checklist(db, "kitchen_closing", ny(2026, 9, 28, 21, 50))
     auto_tasks.auto_tasks_tick(db, ny(2026, 9, 28, 21, 55))
     done = [t for t in auto(db) if t.status == "done"][0]
     assert client_for(db, boss).post(f"/api/team/tasks/{done.id}/reopen").status_code == 200
@@ -472,14 +472,14 @@ def test_admin_reopened_auto_task_is_not_closed_again(db, manager):
     assert db.get(Task, done.id).status == "open"
 
 
-def test_auto_closed_task_shows_spice_town_as_finisher(db, manager):
+def test_auto_closed_task_shows_main_store_as_finisher(db, manager):
     auto_tasks.auto_tasks_tick(db, NIGHT)
-    submit_checklist(db, "street_kitchen_closing", ny(2026, 9, 28, 21, 50))
+    submit_checklist(db, "kitchen_closing", ny(2026, 9, 28, 21, 50))
     auto_tasks.auto_tasks_tick(db, ny(2026, 9, 28, 21, 55))
     done = [t for t in auto(db) if t.status == "done"][0]
     out = client_for(db, manager).get(f"/api/team/tasks/{done.id}").json()
-    assert out["completed_by"] == {"id": None, "name": "StoreOps"}
-    assert out["events"][-1]["user_name"] == "StoreOps"
+    assert out["completed_by"] == {"id": None, "name": "KloudC RetailOps"}
+    assert out["events"][-1]["user_name"] == "KloudC RetailOps"
 
 
 def test_order_below_vendor_minimum_gets_no_task(db, manager, calendar, monkeypatch):
@@ -545,14 +545,14 @@ def test_checklist_auto_task_never_pushes_on_its_own(db):
     from app.team.tasks_models import Task
 
     task = Task(
-        title="Submit the Spice Town closing checklist",
+        title="Submit the Main Store closing checklist",
         requires="none",
         priority="normal",
         status="open",
         created_by_user_id=svc.SYSTEM_USER_ID,
-        created_by_name="Spice Town",
+        created_by_name="Main Store",
         source_type="checklist",
-        source_id="spice_town_closing:2026-09-28",
+        source_id="store_closing:2026-09-28",
     )
     assert svc.is_silent(task)
     task.source_type = "invoice"

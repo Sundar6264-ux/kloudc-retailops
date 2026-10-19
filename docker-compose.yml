@@ -1,4 +1,4 @@
-# One StoreOps store: the store container plus an optional Litestream sidecar.
+# One KloudC RetailOps store: the store container plus an optional Litestream sidecar.
 #
 #   cp .env.example .env                       # the store's settings (never in git)
 #   docker compose run --rm --no-deps store sh -c \
@@ -14,13 +14,13 @@
 services:
   store:
     build: .
-    image: ${STOREOPS_IMAGE:-storeops:local}
+    image: ${RETAILOPS_IMAGE:-kloudc-retailops:local}
     env_file:
       - .env
     environment:
       # Container paths win over anything in .env: the database and uploads
       # always live in the store's volume.
-      DATABASE_URL: sqlite:////data/storeops.db
+      DATABASE_URL: sqlite:////data/retailops.db
       # Holds the store identity marker (backend/app/store/identity.py).
       UPLOADS_ROOT: /data/uploads
       INVOICE_UPLOADS_DIR: /data/uploads/invoices

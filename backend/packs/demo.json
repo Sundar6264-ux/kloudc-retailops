@@ -1,7 +1,7 @@
 {
   "pack_version": 1,
   "pack_id": "demo",
-  "label": "StoreOps DEMO store (made-up data for App Review and sales demos)",
+  "label": "KloudC RetailOps DEMO store (made-up data for App Review and sales demos)",
 
   "menu": {
     "excluded_category_groups": [],
@@ -26,7 +26,7 @@
     ]
   },
 
-  "house_vendors": {"prefixes": ["storeops demo market"]},
+  "house_vendors": {"prefixes": ["retailops demo market"]},
 
   "channels": {
     "empty": "Other",

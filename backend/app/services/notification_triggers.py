@@ -63,7 +63,7 @@ CRITICAL_NAMES_SHOWN = 3
 # notification listing whichever of these are missing (owner: a single
 # checklist alert). This constant is only the built-in default set, kept for
 # reference; code must call closing_checklist_types().
-CLOSING_CHECKLIST_TYPES = ["spice_town_closing", "street_kitchen_closing", "street_kitchen_fsa"]
+CLOSING_CHECKLIST_TYPES = ["store_closing", "kitchen_closing", "kitchen_fsa"]
 
 # Invoice failed: how far back to look. Wide enough to cover a night of
 # quiet hours, so failures from 10pm-7am still alert at 7am.

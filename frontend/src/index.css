@@ -14,9 +14,9 @@
      product defaults (BRAND_COLOR / BRAND_SECONDARY_COLOR); StoreContext
      replaces them at boot with the store's own (branding.js brandCssVars,
      darkened if needed so white button text keeps 4.5:1). */
-  --brand: #0f766e;
-  --brand-secondary: #334155;
-  --accent: #0f766e;
+  --brand: #004bad;
+  --brand-secondary: #2ea3f2;
+  --accent: #004bad;
   --accent-hover: #0d6861;
   --accent-soft: #e7f1f0;
   --accent-rgb: 15, 118, 110;

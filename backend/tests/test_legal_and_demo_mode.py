@@ -23,7 +23,7 @@ def test_legal_is_public_with_product_defaults(anon_client, monkeypatch):
     body = r.json()
     assert body == {
         "schema": 1,
-        "product": "StoreOps",
+        "product": "KloudC RetailOps",
         "company": "KloudC LLC",
         "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
         "terms_url": None,
@@ -47,7 +47,7 @@ def test_legal_follows_the_store_settings(anon_client, monkeypatch):
         "get_settings",
         lambda: _settings(
             company_name="Example Co",
-            product_name="StoreOps",
+            product_name="KloudC RetailOps",
             privacy_url="https://example.invalid/privacy",
             terms_url="  https://example.invalid/terms ",
             support_url="",

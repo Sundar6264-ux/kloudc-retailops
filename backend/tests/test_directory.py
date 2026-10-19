@@ -29,7 +29,7 @@ EXAMPLE = REPO / "directory" / "stores.example.json"
 WORKER_DIR = REPO / "directory" / "worker"
 TEAM = "ABCDE12345"
 FP = ":".join(["AB"] * 32)
-FAKE_CODES = ["STOREOPS_TEST_TOAST", "STOREOPS_TEST_CLOVER", "DEMO"]
+FAKE_CODES = ["RETAILOPS_TEST_TOAST", "RETAILOPS_TEST_CLOVER", "DEMO"]
 
 
 class Clock:
@@ -82,11 +82,11 @@ def test_example_file_holds_the_three_fake_stores_on_fake_hosts():
     stores = load_stores_file(EXAMPLE, DirectoryConfig())
     assert list(stores.stores) == FAKE_CODES
     for rec in stores.stores.values():
-        assert rec.api_base_url.endswith(".storeops.invalid")
+        assert rec.api_base_url.endswith(".retailops.invalid")
         assert rec.status == "active"
-    toast = stores.stores["STOREOPS_TEST_TOAST"]
+    toast = stores.stores["RETAILOPS_TEST_TOAST"]
     assert dict(toast.branding)["timezone"] == "America/Chicago"
-    assert dict(stores.stores["STOREOPS_TEST_CLOVER"].branding)["primary_color"] == "#15803D"
+    assert dict(stores.stores["RETAILOPS_TEST_CLOVER"].branding)["primary_color"] == "#15803D"
     assert dict(stores.stores["DEMO"].branding)["timezone"] == "America/New_York"
 
 
@@ -124,15 +124,15 @@ def _one(**changes):
 @pytest.mark.parametrize(
     "changes, expect",
     [
-        ({"api_base_url": "https://store.example.com"}, "not under .storeops.invalid"),
-        ({"api_base_url": "http://storeops-test-toast.storeops.invalid"}, "https://"),
-        ({"api_base_url": "https://storeops-test-toast.storeops.invalid/api"}, "no path"),
-        ({"api_base_url": "https://storeops-test-toast.storeops.invalid/"}, "no path"),
-        ({"api_base_url": "https://storeops-test-toast.storeops.invalid:8443"}, "no path, port"),
-        ({"api_base_url": "https://shop.spicetown.shop"}, "spicetown.shop"),
-        ({"api_base_url": "https://spicetown.shop"}, "spicetown.shop"),
-        ({"branding__logo_url": "https://cdn.spicetown.shop/logo.png"}, "spicetown.shop"),
-        ({"code": "storeops_test_toast"}, "does not match"),
+        ({"api_base_url": "https://store.example.com"}, "not under .retailops.invalid"),
+        ({"api_base_url": "http://retailops-test-toast.retailops.invalid"}, "https://"),
+        ({"api_base_url": "https://retailops-test-toast.retailops.invalid/api"}, "no path"),
+        ({"api_base_url": "https://retailops-test-toast.retailops.invalid/"}, "no path"),
+        ({"api_base_url": "https://retailops-test-toast.retailops.invalid:8443"}, "no path, port"),
+        ({"api_base_url": f"https://shop.{FORBIDDEN_DOMAIN}"}, FORBIDDEN_DOMAIN),
+        ({"api_base_url": f"https://{FORBIDDEN_DOMAIN}"}, FORBIDDEN_DOMAIN),
+        ({"branding__logo_url": f"https://cdn.{FORBIDDEN_DOMAIN}/logo.png"}, FORBIDDEN_DOMAIN),
+        ({"code": "retailops_test_toast"}, "does not match"),
         ({"code": "AB"}, "does not match"),
         ({"status": "retired"}, "status"),
         ({"branding__primary_color": "blue"}, "#RRGGBB"),
@@ -155,7 +155,7 @@ def test_duplicate_code_and_schema_and_every_problem_reported_together():
     data["schema"] = 2
     data["stores"][1]["branding"] = dict(data["stores"][1]["branding"], timezone="Nowhere/Land")
     problems = _problems(data)
-    assert "duplicate code STOREOPS_TEST_TOAST" in problems
+    assert "duplicate code RETAILOPS_TEST_TOAST" in problems
     assert "schema must be 1" in problems
     assert "Nowhere/Land" in problems
 
@@ -164,20 +164,20 @@ def test_extra_api_hosts_allow_a_host_outside_the_platform_domain():
     data = _one(api_base_url="https://ops.example.com")
     assert "not under" in _problems(data)
     stores = parse_stores(data, DirectoryConfig(extra_api_hosts=("ops.example.com",)))
-    assert stores["STOREOPS_TEST_TOAST"].api_base_url == "https://ops.example.com"
+    assert stores["RETAILOPS_TEST_TOAST"].api_base_url == "https://ops.example.com"
 
 
-def test_settings_refuse_spicetown_domains():
-    assert is_forbidden_host("spicetown.shop") and is_forbidden_host("A.SpiceTown.Shop.")
-    assert not is_forbidden_host("notspicetown.shop")
+def test_settings_refuse_the_blocked_domain():
+    assert is_forbidden_host(FORBIDDEN_DOMAIN) and is_forbidden_host(f"A.{FORBIDDEN_DOMAIN.title()}.")
+    assert not is_forbidden_host(f"not{FORBIDDEN_DOMAIN}")
     with pytest.raises(DirectoryConfigError):
-        DirectoryConfig(platform_domain="spicetown.shop")
+        DirectoryConfig(platform_domain=FORBIDDEN_DOMAIN)
     with pytest.raises(DirectoryConfigError):
-        DirectoryConfig(platform_domain="stores.spicetown.shop")
+        DirectoryConfig(platform_domain=f"stores.{FORBIDDEN_DOMAIN}")
     with pytest.raises(DirectoryConfigError):
-        DirectoryConfig(extra_api_hosts=("api.spicetown.shop",))
+        DirectoryConfig(extra_api_hosts=(f"api.{FORBIDDEN_DOMAIN}",))
     with pytest.raises(DirectoryConfigError):
-        DirectoryConfig(app_store_url="https://spicetown.shop/app")
+        DirectoryConfig(app_store_url=f"https://{FORBIDDEN_DOMAIN}/app")
 
 
 def test_settings_validate_owner_ids_and_store_links(caplog):
@@ -195,9 +195,9 @@ def test_settings_validate_owner_ids_and_store_links(caplog):
         play_store_url="https://play.google.com/store/apps/details?id=com.example.other",
     )
     assert cfg.app_store_url == ""
-    assert cfg.effective_play_store_url == "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
-    cfg = DirectoryConfig(app_store_url="https://apps.apple.com/us/app/storeops/id1234567890/")
-    assert cfg.app_store_url == "https://apps.apple.com/us/app/storeops/id1234567890"
+    assert cfg.effective_play_store_url == "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
+    cfg = DirectoryConfig(app_store_url="https://apps.apple.com/us/app/retailops/id1234567890/")
+    assert cfg.app_store_url == "https://apps.apple.com/us/app/retailops/id1234567890"
 
 
 def test_from_settings_reads_the_store_settings(monkeypatch):
@@ -214,11 +214,11 @@ def test_from_settings_reads_the_store_settings(monkeypatch):
     assert cfg.rate_per_minute == 7 and cfg.rate_per_hour == 100
     assert cfg.extra_api_hosts == ("a.example.com", "b.example.com")
     assert cfg.client_ip_header == "CF-Connecting-IP"
-    assert cfg.platform_domain == "storeops.invalid"
+    assert cfg.platform_domain == "retailops.invalid"
 
 
 def test_normalize_code():
-    assert normalize_code("  storeops-test-toast ") == "STOREOPS_TEST_TOAST"
+    assert normalize_code("  retailops-test-toast ") == "RETAILOPS_TEST_TOAST"
     assert normalize_code("demo") == "DEMO"
     for bad in ("ab", "A" * 25, "_ABC", "BAD!CODE", "", None, "DE MO"):
         assert normalize_code(bad) is None
@@ -228,7 +228,7 @@ def test_normalize_code():
 
 
 def test_known_code_returns_the_contract_body_and_headers(directory):
-    r = _get(directory, "/v1/stores/STOREOPS_TEST_TOAST")
+    r = _get(directory, "/v1/stores/RETAILOPS_TEST_TOAST")
     assert r.status_code == 200
     body = r.json()
     assert list(body) == [
@@ -236,15 +236,15 @@ def test_known_code_returns_the_contract_body_and_headers(directory):
     ]
     assert body == {
         "schema": 1,
-        "code": "STOREOPS_TEST_TOAST",
+        "code": "RETAILOPS_TEST_TOAST",
         "name": "Test Toast Market",
-        "api_base_url": "https://storeops-test-toast.storeops.invalid",
+        "api_base_url": "https://retailops-test-toast.retailops.invalid",
         "status": "active",
         "message": None,
         "branding": {
             "short_name": "Toast Test",
-            "logo_url": "https://storeops-test-toast.storeops.invalid/branding/logo.png",
-            "icon_url": "https://storeops-test-toast.storeops.invalid/branding/icon.png",
+            "logo_url": "https://retailops-test-toast.retailops.invalid/branding/logo.png",
+            "icon_url": "https://retailops-test-toast.retailops.invalid/branding/icon.png",
             "primary_color": "#1D4ED8",
             "secondary_color": "#93C5FD",
             "timezone": "America/Chicago",
@@ -262,8 +262,8 @@ def test_known_code_returns_the_contract_body_and_headers(directory):
 
 
 def test_code_is_normalised(directory):
-    want = _get(directory, "/v1/stores/STOREOPS_TEST_TOAST").content
-    for raw in ("storeops-test-toast", "StoreOps_Test-Toast", "%20storeops_test_toast%20"):
+    want = _get(directory, "/v1/stores/RETAILOPS_TEST_TOAST").content
+    for raw in ("retailops-test-toast", "RetailOps_Test-Toast", "%20retailops_test_toast%20"):
         r = _get(directory, f"/v1/stores/{raw}")
         assert r.status_code == 200, raw
         assert r.content == want
@@ -293,7 +293,7 @@ def test_unknown_and_retired_codes_are_the_same_404(directory, stores_file):
 def test_maintenance_status_and_message_pass_through(tmp_path, clock):
     data = _one(status="maintenance", message="Back at 6 am.")
     client = TestClient(create_app(_cfg(_write_stores(tmp_path / "s.json", data)), clock=clock))
-    body = _get(client, "/v1/stores/STOREOPS_TEST_TOAST").json()
+    body = _get(client, "/v1/stores/RETAILOPS_TEST_TOAST").json()
     assert body["status"] == "maintenance" and body["message"] == "Back at 6 am."
 
 
@@ -381,7 +381,7 @@ def test_broken_file_at_request_time_is_503_until_fixed(directory, stores_file):
 
 
 def test_service_refuses_to_start_on_a_bad_file(tmp_path):
-    bad = _write_stores(tmp_path / "s.json", _one(api_base_url="https://x.spicetown.shop"))
+    bad = _write_stores(tmp_path / "s.json", _one(api_base_url=f"https://x.{FORBIDDEN_DOMAIN}"))
     with pytest.raises(StoresFileError):
         with TestClient(create_app(_cfg(bad))):
             pass
@@ -422,7 +422,7 @@ def test_aasa_and_assetlinks_without_owner_ids(directory):
     # browser once the owner turns on Associated Domains.
     assert paths == ["/s/*"]
     links = _get(directory, "/.well-known/assetlinks.json").json()
-    assert links[0]["target"]["package_name"] == "com.kloudc.storeops"
+    assert links[0]["target"]["package_name"] == "com.kloudc.retailops"
     assert links[0]["target"]["sha256_cert_fingerprints"] == []
     assert links[0]["relation"] == ["delegate_permission/common.handle_all_urls"]
 
@@ -431,23 +431,23 @@ def test_aasa_and_assetlinks_with_owner_ids(stores_file, clock):
     cfg = _cfg(stores_file, apple_team_id=TEAM, android_cert_sha256=(FP,))
     client = TestClient(create_app(cfg, clock=clock))
     aasa = _get(client, "/.well-known/apple-app-site-association").json()
-    assert aasa["applinks"]["details"][0]["appIDs"] == [f"{TEAM}.com.kloudc.storeops"]
+    assert aasa["applinks"]["details"][0]["appIDs"] == [f"{TEAM}.com.kloudc.retailops"]
     links = _get(client, "/.well-known/assetlinks.json").json()
     assert links[0]["target"]["sha256_cert_fingerprints"] == [FP]
 
 
 def test_open_page_is_the_same_for_every_code_and_has_a_strict_csp(directory):
-    a = _get(directory, "/s/STOREOPS_TEST_TOAST")
+    a = _get(directory, "/s/RETAILOPS_TEST_TOAST")
     b = _get(directory, "/s/NOT_A_STORE")
     c = _get(directory, "/s/%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E")
     assert a.status_code == b.status_code == c.status_code == 200
     assert a.content == b.content == c.content
     assert a.headers["content-type"].startswith("text/html")
-    assert "STOREOPS_TEST_TOAST" not in a.text and "Test Toast Market" not in a.text
-    assert "Open this store in the StoreOps app" in a.text
+    assert "RETAILOPS_TEST_TOAST" not in a.text and "Test Toast Market" not in a.text
+    assert "Open this store in the KloudC RetailOps app" in a.text
     csp = a.headers["content-security-policy"]
     assert "default-src 'none'" in csp and "'unsafe-inline'" not in csp
-    assert "https://play.google.com/store/apps/details?id=com.kloudc.storeops" in a.text
+    assert "https://play.google.com/store/apps/details?id=com.kloudc.retailops" in a.text
     assert "apps.apple.com" not in a.text  # no App Store link until the owner sets one
     assert _get(directory, "/s").content == a.content
 
@@ -463,8 +463,8 @@ def test_store_server_serves_the_association_files(anon_client, monkeypatch):
     monkeypatch.setattr(s, "apple_team_id", TEAM.lower())
     monkeypatch.setattr(s, "android_cert_sha256", f"{FP}, not-a-fingerprint")
     r = anon_client.get("/.well-known/apple-app-site-association")
-    assert r.json()["applinks"]["details"][0]["appIDs"] == [f"{TEAM}.com.kloudc.storeops"]
-    assert r.content == build_static.aasa_bytes(TEAM, "com.kloudc.storeops")
+    assert r.json()["applinks"]["details"][0]["appIDs"] == [f"{TEAM}.com.kloudc.retailops"]
+    assert r.content == build_static.aasa_bytes(TEAM, "com.kloudc.retailops")
     prints = anon_client.get("/.well-known/assetlinks.json").json()[0]["target"]["sha256_cert_fingerprints"]
     assert prints == [FP]
     monkeypatch.setattr(s, "apple_team_id", "bad")
@@ -508,15 +508,15 @@ def test_static_build_refuses_a_bad_file(tmp_path, capsys):
 
 def test_refresh_branding_uses_a_fake_fetch_only(stores_file, tmp_path):
     def fetch(url):
-        if "storeops-test-clover" in url:
+        if "retailops-test-clover" in url:
             raise OSError("down")
         if "demo." in url:
             return {"store_code": "SOMEONE_ELSE", "primary_color": "#000000"}
         return {
-            "store_code": "STOREOPS_TEST_TOAST",
+            "store_code": "RETAILOPS_TEST_TOAST",
             "short_name": "Toast New",
-            "logo_url": "https://storeops-test-toast.storeops.invalid/branding/logo2.png",
-            "icon_url": "https://storeops-test-toast.storeops.invalid/branding/icon.png",
+            "logo_url": "https://retailops-test-toast.retailops.invalid/branding/logo2.png",
+            "icon_url": "https://retailops-test-toast.retailops.invalid/branding/icon.png",
             "primary_color": "#111111",
             "secondary_color": "#222222",
             "timezone": "America/Denver",
@@ -525,11 +525,11 @@ def test_refresh_branding_uses_a_fake_fetch_only(stores_file, tmp_path):
         }
 
     stores, notes = build_static.load_for_build(stores_file, DirectoryConfig(), fetch)
-    toast = dict(stores.stores["STOREOPS_TEST_TOAST"].branding)
+    toast = dict(stores.stores["RETAILOPS_TEST_TOAST"].branding)
     assert toast["short_name"] == "Toast New" and toast["timezone"] == "America/Denver"
     assert "address" not in toast
-    assert dict(stores.stores["DEMO"].branding)["primary_color"] == "#0F766E"
-    assert dict(stores.stores["STOREOPS_TEST_CLOVER"].branding)["primary_color"] == "#15803D"
+    assert dict(stores.stores["DEMO"].branding)["primary_color"] == "#004BAD"
+    assert dict(stores.stores["RETAILOPS_TEST_CLOVER"].branding)["primary_color"] == "#15803D"
     assert any("SOMEONE_ELSE" in n for n in notes) and any("not refreshed" in n for n in notes)
 
     def bad_fetch(url):
@@ -567,10 +567,10 @@ _PARITY_HEADERS = [
 
 
 def _parity_steps():
-    toast = "/v1/stores/STOREOPS_TEST_TOAST"
+    toast = "/v1/stores/RETAILOPS_TEST_TOAST"
     return [
         {"path": toast},
-        {"path": "/v1/stores/storeops-test-clover"},
+        {"path": "/v1/stores/retailops-test-clover"},
         {"path": "/v1/stores/DEMO"},
         {"path": "/v1/stores/NO_SUCH_STORE"},
         {"path": "/v1/stores/ab"},
@@ -586,7 +586,7 @@ def _parity_steps():
         {"path": "/healthz"},
         {"path": "/.well-known/apple-app-site-association"},
         {"path": "/.well-known/assetlinks.json"},
-        {"path": "/s/STOREOPS_TEST_TOAST"},
+        {"path": "/s/RETAILOPS_TEST_TOAST"},
         {"path": "/s/"},
         {"path": "/nothing/here"},
     ]
@@ -711,7 +711,7 @@ def test_refresh_branding_never_fetches_from_a_file_that_is_refused(tmp_path):
     # api_base_url must not be contacted, even by the dev-only refresh.
     data = _example()
     data["stores"][0]["api_base_url"] = "https://x." + FORBIDDEN_DOMAIN
-    data["stores"][1]["api_base_url"] = "http://storeops-test-clover.storeops.invalid"
+    data["stores"][1]["api_base_url"] = "http://retailops-test-clover.retailops.invalid"
     bad = _write_stores(tmp_path / "s.json", data)
     fetched = []
 

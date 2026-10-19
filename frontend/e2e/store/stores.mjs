@@ -16,12 +16,13 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { brandCssVars } from "../../src/store/branding.js";
+import { firstOriginNameLine, hasOriginName } from "../../src/test/originNames.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const WORK = process.env.STORE_E2E_WORK;
 const STORES = [
-  { code: "STOREOPS_TEST_TOAST", port: Number(process.env.TOAST_PORT || 8861), city: "Chicago" },
-  { code: "STOREOPS_TEST_CLOVER", port: Number(process.env.CLOVER_PORT || 8862), city: "Los Angeles" },
+  { code: "RETAILOPS_TEST_TOAST", port: Number(process.env.TOAST_PORT || 8861), city: "Chicago" },
+  { code: "RETAILOPS_TEST_CLOVER", port: Number(process.env.CLOVER_PORT || 8862), city: "Los Angeles" },
 ];
 // The DEMO store (MT13): run_demo.py's own generated data, signed in as the
 // App Review login with the password run.sh gave it.
@@ -30,7 +31,6 @@ if (process.env.DEMO_PORT) {
 }
 const ROLES = ["e2e_admin", "e2e_staff", "e2e_hide", "app_store_review"];
 const WIDTHS = [1280, 375];
-const NAMES = new RegExp(["spice[ _]?town", "stre" + "et[ _]kitchen", "ver" + "non", "spice" + "town\\.shop"].join("|"), "i");
 const SHOTS = join(WORK, "shots");
 mkdirSync(SHOTS, { recursive: true });
 
@@ -83,7 +83,7 @@ async function runStore(browser, store) {
   // Clover and the CSV-only DEMO store: no Insights, no labels site, never "Toast".
   const notToast = brand.pos_name !== "Toast";
   const isDemo = Boolean(brand.demo);
-  const title = `${brand.name} - StoreOps`;
+  const title = `${brand.name} - KloudC RetailOps`;
 
   for (const width of WIDTHS) {
     // ---- logged out: the login page is the store's ----
@@ -95,7 +95,7 @@ async function runStore(browser, store) {
       check((await page.textContent('[data-testid="login-store-name"]')).trim() === brand.name, `${store.code} ${width}: login name`);
       check((await page.title()) === title, `${store.code} ${width}: login title "${await page.title()}"`);
       const body = await page.innerText("body");
-      check(!NAMES.test(body), `${store.code} ${width}: origin-store name on the login page`);
+      check(!hasOriginName(body), `${store.code} ${width}: origin-store name on the login page`);
       await page.screenshot({ path: join(SHOTS, `${store.code}-login-${width}.png`) });
       await ctx.close();
     }
@@ -155,7 +155,7 @@ async function runStore(browser, store) {
           check(internal.includes("#/inventory-api") && /Inventory from Toast/.test(menuText), `${tag}: Inventory from Toast missing`);
         }
       }
-      check(!NAMES.test(menuText), `${tag}: origin-store name in the menu`);
+      check(!hasOriginName(menuText), `${tag}: origin-store name in the menu`);
 
       // ---- gated URLs redirect (Clover), or open (Toast admin) ----
       const gated = ["#/insights/daily", "#/insights/returning-customers", "#/insights/busy-hours", "#/insights"];
@@ -214,8 +214,13 @@ async function runStore(browser, store) {
             (fromServer(before) || fromServer(after) ? serverHits : failures).push(msg);
           }
         };
-        const name = text.match(NAMES);
-        if (name) report(name[0], new RegExp(`[^\\n]{0,40}${name[0]}[^\\n]{0,40}`, "gi"));
+        // Origin-store names are matched by hash (src/test/originNames.mjs):
+        // the whole line is the snippet.
+        const nameLine = firstOriginNameLine(text);
+        if (nameLine) {
+          const msg = `${tag}: origin-store name on ${hash}: ...${nameLine.trim().slice(0, 120)}...`;
+          (fromServer(nameLine.trim().slice(0, 20)) ? serverHits : failures).push(msg);
+        }
         if (notToast) report("Toast", /[^\n]{0,40}\bToast\b[^\n]{0,40}/g);
         checks++;
         if (width === 375) {

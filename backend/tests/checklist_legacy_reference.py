@@ -44,8 +44,8 @@ def _is_nothing_to_report(text: str) -> bool:
 
 def short_name(schema: dict) -> str:
     """A checklist's short name: its schema's `short_name` if it has one,
-    else the title up to its first " - " / " – " ("Spice Town - Daily
-    Closing Checklist" -> "Spice Town")."""
+    else the title up to its first " - " / " – " ("Main Store - Daily
+    Closing Checklist" -> "Main Store")."""
     if schema.get("short_name"):
         return schema["short_name"]
     title = schema["title"]
@@ -58,7 +58,7 @@ def short_name(schema: dict) -> str:
 def summary_details(schema: dict, answers: dict) -> list:
     """The answers a checklist wants shown next to "Submitted by" (its
     questions with a `summary_label`, e.g. the FSA closing's chef on duty):
-    [{"label": "Chef", "value": "RK"}], in form order. Unknown types and
+    [{"label": "Chef", "value": "JL"}], in form order. Unknown types and
     unanswered questions are skipped."""
     details = []
     for question in _iter_standalone_questions(schema):
@@ -71,8 +71,8 @@ def summary_details(schema: dict, answers: dict) -> list:
 
 def _iter_grids(schema: dict):
     """Yields (grid_dict) for every grid in a schema, regardless of which
-    checklist's slightly different section shape it came from (Spice Town
-    nests one grid directly under each section; Street Kitchen nests a list
+    checklist's slightly different section shape it came from (Main Store
+    nests one grid directly under each section; Market Kitchen nests a list
     of grids under each section) - one shared walk instead of two per-type
     copies of the same traversal.
     """

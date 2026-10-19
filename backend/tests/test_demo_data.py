@@ -22,11 +22,18 @@ BACKEND = pathlib.Path(__file__).resolve().parents[1]
 GENERATOR = BACKEND / "scripts" / "demo" / "generate_demo_data.py"
 SMOKE = BACKEND / "scripts" / "demo" / "smoke_demo.py"
 PASSWORD = "test-review-pass-not-real"
-FORBIDDEN = re.compile(r"\b(spice ?town|spicetown|street kitchen|vernon|shaz international)\b", re.I)
+# Origin-store names (hashed, tests/origin_names.py) and one real supplier the
+# old seeds used.
+REAL_SUPPLIER = re.compile(r"\bshaz international\b", re.I)
+
+
+def _forbidden(value: str) -> bool:
+    return has_origin_name(value) or bool(REAL_SUPPLIER.search(value))
 SMALL = ["--days", "10", "--items", "60", "--end-date", "2026-10-18", "--seed", "7"]
 
 sys.path.insert(0, str(BACKEND))
 from scripts.demo import demo_catalog, reset_demo, run_demo  # noqa: E402
+from tests.origin_names import has_origin_name  # noqa: E402
 from scripts.demo.fake_pdf import BANNER  # noqa: E402
 from scripts.demo.generate_demo_data import SAFE_OVERRIDES, ean13  # noqa: E402
 
@@ -48,7 +55,7 @@ def dataset(tmp_path_factory):
 
 
 def _conn(folder: pathlib.Path):
-    return sqlite3.connect(f"file:{folder / 'storeops.db'}?mode=ro", uri=True)
+    return sqlite3.connect(f"file:{folder / 'retailops.db'}?mode=ro", uri=True)
 
 
 def test_counts_and_marker(dataset):
@@ -84,7 +91,7 @@ def test_nothing_from_a_real_store(dataset):
         for row in c.execute(f'SELECT * FROM "{table}"'):
             for value in row:
                 if isinstance(value, str):
-                    if FORBIDDEN.search(value):
+                    if _forbidden(value):
                         hits.append((table, value[:60]))
                     for email in re.findall(r"[\w.+-]+@[\w.-]+", value):
                         if not email.endswith(".example"):
@@ -180,7 +187,7 @@ def test_demo_pack():
 
     pack = json.loads((BACKEND / "packs" / "demo.json").read_text())
     assert (pack["pack_version"], pack["pack_id"]) == (1, "demo")
-    assert not FORBIDDEN.search(json.dumps(pack))
+    assert not _forbidden(json.dumps(pack))
     roles = {r["key"] for r in pack["whatsapp_roles"]}
     for c in pack["checklists"]:
         assert engine.validate_schema(engine.normalize_schema(c["schema"])) == []
@@ -201,22 +208,22 @@ def test_demo_pack():
 def test_reset_only_touches_demo_folders(tmp_path):
     foreign = tmp_path / "store-data"
     foreign.mkdir()
-    (foreign / "storeops.db").write_bytes(b"")
+    (foreign / "retailops.db").write_bytes(b"")
     with pytest.raises(reset_demo.ResetError, match="not a DEMO data folder"):
         reset_demo.reset(foreign)
-    assert (foreign / "storeops.db").exists()
+    assert (foreign / "retailops.db").exists()
 
     marked = tmp_path / "marked"
     reset_demo.prepare_data_dir(marked)
     live = marked / "live"
     live.mkdir()
-    sqlite3.connect(live / "storeops.db").execute("CREATE TABLE orders (id INTEGER)").connection.commit()
+    sqlite3.connect(live / "retailops.db").execute("CREATE TABLE orders (id INTEGER)").connection.commit()
     (live / "demo_dataset.json").write_text('{"store_code": "DEMO"}')  # no DB marker row
     with pytest.raises(reset_demo.ResetError, match="not a generated DEMO data set"):
         reset_demo.check_replaceable(live)
     with pytest.raises(reset_demo.ResetError):
         reset_demo.reset(marked)
-    assert (live / "storeops.db").exists()
+    assert (live / "retailops.db").exists()
 
 
 def test_build_and_swap(dataset, tmp_path, monkeypatch):
@@ -251,7 +258,7 @@ def test_runner_forces_the_demo_settings(tmp_path):
     assert env["WHAPI_API_TOKEN"] == env["ANTHROPIC_API_KEY"] == env["GMAIL_APP_PASSWORD"] == ""
     assert env["WHAPI_BASE_URL"] == env["TOAST_API_BASE"] == "http://127.0.0.1:9"
     assert (env["STORE_CODE"], env["POS_PROVIDER"], env["DEMO_MODE"]) == ("DEMO", "csv", "true")
-    assert env["DATABASE_URL"] == f"sqlite:///{tmp_path / 'live' / 'storeops.db'}"
+    assert env["DATABASE_URL"] == f"sqlite:///{tmp_path / 'live' / 'retailops.db'}"
     assert env["DEMO_USERNAMES"] == "appreview,someone"
     assert env["STORE_TIMEZONE"] == "America/Chicago"
     with pytest.raises(run_demo.RunnerError, match="only runs the DEMO store"):

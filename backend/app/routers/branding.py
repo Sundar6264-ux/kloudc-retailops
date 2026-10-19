@@ -1,9 +1,9 @@
-"""Public store branding (StoreOps M2, docs/M2_CONTRACT.md section 2).
+"""Public store branding (KloudC RetailOps M2, docs/M2_CONTRACT.md section 2).
 
 - ``GET /api/app/branding``: the store's names, logo, colours, time zone, POS,
   capabilities, store features and legal links. No login, no cookies read,
   never 401; cached by clients (ETag + 304).
-- ``GET /branding/logo.png`` and ``/branding/icon.png``: the bundled StoreOps
+- ``GET /branding/logo.png`` and ``/branding/icon.png``: the bundled KloudC RetailOps
   placeholder images (a store with its own logo sets LOGO_URL / ICON_URL).
 
 Registered before the website's static mount at "/" (app/main.py).

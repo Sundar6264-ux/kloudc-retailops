@@ -141,11 +141,11 @@ def test_leftover_checklist_tasks_close_as_missed_but_never_a_demo_teams(db, sta
     db.commit()
     add_member(db, review, make_user(db, "app_store_review", features=["team_tasks"]))
     add_member(db, managers, staff)
-    old = auto_task(db, "checklist", "spice_town_closing:2026-10-01", team=managers)
-    submitted = auto_task(db, "checklist", "street_kitchen_closing:2026-10-02", team=managers)
-    demo_team = auto_task(db, "checklist", "spice_town_closing:2026-10-03", team=review)
+    old = auto_task(db, "checklist", "store_closing:2026-10-01", team=managers)
+    submitted = auto_task(db, "checklist", "kitchen_closing:2026-10-02", team=managers)
+    demo_team = auto_task(db, "checklist", "store_closing:2026-10-03", team=review)
     db.add(ChecklistSubmission(
-        checklist_type="street_kitchen_closing", submitted_by_user_id=staff.id, submitted_by_name="ravi",
+        checklist_type="kitchen_closing", submitted_by_user_id=staff.id, submitted_by_name="ravi",
         answers_json="{}", all_clear=True, answers_hash="h1",
         created_at=dt.datetime(2026, 10, 2, 21, 0, tzinfo=NY).astimezone(dt.timezone.utc),
     ))
@@ -166,7 +166,7 @@ def test_rule_on_keeps_tonights_task_until_its_day_is_over(db, monkeypatch, staf
     monkeypatch.setattr(get_settings(), "team_autotask_checklist_enabled", True)
     managers = db.query(Team).filter(Team.name == "Managers").one()
     add_member(db, managers, staff)
-    tonight = auto_task(db, "checklist", "spice_town_closing:2026-10-15", team=managers)
+    tonight = auto_task(db, "checklist", "store_closing:2026-10-15", team=managers)
     auto_tasks.expire_checklist_tasks(db, dt.datetime(2026, 10, 15, 21, 45, tzinfo=NY))
     db.refresh(tonight)
     assert tonight.status == "open"
@@ -178,7 +178,7 @@ def test_rule_on_keeps_tonights_task_until_its_day_is_over(db, monkeypatch, staf
 def test_protected_app_review_ids_are_never_closed(db, staff, monkeypatch):
     managers = db.query(Team).filter(Team.name == "Managers").one()
     add_member(db, managers, staff)
-    task = auto_task(db, "checklist", "spice_town_closing:2026-10-01", team=managers)
+    task = auto_task(db, "checklist", "store_closing:2026-10-01", team=managers)
     monkeypatch.setattr(auto_tasks, "PROTECTED_TASK_IDS", frozenset({task.id}))
     auto_tasks.expire_checklist_tasks(db, utcnow())
     db.refresh(task)
@@ -436,9 +436,9 @@ def test_checklist_submission_closes_its_task_now(db, staff):
     managers = db.query(Team).filter(Team.name == "Managers").one()
     add_member(db, managers, staff)
     today = utcnow().astimezone(NY).date()
-    task = auto_task(db, "checklist", f"spice_town_closing:{today.isoformat()}", team=managers)
+    task = auto_task(db, "checklist", f"store_closing:{today.isoformat()}", team=managers)
     db.add(ChecklistSubmission(
-        checklist_type="spice_town_closing", submitted_by_user_id=staff.id, submitted_by_name="ravi",
+        checklist_type="store_closing", submitted_by_user_id=staff.id, submitted_by_name="ravi",
         answers_json="{}", all_clear=True, answers_hash="h2", created_at=utcnow(),
     ))
     db.commit()
@@ -506,25 +506,25 @@ def test_lead_task_counts_down_and_closes_itself(db, admin, admin_client, pushes
     from app.services import issue_leads
     from tests.test_issue_leads import at, only_missing, save, snap
 
-    sai = make_user(db, "Sai Durga", features=["team_tasks", "inventory_reports"])
+    sasha = make_user(db, "Sasha Durga", features=["team_tasks", "inventory_reports"])
     snap(db, "rice1", "Sona Masoori 20lb", category="Oils & Fats", supplier="Chetak")
     snap(db, "rice2", "Basmati 10lb", category="Oils & Fats", supplier="Chetak")
     db.commit()
     only_missing(db, admin)
-    save(db, admin, sections=[("Oils & Ghee", sai.id)])
+    save(db, admin, sections=[("Oils & Ghee", sasha.id)])
     issue_leads.run_daily_tasks(db, at(10, 5))
     task = db.query(Task).filter(Task.source_type == "issue_leads").one()
     assert task.title == "Fix Issues: 2 left of 2"
-    sai_client = client_for(db, sai)
+    sasha_client = client_for(db, sasha)
     body = {"issue_type": "missing_barcode", "issue_keys": ["rice1"], "reason": "fixed"}
-    assert sai_client.post("/api/issues/close", json=body).status_code == 200
+    assert sasha_client.post("/api/issues/close", json=body).status_code == 200
     db.refresh(task)
     assert (task.title, task.progress_done, task.progress_total, task.status) == ("Fix Issues: 1 left of 2", 1, 2, "open")
     # A reopen counts it again.
-    sai_client.post("/api/issues/reopen", json={"issue_type": "missing_barcode", "issue_keys": ["rice1"]})
+    sasha_client.post("/api/issues/reopen", json={"issue_type": "missing_barcode", "issue_keys": ["rice1"]})
     db.refresh(task)
     assert task.title == "Fix Issues: 2 left of 2"
-    sai_client.post("/api/issues/close", json={**body, "issue_keys": ["rice1", "rice2"]})
+    sasha_client.post("/api/issues/close", json={**body, "issue_keys": ["rice1", "rice2"]})
     db.refresh(task)
     assert (task.status, task.completion_note) == ("done", "All 2 items fixed or closed")
 

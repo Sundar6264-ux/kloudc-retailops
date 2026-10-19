@@ -20,6 +20,7 @@ export const RESERVED_CODES = new Set([
   "SUPPORT",
   "HELP",
   "STOREOPS",
+  "RETAILOPS",
   "KLOUDC",
   "TEST",
   "NULL",
@@ -170,7 +171,7 @@ export function timezoneOptions(all) {
 
 export const PENDING_POLL_MS = 30_000;
 export const PENDING_POLL_MAX_MS = 60 * 60 * 1000;
-export const SIGNUP_STORAGE_KEY = "storeops_signup_request";
+export const SIGNUP_STORAGE_KEY = "retailops_signup_request";
 
 export function pendingUrl(requestId, token) {
   return `/signup/pending?id=${encodeURIComponent(requestId)}&t=${encodeURIComponent(token)}`;

@@ -4,11 +4,11 @@ AES-256-GCM with a random 12-byte nonce per write and associated data that
 binds the ciphertext to its store and kind (``storeops:<CODE>:<kind>:v1``),
 so a row copied to another store does not decrypt.
 
-Key ring: ``STOREOPS_SECRET_KEYS="k2:<base64 32 bytes>,k1:<...>"`` - the first
+Key ring: ``RETAILOPS_SECRET_KEYS="k2:<base64 32 bytes>,k1:<...>"`` - the first
 key encrypts, every listed key decrypts (rows carry their ``key_id``). The
-legacy single ``STOREOPS_SECRET_KEY`` is the ring ``{"k1": ...}``. Only with
+legacy single ``RETAILOPS_SECRET_KEY`` is the ring ``{"k1": ...}``. Only with
 ``APP_ENV=development`` and no ring set is a dev ring generated into
-``STOREOPS_SECRET_KEY_FILE`` (default ``backend/.secrets/storeops_keyring``,
+``RETAILOPS_SECRET_KEY_FILE`` (default ``backend/.secrets/retailops_keyring``,
 mode 0600, the folder gitignored). Losing the ring loses every saved
 credential: production keeps it in the server's secret store.
 """
@@ -32,7 +32,7 @@ AAD_VERSION = "v1"
 
 
 class KeyRingError(RuntimeError):
-    """No usable key ring (production must set STOREOPS_SECRET_KEYS)."""
+    """No usable key ring (production must set RETAILOPS_SECRET_KEYS)."""
 
 
 class DecryptError(RuntimeError):
@@ -90,15 +90,24 @@ def parse_ring(raw: str) -> List[Tuple[str, bytes]]:
 
 
 def gen_key(key_id: Optional[str] = None) -> str:
-    """A new ``<id>:<base64>`` entry to put first in STOREOPS_SECRET_KEYS."""
+    """A new ``<id>:<base64>`` entry to put first in RETAILOPS_SECRET_KEYS."""
     kid = key_id or ("k" + dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M"))
     return f"{kid}:{base64.b64encode(secrets.token_bytes(32)).decode('ascii')}"
 
 
+_DEV_FILE = ".secrets/retailops_keyring"
+# The dev ring's name before the KloudC RetailOps rename: still used when it
+# is there and the new one is not (a checkout from before the rename).
+_LEGACY_DEV_FILE = ".secrets/storeops_keyring"
+
+
 def _dev_file() -> pathlib.Path:
-    raw = str(pget("storeops_secret_key_file") or ".secrets/storeops_keyring")
+    raw = str(pget("retailops_secret_key_file") or _DEV_FILE)
     p = pathlib.Path(raw).expanduser()
-    return p if p.is_absolute() else (BACKEND_DIR / p)
+    p = p if p.is_absolute() else (BACKEND_DIR / p)
+    if raw == _DEV_FILE and not p.is_file() and (BACKEND_DIR / _LEGACY_DEV_FILE).is_file():
+        return BACKEND_DIR / _LEGACY_DEV_FILE
+    return p
 
 
 def _load_or_create_dev_ring() -> str:
@@ -124,21 +133,21 @@ _ring: Optional[KeyRing] = None
 
 def load_keyring() -> KeyRing:
     """Build the ring from settings/env (not cached)."""
-    raw = str(pget("storeops_secret_keys") or "").strip()
+    raw = str(pget("retailops_secret_keys") or "").strip()
     if raw:
         keys = parse_ring(raw)
         if keys:
             return KeyRing(tuple(keys), "env")
-    legacy = str(pget("storeops_secret_key") or "").strip()
+    legacy = str(pget("retailops_secret_key") or "").strip()
     if legacy:
         key = _b64d(legacy)
         if len(key) != 32:
-            raise KeyRingError("STOREOPS_SECRET_KEY must be base64 of 32 bytes")
+            raise KeyRingError("RETAILOPS_SECRET_KEY must be base64 of 32 bytes")
         return KeyRing((("k1", key),), "legacy")
     if str(pget("app_env") or "").strip().lower() == "development":
         return KeyRing(tuple(parse_ring(_load_or_create_dev_ring())), "dev-file")
     raise KeyRingError(
-        "STOREOPS_SECRET_KEYS is not set. Generate one with `python -m app.platform gen-key` and keep it in the "
+        "RETAILOPS_SECRET_KEYS is not set. Generate one with `python -m app.platform gen-key` and keep it in the "
         "server's secret store (APP_ENV=development makes a local dev key ring instead)."
     )
 

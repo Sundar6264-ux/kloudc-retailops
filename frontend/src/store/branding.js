@@ -7,10 +7,10 @@
 // BRAND_SECONDARY_COLOR). Used until branding answers, and by an older
 // server without the endpoint. Never a store's own values.
 export const PRODUCT_DEFAULTS = {
-  productName: "StoreOps",
+  productName: "KloudC RetailOps",
   company: "KloudC LLC",
-  primaryColor: "#0F766E",
-  secondaryColor: "#334155",
+  primaryColor: "#004BAD",
+  secondaryColor: "#2EA3F2",
   logoPath: "/branding/logo.png",
   iconPath: "/branding/icon.png",
 };

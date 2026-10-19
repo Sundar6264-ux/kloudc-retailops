@@ -1,4 +1,4 @@
-"""StoreOps store commands (docs/M2_CONTRACT.md 3.4).
+"""KloudC RetailOps store commands (docs/M2_CONTRACT.md 3.4).
 
     python -m app.store init --code CODE --pack PATH [--adopt]
     python -m app.store pack validate PATH
@@ -28,7 +28,7 @@ def _print(value) -> None:
 # store-init (contract 3.5)
 # ---------------------------------------------------------------------------
 
-LEGACY_CATEGORY_SUPPLIER = "Shaz International"  # migration 0034's one supplier rule
+LEGACY_CATEGORY_SUPPLIER = "Sample Biscuit Supplier"  # migration 0034's one supplier rule
 LEGACY_CATEGORY_CREATED_BY = "category merge plan (migration 0037)"
 LEGACY_WHATSAPP_KEYS = ("store", "kitchen")  # migration 0044's built-in roles
 LEGACY_WHATSAPP_CREATED_BY = "migration 0044"
@@ -413,7 +413,7 @@ def cmd_branding(args) -> int:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="python -m app.store", description="StoreOps store commands")
+    ap = argparse.ArgumentParser(prog="python -m app.store", description="KloudC RetailOps store commands")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("init", help="set up this database as a store (store-init)")
     p.add_argument("--code", required=True)

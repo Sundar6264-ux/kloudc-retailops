@@ -234,14 +234,14 @@ def test_demo_store_cannot_write_platform_settings(client, captured):
 def test_store_admin_cannot_drive_hosting_or_reach_master_routes(alpha_admin, platform_env, monkeypatch):
     monkeypatch.setattr(platform_env, "dedicated_hosting_enabled", True)
     r = alpha_admin.post("/api/settings/hosting/request", json={"reason": "we are big now",
-                                                                "target_api_base_url": "https://alpha.storeops.test",
+                                                                "target_api_base_url": "https://alpha.retailops.test",
                                                                 "target_db_host_ref": "anything"})
     assert r.status_code == 200, r.text
     assert r.json()["target_db_host_ref"] is None
     rid = r.json()["id"]
     for action in ("approve", "start", "complete"):
         assert alpha_admin.post(f"/api/platform/hosting-requests/{rid}/{action}",
-                                json={"api_base_url": "https://alpha.storeops.test"}).status_code == 403
+                                json={"api_base_url": "https://alpha.retailops.test"}).status_code == 403
     assert alpha_admin.put("/api/platform/stores/ALPHA/settings", json={"store_name": "x"}).status_code == 403
     assert alpha_admin.patch("/api/settings/store", json={"hosting": "dedicated"}).status_code == 400
 

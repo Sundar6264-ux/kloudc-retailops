@@ -4,7 +4,7 @@
 # Never writes the prod DB: sqlite3 opens it with mode=ro and only runs .backup.
 set -e
 HERE=${0:A:h}
-W=${SUITE_B_WORK:-/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB}
+W=${SUITE_B_WORK:-/tmp/retailops-suiteB}
 REPO=${SUITE_B_REPO:-${HERE:h:h:h}}   # default: this repository
 # The store database to copy (opened mode=ro, .backup only). No default: name it.
 PROD=${SUITE_B_SOURCE_DB:?set SUITE_B_SOURCE_DB to the store database to copy (read-only)}

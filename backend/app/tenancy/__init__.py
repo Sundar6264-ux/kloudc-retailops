@@ -1,4 +1,4 @@
-"""StoreOps tenancy: one shared service, one database per store
+"""KloudC RetailOps tenancy: one shared service, one database per store
 (docs/PLATFORM_CONTRACT.md sections 4-8, 12, 16).
 
 Single mode (TENANCY_MODE=single, the default) keeps the M2 behaviour: one

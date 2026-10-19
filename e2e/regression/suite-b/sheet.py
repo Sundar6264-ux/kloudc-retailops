@@ -5,7 +5,7 @@ import sys
 
 from PIL import Image, ImageDraw
 
-W = os.environ.get("SUITE_B_WORK", "/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB")
+W = os.environ.get("SUITE_B_WORK", "/tmp/retailops-suiteB")
 pattern, out, cols, tw = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
 files = sorted(glob.glob(os.path.join(W, "shots", pattern)))
 if not files:

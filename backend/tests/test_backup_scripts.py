@@ -52,14 +52,14 @@ def _sha(path: pathlib.Path) -> str:
 
 
 def test_backup_makes_a_checked_gzip_logs_it_and_never_writes_the_source(tmp_path):
-    src = _live_db(tmp_path / "storeops.db")
+    src = _live_db(tmp_path / "retailops.db")
     before = _sha(src)
     dest = tmp_path / "nightly"
     status = backup_db.run(str(src), str(dest), now=NOW)
     assert status["ok"], status
     assert status["integrity"] == "ok" and status["tables"] == 5
     final = pathlib.Path(status["file"])
-    assert final.name == "storeops-20261015-033000.db.gz"
+    assert final.name == "retailops-20261015-033000.db.gz"
     assert _sha(src) == before
     # The archive is a complete, self-contained database (no -wal needed).
     restored = tmp_path / "check.db"
@@ -70,12 +70,12 @@ def test_backup_makes_a_checked_gzip_logs_it_and_never_writes_the_source(tmp_pat
     conn.close()
     assert sorted(p.name for p in dest.iterdir()) == ["backup.log", "last_backup.json", final.name]
     log = (dest / "backup.log").read_text().splitlines()
-    assert len(log) == 1 and " OK storeops-20261015-033000.db.gz " in log[0] and "integrity=ok" in log[0]
+    assert len(log) == 1 and " OK retailops-20261015-033000.db.gz " in log[0] and "integrity=ok" in log[0]
     assert json.loads((dest / "last_backup.json").read_text())["ok"] is True
 
 
 def test_backup_sees_committed_rows_still_in_the_wal(tmp_path):
-    src = _live_db(tmp_path / "storeops.db")
+    src = _live_db(tmp_path / "retailops.db")
     writer = sqlite3.connect(src)
     writer.execute("PRAGMA wal_autocheckpoint=0")  # keep the new rows in the -wal file
     writer.execute("INSERT INTO orders (business_date, item, qty) VALUES ('2026-10-15', 'late sale', 1)")
@@ -90,14 +90,14 @@ def test_backup_sees_committed_rows_still_in_the_wal(tmp_path):
     conn.close()
 
 
-def _fake_backup(dest: pathlib.Path, when: dt.datetime, prefix: str = "storeops") -> pathlib.Path:
+def _fake_backup(dest: pathlib.Path, when: dt.datetime, prefix: str = "retailops") -> pathlib.Path:
     path = dest / f"{prefix}-{when.strftime('%Y%m%d-%H%M%S')}.db.gz"
     path.write_bytes(gzip.compress(b"old"))
     return path
 
 
 def test_retention_deletes_only_backups_older_than_30_days(tmp_path):
-    src = _live_db(tmp_path / "storeops.db")
+    src = _live_db(tmp_path / "retailops.db")
     dest = tmp_path / "nightly"
     dest.mkdir()
     old = [_fake_backup(dest, NOW - dt.timedelta(days=d)) for d in (31, 45)]
@@ -116,7 +116,7 @@ def test_retention_never_deletes_the_newest_backup(tmp_path):
     dest = tmp_path / "nightly"
     dest.mkdir()
     only = _fake_backup(dest, NOW - dt.timedelta(days=100))
-    assert backup_db.prune(dest, "storeops", 30, NOW) == []
+    assert backup_db.prune(dest, "retailops", 30, NOW) == []
     assert only.exists()
 
 
@@ -133,7 +133,7 @@ def test_a_failed_backup_logs_the_error_and_deletes_nothing(tmp_path):
 
 
 def test_an_integrity_failure_keeps_the_copy_as_corrupt_and_deletes_nothing(tmp_path, monkeypatch):
-    src = _live_db(tmp_path / "storeops.db")
+    src = _live_db(tmp_path / "retailops.db")
     dest = tmp_path / "nightly"
     dest.mkdir()
     old = _fake_backup(dest, NOW - dt.timedelta(days=60))
@@ -141,13 +141,13 @@ def test_an_integrity_failure_keeps_the_copy_as_corrupt_and_deletes_nothing(tmp_
     monkeypatch.setattr(backup_db, "integrity_check", lambda path: "*** in database main *** Page 7: btree")
     status = backup_db.run(str(src), str(dest), now=NOW)
     assert status["ok"] is False and "integrity_check failed" in status["error"]
-    assert (dest / "storeops-20261015-033000.db.corrupt").exists()
+    assert (dest / "retailops-20261015-033000.db.corrupt").exists()
     assert old.exists() and newer.exists()
     assert not list(dest.glob("*.partial*"))
 
 
 def test_backup_cli_exit_codes(tmp_path):
-    src = _live_db(tmp_path / "storeops.db")
+    src = _live_db(tmp_path / "retailops.db")
     assert backup_db.main(["--db", str(src), "--dest", str(tmp_path / "n")]) == 0
     assert backup_db.main(["--db", str(tmp_path / "nope.db"), "--dest", str(tmp_path / "n")]) == 1
 
@@ -156,7 +156,7 @@ def test_backup_cli_exit_codes(tmp_path):
 
 
 def test_restore_drill_restores_the_newest_backup_and_reports(tmp_path):
-    src = _live_db(tmp_path / "storeops.db", orders=10)
+    src = _live_db(tmp_path / "retailops.db", orders=10)
     dest = tmp_path / "nightly"
     assert backup_db.run(str(src), str(dest), now=NOW - dt.timedelta(days=1))["ok"]
     conn = sqlite3.connect(src)
@@ -169,7 +169,7 @@ def test_restore_drill_restores_the_newest_backup_and_reports(tmp_path):
     conn.commit()
     conn.close()
 
-    report = restore_drill.drill(restore_drill.pick_backup(dest, "storeops"), compare_db=str(src))
+    report = restore_drill.drill(restore_drill.pick_backup(dest, "retailops"), compare_db=str(src))
     assert report["ok"], report
     assert report["backup"] == newest["file"]
     assert report["integrity"] == "ok"
@@ -185,10 +185,10 @@ def test_restore_drill_restores_the_newest_backup_and_reports(tmp_path):
 def test_restore_drill_fails_on_a_damaged_backup(tmp_path):
     dest = tmp_path / "nightly"
     dest.mkdir()
-    bad = dest / "storeops-20261015-033000.db.gz"
+    bad = dest / "retailops-20261015-033000.db.gz"
     bad.write_bytes(gzip.compress(b"this is not a database" * 100))
     assert restore_drill.main(["--backup-dir", str(dest)]) == 1
-    truncated = dest / "storeops-20261016-033000.db.gz"
+    truncated = dest / "retailops-20261016-033000.db.gz"
     truncated.write_bytes(gzip.compress(b"x" * 10000)[:50])
     report = restore_drill.drill(truncated)
     assert report["ok"] is False and report["error"]
@@ -205,13 +205,13 @@ def test_restore_drill_accepts_a_plain_db_file(tmp_path):
 
 
 def test_launchd_templates_are_valid_plists_and_run_the_right_things():
-    backup = plistlib.loads((BACKUP / "com.kloudc.storeops.backup.plist").read_bytes())
-    assert backup["Label"] == "com.kloudc.storeops.backup"
+    backup = plistlib.loads((BACKUP / "com.kloudc.retailops.backup.plist").read_bytes())
+    assert backup["Label"] == "com.kloudc.retailops.backup"
     assert backup["ProgramArguments"][1].endswith("scripts/backup/backup_db.py")
     assert backup["StartCalendarInterval"] == {"Hour": 3, "Minute": 30}
     assert "--keep-days" in backup["ProgramArguments"]
-    litestream = plistlib.loads((BACKUP / "com.kloudc.storeops.litestream.plist").read_bytes())
-    assert litestream["ProgramArguments"] == ["__STOREOPS_DIR__/backend/scripts/backup/run_litestream.sh"]
+    litestream = plistlib.loads((BACKUP / "com.kloudc.retailops.litestream.plist").read_bytes())
+    assert litestream["ProgramArguments"] == ["__RETAILOPS_DIR__/backend/scripts/backup/run_litestream.sh"]
     assert litestream["KeepAlive"] == {"SuccessfulExit": False}
     for plist in (backup, litestream):
         flat = json.dumps(plist).lower()
@@ -221,7 +221,7 @@ def test_launchd_templates_are_valid_plists_and_run_the_right_things():
 def test_litestream_template_holds_no_credentials():
     text = (BACKUP / "litestream.yml.template").read_text()
     assert "REPLACE_WITH_ACCOUNT_ID" in text and "REPLACE_WITH_BUCKET_NAME" in text
-    assert "REPLACE_WITH_STORE_CODE" in text and "REPLACE_WITH_STOREOPS_DIR" in text
+    assert "REPLACE_WITH_STORE_CODE" in text and "REPLACE_WITH_RETAILOPS_DIR" in text
     for line in text.splitlines():
         stripped = line.strip()
         if stripped.startswith("#"):
@@ -230,7 +230,7 @@ def test_litestream_template_holds_no_credentials():
 
 
 def _run_wrapper(conf_dir: pathlib.Path):
-    env = dict(os.environ, STOREOPS_LITESTREAM_DIR=str(conf_dir), PATH="/usr/bin:/bin")
+    env = dict(os.environ, RETAILOPS_LITESTREAM_DIR=str(conf_dir), PATH="/usr/bin:/bin")
     return subprocess.run(
         ["/bin/bash", str(BACKUP / "run_litestream.sh")], capture_output=True, text=True, env=env, timeout=30
     )
@@ -258,17 +258,17 @@ def test_litestream_wrapper_stays_off_until_the_owner_sets_it_up(tmp_path):
 
 
 def test_restore_steps_stop_the_watchdog_and_keep_the_old_wal():
-    """The watchdog (com.kloudc.storeops.watchdog) re-bootstraps a
+    """The watchdog (com.kloudc.retailops.watchdog) re-bootstraps a
     stopped backend every 5 minutes; the manual restore must stop it before
     the backend, swap a fully unpacked file in with one mv, and keep the old
     database's -wal (it can hold the newest writes after a crash)."""
     readme = (BACKUP / "README.md").read_text()
     steps = readme.split("**To actually restore**", 1)[1].split("## Off-site", 1)[0]
-    stop_watchdog = steps.index("bootout system/com.kloudc.storeops.watchdog")
-    stop_backend = steps.index("bootout system/com.kloudc.storeops.backend")
-    start_backend = steps.index("bootstrap system /Library/LaunchDaemons/com.kloudc.storeops.backend.plist")
-    start_watchdog = steps.index("bootstrap system /Library/LaunchDaemons/com.kloudc.storeops.watchdog.plist")
-    unpack = steps.index("> storeops.db.restoring")
+    stop_watchdog = steps.index("bootout system/com.kloudc.retailops.watchdog")
+    stop_backend = steps.index("bootout system/com.kloudc.retailops.backend")
+    start_backend = steps.index("bootstrap system /Library/LaunchDaemons/com.kloudc.retailops.backend.plist")
+    start_watchdog = steps.index("bootstrap system /Library/LaunchDaemons/com.kloudc.retailops.watchdog.plist")
+    unpack = steps.index("> retailops.db.restoring")
     assert unpack < stop_watchdog < stop_backend < start_backend < start_watchdog
-    assert "rm -f storeops.db-wal" not in steps and "mv storeops.db-wal" in steps
-    assert "> storeops.db\n" not in steps  # never unpacked straight over the live name
+    assert "rm -f retailops.db-wal" not in steps and "mv retailops.db-wal" in steps
+    assert "> retailops.db\n" not in steps  # never unpacked straight over the live name

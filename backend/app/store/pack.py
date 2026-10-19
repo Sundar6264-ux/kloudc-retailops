@@ -653,7 +653,7 @@ def load_pack_file(path: Union[str, pathlib.Path]) -> StorePack:
 def json_schema() -> dict:
     schema = StorePack.model_json_schema(by_alias=True)
     schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
-    schema["title"] = "StoreOps store pack (version 1)"
+    schema["title"] = "KloudC RetailOps store pack (version 1)"
     return schema
 
 

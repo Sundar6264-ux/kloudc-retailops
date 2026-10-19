@@ -23,12 +23,12 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
-_store_var: contextvars.ContextVar[Optional[StoreRef]] = contextvars.ContextVar("storeops_store", default=None)
+_store_var: contextvars.ContextVar[Optional[StoreRef]] = contextvars.ContextVar("retailops_store", default=None)
 # "store" | "platform" | "none" (only meaningful when no store is set).
-_scope_var: contextvars.ContextVar[str] = contextvars.ContextVar("storeops_scope", default="none")
+_scope_var: contextvars.ContextVar[str] = contextvars.ContextVar("retailops_scope", default="none")
 # The status of a store a request's token points at, when that store is not
 # active (the auth dependency answers 403 store_suspended / store_not_ready).
-_block_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("storeops_store_block", default=None)
+_block_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("retailops_store_block", default=None)
 
 
 def current_store() -> Optional[StoreRef]:
@@ -149,7 +149,7 @@ def spawn_in_store(fn: Callable[..., Any], *args, name: str = "", **kwargs) -> t
         target=ctx.run,
         args=(fn, *args),
         kwargs=kwargs,
-        name=name or getattr(fn, "__name__", "storeops-thread"),
+        name=name or getattr(fn, "__name__", "retailops-thread"),
         daemon=True,
     )
     thread.start()

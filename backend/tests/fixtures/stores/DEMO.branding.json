@@ -1,16 +1,16 @@
 {
   "schema": 1,
   "store_code": "DEMO",
-  "name": "StoreOps Demo Market",
+  "name": "KloudC RetailOps Demo Market",
   "short_name": "Demo",
   "product": {
-    "name": "StoreOps",
+    "name": "KloudC RetailOps",
     "company": "KloudC LLC"
   },
-  "logo_url": "https://demo.storeops.invalid/branding/logo.png",
-  "icon_url": "https://demo.storeops.invalid/branding/icon.png",
-  "primary_color": "#0F766E",
-  "secondary_color": "#334155",
+  "logo_url": "https://demo.retailops.invalid/branding/logo.png",
+  "icon_url": "https://demo.retailops.invalid/branding/icon.png",
+  "primary_color": "#004BAD",
+  "secondary_color": "#2EA3F2",
   "timezone": "America/New_York",
   "currency": "USD",
   "locale": "en-US",
@@ -22,7 +22,7 @@
   ],
   "store_features": [],
   "labels_url": null,
-  "public_host": "https://demo.storeops.invalid",
+  "public_host": "https://demo.retailops.invalid",
   "legal": {
     "company": "KloudC LLC",
     "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
@@ -35,7 +35,7 @@
   },
   "store_url": {
     "ios": null,
-    "android": "https://play.google.com/store/apps/details?id=com.kloudc.storeops"
+    "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
   },
   "demo": true
 }

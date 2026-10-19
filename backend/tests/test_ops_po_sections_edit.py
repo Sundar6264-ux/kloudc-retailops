@@ -43,7 +43,7 @@ def store(db):
     add_snap(db, "chai", "Wagh Bakri Tea 1kg", "House of Spices", "Tea, Coffee & Hot Beverages", "Black Tea")
     add_snap(db, "kitkat", "KitKat 4 Finger", "Raja Foods", "Snacks & Savories", "Chocolates & Candy")
     add_snap(db, "rusk", "KCB Plain Tea Rusk 7oz", "Shaz International", "Pantry Staples", "Roti, Naan, Wraps")
-    add_snap(db, "samosa", "Veg Samosa", None, "Snacks", None, group="STREET KITCHEN", price=None)
+    add_snap(db, "samosa", "Veg Samosa", None, "Snacks", None, group="MARKET KITCHEN", price=None)
     db.commit()
     # An existing Toast-category correction (stays, feeds the automatic section).
     add_rule(db, "supplier", "Shaz International")
@@ -105,7 +105,7 @@ def test_every_prod_catalog_combo_has_a_section():
     the kitchen / menu groups and the few non-stock categories."""
     combos = json.loads(private_data("prod_category_combos_2026-09-30.json").read_text())
     assert len(combos) > 150
-    kitchen_groups = {"CATERING MENU", "STREET KITCHEN", "EVENT MENU"}
+    kitchen_groups = {"CATERING MENU", "MARKET KITCHEN", "EVENT MENU"}
     allowed_other = {"Outdoor Recreation", "Smokeless Tobacco", "Uninvoiced/Kitchen"}
     missing = []
     for group, cat, sub in combos:

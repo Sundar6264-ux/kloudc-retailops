@@ -10,7 +10,7 @@ import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-W = pathlib.Path(os.environ.get("SUITE_B_WORK", "/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB"))
+W = pathlib.Path(os.environ.get("SUITE_B_WORK", "/tmp/retailops-suiteB"))
 PORT = int(os.environ.get("SUITE_B_WHAPI_PORT", "8838"))
 LOG = W / "whapi_log.jsonl"
 FAIL = W / "whapi_fail.txt"

@@ -93,7 +93,7 @@ for (const width of WIDTHS) {
         rows: document.querySelectorAll(".ins-printable tbody tr").length,
       }));
       check(!vis.sidebar && !vis.controls, `print hides the sidebar and controls (${JSON.stringify(vis)})`);
-      await page.pdf({ path: `${process.env.SUITE_B_WORK || "/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB"}/shots/prep-forecast-print.pdf`, format: "Letter" });
+      await page.pdf({ path: `${process.env.SUITE_B_WORK || "/tmp/retailops-suiteB"}/shots/prep-forecast-print.pdf`, format: "Letter" });
       await shot(page, "ins-prep-print-1280", true);
       await page.emulateMedia({ media: "screen" });
     }

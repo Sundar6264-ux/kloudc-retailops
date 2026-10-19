@@ -56,8 +56,8 @@ def test_multistore_m1_chain_order():
         assert scripts.get_revision(revision).down_revision == down, revision
 
 
-def test_storeops_m2_chain_order():
-    # StoreOps M2 adds exactly one migration: the store identity stamp (MT8).
+def test_retailops_m2_chain_order():
+    # KloudC RetailOps M2 adds exactly one migration: the store identity stamp (MT8).
     scripts = _scripts()
     assert scripts.get_revision("0062").down_revision == "0061"
     assert scripts.get_heads() == ["0062"]

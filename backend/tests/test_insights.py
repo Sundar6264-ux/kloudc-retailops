@@ -202,7 +202,7 @@ class FakeToast:
     def menu_row(self, d, q, price, **extra):
         row = {
             "restaurantGuid": REST,
-            "restaurantName": "Spice Town",
+            "restaurantName": "Main Store",
             "restaurantLocationName": None,
             "restaurantLocationCode": "",
             "businessDate": ymd(d),
@@ -230,7 +230,7 @@ class FakeToast:
             out.append(
                 {
                     "restaurantGuid": REST,
-                    "restaurantName": "Spice Town",
+                    "restaurantName": "Main Store",
                     "restaurantLocationName": None,
                     "restaurantLocationCode": "",
                     "paymentDate": ymd(d),
@@ -245,7 +245,7 @@ class FakeToast:
             )
         out.append(  # a cash / unknown payment: no card at all
             {
-                "restaurantGuid": REST, "restaurantName": "Spice Town", "restaurantLocationName": None,
+                "restaurantGuid": REST, "restaurantName": "Main Store", "restaurantLocationName": None,
                 "restaurantLocationCode": "", "paymentDate": ymd(d), "orderGuid": "o-cash", "paymentGuid": f"p-cash-{ymd(d)}",
                 "cardFingerprint": None, "cardLast4Digits": None, "cardType": None, "paymentAccountReference": None,
                 "cardHolderName": None,
@@ -919,7 +919,7 @@ def test_menu_map_kitchen_rule():
     items = mm["items"]
     assert items["k1"]["kitchen"] and items["k1"]["group"] == "Chaat Bar"
     assert items["k4"]["kitchen"], "house drinks are made in the kitchen"
-    assert items["k5"]["kitchen"], "the (GH) Street Kitchen menu counts"
+    assert items["k5"]["kitchen"], "the (GH) Market Kitchen menu counts"
     assert not items["g2"]["kitchen"], "canned drinks are retail stock"
     assert not items["g1"]["kitchen"] and items["g3"]["group"] == "Rice & Rice Products"
     assert "t1" not in items

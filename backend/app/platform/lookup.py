@@ -9,8 +9,8 @@ from app.directory.stores import StoreRecord, compact_json, normalize_code
 from app.platform.config import platform_public_url
 from app.platform.models import Store
 
-DEFAULT_PRIMARY = "#0F766E"
-DEFAULT_SECONDARY = "#334155"
+DEFAULT_PRIMARY = "#004BAD"
+DEFAULT_SECONDARY = "#2EA3F2"
 
 
 def _absolute(value, base: str) -> Optional[str]:

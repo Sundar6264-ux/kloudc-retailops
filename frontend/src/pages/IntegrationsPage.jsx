@@ -190,7 +190,7 @@ function IntegrationCard({ view, onChanged, disabled }) {
             {busy === "connect" ? "Connecting…" : "Connect Clover"}
           </button>
           <span className="muted" style={{ fontSize: "0.82rem" }}>
-            Coming with M3 - you'll sign in to Clover and approve StoreOps.
+            Coming with M3 - you'll sign in to Clover and approve KloudC RetailOps.
           </span>
         </div>
       ) : (

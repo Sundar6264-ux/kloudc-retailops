@@ -22,7 +22,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import HRFlowable, Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 # The letterhead icon: DOCUMENT_LOGO_FILE (a local image) when set, else the
-# bundled StoreOps icon; no icon when neither file exists. The store's name,
+# bundled KloudC RetailOps icon; no icon when neither file exists. The store's name,
 # address and phone are real text next to it (store settings), so their size
 # can be tuned independently of the image.
 _BUNDLED_ICON = Path(__file__).resolve().parent.parent / "assets" / "branding" / "logo-128.png"
@@ -235,6 +235,9 @@ def export_simple_po_pdf(
             footer_style,
         )
     )
+    from app.store import settings_view as sv
+
+    story.append(Paragraph(f"Created with {xml_escape(sv.product_credit())}", footer_style))
 
     doc.build(story)
     return buf.getvalue()

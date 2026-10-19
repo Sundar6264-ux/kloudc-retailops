@@ -1,7 +1,7 @@
 {
   "pack_version": 1,
   "pack_id": "generic",
-  "label": "StoreOps default rules for a new store",
+  "label": "KloudC RetailOps default rules for a new store",
 
   "menu": {
     "excluded_category_groups": [],

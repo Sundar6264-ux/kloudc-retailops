@@ -6,7 +6,7 @@ blank, SMTP is a fake outbox, and Whapi points at `mock_whapi.py` (127.0.0.1:883
 also swaps every WhatsApp group's chat id in the copy for a fake one.
 
 ```
-export SUITE_B_WORK=/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB   # default; everything is written here
+export SUITE_B_WORK=/tmp/retailops-suiteB   # default; everything is written here
 export SUITE_B_SOURCE_DB=/path/to/store.db           # required: the store database to copy (opened mode=ro)
 export SUITE_B_FLYERS_SRC=/path/to/flyers            # optional: its flyer folder, so existing thumbnails load
 ./setup.sh                # .backup (mode=ro) -> alembic upgrade head -> temp users -> website from git HEAD of this repo

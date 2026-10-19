@@ -34,7 +34,7 @@ WORK = pathlib.Path(os.environ["REG_WORK"]).resolve()
 DB_URL = os.environ["DATABASE_URL"]
 DB_PATH = pathlib.Path(DB_URL.replace("sqlite:///", "")).resolve()
 assert str(DB_PATH).startswith(str(WORK) + "/"), f"refusing: {DB_PATH} is not inside {WORK}"
-assert "spicetown-backend" not in str(DB_PATH)
+assert not (os.environ.get("ORIGIN_LIVE_DIR") and str(DB_PATH).startswith(os.environ["ORIGIN_LIVE_DIR"])), "never the live database"
 PORT = int(os.environ["REG_PORT"])
 MOCK_PORT = int(os.environ["REG_MOCK_PORT"])
 OUTBOX = WORK / "outbox"

@@ -4,7 +4,7 @@
   NULL DEFAULT 0, so every existing group (the two built-in staff groups
   included) starts as not-marketing.
 - flyers: one row per uploaded flyer. The file itself lives on disk under
-  FLYERS_DIR (default ~/Spice Town Flyers/<Category>/), at file_rel_path.
+  FLYERS_DIR (default ~/Main Store Flyers/<Category>/), at file_rel_path.
   Soft delete only (deleted_at).
 - flyer_sends: one row per (send batch, target). `channel` is "whatsapp" for
   now; target_ref is the chat id snapshot (never returned to clients).

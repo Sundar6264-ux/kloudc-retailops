@@ -3,7 +3,7 @@ import { chromium } from "../../node_modules/playwright/index.mjs";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 export { chromium };
-export const W = process.env.SUITE_B_WORK || "/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB";
+export const W = process.env.SUITE_B_WORK || "/tmp/retailops-suiteB";
 export const BASE = `http://127.0.0.1:${process.env.SUITE_B_PORT || 8831}`;
 export const DB = `${W}/prodcopy.db`;
 export const SHOTS = `${W}/shots`;
@@ -21,7 +21,7 @@ export function check(cond, msg) {
 }
 export function note(msg) { console.log("  note:", msg); notes.push(msg); }
 export function sql(q) {
-  if (!DB.startsWith(W) || DB.includes("spicetown-backend")) throw new Error("not the copy");
+  if (!DB.startsWith(W) || (process.env.ORIGIN_LIVE_DIR && DB.startsWith(process.env.ORIGIN_LIVE_DIR))) throw new Error("not the copy");
   return execFileSync("sqlite3", ["-separator", "|", DB, q], { encoding: "utf8" }).trim();
 }
 // Live Toast calls fail in the sandbox (Toast is blank on purpose).

@@ -19,7 +19,7 @@ from typing import Optional
 from app.config import get_settings
 
 DEFAULT_COMPANY = "KloudC LLC"
-DEFAULT_PRODUCT = "StoreOps"
+DEFAULT_PRODUCT = "KloudC RetailOps"
 DEFAULT_PRIVACY_URL = "https://kloudc.com/kloudc-privacy-policy/"
 DEFAULT_SUPPORT_URL = "https://kloudc.com/kloudc-support/"
 

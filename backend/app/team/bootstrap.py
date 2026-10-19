@@ -26,7 +26,7 @@ def app_config() -> dict:
     return {
         "min_supported_build": {"ios": s.min_supported_build_ios, "android": s.min_supported_build_android},
         # Blank APP_STORE_URL -> null; blank PLAY_STORE_URL -> the Play
-        # listing of APP_BUNDLE_ID (StoreOps M2, settings_view).
+        # listing of APP_BUNDLE_ID (KloudC RetailOps M2, settings_view).
         "store_url": {"ios": app_store_url(s), "android": play_store_url(s)},
         # Multi-store MT6 (additive): which POS this store runs and what it
         # can do (app/pos/gating.py). A Toast store: "Toast" and its full set.

@@ -60,8 +60,8 @@ CREDENTIAL_SETTING_KEYS: FrozenSet[str] = frozenset(
 # own layers fill them.
 _EXPLICIT_PRIVATE_KEYS = frozenset(
     {
-        "gmail_address", "gmail_app_password", "whapi_chat_id", "whapi_spice_town_checklist_group_id",
-        "whapi_street_kitchen_checklist_group_id", "toast_invoice_email", "ap_inbox_email", "insights_hmac_secret",
+        "gmail_address", "gmail_app_password", "whapi_chat_id", "whapi_store_checklist_group_id",
+        "whapi_kitchen_checklist_group_id", "toast_invoice_email", "ap_inbox_email", "insights_hmac_secret",
         "store_name", "store_short_name", "store_address", "store_phone", "store_email", "store_description",
         "logo_url", "icon_url", "document_logo_file", "labels_url", "public_base_url", "email_from_name",
         "first_sales_date", "demo_mode",
@@ -74,7 +74,7 @@ _EXPLICIT_PLATFORM_KEYS = frozenset(
         "store_db_hosts", "store_db_prefix", "pg_admin_url", "tenant_pool_size", "tenant_max_overflow",
         "tenant_pool_timeout", "tenant_max_engines", "tenant_engine_idle_seconds", "statement_timeout_ms",
         "settings_refresh_seconds", "scheduler_max_workers", "platform_public_url", "platform_login_code",
-        "storeops_secret_keys", "storeops_secret_key", "storeops_secret_key_file", "signup_enabled",
+        "retailops_secret_keys", "retailops_secret_key", "retailops_secret_key_file", "signup_enabled",
         "signup_rate_per_hour", "login_lockout_failures", "login_lockout_minutes", "login_ip_lockout_failures",
         "platform_require_totp", "dedicated_hosting_enabled", "dedicated_store_codes", "private_packs_dir",
         "cors_origins", "platform_domain", "product_name", "company_name", "app_bundle_id", "apple_team_id",

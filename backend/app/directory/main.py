@@ -35,7 +35,7 @@ from app.directory.stores import (
 )
 from app.directory.wellknown import AASA_PATH, ASSETLINKS_PATH, CACHE_CONTROL, aasa_bytes, assetlinks_bytes
 
-log = logging.getLogger("storeops.directory")
+log = logging.getLogger("retailops.directory")
 
 JSON = "application/json"
 CACHE_200 = "public, max-age=300, stale-while-revalidate=3600"

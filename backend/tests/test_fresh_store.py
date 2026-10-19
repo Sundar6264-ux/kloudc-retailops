@@ -1,7 +1,7 @@
-"""Fresh-store test (StoreOps M2, MT8; plan 9.1, docs/M2_CONTRACT.md 3.5-3.6).
+"""Fresh-store test (KloudC RetailOps M2, MT8; plan 9.1, docs/M2_CONTRACT.md 3.5-3.6).
 
 A brand-new SQLite file, every migration (`alembic upgrade head`), then
-`python -m app.store init` for the fake store STOREOPS_TEST_TOAST with
+`python -m app.store init` for the fake store RETAILOPS_TEST_TOAST with
 packs/test_toast.json. Every text column of every table is then searched for
 the legacy store's names (and the private staff-name list when this machine
 has it): zero hits. Also: the stamp and the upload marker exist, a second
@@ -21,8 +21,11 @@ import sys
 import pytest
 
 from tests.store_fixtures import BACKEND, PRIVATE_DIR
+from tests.origin_names import has_origin_name
 
-NAMES = ["spice town", "spicetown", "street kitchen", "vernon", "shaz international"]
+# The neutral sample names the old migrations seed (store init removes those
+# rows). Origin-store names are checked too, by hash (tests/origin_names.py).
+NAMES = ["main store", "market kitchen", "sample biscuit supplier"]
 
 
 def _forbidden() -> list:
@@ -74,7 +77,7 @@ def fresh_store(tmp_path_factory):
     _migrate(tmp)
     # Before init, the legacy seeded rows are there (that's what init removes).
     before = _hits(tmp / "store.db")
-    init = _run(tmp, "-m", "app.store", "init", "--code", "STOREOPS_TEST_TOAST", "--pack", str(BACKEND / "packs" / "test_toast.json"))
+    init = _run(tmp, "-m", "app.store", "init", "--code", "RETAILOPS_TEST_TOAST", "--pack", str(BACKEND / "packs" / "test_toast.json"))
     return tmp, before, json.loads(init.stdout)
 
 
@@ -94,6 +97,8 @@ def _hits(db_path: pathlib.Path) -> list:
                     m = pattern.search(value)
                     if m:
                         hits.append(f"{table}.{col}: {m.group(0)!r}")
+                    elif has_origin_name(value):
+                        hits.append(f"{table}.{col}: origin-store name")
     finally:
         conn.close()
     return hits
@@ -103,7 +108,7 @@ def test_init_removes_every_legacy_row(fresh_store):
     tmp, before, summary = fresh_store
     assert before, "the migrations should have seeded the legacy rows the test looks for"
     assert _hits(tmp / "store.db") == []
-    assert summary["store_code"] == "STOREOPS_TEST_TOAST" and summary["pack_id"] == "storeops_test_toast"
+    assert summary["store_code"] == "RETAILOPS_TEST_TOAST" and summary["pack_id"] == "retailops_test_toast"
     assert summary["removed"] == {
         "category_overrides": summary["removed"]["category_overrides"],
         "checklist_definition_versions": summary["removed"]["checklist_definition_versions"],
@@ -119,26 +124,26 @@ def test_pack_rows_stamp_and_marker(fresh_store):
     conn = sqlite3.connect(str(tmp / "store.db"))
     try:
         assert conn.execute("SELECT store_code, instance_id, created_by FROM store_identity").fetchall() == [
-            ("STOREOPS_TEST_TOAST", summary["instance_id"], "store-init")
+            ("RETAILOPS_TEST_TOAST", summary["instance_id"], "store-init")
         ]
         assert conn.execute("SELECT checklist_type, created_by FROM checklist_definitions").fetchall() == [
-            ("daily_closing", "store-init (storeops_test_toast)")
+            ("daily_closing", "store-init (retailops_test_toast)")
         ]
         assert conn.execute("SELECT key, label, builtin FROM whatsapp_groups").fetchall() == [("store", "Store staff group", 1)]
         rows = conn.execute("SELECT value, changed_by_name FROM setting_changes WHERE key = 'store_pack'").fetchall()
-        assert len(rows) == 1 and json.loads(rows[0][0])["pack_id"] == "storeops_test_toast" and rows[0][1] == "store-init"
+        assert len(rows) == 1 and json.loads(rows[0][0])["pack_id"] == "retailops_test_toast" and rows[0][1] == "store-init"
         teams = [r[0] for r in conn.execute("SELECT name FROM teams ORDER BY id")]
         assert teams == ["Everyone", "Grocery", "Kitchen", "Managers"]  # generic, kept
     finally:
         conn.close()
     marker = json.loads((tmp / "uploads" / ".store_identity").read_text())
-    assert marker == {"store_code": "STOREOPS_TEST_TOAST", "instance_id": summary["instance_id"]}
+    assert marker == {"store_code": "RETAILOPS_TEST_TOAST", "instance_id": summary["instance_id"]}
 
 
 def test_second_init_is_a_no_op(fresh_store):
     tmp, _, summary = fresh_store
     again = json.loads(
-        _run(tmp, "-m", "app.store", "init", "--code", "STOREOPS_TEST_TOAST", "--pack", str(BACKEND / "packs" / "test_toast.json")).stdout
+        _run(tmp, "-m", "app.store", "init", "--code", "RETAILOPS_TEST_TOAST", "--pack", str(BACKEND / "packs" / "test_toast.json")).stdout
     )
     assert again["instance_id"] == summary["instance_id"]
     assert again["pack_written"] is False
@@ -148,13 +153,13 @@ def test_second_init_is_a_no_op(fresh_store):
 def test_init_with_another_code_is_refused(fresh_store):
     tmp, _, _ = fresh_store
     done = _run(tmp, "-m", "app.store", "init", "--code", "OTHER_STORE", "--pack", str(BACKEND / "packs" / "generic.json"), check=False)
-    assert done.returncode == 1 and "belongs to STOREOPS_TEST_TOAST" in done.stderr
+    assert done.returncode == 1 and "belongs to RETAILOPS_TEST_TOAST" in done.stderr
 
 
 def test_identity_show(fresh_store):
     tmp, _, summary = fresh_store
     shown = json.loads(_run(tmp, "-m", "app.store", "identity", "show").stdout)
-    assert shown["database"]["store_code"] == "STOREOPS_TEST_TOAST"
+    assert shown["database"]["store_code"] == "RETAILOPS_TEST_TOAST"
     assert shown["uploads_marker"]["instance_id"] == summary["instance_id"]
 
 

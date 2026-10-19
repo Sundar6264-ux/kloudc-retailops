@@ -9,7 +9,7 @@ can create and edit them on the website (docs/CHECKLIST_BUILDER_CONTRACT.md).
   submission was made against. Existing rows stay NULL = version 1.
 
 Seeds the three built-in checklists (app/services/checklist_builtin.py) as
-their version 1, exactly as served before. The Street Kitchen FSA closing
+their version 1, exactly as served before. The Market Kitchen FSA closing
 also gets version 2 = the same form without the "Chef Name" question (owner:
 "names with user only, no dropdown - like other checklists"); every existing
 FSA submission stays on version 1 and still shows its chef.

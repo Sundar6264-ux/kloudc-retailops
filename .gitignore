@@ -1,4 +1,4 @@
-# StoreOps repository-wide guards (secrets and store data never go in git).
+# KloudC RetailOps repository-wide guards (secrets and store data never go in git).
 .env
 .env.*
 !.env.example

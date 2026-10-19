@@ -42,6 +42,6 @@ def verify(secret_b32: str, code: Optional[str], at: Optional[float] = None, dri
     return any(hmac.compare_digest(_code(secret_b32, counter + d), code) for d in range(-drift, drift + 1))
 
 
-def otpauth_uri(secret_b32: str, username: str, issuer: str = "StoreOps") -> str:
+def otpauth_uri(secret_b32: str, username: str, issuer: str = "KloudC RetailOps") -> str:
     label = quote(f"{issuer}:{username}")
     return f"otpauth://totp/{label}?secret={secret_b32}&issuer={quote(issuer)}&digits={DIGITS}&period={STEP}"

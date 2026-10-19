@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Periodic check for a bare-metal Mac install (com.kloudc.storeops.watchdog):
+# Periodic check for a bare-metal Mac install (com.kloudc.retailops.watchdog):
 # re-bootstraps any listed LaunchDaemon that is not loaded at all.
 #
 # RunAtLoad + KeepAlive already cover "start at boot" and "restart on crash",
@@ -7,14 +7,14 @@
 # after a manual `bootout` that was never followed by `bootstrap`. This is the
 # safety net for those cases.
 #
-# Services: STOREOPS_WATCH_SERVICES, space-separated "label:plist" pairs.
-# Default: the backend only. Log: STOREOPS_WATCHDOG_LOG (default: logs/ next
+# Services: RETAILOPS_WATCH_SERVICES, space-separated "label:plist" pairs.
+# Default: the backend only. Log: RETAILOPS_WATCHDOG_LOG (default: logs/ next
 # to this repo's backend).
 set -uo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-LOG="${STOREOPS_WATCHDOG_LOG:-$HERE/../../logs/watchdog.log}"
-SERVICES=(${STOREOPS_WATCH_SERVICES:-"com.kloudc.storeops.backend:/Library/LaunchDaemons/com.kloudc.storeops.backend.plist"})
+LOG="${RETAILOPS_WATCHDOG_LOG:-${STOREOPS_WATCHDOG_LOG:-$HERE/../../logs/watchdog.log}}"
+SERVICES=(${RETAILOPS_WATCH_SERVICES:-${STOREOPS_WATCH_SERVICES:-"com.kloudc.retailops.backend:/Library/LaunchDaemons/com.kloudc.retailops.backend.plist"}})
 
 for entry in "${SERVICES[@]}"; do
   label="${entry%%:*}"

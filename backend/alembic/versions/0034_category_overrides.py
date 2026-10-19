@@ -1,8 +1,8 @@
 """category_overrides - app-side corrections of Toast categories (see
-models.CategoryOverride / services/category_overrides.py). Seeds the owner's
-first rule: every Shaz International item -> RETAIL / Snacks & Savories /
-Biscuits, Cookies & Rusk (Toast files them under Baking Essentials, Roti/Naan,
-Biscuits & Cookies and Sweets & Mithai).
+models.CategoryOverride / services/category_overrides.py). Seeds one example
+rule: every item of the sample supplier "Sample Biscuit Supplier" -> RETAIL /
+Snacks & Savories / Biscuits, Cookies & Rusk. `python -m app.store init`
+removes it for every new store (store/__main__.py LEGACY_CATEGORY_SUPPLIER).
 
 Revision ID: 0034
 Revises: 0033
@@ -39,12 +39,12 @@ def upgrade() -> None:
         [
             {
                 "match_type": "supplier",
-                "match_value": "Shaz International",
+                "match_value": "Sample Biscuit Supplier",
                 "category_group": "RETAIL",
                 "category": "Snacks & Savories",
                 "subcategory": "Biscuits, Cookies & Rusk",
-                "note": "Owner, Sep 2026: every Shaz International item is Biscuits, Cookies & Rusk "
-                "(wrong in Toast; fix list in docs/SHAZ_CATEGORY_FIX.md).",
+                "note": "Example rule: every Sample Biscuit Supplier item is Biscuits, Cookies & Rusk "
+                "(removed by store init).",
                 # Naive UTC, as UTCDateTime stores it.
                 "created_at": dt.datetime.utcnow().replace(microsecond=0),
                 "active": True,

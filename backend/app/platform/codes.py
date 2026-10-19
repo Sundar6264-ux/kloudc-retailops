@@ -24,6 +24,7 @@ RESERVED_CODES = frozenset(
         "SUPPORT",
         "HELP",
         "STOREOPS",
+        "RETAILOPS",
         "KLOUDC",
         "TEST",
         "NULL",

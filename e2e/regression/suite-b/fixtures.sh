@@ -1,9 +1,9 @@
 #!/bin/zsh
 # Test files for Suite B uploads (made locally with macOS tools; nothing downloaded).
 set -e
-W=${SUITE_B_WORK:-/Users/sundar/.claude/jobs/e26a1611/tmp/suiteB}
+W=${SUITE_B_WORK:-/tmp/retailops-suiteB}
 F=$W/fixtures && mkdir -p $F && cd $F
-/Users/sundar/spicetown-dev/website/backend/.venv/bin/python -I - <<'PY'
+${REG_PY:-${0:A:h}/../../../backend/.venv/bin/python} -I - <<'PY'
 from PIL import Image, ImageDraw
 im = Image.new("RGB", (1600, 1200), (250, 236, 210))
 d = ImageDraw.Draw(im)

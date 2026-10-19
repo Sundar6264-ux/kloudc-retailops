@@ -1,6 +1,6 @@
 """The store image and its compose file agree on where store state lives.
 
-`docker run ... -v storeops-data:/data storeops` (the Dockerfile's own usage
+`docker run ... -v retailops-data:/data retailops` (the Dockerfile's own usage
 line) has no compose `environment:` block, so every container path compose
 pins must also be the image's default, or that store keeps state outside its
 volume - and as the non-root user it cannot even create it there.

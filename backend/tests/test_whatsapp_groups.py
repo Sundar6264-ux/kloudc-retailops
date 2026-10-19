@@ -35,7 +35,7 @@ pytestmark = pytest.mark.suite_pack
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 API = "/api/checklists/admin/whatsapp-groups"
 DEFS = "/api/checklists/admin/definitions"
-ST, SK = "spice_town_closing", "street_kitchen_closing"
+ST, SK = "store_closing", "kitchen_closing"
 GROUP_A = "120363011111111111@g.us"
 GROUP_B = "120363022222222222@g.us"
 
@@ -95,8 +95,8 @@ def _never_real_whapi(monkeypatch):
 @pytest.fixture
 def env_groups(monkeypatch):
     s = get_settings()
-    monkeypatch.setattr(s, "whapi_spice_town_checklist_group_id", "120363099999999991@g.us")
-    monkeypatch.setattr(s, "whapi_street_kitchen_checklist_group_id", "")
+    monkeypatch.setattr(s, "whapi_store_checklist_group_id", "120363099999999991@g.us")
+    monkeypatch.setattr(s, "whapi_kitchen_checklist_group_id", "")
     monkeypatch.setattr(s, "whapi_chat_id", "invoice-group@g.us")
 
 
@@ -131,8 +131,8 @@ def test_list_starts_with_the_two_builtins(admin_client, env_groups):
     # The env chat id, masked to its last 6 characters; kitchen isn't configured.
     assert by_key["store"]["chat_id_masked"] == "…999991@g.us" and by_key["store"]["configured"] is True
     assert by_key["kitchen"]["chat_id_masked"] is None and by_key["kitchen"]["configured"] is False
-    # The seeded checklists use them (Spice Town -> store, both Street Kitchen -> kitchen).
-    assert len(by_key["store"]["used_by"]) == 1 and by_key["store"]["used_by"][0].startswith("Spice Town")
+    # The seeded checklists use them (Main Store -> store, both Market Kitchen -> kitchen).
+    assert len(by_key["store"]["used_by"]) == 1 and by_key["store"]["used_by"][0].startswith("Main Store")
     assert len(by_key["kitchen"]["used_by"]) == 2
     # `marketing` is additive (flyers, migration 0046); every group starts unticked.
     assert set(items[0]) == {"key", "label", "chat_id_masked", "configured", "builtin", "active", "marketing", "used_by"}
@@ -262,7 +262,7 @@ def test_available_lists_groups_marks_added_and_caches(admin_client, whapi, env_
     whapi.groups = [
         {"id": GROUP_B, "name": "Zeta crew", "type": "group"},
         {"id": GROUP_A, "name": "alpha team", "type": "group"},
-        {"id": "120363099999999991@g.us", "name": "Spice Town Staff", "type": "group"},
+        {"id": "120363099999999991@g.us", "name": "Main Store Staff", "type": "group"},
         {"name": "no id - skipped"},
     ]
     _add(admin_client, "Deli team", GROUP_A)
@@ -271,7 +271,7 @@ def test_available_lists_groups_marks_added_and_caches(admin_client, whapi, env_
     assert body["items"] == [
         {"chat_id": GROUP_B, "name": "Zeta crew", "already_added_key": None},
         {"chat_id": GROUP_A, "name": "alpha team", "already_added_key": "deli_team"},
-        {"chat_id": "120363099999999991@g.us", "name": "Spice Town Staff", "already_added_key": "store"},
+        {"chat_id": "120363099999999991@g.us", "name": "Main Store Staff", "already_added_key": "store"},
     ]
     assert len(whapi.calls) == 1
     # Cached for 5 minutes - but "already added" is always fresh.
@@ -491,8 +491,8 @@ def test_migration_0044_up_down_and_up_again_on_a_fresh_database(tmp_path):
         assert migrated == {c.name for c in Base.metadata.tables["whatsapp_groups"].columns}
         rows = con.execute("SELECT key, label, chat_id, builtin, active FROM whatsapp_groups ORDER BY id").fetchall()
         assert rows == [
-            ("store", "Spice Town staff group", None, 1, 1),
-            ("kitchen", "Street Kitchen staff group", None, 1, 1),
+            ("store", "Main Store staff group", None, 1, 1),
+            ("kitchen", "Market Kitchen staff group", None, 1, 1),
         ]
         with pytest.raises(sqlite3.IntegrityError):
             con.execute("INSERT INTO whatsapp_groups (key, label, created_at) VALUES ('store', 'x', '2026-10-01')")

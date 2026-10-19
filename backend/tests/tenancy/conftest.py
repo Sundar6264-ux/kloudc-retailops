@@ -1,7 +1,7 @@
 """Fixtures for the tenancy tests (track B): real PostgreSQL store databases
-on the local dev cluster (STOREOPS_TEST_PG_URL), three stores in multi mode.
+on the local dev cluster (RETAILOPS_TEST_PG_URL), three stores in multi mode.
 
-Databases are named ``so_b_<pid>_<store>`` (prefix STOREOPS_TEST_DB_PREFIX,
+Databases are named ``so_b_<pid>_<store>`` (prefix RETAILOPS_TEST_DB_PREFIX,
 default ``so_b``), created once per run with C collation and dropped at the
 end. The tests skip when PostgreSQL is not reachable.
 """
@@ -14,8 +14,8 @@ from sqlalchemy import Boolean, create_engine, text
 from sqlalchemy.schema import DefaultClause
 from sqlalchemy.sql import expression
 
-PG_URL = os.environ.get("STOREOPS_TEST_PG_URL", "postgresql+psycopg://storeops@127.0.0.1:5433/postgres")
-PREFIX = os.environ.get("STOREOPS_TEST_DB_PREFIX", "so_b")
+PG_URL = os.environ.get("RETAILOPS_TEST_PG_URL", "postgresql+psycopg://storeops@127.0.0.1:5433/postgres")
+PREFIX = os.environ.get("RETAILOPS_TEST_DB_PREFIX", "so_b")
 STORES = ("ALPHA", "BETA", "GAMMA")
 
 
@@ -136,7 +136,7 @@ def multi(pg_store_dbs, monkeypatch, tmp_path):
     monkeypatch.setattr(s, "tenancy_mode", "multi")
     monkeypatch.setattr(s, "store_database_url_template", PG_URL.rsplit("/", 1)[0] + "/{db_name}")
     monkeypatch.setattr(s, "uploads_root", str(tmp_path / "uploads"))
-    monkeypatch.setattr(s, "platform_public_url", "https://app.storeops.test")
+    monkeypatch.setattr(s, "platform_public_url", "https://app.retailops.test")
     monkeypatch.setattr(s, "dedicated_store_codes", "")
     monkeypatch.setattr(s, "dedicated_hosting_enabled", False)
     dispose_all_engines()

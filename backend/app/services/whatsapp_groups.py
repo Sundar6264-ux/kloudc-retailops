@@ -7,7 +7,7 @@ A checklist's settings.whatsapp_group holds a group `key`. Sending resolves
 the key to a Whapi chat id here (resolve_chat_id):
 - an active row with a chat_id -> that chat id;
 - an active built-in row with chat_id NULL -> the env setting
-  (WHAPI_SPICE_TOWN_/STREET_KITCHEN_CHECKLIST_GROUP_ID), exactly as before;
+  (WHAPI_STORE_/KITCHEN_CHECKLIST_GROUP_ID), exactly as before;
 - unknown, inactive, empty or unconfigured -> "" (nothing is sent; the
   submission records "not set up", as an unconfigured env group always did).
 

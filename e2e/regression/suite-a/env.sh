@@ -1,11 +1,11 @@
 # Settings shared by the regression scripts (sourced, zsh or bash).
 #
 # REG_WORK  scratch folder: the prod COPY, the built website, screenshots, logs.
-#           Never inside the repo. Default: a folder under ~/.claude/jobs.
+#           Never inside the repo. Default: $TMPDIR/retailops-suiteA.
 # REG_PORT  the throwaway server's port (a mock Toast runs on REG_PORT + 10000).
 # The caller sets HERE (this folder) before sourcing.
 REG_REPO="$(cd "$HERE/../../.." && pwd)"
-: "${REG_WORK:=$HOME/.claude/jobs/e26a1611/tmp/suiteA}"
+: "${REG_WORK:=${TMPDIR:-/tmp}/retailops-suiteA}"
 : "${REG_PORT:=8830}"
 REG_MOCK_PORT=$((REG_PORT + 10000))
 # The store database to copy. Only ever opened read-only (mode=ro) to take a

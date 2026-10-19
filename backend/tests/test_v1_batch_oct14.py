@@ -187,17 +187,17 @@ def test_lead_without_team_tasks_gets_no_task(db, admin, monkeypatch):
     snap(db, "rice1", "Sona Masoori 20lb", category="Oils & Fats", supplier="Chetak")
     snap(db, "frz1", "Veg Puff", category="Beverages (Non-Alcoholic)", supplier="Shata Traders")
     db.commit()
-    sai = make_user(db, "Sai Durga", features=["team_tasks", "inventory_reports"])
+    sasha = make_user(db, "Sasha Durga", features=["team_tasks", "inventory_reports"])
     nobody = make_user(db, "Kiran", features=["inventory_reports"])  # no team_tasks
     only_missing(db, admin)
-    save(db, admin, sections=[("Oils & Ghee", sai.id)], vendors=[("Shata Traders", nobody.id)])
+    save(db, admin, sections=[("Oils & Ghee", sasha.id)], vendors=[("Shata Traders", nobody.id)])
 
     result = il.run_daily_tasks(db, dt.datetime.combine(dt.datetime.now(ny).date(), dt.time(10, 5), ny))
     assignees = {
         t.assignee_user_id
         for t in db.query(Task).filter(Task.source_type == il.SOURCE_TYPE, Task.status == "open")
     }
-    assert assignees == {sai.id}
+    assert assignees == {sasha.id}
     assert result["no_tasks_access"] == [{"user_id": nobody.id, "name": "Kiran", "count": 1}]
     assert "Kiran can't see Team Tasks" in il.last_run(db)["detail"]
 
@@ -220,9 +220,9 @@ def test_lead_tasks_once_a_store_day_across_dst(db, admin, monkeypatch, day):
     ny = zoneinfo.ZoneInfo("America/New_York")
     snap(db, "rice1", "Sona Masoori 20lb", category="Oils & Fats", supplier="Chetak")
     db.commit()
-    sai = make_user(db, "Sai Durga", features=["team_tasks", "inventory_reports"])
+    sasha = make_user(db, "Sasha Durga", features=["team_tasks", "inventory_reports"])
     only_missing(db, admin)
-    save(db, admin, sections=[("Oils & Ghee", sai.id)])
+    save(db, admin, sections=[("Oils & Ghee", sasha.id)])
 
     def local(d, h, m=0):
         return dt.datetime.combine(d, dt.time(h, m), ny)
@@ -234,7 +234,7 @@ def test_lead_tasks_once_a_store_day_across_dst(db, admin, monkeypatch, day):
     for hour in (11, 15, 23):
         assert il.run_daily_tasks(db, local(day, hour, 59)) is None
     (task,) = db.query(Task).filter(Task.source_type == il.SOURCE_TYPE).all()
-    assert task.source_id == f"{sai.id}:{day.isoformat()}"
+    assert task.source_id == f"{sasha.id}:{day.isoformat()}"
     assert task.due_at - task.created_at == dt.timedelta(hours=6)
 
     nxt = il.run_daily_tasks(db, local(day + dt.timedelta(days=1), 10, 5))

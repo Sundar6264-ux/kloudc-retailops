@@ -1,4 +1,4 @@
-"""App build 5 (spicetown-mobile 9985842, lib/features/checklists/**) against
+"""App build 5 (the origin app, commit 9985842, lib/features/checklists/**) against
 the checklist builder's served schemas.
 
 Build 5 parses EVERY entry of GET /api/checklists/schemas with hard Dart
@@ -159,9 +159,9 @@ def test_random_schemas_parse_and_submit_in_build5(seed):
 # --- Edits of the seeded three ----------------------------------------------------------------
 
 SEEDED = {
-    ST: checklist_builtin.SPICE_TOWN_CLOSING,
-    SK: checklist_builtin.STREET_KITCHEN_CLOSING,
-    FSA: checklist_builtin.STREET_KITCHEN_FSA_CLOSING,
+    ST: checklist_builtin.STORE_CLOSING,
+    SK: checklist_builtin.KITCHEN_CLOSING,
+    FSA: checklist_builtin.KITCHEN_FSA_CLOSING,
 }
 
 
@@ -206,7 +206,7 @@ def test_reworded_confirmation_is_still_accepted_from_build5():
     """The confirmation item's title is edited but its single option keeps
     the old text. Build 5 sends `confirmation.label` (the new title); the
     confirmation accepts any non-empty value (the old rule), so it passes."""
-    items = engine.normalize_schema(_editor_copy(checklist_builtin.SPICE_TOWN_CLOSING))
+    items = engine.normalize_schema(_editor_copy(checklist_builtin.STORE_CLOSING))
     confirmation = items["sections"][-1]["items"][-1]
     assert confirmation["legacy_role"] == "confirmation"
     confirmation["title"] = "I checked everything tonight."
@@ -221,7 +221,7 @@ def test_items_only_last_section_still_gets_the_update_message_in_build5():
     are still served top-level and build 5 sends them. They used to count as
     "questions only a newer app can show", so build 5's submission got
     "Missing answer for required item ..." instead of the update message."""
-    items = engine.normalize_schema(_editor_copy(checklist_builtin.SPICE_TOWN_CLOSING))
+    items = engine.normalize_schema(_editor_copy(checklist_builtin.STORE_CLOSING))
     items["sections"][-1]["items"].insert(0, {"id": "q_when", "type": "time", "title": "Closed at", "required": True})
     served = engine.build_served(META, 2, items)
     assert served["min_app_build"] == 6 and served["confirmation"] and served["issues_field"]
@@ -233,7 +233,7 @@ def test_items_only_last_section_still_gets_the_update_message_in_build5():
 
 
 def test_confirmation_moved_out_of_the_last_place_still_works_in_build5():
-    items = engine.normalize_schema(_editor_copy(checklist_builtin.SPICE_TOWN_CLOSING))
+    items = engine.normalize_schema(_editor_copy(checklist_builtin.STORE_CLOSING))
     confirmation = items["sections"][-1]["items"].pop()
     items["sections"][0]["items"].append(confirmation)
     served = engine.build_served(META, 2, items)

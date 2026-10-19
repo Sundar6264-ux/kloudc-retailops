@@ -5,7 +5,7 @@ import { ROUTES_BY_KEY, buildSidebar, footerLinks, groupsToOpen, routeLabel } fr
 import useTeamBadges from "./team/useTeamBadges.js";
 import StoreLogo from "./StoreLogo.jsx";
 
-const COLLAPSE_STORAGE_KEY = "storeops_sidebar_collapsed";
+const COLLAPSE_STORAGE_KEY = "retailops_sidebar_collapsed";
 
 // Team hub counts shown next to a sidebar link (route key -> badge key).
 const ROUTE_BADGES = { team_chat: "unread", team_announcements: "announcements_unacked" };

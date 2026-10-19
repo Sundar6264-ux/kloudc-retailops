@@ -5,12 +5,12 @@ from functools import lru_cache
 from typing import Optional
 from urllib.parse import unquote, urlsplit
 
-from pydantic import field_validator, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 STORE_CODE_RE = re.compile(r"^[A-Z0-9][A-Z0-9_]{2,23}$")
 HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
-# StoreOps never serves from this domain or below it (docs/M2_CONTRACT.md
+# KloudC RetailOps never serves from this domain or below it (docs/M2_CONTRACT.md
 # rule 0.3): the legacy single-store site shares its login cookie across it.
 REFUSED_DOMAIN = "spicetown.shop"
 
@@ -34,9 +34,9 @@ def refused_host(value: str) -> bool:
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", protected_namespaces=("model_",))
 
-    database_url: str = "sqlite:///./storeops.db"
+    database_url: str = "sqlite:///./retailops.db"
 
-    # --- Store identity and branding (StoreOps M2, docs/M2_CONTRACT.md 1.1) ---
+    # --- Store identity and branding (KloudC RetailOps M2, docs/M2_CONTRACT.md 1.1) ---
     # One process serves one store. Every default is a product value or blank;
     # a store's own values live in its .env. Derived values (display name,
     # public host, store features...) are computed in app/store/settings_view.py.
@@ -50,23 +50,23 @@ class Settings(BaseSettings):
     store_email: str = ""  # Reply-To on PO emails; blank -> the sending address
     # One phrase for the Ask bot / weekly digest prompts ("a ... store in ...").
     store_description: str = ""
-    product_name: str = "StoreOps"
+    product_name: str = "KloudC RetailOps"
     company_name: str = "KloudC LLC"
     # The product's domain; store hosts are <host-label>.<platform_domain>.
     # ".invalid" never resolves: a placeholder until the owner picks one.
-    platform_domain: str = "storeops.invalid"
+    platform_domain: str = "retailops.invalid"
     # This store's public origin (https://..., no trailing slash). Blank ->
     # https://<store code, lower case, "_" -> "-">.<platform_domain>.
     public_host: str = ""
     # Absolute https:// URL or a path on this server. Blank -> the bundled
-    # StoreOps images (/branding/logo.png, /branding/icon.png).
+    # KloudC RetailOps images (/branding/logo.png, /branding/icon.png).
     logo_url: str = ""
     icon_url: str = ""
     # A local image printed on documents (the PO PDF letterhead). Blank -> the
-    # bundled StoreOps icon.
+    # bundled KloudC RetailOps icon.
     document_logo_file: str = ""
-    brand_color: str = "#0F766E"
-    brand_secondary_color: str = "#334155"
+    brand_color: str = "#004BAD"  # KloudC blue
+    brand_secondary_color: str = "#2EA3F2"  # KloudC sky (decoration only)
     currency: str = "USD"
     store_locale: str = "en-US"
     # The DEMO store (plan 3.1a): every user is a demo user (nothing is sent
@@ -113,7 +113,7 @@ class Settings(BaseSettings):
     # One-off: stamp an existing, unstamped database / upload folder with
     # STORE_CODE at startup (app/store/identity.py).
     store_identity_adopt: bool = False
-    app_bundle_id: str = "com.kloudc.storeops"
+    app_bundle_id: str = "com.kloudc.retailops"
     apple_team_id: str = ""
     android_cert_sha256: str = ""  # comma-separated SHA-256 fingerprints
     privacy_url: str = "https://kloudc.com/kloudc-privacy-policy/"
@@ -293,8 +293,8 @@ class Settings(BaseSettings):
 
     # Legacy names (still read) for the chat ids of the WhatsApp roles "store"
     # and "kitchen"; WHATSAPP_GROUP_CHAT_IDS above wins over them.
-    whapi_spice_town_checklist_group_id: str = ""
-    whapi_street_kitchen_checklist_group_id: str = ""
+    whapi_store_checklist_group_id: str = ""
+    whapi_kitchen_checklist_group_id: str = ""
 
     # Gmail address + an "app password" (not the real account password -
     # generated at myaccount.google.com/apppasswords) used to send the
@@ -319,7 +319,7 @@ class Settings(BaseSettings):
     # (app/store/settings_view.effective_public_base_url).
     public_base_url: str = ""
     # Relative to the backend process's working directory, same convention
-    # as database_url's "./storeops.db".
+    # as database_url's "./retailops.db".
     invoice_uploads_dir: str = "uploads/invoices"
 
     # Marketing flyers library (app/services/flyers.py): a normal folder with
@@ -448,9 +448,13 @@ class Settings(BaseSettings):
     # The Store ID masters type on the login page.
     platform_login_code: str = "PLATFORM"
     # Credential encryption key ring (secret; app/platform/crypto.py).
-    storeops_secret_keys: str = ""
-    storeops_secret_key: str = ""
-    storeops_secret_key_file: str = ".secrets/storeops_keyring"
+    # (The StoreOps names from before the rename are still read, also from .env.)
+    retailops_secret_keys: str = Field("", validation_alias=AliasChoices("retailops_secret_keys", "storeops_secret_keys"))
+    retailops_secret_key: str = Field("", validation_alias=AliasChoices("retailops_secret_key", "storeops_secret_key"))
+    retailops_secret_key_file: str = Field(
+        ".secrets/retailops_keyring",
+        validation_alias=AliasChoices("retailops_secret_key_file", "storeops_secret_key_file"),
+    )
     signup_enabled: bool = True
     signup_rate_per_hour: int = 5
     login_lockout_failures: int = 5
@@ -479,7 +483,7 @@ class Settings(BaseSettings):
     def _color(cls, value: str) -> str:
         value = (value or "").strip()
         if not HEX_COLOR_RE.match(value):
-            raise ValueError(f"{value!r} is not a colour like #0F766E")
+            raise ValueError(f"{value!r} is not a colour like #004BAD")
         return value.upper()
 
     @field_validator("first_sales_date")
@@ -524,7 +528,7 @@ class Settings(BaseSettings):
         value = (value or "").strip()
         if value and refused_host(value):
             raise ValueError(
-                f"{info.field_name.upper()} {value!r} is under a domain StoreOps never serves from "
+                f"{info.field_name.upper()} {value!r} is under a domain KloudC RetailOps never serves from "
                 f"(docs/M2_CONTRACT.md rule 0.3)"
             )
         return value.rstrip("/") if info.field_name != "session_cookie_domain" else value
@@ -594,7 +598,7 @@ def platform_public_url(s: Optional[Settings] = None) -> str:
     own = (s.platform_public_url or "").strip().rstrip("/")
     if own:
         return own
-    domain = (s.platform_domain or "storeops.invalid").strip(".").lower() or "storeops.invalid"
+    domain = (s.platform_domain or "retailops.invalid").strip(".").lower() or "retailops.invalid"
     return f"https://app.{domain}"
 
 

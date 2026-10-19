@@ -1,5 +1,5 @@
 """add checklist_submissions table (Daily Closing Checklists - native
-replacement for the Spice Town / Street Kitchen Google Forms)
+replacement for the Main Store / Market Kitchen Google Forms)
 
 Revision ID: 0021
 Revises: 0020

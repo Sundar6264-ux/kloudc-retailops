@@ -1,6 +1,6 @@
 """Checklist builder engine (Sep 30): the generic, Google-Forms-like checklist
 format admins edit on the website, and everything computed from it - answer
-validation, section branching, issue flagging, the "Chef: RK"-style details,
+validation, section branching, issue flagging, the "Chef: JL"-style details,
 and the LEGACY blocks the released app (build 5) renders.
 
 Pure functions over plain dicts, no database access (checklist_schemas.py is
@@ -1407,7 +1407,7 @@ def compute_status(schema: dict, answers: dict) -> Tuple[bool, Optional[str]]:
 
 
 def summary_details(schema: dict, answers: dict) -> List[dict]:
-    """[{"label": "Chef", "value": "RK"}] - answers of items with a
+    """[{"label": "Chef", "value": "JL"}] - answers of items with a
     summary_label, shown next to "Submitted by" (history, detail, WhatsApp)."""
     details = []
     if not isinstance(answers, dict):

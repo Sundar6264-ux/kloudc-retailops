@@ -1,4 +1,4 @@
-// A stand-in for the shared StoreOps service's platform routes
+// A stand-in for the shared KloudC RetailOps service's platform routes
 // (docs/PLATFORM_CONTRACT.md 4.5, 12.3, 13), for the website's platform
 // checks (platform.mjs) until the real backend tracks are merged. Serves the
 // built website and answers in the contract's shapes, in memory, with fake
@@ -65,7 +65,7 @@ function addStore(code, name, status, extra = {}) {
 }
 addStore("DEMO_GROCERY", "Demo Grocery", "active");
 addStore("PAUSED_MART", "Paused Mart", "suspended", { status_reason: "Paused by the platform.", maintenance_message: "Paused for maintenance." });
-addStore("MOVED_MART", "Moved Mart", "active", { hosting: "dedicated", api_base_url: "https://moved.storeops.invalid" });
+addStore("MOVED_MART", "Moved Mart", "active", { hosting: "dedicated", api_base_url: "https://moved.retailops.invalid" });
 addStore("CLOVER_MART", "Clover Mart", "active", { pos_provider: "clover" });
 
 const POS_NAMES = { toast: "Toast", clover: "Clover", csv: "CSV upload" };
@@ -76,7 +76,7 @@ const signups = [];
 const hosting = [];
 const audit = [];
 const failures = []; // {key, at}
-const RESERVED = new Set(["PLATFORM", "MASTER", "ADMIN", "ROOT", "SYSTEM", "API", "APP", "WWW", "STATIC", "DIRECTORY", "SUPPORT", "HELP", "STOREOPS", "KLOUDC", "TEST", "NULL", "NONE"]);
+const RESERVED = new Set(["PLATFORM", "MASTER", "ADMIN", "ROOT", "SYSTEM", "API", "APP", "WWW", "STATIC", "DIRECTORY", "SUPPORT", "HELP", "STOREOPS", "RETAILOPS", "KLOUDC", "TEST", "NULL", "NONE"]);
 const DEDICATED_HOSTING_ENABLED = false;
 
 function log(action, extra = {}) {
@@ -121,7 +121,7 @@ function branding(store) {
     return {
       store_code: null,
       name: null,
-      product: { name: "StoreOps", company: "KloudC LLC" },
+      product: { name: "KloudC RetailOps", company: "KloudC LLC" },
       legal: { terms_url: "https://kloudc.invalid/terms", privacy_url: "https://kloudc.invalid/privacy" },
     };
   }
@@ -130,13 +130,13 @@ function branding(store) {
     name: store.name,
     short_name: store.name.split(" ")[0],
     primary_color: "#1D4ED8",
-    secondary_color: "#334155",
+    secondary_color: "#2EA3F2",
     timezone: store.timezone,
     pos_name: POS_NAMES[store.pos_provider],
     capabilities: ["sales", "catalog", "stock_levels", "open_orders"],
     store_features: ["ai"],
     logo_url: null,
-    product: { name: "StoreOps", company: "KloudC LLC" },
+    product: { name: "KloudC RetailOps", company: "KloudC LLC" },
   };
 }
 

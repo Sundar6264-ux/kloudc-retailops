@@ -97,7 +97,7 @@ def test_vendor_refs_split_and_align_codes():
 
 
 # The labelled catalog fixture was a real store's catalog export, so it is
-# not part of the StoreOps repository. These tests run when a catalog fixture
+# not part of the KloudC RetailOps repository. These tests run when a catalog fixture
 # is present at tests/data/ (see tests/similar_products_eval.py) and skip
 # otherwise. TODO(M2): replace with a synthetic catalog + labels.
 requires_catalog_fixture = pytest.mark.skipif(
@@ -294,7 +294,7 @@ def test_vendor_codes_keep_empty_slots_and_skip_junk():
     # The Sep 20 upload put item codes / a placeholder in the Supplier column.
     assert sp.vendor_refs("ACT_SUP_UPDT;Raja Foods", ";R1") == [{"name": "Raja Foods", "supplier_item_id": "R1"}]
     assert sp.vendor_refs("30128", None) == [] and sp.vendor_refs("5RR2", "x") == []
-    assert not sp.is_junk_vendor("Singh & Singh") and not sp.is_junk_vendor("SpiceTown - Street Kitchen")
+    assert not sp.is_junk_vendor("Singh & Singh") and not sp.is_junk_vendor("MainStore - Market Kitchen")
     # Listed twice in Toast -> one vendor, keeping the code it has.
     assert sp.vendor_refs("House of Spices;House of Spices", ";HS1") == [
         {"name": "House of Spices", "supplier_item_id": "HS1"}

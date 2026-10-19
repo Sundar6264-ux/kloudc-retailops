@@ -1,7 +1,7 @@
 {
   "pack_version": 1,
-  "pack_id": "storeops_test_clover",
-  "label": "Fake Clover store for tests (STOREOPS_TEST_CLOVER)",
+  "pack_id": "retailops_test_clover",
+  "label": "Fake Clover store for tests (RETAILOPS_TEST_CLOVER)",
 
   "menu": {
     "excluded_category_groups": [],

@@ -3,7 +3,7 @@
 // no DOM, no fetch - tested by loginModel.test.mjs.
 
 // localStorage key for the last Store ID used on this browser (contract 14).
-export const LAST_STORE_KEY = "storeops_last_store";
+export const LAST_STORE_KEY = "retailops_last_store";
 
 // Store ID that signs a master (platform admin) in (setting
 // PLATFORM_LOGIN_CODE; this is its default).

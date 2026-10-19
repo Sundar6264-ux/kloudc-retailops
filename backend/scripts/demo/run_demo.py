@@ -61,7 +61,7 @@ def server_env(data_dir: pathlib.Path, timezone: str, base: Optional[Dict[str, s
     uploads = live / "uploads"
     env.update(
         {
-            "DATABASE_URL": f"sqlite:///{live / 'storeops.db'}",
+            "DATABASE_URL": f"sqlite:///{live / 'retailops.db'}",
             "UPLOADS_ROOT": str(uploads),
             "INVOICE_UPLOADS_DIR": str(uploads / "invoices"),
             "TEAM_UPLOADS_DIR": str(uploads / "team"),

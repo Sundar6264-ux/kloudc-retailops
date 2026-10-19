@@ -5,7 +5,7 @@
 
 The folder must not exist (or be empty). It gets:
 
-    <out>/storeops.db          a fresh database at Alembic head
+    <out>/retailops.db          a fresh database at Alembic head
     <out>/uploads/invoices/    made-up invoice PDFs (each says it is a sample)
     <out>/uploads/team/        (empty) team uploads
     <out>/uploads/flyers/      (empty) flyers
@@ -92,7 +92,7 @@ class GenerateError(RuntimeError):
 def demo_environment(out: pathlib.Path, timezone: str) -> Dict[str, str]:
     uploads = out / "uploads"
     env = {
-        "DATABASE_URL": f"sqlite:///{out / 'storeops.db'}",
+        "DATABASE_URL": f"sqlite:///{out / 'retailops.db'}",
         "UPLOADS_ROOT": str(uploads),
         "INVOICE_UPLOADS_DIR": str(uploads / "invoices"),
         "TEAM_UPLOADS_DIR": str(uploads / "team"),
@@ -633,7 +633,7 @@ class DemoGenerator:
                     total += amount
                     text.append(f"{qty:>3}  {it['name'][:36]:<36}  {it['cost']:>7.2f}  {amount:>9.2f}")
                 total = money(total)
-                text += ["", f"TOTAL DUE: {total:.2f}", "", "This invoice is sample data for the StoreOps demo."]
+                text += ["", f"TOTAL DUE: {total:.2f}", "", "This invoice is sample data for the KloudC RetailOps demo."]
                 kind = "return" if rng.random() < 0.06 else "invoice"
                 pdf = text_pdf(text, title=f"Sample invoice - {vendor}")
                 token = hex_id(rng, 32)
@@ -1041,7 +1041,7 @@ def generate(args) -> dict:
     engine.dispose()
     info["store_init"] = how
     if getattr(args, "pg_url", ""):
-        info["postgres"] = copy_to_postgres(out / "storeops.db", args.pg_url)
+        info["postgres"] = copy_to_postgres(out / "retailops.db", args.pg_url)
     (out / "demo_dataset.json").write_text(json.dumps(info, indent=2, sort_keys=True) + "\n")
     return info
 

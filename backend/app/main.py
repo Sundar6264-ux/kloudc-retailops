@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI):
         yield
         stop_multi_tenant()
         return
-    # StoreOps M2: refuse to start against another store's database or upload
+    # KloudC RetailOps M2: refuse to start against another store's database or upload
     # folder (app/store/identity.py) - before any job can write anything.
     check_store_identity()
     start_scheduler()
@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
 # demo_write_guard: the App Review demo login is read-only except for an
 # explicit allowlist (app/demo_guard.py). Set here, on the app, so every
 # route included below - and any added later - runs it.
-app = FastAPI(title="StoreOps", lifespan=lifespan, dependencies=[Depends(demo_write_guard)])
+app = FastAPI(title="KloudC RetailOps", lifespan=lifespan, dependencies=[Depends(demo_write_guard)])
 
 settings = get_settings()
 # The store of each request (multi mode; a no-op in single mode). Added
@@ -142,7 +142,7 @@ app.include_router(flyers.router)
 # registered before the StaticFiles mount at "/" below.
 app.include_router(checklist_public.public_router)
 app.include_router(checklist_public.page_router)
-# Public store branding (StoreOps M2): /api/app/branding and the bundled
+# Public store branding (KloudC RetailOps M2): /api/app/branding and the bundled
 # /branding/*.png images, also before the static mount.
 app.include_router(branding.router)
 app.include_router(branding.assets_router)

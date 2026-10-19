@@ -46,7 +46,7 @@ from tests.conftest import add_member, client_for, make_user
 
 NY = zoneinfo.ZoneInfo("America/New_York")
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
-FSA = "street_kitchen_fsa"
+FSA = "kitchen_fsa"
 ALL_FEATURES = ["invoice_submission", "daily_checklists", "ask_bot", "team_tasks", "team_chat"]
 
 
@@ -72,8 +72,8 @@ def no_real_sends(monkeypatch):
     monkeypatch.setattr(
         checklist_submission, "send_whatsapp_message", lambda text, to=None: calls.append(("checklist_whatsapp", to))
     )
-    monkeypatch.setattr(get_settings(), "whapi_street_kitchen_checklist_group_id", "sk-group@g.us")
-    monkeypatch.setattr(get_settings(), "whapi_spice_town_checklist_group_id", "st-group@g.us")
+    monkeypatch.setattr(get_settings(), "whapi_kitchen_checklist_group_id", "sk-group@g.us")
+    monkeypatch.setattr(get_settings(), "whapi_store_checklist_group_id", "st-group@g.us")
     return calls
 
 
@@ -347,19 +347,19 @@ def test_demo_ask_bot_is_canned_with_no_anthropic_call(db, demo_client, monkeypa
 
 
 def test_demo_report_only_notifies_admins_in_its_teams(db, demo, demo_client, review_team, pushes):
-    sundar = make_user(db, "sundar", is_admin=True)
+    sutton = make_user(db, "sutton", is_admin=True)
     other_admin = make_user(db, "boss2", is_admin=True)
-    for u in (demo, sundar):
+    for u in (demo, sutton):
         add_member(db, review_team, u)
-    device(db, sundar)
+    device(db, sutton)
     device(db, other_admin)
-    sundar_c = client_for(db, sundar)
-    channel = team_channel(sundar_c, review_team)
-    msg = send(sundar_c, channel["id"], "welcome to the review team").json()
+    sutton_c = client_for(db, sutton)
+    channel = team_channel(sutton_c, review_team)
+    msg = send(sutton_c, channel["id"], "welcome to the review team").json()
     pushes.clear()
     r = demo_client.post(f"/api/team/messages/{msg['id']}/report", json={"reason": "spam"})
     assert r.status_code == 200
-    assert [p["tokens"] for p in pushes] == [["tok-sundar"]]  # never boss2
+    assert [p["tokens"] for p in pushes] == [["tok-sutton"]]  # never boss2
 
 
 def test_real_report_notifies_every_admin(db, staff, staff_client, team, pushes):
@@ -378,14 +378,14 @@ def test_real_report_notifies_every_admin(db, staff, staff_client, team, pushes)
 
 
 def test_demo_message_pushes_only_teammates(db, demo, demo_client, review_team, pushes):
-    sundar = make_user(db, "sundar", is_admin=True)
-    for u in (demo, sundar):
+    sutton = make_user(db, "sutton", is_admin=True)
+    for u in (demo, sutton):
         add_member(db, review_team, u)
-    device(db, sundar)
+    device(db, sutton)
     channel = team_channel(demo_client, review_team)
     assert send(demo_client, channel["id"], "hello").status_code == 200
-    assert pushes and all(p["tokens"] == ["tok-sundar"] for p in pushes)
-    assert chat.push_new_message(db, db.query(Message).order_by(Message.id.desc()).first().id) <= {sundar.id}
+    assert pushes and all(p["tokens"] == ["tok-sutton"] for p in pushes)
+    assert chat.push_new_message(db, db.query(Message).order_by(Message.id.desc()).first().id) <= {sutton.id}
 
 
 def test_demo_cant_do_only_notifies_teammates(db, demo, demo_client, review_team, monkeypatch):
@@ -495,7 +495,7 @@ def test_filter_masks_whole_words_and_leetspeak(text, expected):
 @pytest.mark.parametrize(
     "text",
     [
-        "class", "assess", "Scunthorpe", "classic assistant passed", "cocktail", "Spice Town spices",
+        "class", "assess", "Scunthorpe", "classic assistant passed", "cocktail", "Main Store spices",
         "shiitake", "Dickens", "grape", "therapist", "button", "hello @ravi!", "Hi!", "price $455 and 5 boxes",
         "455", "Mississippi", "assassin", "bass", "glasses", "Cockburn", "", "rapeseed oil", "black negro beans",
     ],
@@ -564,7 +564,7 @@ def test_announcement_is_masked(db, admin_client, team):
 def test_rules_get_accept_and_version(db, staff, staff_client, anon_client, monkeypatch):
     from app.config import get_settings
 
-    # The store's name and phone (StoreOps M2 store settings).
+    # The store's name and phone (KloudC RetailOps M2 store settings).
     monkeypatch.setattr(get_settings(), "store_name", "Test Store")
     monkeypatch.setattr(get_settings(), "store_phone", "555-010-0100")
     assert anon_client.get("/api/team/rules").status_code == 401

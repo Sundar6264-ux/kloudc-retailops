@@ -62,7 +62,7 @@ stamped = db.execute(text("SELECT COUNT(*) FROM sqlite_master WHERE name='store_
     text("SELECT COUNT(*) FROM store_identity")
 ).scalar()
 for label, sql, params in [] if stamped else [
-    ("category_overrides", "DELETE FROM category_overrides WHERE (match_type='supplier' AND match_value='Shaz International') "
+    ("category_overrides", "DELETE FROM category_overrides WHERE (match_type='supplier' AND match_value='Sample Biscuit Supplier') "
      "OR created_by='category merge plan (migration 0037)'", {}),
     ("checklist_definition_versions", "DELETE FROM checklist_definition_versions WHERE definition_id IN "
      "(SELECT id FROM checklist_definitions WHERE checklist_type IN (%s))" % ",".join(f"'{t}'" for t in types_), {}),

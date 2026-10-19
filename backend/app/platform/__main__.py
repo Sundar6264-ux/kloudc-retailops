@@ -14,8 +14,8 @@
     python -m app.platform purge-store CODE --confirm CODE
     python -m app.platform prune-logins [--days 7]
 
-Passwords come from a prompt, or STOREOPS_MASTER_PASSWORD /
-STOREOPS_OWNER_PASSWORD (never a command-line argument). Every command
+Passwords come from a prompt, or RETAILOPS_MASTER_PASSWORD /
+RETAILOPS_OWNER_PASSWORD (never a command-line argument). Every command
 uses PLATFORM_DATABASE_URL (and the store URL template) from the settings.
 """
 
@@ -56,7 +56,7 @@ def cmd_create_master(args) -> int:
     from app.platform.db import platform_session
     from app.platform.masters import PASSWORD_MIN, create_master
 
-    pw = _password("STOREOPS_MASTER_PASSWORD", f"Password for {args.username}: ", PASSWORD_MIN)
+    pw = _password("RETAILOPS_MASTER_PASSWORD", f"Password for {args.username}: ", PASSWORD_MIN)
     with platform_session() as db:
         user = create_master(db, args.username, pw, args.display_name or "", args.email, actor=ACTOR, actor_type="system")
         print(f"master {user.username} created")
@@ -78,7 +78,7 @@ def cmd_provision(args) -> int:
 
     pw_hash = None
     if not args.no_password:
-        pw_hash = hash_password(_password("STOREOPS_OWNER_PASSWORD", f"Password for {args.owner_username}: ", 10))
+        pw_hash = hash_password(_password("RETAILOPS_OWNER_PASSWORD", f"Password for {args.owner_username}: ", 10))
     out = create_store_manually(code=args.code, name=args.name, pack_id=args.pack, timezone=args.tz,
                                 pos_provider=args.pos, owner_username=args.owner_username,
                                 owner_password_hash=pw_hash, actor=ACTOR, run="inline")
@@ -179,7 +179,7 @@ def cmd_gen_key(args) -> int:
     from app.platform.crypto import gen_key
 
     print(gen_key(args.id))
-    print("Put this FIRST in STOREOPS_SECRET_KEYS (keep the old keys after it), restart, then run rotate-keys.",
+    print("Put this FIRST in RETAILOPS_SECRET_KEYS (keep the old keys after it), restart, then run rotate-keys.",
           file=sys.stderr)
     return 0
 
@@ -215,7 +215,7 @@ def cmd_prune_logins(args) -> int:
 def main(argv: Optional[List[str]] = None) -> int:
     from app.platform.errors import PlatformError
 
-    ap = argparse.ArgumentParser(prog="python -m app.platform", description="StoreOps platform commands")
+    ap = argparse.ArgumentParser(prog="python -m app.platform", description="KloudC RetailOps platform commands")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("migrate-platform").set_defaults(func=cmd_migrate_platform)
     p = sub.add_parser("create-master")

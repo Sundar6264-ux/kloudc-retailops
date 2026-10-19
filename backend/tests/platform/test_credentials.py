@@ -33,8 +33,8 @@ def test_key_ring_parsing_and_errors(platform_env, monkeypatch):
     entry = crypto.gen_key("k9")
     kid, key = crypto.parse_ring(entry)[0]
     assert kid == "k9" and len(key) == 32
-    monkeypatch.setattr(platform_env, "storeops_secret_keys", "")
-    monkeypatch.setattr(platform_env, "storeops_secret_key", "")
+    monkeypatch.setattr(platform_env, "retailops_secret_keys", "")
+    monkeypatch.setattr(platform_env, "retailops_secret_key", "")
     monkeypatch.setattr(platform_env, "app_env", "production")
     with pytest.raises(crypto.KeyRingError):
         crypto.load_keyring()
@@ -46,9 +46,9 @@ def test_key_ring_parsing_and_errors(platform_env, monkeypatch):
 
 
 def test_dev_key_ring_file_is_private(platform_env, monkeypatch, tmp_path):
-    monkeypatch.setattr(platform_env, "storeops_secret_keys", "")
+    monkeypatch.setattr(platform_env, "retailops_secret_keys", "")
     monkeypatch.setattr(platform_env, "app_env", "development")
-    monkeypatch.setattr(platform_env, "storeops_secret_key_file", str(tmp_path / ".secrets" / "ring"))
+    monkeypatch.setattr(platform_env, "retailops_secret_key_file", str(tmp_path / ".secrets" / "ring"))
     ring = crypto.load_keyring()
     assert ring.source == "dev-file" and ring.active_id == "dev1"
     path = tmp_path / ".secrets" / "ring"
@@ -134,18 +134,18 @@ def test_copied_ciphertext_does_not_decrypt_in_another_store(pdb):
 
 def test_key_rotation(pdb, platform_env, monkeypatch):
     _store(pdb)
-    monkeypatch.setattr(platform_env, "storeops_secret_keys", "t1:" + "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=")
+    monkeypatch.setattr(platform_env, "retailops_secret_keys", "t1:" + "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=")
     crypto.reset_keyring()
     creds.save_credential("ALPHA", "ai", {}, {"api_key": "rot-key-12345"}, actor="a")
     assert pdb.execute(select(StoreCredential.key_id)).scalar() == "t1"
     new = crypto.gen_key("t3")
-    monkeypatch.setattr(platform_env, "storeops_secret_keys", new + ",t1:" + "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=")
+    monkeypatch.setattr(platform_env, "retailops_secret_keys", new + ",t1:" + "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=")
     counts = creds.rotate_all()
     assert counts["credentials"] == 1
     pdb.expire_all()
     assert pdb.execute(select(StoreCredential.key_id)).scalar() == "t3"
     # Old key gone from the ring: still opens (re-encrypted with t3).
-    monkeypatch.setattr(platform_env, "storeops_secret_keys", new)
+    monkeypatch.setattr(platform_env, "retailops_secret_keys", new)
     crypto.reset_keyring()
     assert creds.decrypt_secrets("ALPHA", "ai") == {"api_key": "rot-key-12345"}
 

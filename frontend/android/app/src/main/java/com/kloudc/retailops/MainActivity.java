@@ -1,4 +1,4 @@
-package com.kloudc.storeops;
+package com.kloudc.retailops;
 
 import com.getcapacitor.BridgeActivity;
 

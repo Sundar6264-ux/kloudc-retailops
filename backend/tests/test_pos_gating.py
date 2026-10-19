@@ -1,6 +1,6 @@
 """Multi-store M1 / MT6: neutral contracts and POS capabilities.
 
-Spice Town (Toast) must see no change at all: every gate passes, every old
+Main Store (Toast) must see no change at all: every gate passes, every old
 key / route / setting keeps working, the scheduled job list is identical.
 A store whose POS lacks a capability gets 409 on that POS-only route, loses
 the matching feature in /me, and never registers the matching job.
@@ -26,7 +26,7 @@ from tests.conftest import client_for, make_user
 
 @pytest.fixture
 def store_without(monkeypatch):
-    """Make this process a store whose POS lacks `caps` (Spice Town's Toast
+    """Make this process a store whose POS lacks `caps` (Main Store's Toast
     set minus them), named "TestPOS"."""
 
     def _apply(*caps):
@@ -81,12 +81,12 @@ AP_TWINS = {
 # --- capabilities ------------------------------------------------------------------------
 
 
-def test_spice_town_is_toast_with_its_full_capability_set():
+def test_main_store_is_toast_with_its_full_capability_set():
     assert gating.pos_provider() == "toast"
     assert gating.pos_name() == "Toast"
     assert gating.store_capabilities() == TOAST_CAPABILITIES
     assert gating.capability_values() == [c.value for c in Capability if c in TOAST_CAPABILITIES]
-    # Every capability a gate below asks for is one Spice Town has.
+    # Every capability a gate below asks for is one Main Store has.
     used = set().union(*gating.FEATURE_CAPABILITIES.values(), *gating.JOB_CAPABILITIES.values())
     assert used <= TOAST_CAPABILITIES
     assert set(gating.CAPABILITY_LABELS) == set(Capability)
@@ -102,7 +102,7 @@ def test_unknown_provider_has_no_capabilities(monkeypatch):
 
 
 def test_clover_and_csv_fallback_entries(monkeypatch):
-    """StoreOps M2 (contract section 7): no adapter yet, but the fallback
+    """KloudC RetailOps M2 (contract section 7): no adapter yet, but the fallback
     capability sets gate pages and jobs."""
     from app.pos.capabilities import CLOVER_CAPABILITIES, CSV_CAPABILITIES
 
@@ -179,7 +179,7 @@ def test_pos_only_routes_answer_409_without_the_capability(admin_client, store_w
 
 
 @pytest.mark.parametrize("method,path,cap", GATED_ROUTES)
-def test_pos_only_routes_are_not_gated_for_spice_town(admin_client, monkeypatch, method, path, cap):
+def test_pos_only_routes_are_not_gated_for_main_store(admin_client, monkeypatch, method, path, cap):
     """With Toast's set the gate never fires (the route answers as before:
     whatever it answered, never the 409 'Not available for this store')."""
     import app.routers.orders as orders_router
@@ -240,7 +240,7 @@ def test_store_timezone_wins_and_both_names_agree(monkeypatch):
 
 def test_ap_inbox_email_falls_back_wins_or_turns_off(monkeypatch):
     s = _settings(monkeypatch)
-    assert s.ap_inbox_email == s.toast_invoice_email == ""  # StoreOps: blank = the AP email channel off
+    assert s.ap_inbox_email == s.toast_invoice_email == ""  # KloudC RetailOps: blank = the AP email channel off
     s = _settings(monkeypatch, TOAST_INVOICE_EMAIL="old@inbox.test")
     assert s.ap_inbox_email == s.toast_invoice_email == "old@inbox.test"
     s = _settings(monkeypatch, TOAST_INVOICE_EMAIL="old@inbox.test", AP_INBOX_EMAIL="ap@inbox.test")
@@ -401,9 +401,9 @@ def test_ap_email_is_accepted_as_the_toast_email_channel(db, admin_client, monke
 
 # --- scheduled jobs ----------------------------------------------------------------------
 
-# Spice Town's job list on the Oct 15 production copy (parity baseline
+# Main Store's job list on the Oct 15 production copy (parity baseline
 # scheduler_jobs.json), main + notifications schedulers.
-SPICE_TOWN_JOBS = {
+MAIN_STORE_JOBS = {
     "main": {
         "daily_sales_sync": "run_daily_sales_sync",
         "insights_catchup": "run_insights_catchup",
@@ -459,8 +459,8 @@ def registered_jobs(monkeypatch):
     return _collect
 
 
-def test_spice_town_job_list_is_identical(registered_jobs):
-    assert registered_jobs() == SPICE_TOWN_JOBS
+def test_main_store_job_list_is_identical(registered_jobs):
+    assert registered_jobs() == MAIN_STORE_JOBS
 
 
 def test_every_job_is_classified(registered_jobs):
@@ -493,7 +493,7 @@ def test_jobs_need_their_capability(registered_jobs, store_without, missing, gon
     store_without(missing)
     jobs = registered_jobs()
     ids = set(jobs["main"]) | set(jobs["notifications"])
-    all_ids = set(SPICE_TOWN_JOBS["main"]) | set(SPICE_TOWN_JOBS["notifications"])
+    all_ids = set(MAIN_STORE_JOBS["main"]) | set(MAIN_STORE_JOBS["notifications"])
     assert ids == all_ids - gone
 
 

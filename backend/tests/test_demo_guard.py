@@ -31,7 +31,7 @@ ALL_FEATURES = [
     "purchase_order_cart", "supplier_projection", "inventory_reports", "reconciliation", "category_edits",
     "fix_issues", "vendor_calendar", "transfers",
 ]
-FSA = "street_kitchen_fsa"
+FSA = "kitchen_fsa"
 
 
 @pytest.fixture(autouse=True)

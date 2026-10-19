@@ -1,4 +1,4 @@
-"""The StoreOps catalog CSV template (CSV-only stores, MT13).
+"""The KloudC RetailOps catalog CSV template (CSV-only stores, MT13).
 
 The canonical headers are exactly the column names the Inventory upload page
 already understands (``services/inventory_parser.py`` / the Toast Retail

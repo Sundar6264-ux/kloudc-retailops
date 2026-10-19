@@ -13,6 +13,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { hasOriginName } from "../../src/test/originNames.mjs";
 
 // E2E_PLAYWRIGHT: the playwright module to use when this tree has no node_modules.
 const { chromium } = await import(process.env.E2E_PLAYWRIGHT || "playwright");
@@ -59,9 +60,8 @@ async function noSideways(page, tag) {
   check(over <= 1, `${tag}: page scrolls sideways by ${over}px`);
 }
 
-// The origin store's name never shows on a StoreOps page (M2 name audit):
+// The origin store's name never shows on a KloudC RetailOps page (M2 name audit):
 // checked on every screen this suite photographs (text, title, alt text).
-const ORIGIN_NAME = new RegExp(["spice", "\\s*", "town"].join(""), "i");
 async function noOriginName(page, tag) {
   const text = await page
     .evaluate(() =>
@@ -69,7 +69,7 @@ async function noOriginName(page, tag) {
        ...Array.from(document.querySelectorAll("[alt],[title],[placeholder],[aria-label]"), (e) =>
          [e.getAttribute("alt"), e.getAttribute("title"), e.getAttribute("placeholder"), e.getAttribute("aria-label")].join(" "))].join("\n"))
     .catch(() => "");
-  check(!ORIGIN_NAME.test(text), `${tag}: page shows the origin store's name`);
+  check(!hasOriginName(text), `${tag}: page shows the origin store's name`);
 }
 
 async function shot(page, name) {

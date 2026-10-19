@@ -31,7 +31,7 @@ def test_signup_approve_provisions_a_working_store(client, master_client, pdb, u
 
     r = master_client.post(f"/api/platform/signups/{req_id}/approve", json={"pack_id": "test_toast"})
     assert r.status_code == 202, r.text
-    assert r.json() == {"store_code": "ALPHA", "status": "provisioning", "login_url": "https://app.storeops.test/#/login?store=ALPHA"}
+    assert r.json() == {"store_code": "ALPHA", "status": "provisioning", "login_url": "https://app.retailops.test/#/login?store=ALPHA"}
     result = provisioning.wait_for("ALPHA", 120)
     assert result and result["status"] == "active", result
 
@@ -78,7 +78,7 @@ def test_public_store_lookup_matches_directory_shape(client, pdb):
     assert r.status_code == 200
     body = r.json()
     assert list(body) == ["schema", "code", "name", "api_base_url", "status", "message", "branding", "min_build", "updated_at"]
-    assert body["code"] == "ALPHA" and body["status"] == "active" and body["api_base_url"] == "https://app.storeops.test"
+    assert body["code"] == "ALPHA" and body["status"] == "active" and body["api_base_url"] == "https://app.retailops.test"
     assert list(body["branding"]) == ["short_name", "logo_url", "icon_url", "primary_color", "secondary_color", "timezone", "pos_name"]
     assert body["branding"]["pos_name"] == "Toast" and body["branding"]["timezone"] == "America/Chicago"
     etag = r.headers["etag"]
@@ -167,7 +167,7 @@ def test_manual_store_without_password_gets_one_time_setup_link(client, pdb):
     out = provisioning.create_store_manually(code="DELTA", name="Delta", pack_id="test_toast", timezone="UTC",
                                              pos_provider="toast", owner_username="dee", owner_password_hash=None,
                                              actor="platform:t")
-    assert out["status"] == "active" and out["setup_url"].startswith("https://app.storeops.test/#/setup?store=DELTA&token=")
+    assert out["status"] == "active" and out["setup_url"].startswith("https://app.retailops.test/#/setup?store=DELTA&token=")
     token = out["setup_url"].split("token=")[1]
     assert store_login(client, "DELTA", "dee", "anything-long-1").status_code == 401  # no password yet
     r = client.post("/api/signup/owner-setup", json={"store_code": "delta", "token": token, "password": "delta-pass-123"})

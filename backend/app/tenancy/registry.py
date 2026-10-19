@@ -35,7 +35,7 @@ STORE_STATUSES = ("pending", "provisioning", "active", "suspended", "failed", "a
 RESERVED_CODES = frozenset(
     {
         "PLATFORM", "MASTER", "ADMIN", "ROOT", "SYSTEM", "API", "APP", "WWW", "STATIC", "DIRECTORY",
-        "SUPPORT", "HELP", "STOREOPS", "KLOUDC", "TEST", "NULL", "NONE",
+        "SUPPORT", "HELP", "STOREOPS", "RETAILOPS", "KLOUDC", "TEST", "NULL", "NONE",
     }
 )
 REGISTRY_CACHE_SECONDS = 10.0

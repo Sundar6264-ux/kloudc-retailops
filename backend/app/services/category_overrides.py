@@ -1,8 +1,8 @@
 """App-side category corrections for items Toast has in the wrong category.
 
 Our Toast API access is read-only (no menus:write), so when the owner says a
-set of items is in the wrong category (first case, Sep 2026: every Shaz
-International item belongs in RETAIL / Snacks & Savories / Biscuits, Cookies &
+set of items is in the wrong category (for example every item of one
+supplier belongs in RETAIL / Snacks & Savories / Biscuits, Cookies &
 Rusk), the correction lives in the `category_overrides` table and is applied
 whenever items are read - `reorder.latest_inventory_by_item` applies it, so
 every report, list, export, PDF section and API built on it (Supplier

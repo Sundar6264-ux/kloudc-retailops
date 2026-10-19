@@ -6,7 +6,7 @@
 #   LITESTREAM_ACCESS_KEY_ID, LITESTREAM_SECRET_ACCESS_KEY (read directly by Litestream)
 # No credentials in this file. Owner steps: backend/scripts/backup/README.md.
 dbs:
-  - path: /data/storeops.db
+  - path: /data/retailops.db
     replicas:
       - name: r2
         type: s3

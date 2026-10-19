@@ -1,4 +1,4 @@
-// StoreOps store directory as a Cloudflare Worker (M2 contract section 4).
+// KloudC RetailOps store directory as a Cloudflare Worker (M2 contract section 4).
 //
 // All bodies (store records, errors, AASA, assetlinks, the open-in-app page)
 // come precomputed from `data.json`, which

@@ -9,7 +9,7 @@ it is, and every report still reads the old Toast columns:
   upsert key, answered today by the same Toast selection GUID.
 - open_order_cache: external_order_id.
 - new table sync_cursors (source, stream) -> cursor.
-- new table pos_item_map (source, external_id) -> item_id; for Spice Town every
+- new table pos_item_map (source, external_id) -> item_id; for Main Store every
   Toast item GUID maps to itself.
 
 Backfill: copies of the Toast columns (channel stays NULL: Toast only gives a

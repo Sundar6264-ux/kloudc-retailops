@@ -2,7 +2,7 @@
 
     DEMO_REVIEW_PASSWORD=... python scripts/demo/smoke_demo.py --data /path/to/folder
 
-Boots the FastAPI app in-process against ``<data>/storeops.db`` with the DEMO
+Boots the FastAPI app in-process against ``<data>/retailops.db`` with the DEMO
 store settings (POS_PROVIDER=csv, DEMO_MODE=true, every outside channel
 blank), signs in as the review login and checks:
 - /api/auth/me: a demo login on a "CSV upload" store with only

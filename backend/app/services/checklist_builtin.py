@@ -11,20 +11,20 @@ render with them (a version is immutable). Change a checklist by publishing a
 new version from the website instead.
 
 Versions seeded:
-  spice_town_closing      v1 = SPICE_TOWN_CLOSING
-  street_kitchen_closing  v1 = STREET_KITCHEN_CLOSING
-  street_kitchen_fsa      v1 = STREET_KITCHEN_FSA_CLOSING_V1 (with the "Chef Name"
-                          dropdown, every submission before Sep 30),
-                          v2 = STREET_KITCHEN_FSA_CLOSING (current: no Chef Name -
+  store_closing    v1 = STORE_CLOSING
+  kitchen_closing  v1 = KITCHEN_CLOSING
+  kitchen_fsa      v1 = KITCHEN_FSA_CLOSING_V1 (with the "Chef Name"
+                   dropdown, every submission before Sep 30),
+                   v2 = KITCHEN_FSA_CLOSING (current: no Chef Name -
                           owner: "names with user only, no dropdown - like other
                           checklists"; the submitter is the logged-in user).
 
 Original notes from checklist_schemas.py follow.
 
 Daily Closing Checklists - native replacements for existing Google
-Forms (Spice Town's daily closing checklist, Street Kitchen's chef closing
-checklist and, since Sep 29, Street Kitchen's Food Service Associate
-closing - see STREET_KITCHEN_FSA_CLOSING). This module is the single source of truth for both checklists'
+Forms (Main Store's daily closing checklist, Market Kitchen's chef closing
+checklist and, since Sep 29, Market Kitchen's Food Service Associate
+closing - see KITCHEN_FSA_CLOSING). This module is the single source of truth for both checklists'
 structure: sections, grid questions (a shared set of status options applied
 to a list of task rows), and any standalone questions - Flutter and the web
 app both fetch this via GET /api/checklists/schema/{type} and render it
@@ -33,10 +33,10 @@ generically, rather than each hand-duplicating ~90 rows independently.
 The exact question text, section grouping, and answer choices below were
 extracted directly from the real, live Google Forms' own embedded data
 (not retyped by hand, to avoid transcription drift across ~90 rows). The
-origin store's form links are not kept in StoreOps.
+origin store's form links are not kept in KloudC RetailOps.
 
 Deliberately dropped from both: the original "Employee Name"/"Chef Name"
-dropdown question. A logged-in Spice Town account already provides that
+dropdown question. A logged-in Main Store account already provides that
 identity securely (submitted_by_user_id/name on ChecklistSubmission) -
 trusting a freely-typed name field instead would defeat the whole point of
 requiring a real login to submit one of these.
@@ -47,8 +47,8 @@ computed all_clear/issue_summary on a submission and the WhatsApp message's
 grouping, so there is exactly one place that encodes "which answers count
 as a problem", not one copy per consumer.
 
-Spice Town only has one real category: `issue` ("Issue / Not completed").
-Street Kitchen's four categories, mapped from the real form's own answer
+Main Store only has one real category: `issue` ("Issue / Not completed").
+Market Kitchen's four categories, mapped from the real form's own answer
 text (not literal form fields - the original Apps Script grouped these
 into named buckets for its WhatsApp summary, reproduced here):
   - `morning_prep`: "AM prep required" / "Marinated for AM Prep" - not a
@@ -65,9 +65,9 @@ import copy
 import json
 
 
-SPICE_TOWN_CLOSING = {
-    'checklist_type': 'spice_town_closing',
-    'title': 'Spice Town - Daily Closing Checklist',
+STORE_CLOSING = {
+    'checklist_type': 'store_closing',
+    'title': 'Main Store - Daily Closing Checklist',
     'description': 'The employee responsible for closing must complete this form every day before leaving. Select Completed or Issue / Not completed for every task.',
     'sections': [
         {
@@ -210,7 +210,7 @@ SPICE_TOWN_CLOSING = {
                     },
                     {
                         'id': '3_10',
-                        'label': 'Informed RK to Soft-lock the store?',
+                        'label': 'Informed the manager to Soft-lock the store?',
                     },
                 ],
             },
@@ -228,9 +228,9 @@ SPICE_TOWN_CLOSING = {
     },
 }
 
-STREET_KITCHEN_CLOSING = {
-    'checklist_type': 'street_kitchen_closing',
-    'title': 'Street Kitchen – Chef Closing Checklist',
+KITCHEN_CLOSING = {
+    'checklist_type': 'kitchen_closing',
+    'title': 'Market Kitchen – Chef Closing Checklist',
     'description': 'Complete before leaving. Your goal is to ensure the kitchen is 100% ready for tomorrow’s service.',
     'sections': [
         {
@@ -850,7 +850,7 @@ STREET_KITCHEN_CLOSING = {
         },
     ],
     # Free text for anything the grids above don't cover (e.g. a broken
-    # fryer) - reported under "Issue" like Spice Town's own field.
+    # fryer) - reported under "Issue" like Main Store's own field.
     'issues_field': {
         'id': 'issues_text',
         'label': 'Any other issues?',
@@ -858,8 +858,8 @@ STREET_KITCHEN_CLOSING = {
     },
 }
 
-# Third checklist (Sep 29): the Street Kitchen Food Service Associate's
-# closing, from the origin store's Google Form (link not kept in StoreOps).
+# Third checklist (Sep 29): the Market Kitchen Food Service Associate's
+# closing, from the origin store's Google Form (link not kept in KloudC RetailOps).
 # Same shape as the two above,
 # plus two things they don't have:
 #   - `checkbox_groups` (a section key): Google Forms "checkboxes" questions.
@@ -878,16 +878,16 @@ STREET_KITCHEN_CLOSING = {
 #     Associate submits and "Chef Name" records which CHEF was on duty. It is
 #     a plain standalone question (answer = the chef's name, a string) with
 #     `input: "dropdown"` (render as a select, never auto-filled by "All as
-#     usual") and `summary_label` (shown as "Chef: RK" in the WhatsApp message
+#     usual") and `summary_label` (shown as "Chef: JL" in the WhatsApp message
 #     and in history/detail - see summary_details()). An older app that
 #     ignores `input` still renders it as ordinary choice buttons.
 CHECKBOX_DONE_VALUE = "Done"
 
-STREET_KITCHEN_FSA_CLOSING_V1 = {
-    'checklist_type': 'street_kitchen_fsa',
-    'title': 'Street Kitchen - Food Service Associate Closing',
+KITCHEN_FSA_CLOSING_V1 = {
+    'checklist_type': 'kitchen_fsa',
+    'title': 'Market Kitchen - Food Service Associate Closing',
     # Used where the title is too long (the nightly auto-task title).
-    'short_name': 'Street Kitchen FSA',
+    'short_name': 'Market Kitchen FSA',
     'description': "Complete all closing tasks before leaving. Ensure the kitchen and front service area are clean, stocked, organized, and ready for the next day's service.",
     'sections': [
         {
@@ -902,10 +902,10 @@ STREET_KITCHEN_FSA_CLOSING_V1 = {
                     'input': 'dropdown',
                     'summary_label': 'Chef',
                     'options': [
-                        {'value': 'Amandeep', 'issue_tag': None},
-                        {'value': 'Harshitha', 'issue_tag': None},
-                        {'value': 'RK', 'issue_tag': None},
-                        {'value': 'Sadia', 'issue_tag': None},
+                        {'value': 'Avery', 'issue_tag': None},
+                        {'value': 'Hayden', 'issue_tag': None},
+                        {'value': 'JL', 'issue_tag': None},
+                        {'value': 'Dana', 'issue_tag': None},
                         {'value': 'Other', 'issue_tag': None},
                     ],
                     'required': True,
@@ -1016,33 +1016,33 @@ STREET_KITCHEN_FSA_CLOSING_V1 = {
 # Current FSA closing (seeded as version 2): the same form without the "Chef
 # Name" question - its whole first section held only that question, so the
 # section goes too. Old submissions keep version 1 and still show their chef.
-STREET_KITCHEN_FSA_CLOSING = copy.deepcopy(STREET_KITCHEN_FSA_CLOSING_V1)
-STREET_KITCHEN_FSA_CLOSING["sections"] = STREET_KITCHEN_FSA_CLOSING["sections"][1:]
+KITCHEN_FSA_CLOSING = copy.deepcopy(KITCHEN_FSA_CLOSING_V1)
+KITCHEN_FSA_CLOSING["sections"] = KITCHEN_FSA_CLOSING["sections"][1:]
 
 # Settings per built-in checklist (see checklist_engine.DEFAULT_SETTINGS).
-# whatsapp_group "store" = config whapi_spice_town_checklist_group_id,
-# "kitchen" = whapi_street_kitchen_checklist_group_id.
+# whatsapp_group "store" = config whapi_store_checklist_group_id,
+# "kitchen" = whapi_kitchen_checklist_group_id.
 SEED_DEFINITIONS = [
     {
-        "checklist_type": "spice_town_closing",
-        "short_name": "Spice Town",
+        "checklist_type": "store_closing",
+        "short_name": "Main Store",
         "sort_order": 1,
         "settings": {"closing": True, "whatsapp_group": "store", "all_as_usual": True},
-        "versions": [SPICE_TOWN_CLOSING],
+        "versions": [STORE_CLOSING],
     },
     {
-        "checklist_type": "street_kitchen_closing",
-        "short_name": "Street Kitchen",
+        "checklist_type": "kitchen_closing",
+        "short_name": "Market Kitchen",
         "sort_order": 2,
         "settings": {"closing": True, "whatsapp_group": "kitchen", "all_as_usual": True},
-        "versions": [STREET_KITCHEN_CLOSING],
+        "versions": [KITCHEN_CLOSING],
     },
     {
-        "checklist_type": "street_kitchen_fsa",
-        "short_name": "Street Kitchen FSA",
+        "checklist_type": "kitchen_fsa",
+        "short_name": "Market Kitchen FSA",
         "sort_order": 3,
         "settings": {"closing": True, "whatsapp_group": "kitchen", "all_as_usual": True},
-        "versions": [STREET_KITCHEN_FSA_CLOSING_V1, STREET_KITCHEN_FSA_CLOSING],
+        "versions": [KITCHEN_FSA_CLOSING_V1, KITCHEN_FSA_CLOSING],
     },
 ]
 
@@ -1051,7 +1051,7 @@ SEEDED_BY = "checklist builder seed (migration 0039)"
 
 
 def _seed_note(checklist_type: str, version: int, total: int) -> str:
-    if checklist_type == "street_kitchen_fsa" and total > 1:
+    if checklist_type == "kitchen_fsa" and total > 1:
         if version == 1:
             return "Original checklist (with Chef Name), used before Sep 30"
         return "Chef Name removed - the submitter is the logged-in user"

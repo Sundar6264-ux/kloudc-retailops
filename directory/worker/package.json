@@ -1,8 +1,8 @@
 {
-  "name": "storeops-directory-worker",
+  "name": "retailops-directory-worker",
   "private": true,
   "type": "module",
-  "description": "StoreOps store directory as a Cloudflare Worker (docs/M2_CONTRACT.md section 4).",
+  "description": "KloudC RetailOps store directory as a Cloudflare Worker (docs/M2_CONTRACT.md section 4).",
   "scripts": {
     "test": "node --test test/directory.test.mjs"
   }

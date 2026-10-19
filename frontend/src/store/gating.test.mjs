@@ -20,8 +20,8 @@ import {
 } from "./gating.js";
 
 const storeOf = (code) => storeView(normalizeBranding(BRANDING[code]), null);
-const TOAST = storeOf("STOREOPS_TEST_TOAST");
-const CLOVER = storeOf("STOREOPS_TEST_CLOVER");
+const TOAST = storeOf("RETAILOPS_TEST_TOAST");
+const CLOVER = storeOf("RETAILOPS_TEST_CLOVER");
 const DEMO = storeOf("DEMO");
 
 // The same rules as AuthContext.hasFeature (admin: every grant, minus what
@@ -87,7 +87,7 @@ const elementsOn = (store) => Object.keys(ELEMENT_REQUIREMENTS).filter((e) => el
 
 test("Toast store: every page, the Label Scanner, every control", () => {
   assert.deepEqual(hiddenPages(TOAST), []);
-  assert.ok(footerLinks(adminCtx(TOAST)).some((l) => l.key === "labels" && l.href === BRANDING.STOREOPS_TEST_TOAST.labels_url));
+  assert.ok(footerLinks(adminCtx(TOAST)).some((l) => l.key === "labels" && l.href === BRANDING.RETAILOPS_TEST_TOAST.labels_url));
   assert.deepEqual(elementsOn(TOAST), Object.keys(ELEMENT_REQUIREMENTS));
   assert.equal(featureAvailable("ask_bot", TOAST), true);
 });
@@ -139,12 +139,12 @@ test("an older server that says nothing keeps every page (pre-M2 behaviour), but
 
 test("/api/auth/me wins over branding for capabilities and store features", () => {
   const me = { pos_name: "Toast", capabilities: ["open_orders"], store_features: ["whatsapp"] };
-  const s = storeView(normalizeBranding(BRANDING.STOREOPS_TEST_CLOVER), me);
+  const s = storeView(normalizeBranding(BRANDING.RETAILOPS_TEST_CLOVER), me);
   assert.equal(s.posName, "Toast");
   assert.deepEqual(s.capabilities, ["open_orders"]);
   assert.equal(elementAvailable("whatsapp", s), true);
   // /me without the M2 key: branding's list stays.
-  const old = storeView(normalizeBranding(BRANDING.STOREOPS_TEST_CLOVER), { pos_name: "Clover", capabilities: ["catalog"] });
+  const old = storeView(normalizeBranding(BRANDING.RETAILOPS_TEST_CLOVER), { pos_name: "Clover", capabilities: ["catalog"] });
   assert.deepEqual(old.storeFeatures, []);
 });
 

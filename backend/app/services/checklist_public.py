@@ -117,9 +117,9 @@ MAX_MEDIA_KEYS = 50
 # in the admin panel when no link exists yet (never created automatically).
 # No staff names: the allowed-name list always starts empty.
 SUGGESTED = {
-    "street_kitchen_fsa": {"slug": "kitchen"},
-    "street_kitchen_closing": {"slug": "chef"},
-    "spice_town_closing": {"slug": "store"},
+    "kitchen_fsa": {"slug": "kitchen"},
+    "kitchen_closing": {"slug": "chef"},
+    "store_closing": {"slug": "store"},
 }
 
 RATE_LIMITED = "Too many tries from this device. Wait a few minutes and try again."

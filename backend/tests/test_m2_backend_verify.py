@@ -8,7 +8,7 @@ import re
 import pytest
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from app.config import get_settings
+from app.config import REFUSED_DOMAIN, get_settings
 from app.models import InvoiceSubmission
 from app.pos import gating
 from app.timeutil import utcnow
@@ -48,14 +48,14 @@ def scheduled_job_ids(monkeypatch):
 def test_clover_store_registers_no_job_that_calls_the_pos(monkeypatch, scheduled_job_ids):
     """Contract 7: a Clover store (no adapter in M2) must not run POS jobs -
     each one would fail with "Unknown POS_PROVIDER" on every run."""
-    use_store(monkeypatch, "STOREOPS_TEST_CLOVER")
+    use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")
     funcs = set(scheduled_job_ids().values())
     assert funcs <= gating.POS_NEUTRAL_JOB_FUNCS, funcs - gating.POS_NEUTRAL_JOB_FUNCS
 
 
 @pytest.mark.parametrize("path", ["/api/orders/open", "/api/orders/employees"])
 def test_clover_store_pos_routes_answer_409_not_500(db, monkeypatch, path):
-    use_store(monkeypatch, "STOREOPS_TEST_CLOVER")
+    use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")
     client = client_for(db, make_user(db, "owner", is_admin=True))
     r = client.get(path)
     assert r.status_code == 409, (r.status_code, r.text[:200])
@@ -65,7 +65,7 @@ def test_clover_store_pos_routes_answer_409_not_500(db, monkeypatch, path):
 def test_clover_store_still_advertises_its_capabilities(monkeypatch):
     """Branding / /me keep the contract's Clover set (section 7) - only the
     server's own gates need a connected POS."""
-    use_store(monkeypatch, "STOREOPS_TEST_CLOVER")
+    use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")
     assert "open_orders" in gating.capability_values()
     assert not gating.has_capability(gating.Capability.OPEN_ORDERS)
 
@@ -130,7 +130,7 @@ def _compose_env() -> dict:
 def test_dockerfile_sets_every_container_path_compose_sets():
     """`docker run` (no compose) must keep the database, uploads and the
     identity marker in /data too: UPLOADS_ROOT unset puts the marker under
-    /app/backend (not the volume, not writable by the storeops user)."""
+    /app/backend (not the volume, not writable by the retailops user)."""
     image, compose = _dockerfile_env(), _compose_env()
     assert image.get("UPLOADS_ROOT") == "/data/uploads"
     for name, value in compose.items():
@@ -148,8 +148,8 @@ def test_dockerignore_keeps_private_packs_out_of_the_build_context():
 
 @pytest.mark.parametrize(
     "value",
-    ["//spicetown.shop", "x@spicetown.shop", "https://spicetown.shop\\@example.com", "https://spicetown.shop%2e",
-     "HTTPS://Labels.SpiceTown.Shop./"],
+    [f"//{REFUSED_DOMAIN}", f"x@{REFUSED_DOMAIN}", f"https://{REFUSED_DOMAIN}\\@example.com", f"https://{REFUSED_DOMAIN}%2e",
+     f"HTTPS://Labels.{REFUSED_DOMAIN.title()}./"],
 )
 def test_refused_domain_spellings(value):
     from app.config import refused_host
@@ -157,7 +157,7 @@ def test_refused_domain_spellings(value):
     assert refused_host(value)
 
 
-@pytest.mark.parametrize("value", ["https://storeops-test-toast.storeops.invalid", "notspicetown.shop", ""])
+@pytest.mark.parametrize("value", ["https://retailops-test-toast.retailops.invalid", f"not{REFUSED_DOMAIN}", ""])
 def test_other_hosts_are_not_refused(value):
     from app.config import refused_host
 
@@ -180,13 +180,13 @@ def _invoice(db, **kw):
 
 
 def test_store_without_ap_inbox_or_whatsapp_never_fails_an_invoice(db, monkeypatch):
-    """STOREOPS_TEST_CLOVER has neither store feature: both channels are off
+    """RETAILOPS_TEST_CLOVER has neither store feature: both channels are off
     for the store, so an invoice is saved and done - not "failed", and no
     "Invoice failed to send" push to every admin for each one."""
     from app.services import invoice_submission as inv
     from app.services.notification_triggers import invoice_failed_alerts
 
-    use_store(monkeypatch, "STOREOPS_TEST_CLOVER")
+    use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")
     monkeypatch.setattr(inv, "convert_to_pdf", lambda src, dst: None)
     make_user(db, "owner", is_admin=True)
     entry = _invoice(db)
@@ -204,9 +204,9 @@ def test_store_with_ap_inbox_but_no_whatsapp_can_close_the_bill(db, monkeypatch)
     from app.services import invoice_submission as inv
     from app.services.notification_triggers import invoice_failed_alerts
 
-    use_store(monkeypatch, "STOREOPS_TEST_CLOVER")
-    monkeypatch.setattr(get_settings(), "ap_inbox_email", "ap@x.storeops.invalid")
-    monkeypatch.setattr(get_settings(), "toast_invoice_email", "ap@x.storeops.invalid")
+    use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")
+    monkeypatch.setattr(get_settings(), "ap_inbox_email", "ap@x.retailops.invalid")
+    monkeypatch.setattr(get_settings(), "toast_invoice_email", "ap@x.retailops.invalid")
     admin = make_user(db, "owner", is_admin=True)
     entry = _invoice(db, toast_email_sent=True)
     inv._attempt_whatsapp(db, entry)

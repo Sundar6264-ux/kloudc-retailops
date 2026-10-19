@@ -10,9 +10,9 @@ cd /app/backend
 mkdir -p "$INVOICE_UPLOADS_DIR" "$TEAM_UPLOADS_DIR" "$FLYERS_DIR"
 
 if [ "${1:-}" = "" ] || [ "${1:-}" = "serve" ]; then
-  echo "storeops: alembic upgrade head"
+  echo "retailops: alembic upgrade head"
   alembic upgrade head
-  echo "storeops: starting on port ${PORT:-8000}"
+  echo "retailops: starting on port ${PORT:-8000}"
   # Behind a reverse proxy or tunnel, set FORWARDED_ALLOW_IPS (uvicorn reads
   # it) to the proxy's address so client IPs and https are seen correctly.
   exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --workers 1 --proxy-headers

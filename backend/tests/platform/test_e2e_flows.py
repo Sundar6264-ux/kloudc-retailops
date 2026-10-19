@@ -210,7 +210,7 @@ def test_full_flow_two_stores(client, pdb, fake_testers, fake_toast, paused_sche
 
     # 1. Bootstrap the first master with the CLI (owner action), sign in on
     #    the one login page with Store ID PLATFORM.
-    monkeypatch.setenv("STOREOPS_MASTER_PASSWORD", "master-pass-123")
+    monkeypatch.setenv("RETAILOPS_MASTER_PASSWORD", "master-pass-123")
     assert platform_cli(["create-master", "--username", "Owner", "--display-name", "The Owner"]) == 0
     master, r = _web_login(client, "platform", "owner", "master-pass-123")
     assert r.status_code == 200 and r.json()["scope"] == "platform", r.text

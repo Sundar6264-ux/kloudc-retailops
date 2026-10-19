@@ -8,7 +8,7 @@
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
 
-const TOKEN_KEY = "storeops_mobile_token";
+const TOKEN_KEY = "retailops_mobile_token";
 
 export function isNative() {
   return Capacitor.isNativePlatform();

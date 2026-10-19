@@ -1,4 +1,4 @@
-"""The REAL StoreOps server in multi mode for the end-to-end flow checks
+"""The REAL KloudC RetailOps server in multi mode for the end-to-end flow checks
 (flows.mjs): a throwaway PostgreSQL cluster prefix, bootstrapped the way the
 owner does it (``python -m app.platform migrate-platform`` and
 ``create-master`` as separate processes), schedulers ON (leader election,
@@ -43,13 +43,13 @@ PREFIX = os.environ.get("E2E_DB_PREFIX", "so_flows")
 PORT = int(os.environ.get("MOCK_PORT", "8873"))
 DIST = os.environ.get("MOCK_DIST", "")
 MASTER_PW = os.environ["MOCK_MASTER_PASSWORD"]
-WORK = pathlib.Path(os.environ.get("FLOWS_WORK") or tempfile.mkdtemp(prefix="storeops-flows-"))
+WORK = pathlib.Path(os.environ.get("FLOWS_WORK") or tempfile.mkdtemp(prefix="retailops-flows-"))
 if not PREFIX.startswith("so_") or not PREFIX.replace("_", "").isalnum():
     raise SystemExit(f"E2E_DB_PREFIX={PREFIX!r}: use so_<letters/digits>")
 
 PLATFORM_DB = f"{PREFIX}_platform"
 STORE_PREFIX = f"{PREFIX}_s_"
-TMP = pathlib.Path(tempfile.mkdtemp(prefix="storeops-flows-up-"))
+TMP = pathlib.Path(tempfile.mkdtemp(prefix="retailops-flows-up-"))
 CALLS = WORK / "toast_calls.jsonl"
 
 
@@ -65,10 +65,10 @@ os.environ.update(
         "STORE_DATABASE_URL_TEMPLATE": _url("{db_name}"),
         "PG_ADMIN_URL": PG_URL,
         "STORE_DB_PREFIX": STORE_PREFIX,
-        "STOREOPS_SECRET_KEYS": "flows1:" + base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
+        "RETAILOPS_SECRET_KEYS": "flows1:" + base64.b64encode(secrets.token_bytes(32)).decode("ascii"),
         "UPLOADS_ROOT": str(TMP / "uploads"),
         "PLATFORM_PUBLIC_URL": f"http://127.0.0.1:{PORT}",
-        "PLATFORM_DOMAIN": "storeops.invalid",
+        "PLATFORM_DOMAIN": "retailops.invalid",
         "SIGNUP_ENABLED": "true",
         "SCHEDULER_ENABLED": "true",
         "NOTIFICATIONS_ENABLED": "false",
@@ -177,7 +177,7 @@ def bootstrap() -> None:
     py = sys.executable
     subprocess.run([py, "-m", "app.platform", "migrate-platform"], check=True, env=_cli_env, cwd=BACKEND)
     subprocess.run([py, "-m", "app.platform", "create-master", "--username", "owner", "--display-name", "The Owner"],
-                   check=True, env={**_cli_env, "STOREOPS_MASTER_PASSWORD": MASTER_PW}, cwd=BACKEND)
+                   check=True, env={**_cli_env, "RETAILOPS_MASTER_PASSWORD": MASTER_PW}, cwd=BACKEND)
 
     from app.platform import connector_tests
 

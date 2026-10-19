@@ -12,7 +12,7 @@ import sys
 W = pathlib.Path(os.environ["SUITE_B_WORK"]).resolve()
 PORT = int(os.environ["SUITE_B_PORT"])
 assert os.environ["DATABASE_URL"] == f"sqlite:///{W}/prodcopy.db", os.environ["DATABASE_URL"]
-assert "spicetown-backend" not in os.environ["DATABASE_URL"]
+assert not (os.environ.get("ORIGIN_LIVE_DIR") and os.environ["ORIGIN_LIVE_DIR"] in os.environ["DATABASE_URL"]), "never the live database"
 
 
 class FakeSMTP:
