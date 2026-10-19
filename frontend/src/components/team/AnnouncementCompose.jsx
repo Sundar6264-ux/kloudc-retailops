@@ -75,7 +75,7 @@ export default function AnnouncementCompose({ teams, onCancel, onPosted }) {
           {teams.map((t) => (
             <label key={t.id}>
               <input type="checkbox" checked={teamIds.includes(t.id)} onChange={() => toggleTeam(t.id)} />
-              <span className="task-team-dot" style={{ background: t.color || "#6b7280" }} aria-hidden="true" />
+              <span className="task-team-dot" style={{ background: t.color || "var(--neutral-fill)" }} aria-hidden="true" />
               {t.name}
             </label>
           ))}

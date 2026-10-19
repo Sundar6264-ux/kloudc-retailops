@@ -720,7 +720,7 @@ export default function ChatConversation({
         </button>
         <div className="chat-conv-title">
           {channel?.kind === "team" && (
-            <span className="task-team-dot" style={{ background: channel.color || "#9ca3af" }} />
+            <span className="task-team-dot" style={{ background: channel.color || "var(--text-disabled)" }} />
           )}
           <strong>{channel ? (channel.kind === "team" ? `# ${channel.name}` : channel.name) : "…"}</strong>
           {channel?.muted && <span className="pill">Muted</span>}

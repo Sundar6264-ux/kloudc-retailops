@@ -1,0 +1,403 @@
+/* KloudC RetailOps design tokens (docs/DESIGN_SYSTEM.md section 1).
+   The ONLY file with raw colour values (src/test/tokens.test.mjs fails on
+   new hex elsewhere). Light on :root; dark for "System" when the OS is dark
+   and for an explicit Dark choice (user menu > Appearance, kc.theme). The
+   store's brand colours arrive at boot as inline --brand / --accent /
+   --accent-dark / --brand-text-* (store/branding.js brandCssVars). */
+
+:root {
+  color-scheme: light;
+
+  /* ---- KloudC brand ---- */
+  --kc-blue: #004bad;
+  --kc-blue-fill: #004bad;
+  --kc-sky: #2ea3f2;
+  /* KloudC link blue (#0C71C3) deepened a touch so links pass 4.5:1 on the
+     tinted surfaces too (src/test/tokens.test.mjs). */
+  --kc-link: #0b6cbb;
+  --kc-ink: #2d3940;
+  --kc-grey: #9e9e9e;
+  --kc-gradient: linear-gradient(135deg, #004bad 0%, #0c71c3 55%, #2ea3f2 100%);
+  --kc-gradient-deep: linear-gradient(135deg, #062a5c 0%, #004bad 48%, #0c71c3 100%);
+
+  /* ---- neutrals ---- */
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface-2: #eef2f6;
+  --surface-3: #e4e9ef;
+  --border: #e1e6ec;
+  --border-strong: #c9d1da;
+  --input-border: #808d9b;
+  --text: #1e2a32;
+  --text-2: #475663;
+  --text-muted: #5a6774;
+  --text-disabled: #9aa6b2;
+  --overlay: rgba(14, 22, 32, 0.45);
+  --row-hover: #f4f7fb;
+  --selected-bg: #eaf2fc;
+  --selected-border: #b9d7f5;
+  --on-fill: #ffffff;
+  --inverse-bg: #1e2a32;
+  --inverse-text: #f5f7fa;
+  --glass: rgba(255, 255, 255, 0.86);
+  --toast-bg: #1e2a32;
+  --toast-text: #f5f7fa;
+  --toast-link: #9ccbf8;
+  --toast-border: transparent;
+
+  /* ---- store navigation (deep KloudC navy in both themes) ---- */
+  --nav-bg: #0b1f3a;
+  --nav-bg-2: #0f2747;
+  --nav-text: #a9b8cc;
+  --nav-muted: #7f93ad;
+  --nav-active: #ffffff;
+  --nav-hover: rgba(255, 255, 255, 0.06);
+  --nav-active-bg: rgba(255, 255, 255, 0.1);
+  --nav-border: rgba(255, 255, 255, 0.08);
+
+  /* ---- area identity (never status) ---- */
+  --area-home: #004bad;
+  --area-home-soft: #e8f1fd;
+  --area-ordering: #6d28d9;
+  --area-ordering-soft: #f3eeff;
+  --area-stock: #0f766e;
+  --area-stock-soft: #e6f6f4;
+  --area-sales: #be185d;
+  --area-sales-soft: #fdebf3;
+  --area-team: #c2410c;
+  --area-team-soft: #fff1e6;
+  --area-setup: #475569;
+  --area-setup-soft: #eef2f6;
+  --area-platform: #004bad;
+  --area-platform-soft: #e8f1fd;
+  --area-help: #0b6cbb;
+  --area-help-soft: #e6f2fd;
+  /* Nav icons on the navy sidebar (both themes). */
+  --area-home-nav: #7cc0f8;
+  --area-ordering-nav: #c4b0ff;
+  --area-stock-nav: #5fd8cb;
+  --area-sales-nav: #f9a0c8;
+  --area-team-nav: #fdb07a;
+  --area-setup-nav: #b4c2d2;
+  --area-help-nav: #7cc0f8;
+
+  /* ---- status (always with an icon and a word) ---- */
+  --success-text: #157a3e;
+  --success-soft: #e3f6ea;
+  --success-border: #a6ddb8;
+  --success-fill: #157a3e;
+  --warning-text: #9a5b00;
+  --warning-soft: #fef4d6;
+  --warning-border: #f2d58a;
+  --warning-fill: #9a5b00;
+  --warning-icon: #d97706;
+  --danger-text: #b42318;
+  --danger-soft: #fdecea;
+  --danger-border: #f5b5ae;
+  --danger-fill: #b42318;
+  --info-text: #0c63b0;
+  --info-soft: #e6f2fd;
+  --info-border: #b9d7f5;
+  --info-fill: #0c63b0;
+  --neutral-text: #475663;
+  --neutral-soft: #eef2f6;
+  --neutral-border: #c9d1da;
+  --neutral-fill: #5e6c78;
+  --violet-text: #6d28d9;
+  --violet-soft: #f3eeff;
+  --violet-border: #d6c6fb;
+
+  /* ---- brand (store colours; product defaults until branding answers) ---- */
+  --brand: #004bad;
+  --brand-secondary: #2ea3f2;
+  --accent: #004bad;
+  --accent-dark: #1f6fd1;
+  --accent-hover: #00418f;
+  --accent-rgb: 0, 75, 173;
+  --brand-text-light: #004bad;
+  --brand-text-dark: #6cb6f7;
+  --brand-text-dark-rgb: 108, 182, 247;
+  --primary: var(--accent);
+  --primary-hover: var(--accent-hover);
+  --brand-text: var(--brand-text-light);
+  --brand-soft: rgba(var(--accent-rgb), 0.08);
+  --brand-soft-strong: rgba(var(--accent-rgb), 0.14);
+
+  /* ---- focus ---- */
+  --focus: #0c71c3;
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--focus);
+
+  /* ---- type ---- */
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --fs-display: 30px;
+  --fs-h1: 24px;
+  --fs-h2: 20px;
+  --fs-h3: 16px;
+  --fs-body: 14px;
+  --fs-small: 13px;
+  --fs-label: 12px;
+  --fs-kpi: 26px;
+
+  /* ---- spacing (4 px base) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --gutter: 32px;
+  --content-max: 1240px;
+  --topbar-h: 56px;
+  --sidebar-w: 248px;
+  --sidebar-rail: 68px;
+
+  /* ---- radius ---- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --radius: 10px;
+
+  /* ---- elevation ---- */
+  --shadow-xs: 0 1px 1px rgba(16, 24, 40, 0.04);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --shadow-md: 0 4px 8px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.05);
+  --shadow-lg: 0 12px 24px -4px rgba(16, 24, 40, 0.12), 0 4px 8px -4px rgba(16, 24, 40, 0.06);
+  --shadow-brand: 0 1px 2px rgba(var(--accent-rgb), 0.25);
+
+  /* ---- layers ---- */
+  --z-sidebar: 30;
+  --z-topbar: 40;
+  --z-drawer: 50;
+  --z-popover: 60;
+  --z-dialog: 70;
+  --z-toast: 80;
+
+  /* ---- motion ---- */
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 240ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---- legacy names (older rules keep working, now theme-aware) ---- */
+  --card-bg: var(--surface);
+  --subtle-bg: var(--surface-2);
+  --hover-bg: var(--surface-2);
+  --link: var(--kc-link);
+  --cart-accent: var(--kc-link);
+  --cart-accent-hover: var(--info-text);
+  --accent-soft: var(--brand-soft);
+  --failed-bg: var(--danger-soft);
+  --failed-text: var(--danger-text);
+  --running-bg: var(--warning-soft);
+  --running-text: var(--warning-text);
+  --info-bg: var(--info-soft);
+  --success-bg: var(--success-soft);
+  --negative: var(--danger-text);
+  --sidebar-bg: var(--nav-bg);
+  --sidebar-text: var(--nav-text);
+  --sidebar-text-active: var(--nav-active);
+  --sidebar-border: var(--nav-border);
+  --sidebar-hover: var(--nav-hover);
+}
+
+@media (max-width: 1279px) {
+  :root {
+    --gutter: 24px;
+  }
+}
+
+@media (max-width: 639px) {
+  :root {
+    --gutter: 16px;
+  }
+}
+
+/* ---- dark: the same tokens, dark values. Kept in one mixin-like block
+   twice (System + explicit Dark) - keep the two blocks identical. ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --kc-blue: #6cb6f7;
+    --kc-blue-fill: #1f6fd1;
+    --kc-link: #6cb6f7;
+    --bg: #0e1620;
+    --surface: #162130;
+    --surface-2: #1d2a3a;
+    --surface-3: #243346;
+    --border: #273545;
+    --border-strong: #36475a;
+    --input-border: #62748a;
+    --text: #e8eef4;
+    --text-2: #b4c0cc;
+    --text-muted: #8c9bab;
+    --text-disabled: #5d6c7c;
+    --overlay: rgba(0, 0, 0, 0.6);
+    --row-hover: rgba(255, 255, 255, 0.035);
+    --selected-bg: rgba(108, 182, 247, 0.12);
+    --selected-border: rgba(108, 182, 247, 0.4);
+    --inverse-bg: #e8eef4;
+    --inverse-text: #0e1620;
+    --glass: rgba(22, 33, 48, 0.86);
+    --toast-bg: #2a3b50;
+    --toast-border: #3a4d64;
+    --nav-bg: #0a1626;
+    --nav-bg-2: #0e1d31;
+    --area-home: #6cb6f7;
+    --area-home-soft: rgba(108, 182, 247, 0.14);
+    --area-ordering: #b79cff;
+    --area-ordering-soft: rgba(183, 156, 255, 0.14);
+    --area-stock: #4fd1c5;
+    --area-stock-soft: rgba(79, 209, 197, 0.14);
+    --area-sales: #f98bbe;
+    --area-sales-soft: rgba(249, 139, 190, 0.14);
+    --area-team: #fda769;
+    --area-team-soft: rgba(253, 167, 105, 0.14);
+    --area-setup: #a8b6c6;
+    --area-setup-soft: rgba(168, 182, 198, 0.14);
+    --area-platform: #6cb6f7;
+    --area-platform-soft: rgba(108, 182, 247, 0.14);
+    --area-help: #6cb6f7;
+    --area-help-soft: rgba(108, 182, 247, 0.14);
+    --success-text: #4ade80;
+    --success-soft: rgba(74, 222, 128, 0.14);
+    --success-border: rgba(74, 222, 128, 0.35);
+    --warning-text: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.14);
+    --warning-border: rgba(251, 191, 36, 0.38);
+    --warning-icon: #fbbf24;
+    --danger-text: #ff7b72;
+    --danger-soft: rgba(255, 123, 114, 0.14);
+    --danger-border: rgba(255, 123, 114, 0.38);
+    --info-text: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.14);
+    --info-border: rgba(96, 165, 250, 0.38);
+    --neutral-text: #b4c0cc;
+    --neutral-soft: rgba(180, 192, 204, 0.12);
+    --neutral-border: #36475a;
+    --violet-text: #b79cff;
+    --violet-soft: rgba(183, 156, 255, 0.14);
+    --violet-border: rgba(183, 156, 255, 0.38);
+    --primary: var(--accent-dark);
+    --primary-hover: var(--accent);
+    --brand-text: var(--brand-text-dark);
+    --brand-soft: rgba(var(--brand-text-dark-rgb), 0.14);
+    --brand-soft-strong: rgba(var(--brand-text-dark-rgb), 0.22);
+    --focus: #6cb6f7;
+    --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 16px 32px -6px rgba(0, 0, 0, 0.55);
+    --shadow-brand: none;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --kc-blue: #6cb6f7;
+  --kc-blue-fill: #1f6fd1;
+  --kc-link: #6cb6f7;
+  --bg: #0e1620;
+  --surface: #162130;
+  --surface-2: #1d2a3a;
+  --surface-3: #243346;
+  --border: #273545;
+  --border-strong: #36475a;
+  --input-border: #62748a;
+  --text: #e8eef4;
+  --text-2: #b4c0cc;
+  --text-muted: #8c9bab;
+  --text-disabled: #5d6c7c;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --row-hover: rgba(255, 255, 255, 0.035);
+  --selected-bg: rgba(108, 182, 247, 0.12);
+  --selected-border: rgba(108, 182, 247, 0.4);
+  --inverse-bg: #e8eef4;
+  --inverse-text: #0e1620;
+  --glass: rgba(22, 33, 48, 0.86);
+  --toast-bg: #2a3b50;
+  --toast-border: #3a4d64;
+  --nav-bg: #0a1626;
+  --nav-bg-2: #0e1d31;
+  --area-home: #6cb6f7;
+  --area-home-soft: rgba(108, 182, 247, 0.14);
+  --area-ordering: #b79cff;
+  --area-ordering-soft: rgba(183, 156, 255, 0.14);
+  --area-stock: #4fd1c5;
+  --area-stock-soft: rgba(79, 209, 197, 0.14);
+  --area-sales: #f98bbe;
+  --area-sales-soft: rgba(249, 139, 190, 0.14);
+  --area-team: #fda769;
+  --area-team-soft: rgba(253, 167, 105, 0.14);
+  --area-setup: #a8b6c6;
+  --area-setup-soft: rgba(168, 182, 198, 0.14);
+  --area-platform: #6cb6f7;
+  --area-platform-soft: rgba(108, 182, 247, 0.14);
+  --area-help: #6cb6f7;
+  --area-help-soft: rgba(108, 182, 247, 0.14);
+  --success-text: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.14);
+  --success-border: rgba(74, 222, 128, 0.35);
+  --warning-text: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.14);
+  --warning-border: rgba(251, 191, 36, 0.38);
+  --warning-icon: #fbbf24;
+  --danger-text: #ff7b72;
+  --danger-soft: rgba(255, 123, 114, 0.14);
+  --danger-border: rgba(255, 123, 114, 0.38);
+  --info-text: #60a5fa;
+  --info-soft: rgba(96, 165, 250, 0.14);
+  --info-border: rgba(96, 165, 250, 0.38);
+  --neutral-text: #b4c0cc;
+  --neutral-soft: rgba(180, 192, 204, 0.12);
+  --neutral-border: #36475a;
+  --violet-text: #b79cff;
+  --violet-soft: rgba(183, 156, 255, 0.14);
+  --violet-border: rgba(183, 156, 255, 0.38);
+  --primary: var(--accent-dark);
+  --primary-hover: var(--accent);
+  --brand-text: var(--brand-text-dark);
+  --brand-soft: rgba(var(--brand-text-dark-rgb), 0.14);
+  --brand-soft-strong: rgba(var(--brand-text-dark-rgb), 0.22);
+  --focus: #6cb6f7;
+  --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 32px -6px rgba(0, 0, 0, 0.55);
+  --shadow-brand: none;
+}
+
+/* Area scoping: a page root (or tile, chip, nav group) sets data-area and
+   reads --area / --area-soft. */
+[data-area="home"] { --area: var(--area-home); --area-soft: var(--area-home-soft); --area-nav: var(--area-home-nav); }
+[data-area="ordering"] { --area: var(--area-ordering); --area-soft: var(--area-ordering-soft); --area-nav: var(--area-ordering-nav); }
+[data-area="stock"] { --area: var(--area-stock); --area-soft: var(--area-stock-soft); --area-nav: var(--area-stock-nav); }
+[data-area="sales"] { --area: var(--area-sales); --area-soft: var(--area-sales-soft); --area-nav: var(--area-sales-nav); }
+[data-area="team"] { --area: var(--area-team); --area-soft: var(--area-team-soft); --area-nav: var(--area-team-nav); }
+[data-area="setup"] { --area: var(--area-setup); --area-soft: var(--area-setup-soft); --area-nav: var(--area-setup-nav); }
+[data-area="platform"] { --area: var(--area-platform); --area-soft: var(--area-platform-soft); --area-nav: var(--area-home-nav); }
+[data-area="help"] { --area: var(--area-help); --area-soft: var(--area-help-soft); --area-nav: var(--area-help-nav); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+    --dur-slow: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
