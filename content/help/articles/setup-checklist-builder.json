@@ -29,7 +29,7 @@
   {
    "type": "bullets",
    "items": [
-    "Click a question to edit it and pick its type: short answer, paragraph, multiple choice, checkboxes, dropdown, linear scale, rating, grids, date, time or photo upload.",
+    "Select a question to edit it and pick its type: short answer, paragraph, multiple choice, checkboxes, dropdown, linear scale, rating, grids, date, time or photo upload.",
     "Add titles, images and sections. Each option can flag an issue (Critical, Low stock and so on).",
     "The ⋮ menu has the extras: description, response checks, go to section based on answer, shuffle, Other, and more.",
     "The preview on the right shows exactly what staff see. Try it: nothing is sent."

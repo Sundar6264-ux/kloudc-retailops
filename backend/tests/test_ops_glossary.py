@@ -21,7 +21,12 @@ from app.services.vendor_calendar import CONFIRM_WINDOW_DAYS
 
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 WEB_SRC = BACKEND.parent / "frontend" / "src"
-MOBILE_LIB = BACKEND.parents[1] / "mobile" / "lib"
+# The app checkout next to this repository (storeops-app; older layouts
+# called it mobile/). Missing on CI, where the app tests skip.
+MOBILE_LIB = next(
+    (c / "lib" for c in (BACKEND.parents[1] / "storeops-app", BACKEND.parents[1] / "mobile") if (c / "pubspec.yaml").exists()),
+    BACKEND.parents[1] / "storeops-app" / "lib",
+)
 
 KEY_RE = r"[a-z][a-z0-9_]*"
 
@@ -239,7 +244,7 @@ def test_automation_batch_terms_quote_the_code():
 def test_open_order_threshold_matches_the_app():
     src = MOBILE_LIB / "features" / "orders" / "models" / "open_order.dart"
     if not src.exists():
-        pytest.skip("mobile repo not checked out next to website/")
+        pytest.skip("app repo (storeops-app) not checked out next to this repository")
     m = re.search(r"bool get isStale\s*=>[^;]*\)\s*>\s*(\d+)", src.read_text())
     assert m, "isStale rule not found in open_order.dart"
     assert int(m.group(1)) == g.OPEN_ORDER_STALE_MINUTES
@@ -294,7 +299,7 @@ def test_website_references_only_real_keys():
 
 def test_app_references_only_real_keys():
     if not MOBILE_LIB.exists():
-        pytest.skip("mobile repo not checked out next to website/")
+        pytest.skip("app repo (storeops-app) not checked out next to this repository")
     keys = _app_keys()
     assert "urgency_critical" in keys and "review" in keys, "app wiring not found"
     missing = sorted(k for k in keys if k not in g.TERMS_BY_KEY)
@@ -304,7 +309,7 @@ def test_app_references_only_real_keys():
 def test_app_bundled_copy_is_current():
     target = MOBILE_LIB / "core" / "glossary" / "glossary_data.dart"
     if not target.exists():
-        pytest.skip("mobile repo not checked out next to website/")
+        pytest.skip("app repo (storeops-app) not checked out next to this repository")
     sys.path.insert(0, str(BACKEND / "scripts"))
     try:
         import export_glossary
@@ -312,5 +317,5 @@ def test_app_bundled_copy_is_current():
         sys.path.pop(0)
     bundled = export_glossary.bundled_json(target.read_text(encoding="utf-8"))
     assert bundled == json.loads(json.dumps(g.get_glossary())), (
-        "mobile glossary_data.dart is stale - run: .venv312/bin/python scripts/export_glossary.py"
+        "app glossary_data.dart is stale - run: scripts/help/sync_help_to_app.sh"
     )

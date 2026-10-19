@@ -20,7 +20,7 @@
  "blocks": [
   {
    "type": "p",
-   "text": "Click **Generate this week's digest** on Home. You get a summary of the last 7 days: sales against last week, the top reorder needs, dead stock, vendor savings, the biggest reconciliation gaps and barcode problems."
+   "text": "Select **Generate this week's digest** on Home. You get a summary of the last 7 days: sales against last week, the top reorder needs, dead stock, vendor savings, the biggest reconciliation gaps and barcode problems."
   },
   {
    "type": "bullets",

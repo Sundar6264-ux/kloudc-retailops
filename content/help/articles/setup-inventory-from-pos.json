@@ -28,7 +28,7 @@
   },
   {
    "type": "p",
-   "text": "It is off until an admin clicks **Use {pos} for inventory** on Setup › Inventory from {pos}. It applies at once, and every change is listed there with who and when. Until then, the nightly run only compares what it built with that day's file."
+   "text": "It is off until an admin selects **Use {pos} for inventory** on Setup › Inventory from {pos}. It applies at once, and every change is listed there with who and when. Until then, the nightly run only compares what it built with that day's file."
   },
   {
    "type": "h",

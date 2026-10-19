@@ -24,7 +24,7 @@
   {
    "type": "steps",
    "items": [
-    "Open Setup › **Users** and click **Add user**.",
+    "Open Setup › **Users** and select **Add user**.",
     "Type a username and a first password. Share them with the person privately.",
     "Tick the pages they may open (Select all and Select none help), or make them an admin.",
     "Tick **Hide sales numbers** if they shouldn't see dollar amounts, and **Can assign tasks** for shift leads.",

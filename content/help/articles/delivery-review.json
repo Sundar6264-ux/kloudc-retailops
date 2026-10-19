@@ -45,7 +45,7 @@
    "items": [
     "Open a suggestion and check each line against the invoice.",
     "Change any quantity. A box turns red when it differs from the suggestion, as a reminder, not a block.",
-    "Click **Confirm & log**. It writes the purchase log, with each item's cost from that day's file."
+    "Select **Confirm & log**. It writes the purchase log, with each item's cost from that day's file."
    ]
   },
   {

@@ -22,7 +22,7 @@
  "blocks": [
   {
    "type": "p",
-   "text": "Fix Issues lists the records in your latest inventory upload that need attention: barcode problems, duplicates, and stock problems. Kitchen and catering items are left out, since they are made in the store. The number on each tile is how many are still open. Click an item's name for its details."
+   "text": "Fix Issues lists the records in your latest inventory upload that need attention: barcode problems, duplicates, and stock problems. Kitchen and catering items are left out, since they are made in the store. The number on each tile is how many are still open. Select an item's name for its details."
   },
   {
    "type": "h",
@@ -60,7 +60,7 @@
   {
    "type": "steps",
    "items": [
-    "Click **Close** on a row (or tick several and use Close selected).",
+    "Select **Close** on a row (or tick several and use Close selected).",
     "Pick the reason that fits. Each reason says what it will do.",
     "If you pick Other, type a few words about why."
    ]

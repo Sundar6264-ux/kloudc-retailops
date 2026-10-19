@@ -633,7 +633,7 @@
   "label": "Weekly sales",
   "category": "concept_ordering",
   "area": "ordering",
-  "definition": "Units of an item sold per week on average, counting only days it was in stock. Click it to see the week by week numbers.",
+  "definition": "Units of an item sold per week on average, counting only days it was in stock. Select it to see the week by week numbers.",
   "aliases": [
    "per week",
    "/week",

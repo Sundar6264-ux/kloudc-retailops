@@ -29,9 +29,9 @@
     "Pick a **vendor**.",
     "Pick a **lookback**: how much sales history to average (3 months is the default, or choose exact dates).",
     "Pick a **projection duration**: how far ahead to cover (1 week to 3 months, or a date).",
-    "Click **Generate projection**. Every item that vendor supplies in the latest inventory is listed, most needed first.",
+    "Select **Generate projection**. Every item that vendor supplies in the latest inventory is listed, most needed first.",
     "Tick the items you want. Each gets an **Order qty** box filled with its suggestion. Change any of them.",
-    "Click **Add to cart**. You stay on the page, so you can keep going or switch vendor."
+    "Select **Add to cart**. You stay on the page, so you can keep going or switch vendor."
    ]
   },
   {
@@ -41,7 +41,7 @@
   {
    "type": "bullets",
    "items": [
-    "**Avg/day** and **Avg/week**: the same sales rate at two scales, counting only days the item was in stock. Click either to see the weeks it comes from, each with its average on hand.",
+    "**Avg/day** and **Avg/week**: the same sales rate at two scales, counting only days the item was in stock. Select either to see the weeks it comes from, each with its average on hand.",
     "**On hand**: includes the item's Container row, shown as \"(+N container)\".",
     "**Need**: projected sales for the period plus a small safety buffer, minus what is on hand. An asterisk means stock isn't counted for that item, so Need is just projected sales."
    ]

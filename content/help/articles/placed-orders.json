@@ -20,7 +20,7 @@
  "blocks": [
   {
    "type": "p",
-   "text": "A full history of purchase orders from the cart, newest first. Filter by vendor, dates and status, or search by item name, code or vendor. Click an order to see its items."
+   "text": "A full history of purchase orders from the cart, newest first. Filter by vendor, dates and status, or search by item name, code or vendor. Select an order to see its items."
   },
   {
    "type": "h",
@@ -29,7 +29,7 @@
   {
    "type": "bullets",
    "items": [
-    "**Placed**: someone clicked Order placed (or Mark placed in the app), or Send PO sent it. It records exactly what was in that vendor's cart.",
+    "**Placed**: someone selected Order placed (or Mark placed in the app), or Send PO sent it. It records exactly what was in that vendor's cart.",
     "**PDF only**: a PO was made (downloaded or shared) but never marked placed.",
     "Making the PDF again within a day updates the same entry, and marking it placed within 2 days turns that entry into the placed order. A PDF plus Order placed is one order, not two.",
     "**Placed outside the app**: an admin said the order went in another way. It has no items."
@@ -45,7 +45,7 @@
   },
   {
    "type": "p",
-   "text": "Open an order and click **Order again** to put its items back into that vendor's cart with the same quantities. Then check the cart as usual."
+   "text": "Open an order and select **Order again** to put its items back into that vendor's cart with the same quantities. Then check the cart as usual."
   }
  ]
 }

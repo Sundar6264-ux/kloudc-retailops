@@ -239,7 +239,7 @@
   "a": [
    {
     "type": "p",
-    "text": "Click **Send PO** on the vendor in the cart. It goes to the vendor's contacts marked Gets POs, plus any CC addresses: the contact's defaults, and any you add for that send. See [Send PO](article:po-cart)."
+    "text": "Select **Send PO** on the vendor in the cart. It goes to the vendor's contacts marked Gets POs, plus any CC addresses: the contact's defaults, and any you add for that send. See [Send PO](article:po-cart)."
    }
   ],
   "area": "ordering",
@@ -278,7 +278,7 @@
   "a": [
    {
     "type": "p",
-    "text": "Delivery Review suggests deliveries from your uploads and {pos}'s receiving records. Check the quantities and click **Confirm & log**. Nothing is logged by itself. You can also log a purchase by hand on Reconciliation."
+    "text": "Delivery Review suggests deliveries from your uploads and {pos}'s receiving records. Check the quantities and select **Confirm & log**. Nothing is logged by itself. You can also log a purchase by hand on Reconciliation."
    }
   ],
   "area": "stock",
@@ -569,7 +569,7 @@
   "a": [
    {
     "type": "p",
-    "text": "An admin opens Setup › [Integrations](page:integrations), picks the POS tile, fills in the details, saves and clicks Test connection. Sales start syncing that night. Need a hand? Email {support_email}."
+    "text": "An admin opens Setup › [Integrations](page:integrations), picks the POS tile, fills in the details, saves and selects Test connection. Sales start syncing that night. Need a hand? Email {support_email}."
    }
   ],
   "area": "setup",

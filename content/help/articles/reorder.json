@@ -54,7 +54,7 @@
   {
    "type": "bullets",
    "items": [
-    "**Avg/day**: average units sold per day over the **Lookback** you choose. Click it to see week by week sales with the average on hand each week.",
+    "**Avg/day**: average units sold per day over the **Lookback** you choose. Select it to see week by week sales with the average on hand each week.",
     "**Forecast (lead time)**: Avg/day times the lead time.",
     "**Shortfall**: the forecast minus what is on hand. Only items that will really run short are listed.",
     "Only items with a known count are included, so a kitchen item that is never counted doesn't show as out of stock."

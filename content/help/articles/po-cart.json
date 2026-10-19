@@ -51,7 +51,7 @@
   },
   {
    "type": "p",
-   "text": "Only an admin can remove a line, set it to 0 or clear a vendor's cart. Anyone else clicks **Request removal**. Admins get a notification and approve or reject."
+   "text": "Only an admin can remove a line, set it to 0 or clear a vendor's cart. Anyone else selects **Request removal**. Admins get a notification and approve or reject."
   },
   {
    "type": "h",
@@ -69,9 +69,9 @@
   {
    "type": "steps",
    "items": [
-    "Click **Send PO** on a vendor. A preview shows who it goes to (the vendor's saved contacts, those marked Gets POs ticked), the subject, the message and the PDF.",
+    "Select **Send PO** on a vendor. A preview shows who it goes to (the vendor's saved contacts, those marked Gets POs ticked), the subject, the message and the PDF.",
     "Add a note or CC addresses for this send if you like. **Preview PDF** shows the attachment.",
-    "Click **Send**. It goes from the store's email account."
+    "Select **Send**. It goes from the store's email account."
    ]
   },
   {
@@ -90,7 +90,7 @@
   },
   {
    "type": "p",
-   "text": "Ordered another way? Click **Order placed** on the vendor once the order has really gone. That records it on Placed Orders and empties that vendor's cart."
+   "text": "Ordered another way? Select **Order placed** on the vendor once the order has really gone. That records it on Placed Orders and empties that vendor's cart."
   },
   {
    "type": "note",

@@ -847,8 +847,7 @@
    "delivery_suggested",
    "delivery_suggested_qty",
    "delivery_new_item",
-   "concept_purchase_log",
-   "delivery_suggested"
+   "concept_purchase_log"
   ],
   "article": "delivery-review",
   "new_until": null
@@ -906,8 +905,7 @@
    "invoice_close_suggested",
    "invoice_trash",
    "concept_invoice",
-   "invoice_type_return",
-   "invoice_transfer"
+   "invoice_type_return"
   ],
   "article": "invoices",
   "new_until": null
@@ -967,7 +965,6 @@
   "terms": [
    "store_vs_container",
    "concept_container",
-   "store_vs_container",
    "container_qty"
   ],
   "article": "inventory-reports",
@@ -1029,7 +1026,6 @@
    "recon_variance",
    "recon_invoice_gap",
    "concept_reconciliation",
-   "recon_variance",
    "concept_purchase_log"
   ],
   "article": "reconciliation",
@@ -1311,8 +1307,7 @@
    "insights_discount",
    "insights_void",
    "insights_refund",
-   "insights_comp_estimate",
-   "insights_loss_watch"
+   "insights_comp_estimate"
   ],
   "article": "insights-loss-watch",
   "new_until": null
@@ -1351,8 +1346,7 @@
    "insights_odd_checks",
    "insights_odd_open_long",
    "insights_odd_modified_after_paid",
-   "insights_odd_large_refund",
-   "insights_odd_checks"
+   "insights_odd_large_refund"
   ],
   "article": "insights-odd-checks",
   "new_until": null
@@ -1508,8 +1502,7 @@
   "terms": [
    "insights_card_customers",
    "insights_returning_customer",
-   "insights_returning_rate",
-   "insights_returning_customer"
+   "insights_returning_rate"
   ],
   "article": "insights-returning",
   "new_until": null
@@ -1546,8 +1539,7 @@
   "sections": {},
   "terms": [
    "insights_channel",
-   "insights_channel_share",
-   "insights_channel"
+   "insights_channel_share"
   ],
   "article": "insights-also-in-pos",
   "new_until": null
@@ -1584,8 +1576,7 @@
   "sections": {},
   "terms": [
    "insights_avg_check",
-   "insights_guests",
-   "insights_avg_check"
+   "insights_guests"
   ],
   "article": "insights-also-in-pos",
   "new_until": null
@@ -1624,8 +1615,7 @@
   "terms": [
    "insights_heatmap",
    "insights_busiest",
-   "insights_quietest",
-   "insights_heatmap"
+   "insights_quietest"
   ],
   "article": "insights-also-in-pos",
   "new_until": null
@@ -1852,7 +1842,6 @@
   "terms": [
    "flyer",
    "marketing_group",
-   "flyer",
    "concept_whatsapp_group"
   ],
   "article": "flyers",
@@ -1931,9 +1920,7 @@
    "user_admin",
    "user_features",
    "hide_sales",
-   "user_can_assign",
-   "user_features",
-   "user_admin"
+   "user_can_assign"
   ],
   "article": "setup-users",
   "new_until": null
@@ -1949,9 +1936,7 @@
   "web": {
    "route": "/teams"
   },
-  "app": {
-   "location": "More › Setup"
-  },
+  "app": null,
   "gating": {
    "feature": null,
    "admin": true,
@@ -2091,7 +2076,6 @@
   },
   "sections": {},
   "terms": [
-   "po_section",
    "po_section"
   ],
   "article": "setup-po-sections",

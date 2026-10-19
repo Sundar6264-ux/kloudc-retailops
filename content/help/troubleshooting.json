@@ -73,7 +73,7 @@
     "type": "steps",
     "items": [
      "Open the job status card on Home and read the detail.",
-     "An admin opens Integrations and clicks Test connection on the POS tile.",
+     "An admin opens Integrations and selects Test connection on the POS tile.",
      "If the test fails, re-enter the POS details and Save. A missed night is caught up on the next run."
     ]
    }
@@ -236,7 +236,7 @@
     "type": "steps",
     "items": [
      "Wait a minute: Sending can take a while.",
-     "Click Resend on the invoice (or Retry on a flyer).",
+     "Select Resend on the invoice (or Retry on a flyer).",
      "An admin checks WhatsApp on Integrations with Test connection, and that the number is still in the group."
     ]
    }
