@@ -40,7 +40,7 @@ def normalize_code(raw: Any) -> Optional[str]:
     if not isinstance(raw, str):
         return None
     code = raw.strip(CODE_TRIM).upper().replace("-", "_")
-    return code if CODE_RE.match(code) else None
+    return code if CODE_RE.fullmatch(code) else None
 
 
 def is_reserved(code: str) -> bool:
@@ -51,6 +51,6 @@ def db_name_for(code: str) -> str:
     """``STORE_DB_PREFIX`` + the code in lower case (max 63, PG's limit)."""
     prefix = str(pget("store_db_prefix") or "so_")
     name = (prefix + code.lower())[:63]
-    if not re.match(r"^[a-z_][a-z0-9_]*$", name):
+    if not re.fullmatch(r"[a-z_][a-z0-9_]*", name):
         raise ValueError(f"database name {name!r} is not a plain identifier")
     return name

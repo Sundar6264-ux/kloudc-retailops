@@ -80,7 +80,7 @@ def normalize_store_code(raw: Optional[str]) -> str:
 
 
 def is_valid_store_code(code: str) -> bool:
-    return bool(STORE_CODE_RE.match(code or ""))
+    return bool(STORE_CODE_RE.fullmatch(code or ""))
 
 
 def reserved_codes() -> frozenset:

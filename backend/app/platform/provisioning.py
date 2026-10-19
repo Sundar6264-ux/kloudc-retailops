@@ -213,7 +213,7 @@ INIT_STORE: Optional[Callable[..., dict]] = None  # default app.store.init_store
 
 
 def _quote_ident(name: str) -> str:
-    if not re.match(r"^[a-z_][a-z0-9_]{0,62}$", name):
+    if not re.fullmatch(r"[a-z_][a-z0-9_]{0,62}", name):
         raise ProvisionError(f"{name!r} is not a safe database name")
     return '"' + name + '"'
 
