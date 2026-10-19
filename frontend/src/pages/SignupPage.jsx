@@ -8,6 +8,7 @@ import {
   EMPTY_SIGNUP,
   MIN_PASSWORD,
   POS_OPTIONS,
+  availabilityReason,
   SIGNUP_STORAGE_KEY,
   codeProblem,
   pendingUrl,
@@ -74,7 +75,7 @@ export default function SignupPage() {
     const t = setTimeout(async () => {
       try {
         const r = await checkStoreCode(code);
-        if (mine === checkSeq.current) setAvailability({ code, available: !!r?.available, reason: r?.reason || null });
+        if (mine === checkSeq.current) setAvailability({ code, available: !!r?.available, reason: availabilityReason(r) });
       } catch {
         if (mine === checkSeq.current) setAvailability(null); // the server checks again on submit
       }
@@ -97,7 +98,12 @@ export default function SignupPage() {
       }
       navigate(pendingUrl(r.request_id, r.status_token));
     } catch (err) {
-      if (err.status === 429) setServerError("Too many requests from here. Please try again in an hour.");
+      if (err.status === 409 && err.body?.error === "code_unavailable") {
+        // Taken between the live check and the submit: show it on the field.
+        const reason = availabilityReason({ available: false, reason: err.body.reason, message: err.body.message });
+        setAvailability({ code, available: false, reason });
+        setServerError(reason || err.message);
+      } else if (err.status === 429) setServerError("Too many requests from here. Please try again in an hour.");
       else if (err.status === 404) setServerError("Sign-up is closed right now. Please contact support.");
       else if (!err.status) setServerError("Can't reach the server. Check your connection and try again.");
       else setServerError(err.message || "Couldn't send the request. Please check the form and try again.");

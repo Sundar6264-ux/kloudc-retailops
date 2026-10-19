@@ -37,6 +37,7 @@ import ChangePasswordPage from "./pages/ChangePasswordPage.jsx";
 import NoAccessPage from "./pages/NoAccessPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
 import SignupPendingPage from "./pages/SignupPendingPage.jsx";
+import OwnerSetupPage from "./pages/OwnerSetupPage.jsx";
 import PlatformConsolePage from "./pages/PlatformConsolePage.jsx";
 import IntegrationsPage from "./pages/IntegrationsPage.jsx";
 import FlyersPage from "./pages/FlyersPage.jsx";
@@ -162,6 +163,7 @@ function AppShell() {
       <Routes>
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/signup/pending" element={<SignupPendingPage />} />
+        <Route path="/setup" element={<OwnerSetupPage />} />
         <Route path="*" element={<LoginPage />} />
       </Routes>
     );

@@ -57,8 +57,8 @@ export function AuthProvider({ children }) {
 
   // Store ID + username + password (contract 4.5). Store ID PLATFORM
   // signs a master in: user.scope === "platform".
-  async function login(storeCode, username, password) {
-    const me = normalizeMe(await apiLogin(storeCode, username, password));
+  async function login(storeCode, username, password, totp = "") {
+    const me = normalizeMe(await apiLogin(storeCode, username, password, totp));
     setUser(me);
     announceStore(me);
     return me;

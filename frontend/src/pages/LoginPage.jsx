@@ -6,6 +6,7 @@ import PasswordInput from "../components/PasswordInput.jsx";
 import StoreLogo from "../components/StoreLogo.jsx";
 import { useBranding } from "../store/StoreContext.jsx";
 import {
+  cleanTotp,
   initialStoreId,
   isPlatformCode,
   loginErrorMessage,
@@ -42,6 +43,9 @@ export default function LoginPage() {
   );
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  // Two-step sign-in (masters with TOTP): shown after the server asks.
+  const [needTotp, setNeedTotp] = useState(false);
+  const [totp, setTotp] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   // The store the typed Store ID belongs to (public lookup on blur), for
@@ -82,7 +86,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await login(code, username.trim(), password);
+      await login(code, username.trim(), password, needTotp ? totp : "");
       rememberStore(storage(), code);
       // Set only when the backend redirected here from a link that needed
       // login first (a WhatsApp invoice link: /public/invoices/...) - a real
@@ -92,6 +96,12 @@ export default function LoginPage() {
       if (next && next.startsWith("/") && !next.startsWith("//")) window.location.href = next;
     } catch (err) {
       const info = loginErrorMessage(err);
+      if (info.kind === "totp") {
+        setNeedTotp(true);
+        setTotp("");
+        setError(info.message);
+        return;
+      }
       if (info.kind === "moved") {
         // Contract 12.3: this store has its own server now.
         rememberStore(storage(), code);
@@ -139,6 +149,7 @@ export default function LoginPage() {
             onChange={(e) => {
               setStoreId(e.target.value.replace(/[^A-Za-z0-9_\- ]/g, "").slice(0, 32));
               setFound(null);
+              setNeedTotp(false);
             }}
             onBlur={(e) => {
               const n = normalizeStoreCode(e.target.value);
@@ -158,7 +169,10 @@ export default function LoginPage() {
             type="text"
             name="username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              setNeedTotp(false);
+            }}
             autoComplete="username"
             autoFocus={!!storeId}
           />
@@ -167,6 +181,22 @@ export default function LoginPage() {
           Password
           <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
         </label>
+        {needTotp && (
+          <label className="login-field">
+            6-digit code
+            <input
+              type="text"
+              name="totp"
+              data-testid="login-totp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={totp}
+              onChange={(e) => setTotp(cleanTotp(e.target.value))}
+              placeholder="123456"
+              autoFocus
+            />
+          </label>
+        )}
 
         {error && (
           <p className="error" role="alert" data-testid="login-error" style={{ margin: 0 }}>
@@ -174,7 +204,10 @@ export default function LoginPage() {
           </p>
         )}
 
-        <button type="submit" disabled={loading || !storeId.trim() || !username || !password}>
+        <button
+          type="submit"
+          disabled={loading || !storeId.trim() || !username || !password || (needTotp && totp.length !== 6)}
+        >
           {loading ? "Signing in…" : "Sign in"}
         </button>
         <p className="login-links">

@@ -169,6 +169,7 @@ export function platformErrorMessage(err) {
   if (code === "dedicated_hosting_disabled") {
     return "Dedicated servers are switched off on this platform (DEDICATED_HOSTING_ENABLED).";
   }
+  if (code === "totp_setup_required") return TOTP_SETUP_MESSAGE;
   if (err.status === 403) return "Only a master admin can do that.";
   return message || "Something went wrong. Please try again.";
 }
@@ -177,4 +178,42 @@ export function isHostingDisabled(err) {
   const body = err?.body && typeof err.body === "object" ? err.body : {};
   const detail = body.detail && typeof body.detail === "object" ? body.detail : {};
   return (body.error || detail.error) === "dedicated_hosting_disabled";
+}
+
+// GET /api/platform/packs -> [{id, label}] for the approve form. The server
+// answers [{"pack_id", "label", "private"}]; bare ids (older mock) work too.
+export function packOptions(reply) {
+  const list = Array.isArray(reply) ? reply : Array.isArray(reply?.packs) ? reply.packs : [];
+  const out = [];
+  for (const p of list) {
+    const id = typeof p === "string" ? p : p?.pack_id || p?.id;
+    if (!id || out.some((o) => o.id === id)) continue;
+    const label = typeof p === "object" && p.label && p.label !== id ? `${p.label} (${id})` : id;
+    out.push({ id, label });
+  }
+  return out;
+}
+
+// GET /api/platform/hosting-requests -> {"enabled": false, ...} while
+// DEDICATED_HOSTING_ENABLED is off (a bare list = an older server: on).
+export function hostingListOff(reply) {
+  return !!reply && typeof reply === "object" && !Array.isArray(reply) && reply.enabled === false;
+}
+
+// Two-step sign-in (TOTP) for masters ("As built - C": PLATFORM_REQUIRE_TOTP,
+// POST /users/me/totp/setup + /enable).
+export const TOTP_SETUP_MESSAGE = "Set up two-step sign-in first (the Two-step button above).";
+
+// The panel opens by itself when the platform requires TOTP and this master
+// has none yet; `config` is GET /api/platform/config.
+export function totpSetupNeeded(config) {
+  return !!config && !!config.require_totp && !(config.user && config.user.totp_enrolled);
+}
+
+// The secret as shown to type into an authenticator app: groups of 4.
+export function groupSecret(secret) {
+  return String(secret ?? "")
+    .replace(/\s+/g, "")
+    .replace(/(.{4})/g, "$1 ")
+    .trim();
 }

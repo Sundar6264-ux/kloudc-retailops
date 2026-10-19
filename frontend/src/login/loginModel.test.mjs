@@ -139,10 +139,12 @@ test("/me: a platform session is flattened; a store session keeps every key", ()
     username: "owner",
     display_name: "Owner",
     role: "master",
+    totp_enrolled: false,
     is_admin: false,
     allowed_features: [],
   });
   assert.ok(isPlatformUser(platform));
+  assert.equal(normalizeMe({ scope: "platform", user: { username: "o", totp_enrolled: true } }).totp_enrolled, true);
   const store = normalizeMe({ id: 1, username: "maria", is_admin: true, store_code: "XYZ" });
   assert.equal(store.scope, "store", "an M2 server leaves scope out");
   assert.equal(store.store_code, "XYZ");

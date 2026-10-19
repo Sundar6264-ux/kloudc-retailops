@@ -79,7 +79,13 @@ export const LOGIN_MESSAGES = {
   moved: "This store moved to its own server. Taking you there…",
   unreachable: "Can't reach the server. Check your connection and try again.",
   generic: "Couldn't sign in. Please try again in a moment.",
+  totp: "Enter the 6-digit code from your authenticator app.",
 };
+
+// The two-step sign-in code as typed: digits only, at most 6.
+export function cleanTotp(raw) {
+  return String(raw ?? "").replace(/\D/g, "").slice(0, 6);
+}
 
 function waitText(seconds) {
   const s = Math.max(1, Math.round(Number(seconds) || 0));
@@ -94,6 +100,8 @@ export function loginErrorMessage(err) {
   const status = err?.status;
   if (!status) return { kind: "unreachable", message: LOGIN_MESSAGES.unreachable };
   const { code, message, data } = errorInfo(err.body);
+  // A master with two-step sign-in: the password was right, ask for the code.
+  if (status === 401 && code === "totp_required") return { kind: "totp", message: message || LOGIN_MESSAGES.totp };
   if (status === 401) return { kind: "incorrect", message: message || LOGIN_MESSAGES.incorrect };
   if (status === 429) {
     const retryAfter = Number(data.retry_after) || 0;
@@ -152,6 +160,7 @@ export function normalizeMe(me) {
       username: u.username || "",
       display_name: u.display_name || u.username || "",
       role: u.role || "master",
+      totp_enrolled: !!u.totp_enrolled,
       is_admin: false,
       allowed_features: [],
     };

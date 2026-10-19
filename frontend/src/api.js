@@ -77,8 +77,8 @@ async function patchJSON(path, body) {
 // username + password. Store ID PLATFORM signs a master in (reply
 // {"scope":"platform","user":{...}}). `store_code` is left out when blank:
 // a single-store (M2) server accepts that.
-export async function login(storeCode, username, password) {
-  const body = { username, password, ...(storeCode ? { store_code: storeCode } : {}) };
+export async function login(storeCode, username, password, totp = "") {
+  const body = { username, password, ...(storeCode ? { store_code: storeCode } : {}), ...(totp ? { totp } : {}) };
   if (isNative()) {
     const result = await postJSON("/api/auth/mobile-login", body);
     await setToken(result.token);
@@ -2084,6 +2084,16 @@ export async function submitSignup(body) {
   });
 }
 
+// One-time owner set-up link (<PLATFORM_PUBLIC_URL>/#/setup?store=&token=),
+// made by a master instead of an email: sets the owner's password.
+export async function redeemOwnerSetup(storeCode, token, password) {
+  return platformPublicRequest("/api/signup/owner-setup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ store_code: storeCode, token, password }),
+  });
+}
+
 export async function checkStoreCode(code) {
   return platformPublicRequest(`/api/signup/code-available?code=${encodeURIComponent(code)}`);
 }
@@ -2128,6 +2138,9 @@ export const listHostingRequests = (status = "") =>
 export const hostingAction = (id, action, body = {}) => platformPost(`/hosting-requests/${id}/${action}`, body);
 export const getAudit = (query) => platformGet(`/audit?${query}`);
 export const listPacks = () => platformGet("/packs");
+export const getPlatformConfig = () => platformGet("/config");
+export const startTotpSetup = () => platformPost("/users/me/totp/setup", {});
+export const enableTotp = (pending, code) => platformPost("/users/me/totp/enable", { pending, code });
 
 // Settings -> Integrations (13.5): store admin.
 const I = "/api/settings/integrations";

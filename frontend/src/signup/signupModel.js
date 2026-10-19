@@ -81,6 +81,25 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME = /^[A-Za-z0-9._-]{3,64}$/;
 
 // Field -> message for everything the person must fix (empty = ready).
+// GET /api/signup/code-available -> {code, available, reason?, message?}:
+// the server's `reason` is a code (taken / reserved / requested / invalid),
+// shown in the site's "Store ID" words; an unknown one shows its message.
+export const CODE_REASON_TEXT = {
+  taken: "That Store ID is taken.",
+  reserved: "That Store ID is reserved.",
+  requested: "Someone has already asked for that Store ID.",
+  invalid: "Store IDs are 3 to 24 letters, numbers or underscores.",
+};
+
+export function availabilityReason(reply) {
+  if (!reply || reply.available) return null;
+  const code = typeof reply.reason === "string" ? reply.reason : "";
+  if (CODE_REASON_TEXT[code]) return CODE_REASON_TEXT[code];
+  if (typeof reply.message === "string" && reply.message) return reply.message;
+  // An older server (or the mock) sent the sentence itself as `reason`.
+  return code && /\s/.test(code) ? code : null;
+}
+
 // `codeAvailability` is the live check's answer ({available, reason}) or null.
 export function validateSignup(form, { codeAvailability = null } = {}) {
   const f = { ...EMPTY_SIGNUP, ...(form || {}) };
@@ -197,4 +216,23 @@ export function pendingView(status) {
 // past an hour since it opened).
 export function shouldPoll({ done, visible, startedAt, now }) {
   return !done && !!visible && now - startedAt < PENDING_POLL_MAX_MS;
+}
+
+// One-time owner set-up link (/#/setup?store=&token=, made by a master):
+// what's wrong with the typed passwords, or null. The username is the one
+// the link was made for (the server answers with it).
+export function ownerSetupProblem(password, confirm) {
+  const p = passwordProblem(password);
+  if (p) return p;
+  if (String(password) !== String(confirm ?? "")) return "The passwords don't match.";
+  if (String(password).length > 256) return "At most 256 characters.";
+  return null;
+}
+
+// The link's own values, or null when one is missing / malformed.
+export function ownerSetupParams(store, token) {
+  const s = String(store ?? "").trim().toUpperCase().replace(/-/g, "_");
+  const t = String(token ?? "").trim();
+  if (!/^[A-Z0-9][A-Z0-9_]{2,23}$/.test(s) || t.length < 16 || t.length > 200) return null;
+  return { store: s, token: t };
 }

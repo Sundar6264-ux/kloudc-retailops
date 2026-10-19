@@ -3,6 +3,9 @@ import { useAuth } from "../AuthContext.jsx";
 import {
   approveSignup,
   archiveStore,
+  enableTotp,
+  getPlatformConfig,
+  startTotpSetup,
   getAudit,
   getStoreSettings,
   hostingAction,
@@ -29,17 +32,22 @@ import {
   archiveConfirmed,
   auditDetails,
   auditQuery,
+  groupSecret,
   hostingActions,
+  hostingListOff,
   hostingStatusChip,
   isHostingDisabled,
   matchesSearch,
+  packOptions,
   platformErrorMessage,
   readLastTab,
   rememberTab,
   signupStatusChip,
   storeActions,
   storeStatusChip,
+  totpSetupNeeded,
 } from "../platform/platformModel.js";
+import { cleanTotp } from "../login/loginModel.js";
 import { timezoneOptions } from "../signup/signupModel.js";
 import "../platform/platform.css";
 
@@ -71,6 +79,22 @@ export default function PlatformConsolePage() {
   const [filter, setFilter] = useState({ requests: "pending", stores: "", hosting: "", audit: "" });
   const [showInfo, setShowInfo] = useState(false);
   const [counts, setCounts] = useState({});
+  const [config, setConfig] = useState(null);
+  const [showTotp, setShowTotp] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    getPlatformConfig()
+      .then((c) => {
+        if (!live) return;
+        setConfig(c);
+        if (totpSetupNeeded(c)) setShowTotp(true);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
 
   function choose(key) {
     setTab(key);
@@ -88,10 +112,27 @@ export default function PlatformConsolePage() {
           <span className="muted" style={{ fontSize: "0.8rem" }}>
             {user?.display_name || user?.username}
           </span>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ width: "auto" }}
+            data-testid="pf-totp-toggle"
+            aria-expanded={showTotp}
+            onClick={() => setShowTotp((v) => !v)}
+          >
+            Two-step
+          </button>
           <button type="button" className="btn-secondary" style={{ width: "auto" }} onClick={logout}>
             Log out
           </button>
         </div>
+        {showTotp && (
+          <TotpPanel
+            enrolled={!!(config?.user?.totp_enrolled ?? user?.totp_enrolled)}
+            required={!!config?.require_totp}
+            onEnrolled={() => setConfig((c) => (c ? { ...c, user: { ...(c.user || {}), totp_enrolled: true } } : c))}
+          />
+        )}
         <div className="pf-tabs" role="tablist" aria-label="Console sections">
           {PLATFORM_TABS.map((t) => (
             <button
@@ -221,7 +262,7 @@ function RequestsTab({ status, search, onCount }) {
 
   useEffect(() => {
     listPacks()
-      .then((r) => setPacks(asList(r, "packs").map((p) => (typeof p === "string" ? p : p.id)).filter(Boolean)))
+      .then((r) => setPacks(packOptions(r)))
       .catch(() => setPacks([]));
   }, []);
 
@@ -323,8 +364,8 @@ function SignupRow({ req, packs, zones, onDone }) {
             <select value={form.packId} onChange={(e) => setForm((f) => ({ ...f, packId: e.target.value }))}>
               <option value="">Default for {(req.pos_provider || "the POS").toUpperCase()}</option>
               {packs.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+                <option key={p.id} value={p.id}>
+                  {p.label}
                 </option>
               ))}
             </select>
@@ -664,9 +705,12 @@ function StoreSettingsForm({ code, onSaved, onCancel }) {
 // --- Hosting ----------------------------------------------------------------
 
 function HostingTab({ status, search }) {
-  const { rows, error, errorObj, reload } = useList(async () => asList(await listHostingRequests(status), "requests"), [status]);
+  // The real server answers {"enabled", "requests"} (200) and 409
+  // dedicated_hosting_disabled on the write routes; either says "off".
+  const { rows: reply, error, errorObj, reload } = useList(() => listHostingRequests(status), [status]);
+  const rows = reply === null ? null : asList(reply, "requests");
   const [message, setMessage] = useState(null);
-  const disabled = isHostingDisabled(errorObj);
+  const disabled = isHostingDisabled(errorObj) || hostingListOff(reply);
   const shown = (rows || []).filter((r) => matchesSearch(r, search, HOSTING_SEARCH_FIELDS));
 
   if (disabled) {
@@ -799,6 +843,95 @@ function AuditTab({ store, action }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Two-step sign-in for this master: a new secret (shown once) to add to an
+// authenticator app, then the app's 6-digit code to switch it on. From then
+// on the login page asks for the code after the password.
+function TotpPanel({ enrolled, required, onEnrolled }) {
+  const [setup, setSetup] = useState(null);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [done, setDone] = useState(false);
+
+  async function begin() {
+    setBusy(true);
+    setError(null);
+    try {
+      setSetup(await startTotpSetup());
+    } catch (err) {
+      setError(platformErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function enable(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await enableTotp(setup.pending, code);
+      setDone(true);
+      setSetup(null);
+      onEnrolled();
+    } catch (err) {
+      setError(err?.status === 400 || err?.status === 401 ? "That code didn't match. Try the current one." : platformErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="pf-info" data-testid="pf-totp">
+      {done || (enrolled && !setup) ? (
+        <p>
+          <strong>Two-step sign-in is on.</strong> The login page asks for your authenticator app's code after the
+          password.{enrolled && !done ? " Set it up again to move it to a new phone." : ""}
+        </p>
+      ) : (
+        <p>
+          <strong>Two-step sign-in</strong>
+          {required ? " is required on this platform." : " adds a code from an authenticator app to your sign-in."}
+        </p>
+      )}
+      {!setup ? (
+        <button type="button" className="btn-secondary" style={{ width: "auto" }} disabled={busy} onClick={begin}>
+          {enrolled || done ? "Set up again" : "Set up two-step sign-in"}
+        </button>
+      ) : (
+        <form onSubmit={enable}>
+          <p>
+            Add this key to your authenticator app (shown once):{" "}
+            <code data-testid="pf-totp-secret" style={{ wordBreak: "break-all" }}>
+              {groupSecret(setup.secret)}
+            </code>
+          </p>
+          {setup.otpauth_uri && (
+            <p className="muted" style={{ fontSize: "0.78rem", wordBreak: "break-all" }}>
+              Or open: <a href={setup.otpauth_uri}>{setup.otpauth_uri}</a>
+            </p>
+          )}
+          <label className="login-field" style={{ maxWidth: "12rem" }}>
+            6-digit code
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              data-testid="pf-totp-code"
+              value={code}
+              onChange={(e) => setCode(cleanTotp(e.target.value))}
+            />
+          </label>
+          <button type="submit" style={{ width: "auto" }} disabled={busy || code.length !== 6}>
+            Switch on
+          </button>
+        </form>
+      )}
+      {error && <p className="error">{error}</p>}
     </div>
   );
 }
