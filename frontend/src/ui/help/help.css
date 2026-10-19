@@ -977,7 +977,8 @@ a.kc-term-chip:hover {
     align-items: center;
   }
   .kc-tiletab-label {
-    font-size: 13px;
+    max-width: 100%;
+    font-size: 12px;
   }
   .kc-tiletab-hint {
     display: none;
