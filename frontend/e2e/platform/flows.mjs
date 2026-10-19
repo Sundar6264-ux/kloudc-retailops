@@ -375,11 +375,9 @@ async function run(browser, width) {
     } else {
       // Already signed in (shared cookie): sign out first, as a person would.
       await tab2.waitForSelector("nav.sidebar", { timeout: 10000 }).catch(() => {});
-      if (width < 900) {
-        const t = tab2.locator(".sidebar-toggle");
-        if (await t.isVisible()) await t.click();
-      }
-      await tab2.click(".sidebar-logout");
+      // Sign out is in the top bar's user menu (final pass).
+      await tab2.click('[data-testid="user-menu"]');
+      await tab2.click('[data-testid="sign-out"]');
       await tab2.waitForSelector('[data-testid="login-store-id"]');
       await login(tab2, codeB, ownerB, pwB);
     }
