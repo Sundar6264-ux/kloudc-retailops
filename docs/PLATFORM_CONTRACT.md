@@ -2468,3 +2468,23 @@ Screenshots: `/Users/sundar/storeops/screenshots/platform/web/` (34) and
   this work.
 - The reorder-candidates `note` names Toast's Purchasing API on every store,
   including CSV stores. This is the known M2 "Toast strings" gap.
+
+## As built - Final pass: design system spec (stage 1)
+
+Spec only, no feature code: `docs/DESIGN_SYSTEM.md` is the source for the
+final pass's look, navigation and help. It covers KloudC tokens (brand,
+cool-slate neutrals, per-area accents for Home/Ordering/Stock/Sales/Team/
+Setup/Platform, status colours, light + dark, all text pairs measured at
+WCAG AA), system-font type scale, spacing/radius/shadow/motion, the Flutter
+`ThemeData` + `KcColors` mapping; components (web app shell with top bar,
+search, help panel and user menu; KloudC-branded master console and
+logged-out pages; page header, compact list header, cards/tiles, tables,
+empty states, toasts, forms, buttons, badges, tabs); the information
+architecture for web and app (same groups and names, every page in <=2
+clicks); the help system (Help Center, Glossary with concept terms merged
+into `/api/glossary`, contextual info keyed by page id) with one shared
+content source `content/help/*.json` read by the server (`/api/help`), the
+website (build-time import) and the app (bundled copy + server refresh);
+and the W/H/M/S ownership split with component APIs. Decisions made for
+the owner are listed in its section 6. Baseline screenshots (before):
+`/Users/sundar/storeops/screenshots/final-pass/baseline/` (19, outside git).
