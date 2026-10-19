@@ -5,6 +5,7 @@ import { lookupStore } from "../api";
 import PasswordInput from "../components/PasswordInput.jsx";
 import StoreLogo from "../components/StoreLogo.jsx";
 import { useBranding } from "../store/StoreContext.jsx";
+import { safeUrl } from "../store/branding.js";
 import {
   cleanTotp,
   initialStoreId,
@@ -123,7 +124,7 @@ export default function LoginPage() {
   const platform = isPlatformCode(storeId);
   const ownStore = !!code && code === brand.code;
   const header = found
-    ? { name: found.name, shortName: found.name, logoUrl: found.branding?.logo_url || null }
+    ? { name: found.name, shortName: found.name, logoUrl: safeUrl(found.branding?.logo_url) }
     : ownStore
       ? brand
       : { name: brand.productName, shortName: brand.productName, logoUrl: brand.code ? null : brand.logoUrl };

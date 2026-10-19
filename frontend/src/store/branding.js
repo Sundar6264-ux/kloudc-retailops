@@ -21,6 +21,17 @@ function str(v) {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
+// A link or image address from the store's settings: http(s) or a path on
+// this site only. A store admin sets these and the website is one origin for
+// every store, so a javascript: / data: address must never reach an href.
+export function safeUrl(v) {
+  const s = str(v);
+  if (!s) return null;
+  if (/^https?:\/\/[^\s/]/i.test(s)) return s;
+  if (s.startsWith("/") && !s.startsWith("//") && !s.startsWith("/\\")) return s;
+  return null;
+}
+
 function strList(v) {
   return Array.isArray(v) ? v.filter((x) => typeof x === "string") : null;
 }
@@ -41,8 +52,8 @@ export function normalizeBranding(raw) {
     shortName: str(b.short_name) || name,
     productName,
     company: str(product.company) || str(legal.company) || PRODUCT_DEFAULTS.company,
-    logoUrl: str(b.logo_url) || PRODUCT_DEFAULTS.logoPath,
-    iconUrl: str(b.icon_url) || PRODUCT_DEFAULTS.iconPath,
+    logoUrl: safeUrl(b.logo_url) || PRODUCT_DEFAULTS.logoPath,
+    iconUrl: safeUrl(b.icon_url) || PRODUCT_DEFAULTS.iconPath,
     primaryColor: HEX.test(b.primary_color || "") ? b.primary_color : PRODUCT_DEFAULTS.primaryColor,
     secondaryColor: HEX.test(b.secondary_color || "") ? b.secondary_color : PRODUCT_DEFAULTS.secondaryColor,
     timezone: str(b.timezone),
@@ -51,11 +62,11 @@ export function normalizeBranding(raw) {
     posName: str(b.pos_name),
     capabilities: strList(b.capabilities),
     storeFeatures: strList(b.store_features),
-    labelsUrl: str(b.labels_url),
+    labelsUrl: safeUrl(b.labels_url),
     legal: {
-      privacyUrl: str(legal.privacy_url),
-      termsUrl: str(legal.terms_url),
-      supportUrl: str(legal.support_url),
+      privacyUrl: safeUrl(legal.privacy_url),
+      termsUrl: safeUrl(legal.terms_url),
+      supportUrl: safeUrl(legal.support_url),
     },
     demo: b.demo === true,
   };

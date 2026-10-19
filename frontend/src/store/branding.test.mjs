@@ -116,3 +116,19 @@ test("web fixtures match the server's committed branding bodies (field names) an
     assert.deepEqual(Object.keys(body).sort(), Object.keys(BRANDING[code]).sort(), `${code} field names`);
   }
 });
+
+test("store links and images are http(s) or a path on this site, never javascript:/data:", () => {
+  const b = normalizeBranding({
+    labels_url: "javascript:alert(document.domain)",
+    logo_url: "data:image/svg+xml,<svg onload=alert(1)>",
+    icon_url: "//evil.example.net/i.png",
+    legal: { privacy_url: " JaVaScRiPt:alert(1)", terms_url: "https://kloudc.com/terms", support_url: "/help" },
+  });
+  assert.equal(b.labelsUrl, null);
+  assert.equal(b.logoUrl, PRODUCT_DEFAULTS.logoPath);
+  assert.equal(b.iconUrl, PRODUCT_DEFAULTS.iconPath);
+  assert.equal(b.legal.privacyUrl, null);
+  assert.equal(b.legal.termsUrl, "https://kloudc.com/terms");
+  assert.equal(b.legal.supportUrl, "/help");
+  assert.equal(normalizeBranding({ labels_url: "https://labels.alpha.example.com" }).labelsUrl, "https://labels.alpha.example.com");
+});

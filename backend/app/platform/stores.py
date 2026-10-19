@@ -3,6 +3,7 @@ store settings (contract 3.1, 3.4, 8.2, 13.1; owner C)."""
 
 import json
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlsplit
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -164,6 +165,34 @@ def settings_values(db: Session, store: Store) -> Dict[str, Any]:
     return out
 
 
+# Store settings the website and the app put into links and images. A store
+# admin sets them, and the website is one origin for every store: only
+# https:// addresses (no javascript:, data:, scheme-relative or http).
+URL_SETTING_KEYS = ("logo_url", "icon_url", "labels_url")
+
+
+def _https_setting(key: str, value: Any) -> str:
+    raw = value if isinstance(value, str) else ""
+    v = raw.strip()
+    if not v:
+        return ""
+    try:
+        parts = urlsplit(v)
+    except ValueError:
+        parts = None
+    if (
+        v != raw.strip(" ")
+        or parts is None
+        or parts.scheme != "https"
+        or not parts.hostname
+        or parts.username
+        or parts.password
+        or any(c.isspace() or ord(c) < 32 for c in v)
+    ):
+        raise PlatformError(400, "invalid", f"{key} must be an https:// address.", field=key)
+    return v
+
+
 def _validate_settings(current: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
     """Each value through the same pydantic validators as env values
     (contract 8.2; track B's ``validate_store_setting``); None = remove."""
@@ -173,6 +202,8 @@ def _validate_settings(current: Dict[str, Any], updates: Dict[str, Any]) -> Dict
         if value is None:
             out[key] = None
             continue
+        if key in URL_SETTING_KEYS:
+            value = _https_setting(key, value)
         try:
             out[key] = t.validate_store_setting(key, value)
         except ValueError as exc:
