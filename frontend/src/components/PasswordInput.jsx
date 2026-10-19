@@ -35,7 +35,7 @@ export default function PasswordInput({ value, onChange, placeholder, autoComple
           cursor: "pointer",
           fontSize: "0.78rem",
           fontWeight: 600,
-          color: "var(--accent)",
+          color: "var(--brand-text)",
         }}
       >
         {visible ? "Hide" : "Show"}

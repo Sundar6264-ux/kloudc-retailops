@@ -31,6 +31,7 @@ import {
   toEditable,
 } from "./editorModel.js";
 import { DEFAULT_ISSUE_TAGS, SUBMIT_TARGET, newId } from "./model.js";
+import Icon from "../../ui/icons.jsx";
 
 // The Checklist builder's editor (route /checklists/admin/:type). Questions
 // tab = Google Forms-style canvas with a live preview beside it; Settings =
@@ -404,7 +405,7 @@ function SectionHeader({ section, index, count, onChange, onMove, onDelete, onDu
           ↓
         </button>
         <button type="button" className="clb-icon-btn" title="Duplicate section" aria-label="Duplicate section" onClick={onDuplicate}>
-          ⧉
+          <Icon name="copy" size={16} />
         </button>
         <button
           type="button"
@@ -414,7 +415,7 @@ function SectionHeader({ section, index, count, onChange, onMove, onDelete, onDu
           disabled={count <= 1}
           onClick={onDelete}
         >
-          🗑
+          <Icon name="trash-2" size={16} />
         </button>
       </div>
     </div>

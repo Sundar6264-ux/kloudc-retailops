@@ -21,6 +21,7 @@ import useDialogA11y from "./useDialogA11y";
 import usePageActive, { isPageVisible, onPageShown } from "./usePageActive";
 import { refreshTeamBadges } from "./useTeamBadges";
 import { lazyStoreFormat, storeDateOffsetStr } from "../../format.js";
+import Icon from "../../ui/icons.jsx";
 
 // One chat conversation (team channel or DM): messages oldest-first grouped
 // by day, "Load earlier", a 5 s poll for new ones while it's open, and a
@@ -803,7 +804,7 @@ export default function ChatConversation({
                 >
                   {m.pinned && !m.deleted && (
                     <div className="chat-pinned-tag" title={m.pinned_by ? `Pinned by ${m.pinned_by.name}` : "Pinned"}>
-                      📌 Pinned
+                      <Icon name="pin" size={12} /> Pinned
                     </div>
                   )}
                   {showName && <div className="chat-sender">{m.sender.name}</div>}

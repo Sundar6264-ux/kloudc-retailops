@@ -14,6 +14,7 @@ import {
   newId,
 } from "./model.js";
 import { SUMMARY_TYPES } from "./editorModel.js";
+import Icon from "../../ui/icons.jsx";
 
 // One question card in the builder, Google Forms style: click to edit; the
 // selected card shows the full editor, the others a compact summary.
@@ -852,10 +853,10 @@ export default function ItemEditor({
         </div>
         <div className="clb-footer-right">
           <IconButton label="Duplicate" onClick={onDuplicate}>
-            ⧉
+            <Icon name="copy" size={16} />
           </IconButton>
           <IconButton label="Delete" danger onClick={onDelete}>
-            🗑
+            <Icon name="trash-2" size={16} />
           </IconButton>
           {!display && (
             <>

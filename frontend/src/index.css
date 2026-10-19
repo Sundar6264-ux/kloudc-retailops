@@ -4758,6 +4758,16 @@ button.rc-cart-in-cart:disabled {
   flex: 1;
 }
 
+.chat-sidebar-head > button:not(:first-child) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  padding: 0;
+  color: var(--text-2);
+}
+
 .chat-list-label {
   padding: 0.75rem 0.85rem 0.3rem;
   font-size: 0.72rem;
@@ -8336,9 +8346,10 @@ button.fly-chip:hover:not(:disabled) {
 
 button.fly-chip-on,
 button.fly-chip-on:hover:not(:disabled) {
-  border-color: var(--text);
-  background: var(--text);
-  color: var(--on-fill);
+  border-color: var(--brand-text);
+  background: var(--brand-soft);
+  color: var(--brand-text);
+  font-weight: 600;
 }
 
 .fly-chip-count {
@@ -8352,8 +8363,8 @@ button.fly-chip-on:hover:not(:disabled) {
 }
 
 .fly-chip-on .fly-chip-count {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--on-fill);
+  background: var(--surface);
+  color: var(--brand-text);
 }
 
 .fly-grid {
@@ -13060,8 +13071,10 @@ button.fi-filter-clear {
   color: var(--text-muted);
 }
 
-.leads-changed td {
-  background: var(--warning-soft);
+/* Unsaved rows: a warning edge on the first cell (the "Not saved" pill says
+   the rest) instead of tinting the whole table yellow. */
+.leads-changed td:first-child {
+  box-shadow: inset 3px 0 0 var(--warning-text);
 }
 
 .leads-actions {
@@ -13100,9 +13113,10 @@ button.leads-tab:hover:not(:disabled) {
 
 button.leads-tab.active,
 button.leads-tab.active:hover:not(:disabled) {
-  background: var(--text);
-  color: var(--on-fill);
-  border-color: var(--text);
+  background: var(--brand-soft);
+  color: var(--brand-text);
+  border-color: var(--brand-text);
+  font-weight: 600;
 }
 
 .leads-settings {
@@ -13511,6 +13525,9 @@ button.leads-tab.active:hover:not(:disabled) {
 }
 
 .chat-pinned-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   font-size: 0.72rem;
   color: var(--running-text);
   font-weight: 600;
@@ -14211,3 +14228,14 @@ button.btn-secondary.sp-qty-update {
   text-transform: none;
 }
 .login-logo { border-radius: 8px; }
+
+/* Cart vendor actions on a narrow phone: Order placed / Send / PDF wrap
+   inside the panel instead of running past its right edge (375 px). */
+@media (max-width: 480px) {
+  .po-vendor-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    min-width: 0;
+    padding-left: 0.6rem;
+  }
+}

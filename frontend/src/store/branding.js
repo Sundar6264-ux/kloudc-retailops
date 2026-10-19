@@ -212,7 +212,9 @@ export function brandCssVars(primary, secondary) {
   const s = HEX.test(secondary || "") ? secondary : PRODUCT_DEFAULTS.secondaryColor;
   const accent = readableOnWhiteText(p.toUpperCase());
   const isProduct = p.toUpperCase() === PRODUCT_DEFAULTS.primaryColor;
-  const textDark = isProduct ? PRODUCT_DARK.text : readableOn(p, DARK_SURFACE);
+  // 6:1 on the dark surface (not just 4.5) so brand text still passes on
+  // the tinted brand-soft fills it sits on (avatar, chips, active tabs).
+  const textDark = isProduct ? PRODUCT_DARK.text : readableOn(p, DARK_SURFACE, 6);
   return {
     "--brand": p.toUpperCase(),
     "--brand-secondary": s.toUpperCase(),

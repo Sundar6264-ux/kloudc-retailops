@@ -21,6 +21,7 @@ import { storeDay, todayStoreDay } from "../components/team/taskUtils";
 import useDialogA11y from "../components/team/useDialogA11y";
 import { isPageVisible, onPageShown } from "../components/team/usePageActive";
 import { lazyStoreFormat } from "../format.js";
+import Icon from "../ui/icons.jsx";
 import PageHeader from "../ui/PageHeader.jsx";
 
 // Team hub Chat on the website (docs/TEAM_HUB_DESIGN.md §4.4): team
@@ -301,7 +302,7 @@ export default function TeamChatPage() {
               title="Search messages"
               aria-expanded={panel === "search"}
             >
-              🔍
+              <Icon name="search" size={16} />
             </button>
             <button
               type="button"
@@ -310,7 +311,7 @@ export default function TeamChatPage() {
               aria-label="Chat settings"
               title="Chat settings"
             >
-              ⚙
+              <Icon name="settings" size={16} />
             </button>
           </div>
           {panel === "new" && <NewDmPicker onPick={startDm} onCancel={() => setPanel(null)} />}

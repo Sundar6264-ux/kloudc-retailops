@@ -13,6 +13,7 @@ import {
 } from "./teamAdvancedModel";
 import useDialogA11y from "./useDialogA11y";
 import { lazyStoreFormat } from "../../format.js";
+import Icon from "../../ui/icons.jsx";
 
 // W5 chat pieces: voice notes and PDFs in a bubble, the voice recorder,
 // pinned messages, "Seen by" and message search. Media is auth-checked
@@ -199,7 +200,7 @@ export function PinsBar({ pins, onJump }) {
   return (
     <div className="chat-pins">
       <button type="button" className="chat-pins-head" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span aria-hidden="true">📌</span>
+        <Icon name="pin" size={14} />
         <span className="chat-pins-text">
           <strong>{pins.length === 1 ? "Pinned" : `${pins.length} pinned`}</strong> {messagePreview(top)}
         </span>
