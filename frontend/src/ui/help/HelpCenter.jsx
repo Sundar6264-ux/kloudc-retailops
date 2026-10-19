@@ -193,9 +193,9 @@ export default function HelpCenter({ tab: forcedTab }) {
                   const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
                   if (!step) return;
                   e.preventDefault();
-                  const k = HELP_TABS[(i + step + HELP_TABS.length) % HELP_TABS.length].key;
-                  chooseTab(k);
-                  requestAnimationFrame(() => document.getElementById(`help-tab-${k}`)?.focus());
+                  const nextKey = HELP_TABS[(i + step + HELP_TABS.length) % HELP_TABS.length].key;
+                  chooseTab(nextKey);
+                  requestAnimationFrame(() => document.getElementById(`help-tab-${nextKey}`)?.focus());
                 }}
               >
                 <span className="kc-tiletab-icon" aria-hidden="true">
@@ -411,9 +411,9 @@ const AREA_ORDER = ["help", "home", "ordering", "stock", "sales", "team", "setup
 function groupByArea(list) {
   const groups = new Map();
   for (const x of list) {
-    const k = x.area || "help";
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(x);
+    const area = x.area || "help";
+    if (!groups.has(area)) groups.set(area, []);
+    groups.get(area).push(x);
   }
   return AREA_ORDER.filter((k) => groups.has(k)).map((k) => ({ area: k, items: groups.get(k) }));
 }
