@@ -349,9 +349,10 @@ def build() -> dict:
 
 def print_logins(logins: dict) -> None:
     url = f"http://127.0.0.1:{ARGS.port}"
-    print("\nRetailOps preview (one shared server, a PostgreSQL database per store)")
+    print("\nKloudC RetailOps preview (one shared server, a PostgreSQL database per store)")
     print(f"  Website:  {url}/   (one login page: Store ID + Username + Password)")
     print(f"  Sign-up:  {url}/#/signup   Master console: sign in with Store ID PLATFORM")
+    print(f"  Help:     {url}/#/help   Glossary: {url}/#/glossary   (after signing in)")
     for code, rows in logins.items():
         if code == "url":
             continue
