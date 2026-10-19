@@ -411,6 +411,10 @@ def provision_store(code: str, *, actor: str = "system") -> Dict[str, Any]:
             if store is None:
                 raise PlatformError(404, "unknown_store")
             raise PlatformError(409, "conflict", f"Store {code} is {store.status}; nothing to provision.")
+    # The registry may still remember this code as unknown (someone tried the
+    # Store ID while the request was pending) or with an old status; the
+    # store_init / owner_admin steps open the store through it.
+    bridge.store_changed(code)
     result: Dict[str, Any] = {"store_code": code, "setup_url": None}
     with platform_session() as pdb:
         store = pdb.execute(select(Store).where(Store.code == code)).scalar_one()
