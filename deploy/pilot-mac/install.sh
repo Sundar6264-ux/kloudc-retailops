@@ -116,7 +116,8 @@ fi
 cat <<DONE
 
 KloudC RetailOps pilot is installed.
-  Website (this Mac):  http://127.0.0.1:$PILOT_APP_PORT  (sign in with Store ID PLATFORM)
+  Sign in at:          $(grep '^PLATFORM_PUBLIC_URL=' "$PILOT_ROOT/config/pilot.env" | cut -d= -f2- | tr -d "'")  (Store ID PLATFORM; https only)
+  Health (this Mac):   http://127.0.0.1:$PILOT_APP_PORT/api/ready
   Logs:                $PILOT_ROOT/logs  (error.log first)
   Backups:             $PILOT_ROOT/backups  (nightly $PILOT_BACKUP_HOUR:$(printf '%02d' "$PILOT_BACKUP_MINUTE"), drill on the 1st)
   Secrets:             $PILOT_ROOT/secrets/retailops.env  - keep an OFFLINE copy

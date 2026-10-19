@@ -31,6 +31,7 @@ else
   say "    already there ($(git -C "$APP_DIR" rev-parse --short HEAD)); update.sh moves it to a new release"
 fi
 
+[ "$SKIP_VENV" = 0 ] || [ -x "$VENV_PY" ] || die "--skip-venv but there is no venv at $BACKEND_DIR/.venv yet"
 if [ "$SKIP_VENV" = 0 ] && [ ! -x "$VENV_PY" ]; then
   say "3/7 Python venv + requirements (a few minutes the first time)"
   "$PILOT_PYTHON" -m venv "$BACKEND_DIR/.venv"

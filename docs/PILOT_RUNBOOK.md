@@ -50,7 +50,9 @@ Mac user, never as root). Only these labels are ever touched:
 | `com.kloudc.retailops.pilot.drill` | `run-backup.sh drill` on the 1st at 05:00 |
 | `com.kloudc.retailops.pilot.parity` | `run-parity.sh` at 07:30 (does nothing until `config/parity.env` exists) |
 
-First sign-in: open the address the installer prints, Store ID `PLATFORM`,
+First sign-in: open the https address the installer prints (the Tailscale
+address; plain http on 127.0.0.1 is only for health checks - the login
+cookie is https-only), Store ID `PLATFORM`,
 your master username and password. Two-step sign-in is **required in
 production**: the console asks you to set it up first (any authenticator app).
 

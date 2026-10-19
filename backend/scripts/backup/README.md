@@ -1,5 +1,14 @@
 # Backups
 
+**The shared service (PostgreSQL, multi-store):** `backup_all.py backup`
+dumps the platform database and every store database nightly (each through
+`pg_backup.py`: `pg_dump` custom format, checked with `pg_restore --list`,
+kept 30 days, never the newest) and `backup_all.py drill` restores the newest
+dumps into scratch databases monthly and compares row counts. The pilot on a
+Mac and the cloud VM compose schedule both for you - see
+`docs/PILOT_RUNBOOK.md` section 5 (also how to restore one store). The rest
+of this page is the older one-store-per-server (SQLite) setup.
+
 Two layers, both off until set up:
 
 | Layer | What | Where | Status |
