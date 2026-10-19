@@ -50,7 +50,14 @@ import {
 import { cleanTotp } from "../login/loginModel.js";
 import { timezoneOptions } from "../signup/signupModel.js";
 import "../platform/platform.css";
-import ProductLockup from "../components/ProductLockup.jsx";
+import AreaChip from "../ui/AreaChip.jsx";
+import Icon from "../ui/icons.jsx";
+import KloudcLogo from "../ui/KloudcLogo.jsx";
+import Menu, { MenuDivider, MenuItem, MenuLabel, MenuLink } from "../ui/Menu.jsx";
+import { HelpCenter, InfoButton } from "../ui/helpBridge.jsx";
+import { initials, KLOUDC, KLOUDC_LINKS, supportMailto } from "../ui/kloudc.js";
+import { THEMES } from "../ui/theme.js";
+import useTheme from "../ui/useTheme.js";
 
 function storage() {
   try {
@@ -64,8 +71,16 @@ function when(iso) {
   return iso ? formatRestaurantTime(iso) : "";
 }
 
+const CHIP_ICON = { good: "circle-check", warn: "triangle-alert", bad: "octagon-alert", info: "info", neutral: "circle", off: "circle" };
+
+// Status: colour + icon + word (DESIGN_SYSTEM 1.4).
 function Chip({ chip }) {
-  return <span className={`pf-chip tone-${chip.tone}`}>{chip.label}</span>;
+  return (
+    <span className={`pf-chip tone-${chip.tone}`}>
+      <Icon name={CHIP_ICON[chip.tone] || "circle"} size={12} />
+      {chip.label}
+    </span>
+  );
 }
 
 const asList = (r, key) => (Array.isArray(r) ? r : Array.isArray(r?.[key]) ? r[key] : Array.isArray(r?.items) ? r.items : []);
@@ -82,6 +97,7 @@ export default function PlatformConsolePage() {
   const [counts, setCounts] = useState({});
   const [config, setConfig] = useState(null);
   const [showTotp, setShowTotp] = useState(false);
+  const [theme, setTheme] = useTheme();
 
   useEffect(() => {
     let live = true;
@@ -105,96 +121,188 @@ export default function PlatformConsolePage() {
   const filterOptions =
     tab === "requests" ? SIGNUP_STATUS_FILTERS : tab === "stores" ? STORE_STATUS_FILTERS : tab === "hosting" ? ["", "requested", "approved", "migrating", "done", "rejected", "rolled_back"] : null;
 
+  const current = PLATFORM_TABS.find((t) => t.key === tab) || PLATFORM_TABS[0];
+  const listTab = tab !== "help";
+
   return (
-    <div className="main" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <div className="pf-head">
-        <div className="pf-head-row">
-          <ProductLockup height={34} />
-          <h1>Platform console</h1>
-          <span className="muted" style={{ fontSize: "0.8rem" }}>
-            {user?.display_name || user?.username}
-          </span>
-          <button
-            type="button"
-            className="btn-secondary"
-            style={{ width: "auto" }}
-            data-testid="pf-totp-toggle"
-            aria-expanded={showTotp}
-            onClick={() => setShowTotp((v) => !v)}
-          >
-            Two-step
-          </button>
-          <button type="button" className="btn-secondary" style={{ width: "auto" }} onClick={logout}>
-            Log out
-          </button>
-        </div>
-        {showTotp && (
-          <TotpPanel
-            enrolled={!!(config?.user?.totp_enrolled ?? user?.totp_enrolled)}
-            required={!!config?.require_totp}
-            onEnrolled={() => setConfig((c) => (c ? { ...c, user: { ...(c.user || {}), totp_enrolled: true } } : c))}
-          />
-        )}
-        <div className="pf-tabs" role="tablist" aria-label="Console sections">
-          {PLATFORM_TABS.map((t) => (
+    <div className="pf-shell" data-area="platform">
+      {/* KloudC band (DESIGN_SYSTEM 2.2): never a store's colours. */}
+      <header className="pf-band">
+        <div className="pf-band-inner">
+          <KloudcLogo tone="light" height={30} />
+          <span className="pf-band-pill">Platform</span>
+          <h1 className="sr-only">Platform console</h1>
+          <div className="pf-band-actions">
             <button
-              key={t.key}
               type="button"
-              role="tab"
-              aria-selected={tab === t.key}
-              className={`pf-tab${tab === t.key ? " active" : ""}`}
-              data-testid={`pf-tab-${t.key}`}
-              onClick={() => choose(t.key)}
+              className="pf-band-btn"
+              data-testid="pf-totp-toggle"
+              aria-expanded={showTotp}
+              onClick={() => setShowTotp((v) => !v)}
             >
-              {t.label}
-              {counts[t.key] ? <span className="pf-count">{counts[t.key]}</span> : null}
+              <Icon name="shield" size={16} />
+              <span>Two-step</span>
             </button>
-          ))}
-        </div>
-        <div className="pf-head-row">
-          <input
-            type="search"
-            className="pf-search"
-            placeholder={tab === "audit" ? "Store ID" : "Search"}
-            value={tab === "audit" ? filter.auditStore || "" : search}
-            onChange={(e) =>
-              tab === "audit" ? setFilter((f) => ({ ...f, auditStore: e.target.value })) : setSearch(e.target.value)
-            }
-            aria-label="Search"
-          />
-          {filterOptions ? (
-            <select
-              aria-label="Filter by status"
-              value={filter[tab]}
-              onChange={(e) => setFilter((f) => ({ ...f, [tab]: e.target.value }))}
+            <Menu
+              label="Account menu"
+              buttonClass="pf-band-avatar"
+              testId="user-menu"
+              button={<span aria-hidden="true">{initials(user?.display_name || user?.username)}</span>}
             >
-              {filterOptions.map((s) => (
-                <option key={s || "all"} value={s}>
-                  {s ? s.replace(/_/g, " ") : "All"}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type="text"
-              aria-label="Action"
-              placeholder="Action, e.g. login.failed"
-              style={{ maxWidth: "11rem" }}
-              value={filter.audit}
-              onChange={(e) => setFilter((f) => ({ ...f, audit: e.target.value }))}
+              {(close) => (
+                <>
+                  <div className="kc-menu-head">
+                    <span className="topbar-avatar topbar-avatar-lg" aria-hidden="true">
+                      {initials(user?.display_name || user?.username)}
+                    </span>
+                    <span>
+                      <strong className="kc-menu-name">{user?.display_name || user?.username}</strong>
+                      <span className="kc-menu-sub">KloudC master</span>
+                    </span>
+                  </div>
+                  <MenuDivider />
+                  <MenuItem
+                    icon="shield"
+                    onSelect={() => {
+                      close();
+                      setShowTotp(true);
+                    }}
+                  >
+                    Two-step sign-in
+                  </MenuItem>
+                  <MenuItem
+                    icon="life-buoy"
+                    onSelect={() => {
+                      close();
+                      choose("help");
+                    }}
+                  >
+                    Help
+                  </MenuItem>
+                  <MenuDivider />
+                  <MenuLabel>Appearance</MenuLabel>
+                  <div className="kc-menu-segment" role="group" aria-label="Appearance">
+                    {THEMES.map((t) => (
+                      <MenuItem
+                        key={t.value}
+                        icon={t.value === "system" ? "monitor" : t.value === "light" ? "sun" : "moon"}
+                        checked={theme === t.value}
+                        onSelect={() => setTheme(t.value)}
+                      >
+                        {t.label}
+                      </MenuItem>
+                    ))}
+                  </div>
+                  <MenuDivider />
+                  <MenuLink icon="shield" href={KLOUDC_LINKS.privacy} external onSelect={close}>
+                    Privacy policy
+                  </MenuLink>
+                  <MenuItem
+                    icon="log-out"
+                    danger
+                    testId="sign-out"
+                    onSelect={() => {
+                      close();
+                      logout();
+                    }}
+                  >
+                    Sign out
+                  </MenuItem>
+                </>
+              )}
+            </Menu>
+          </div>
+        </div>
+      </header>
+
+      <div className="pf-body">
+        <div className="pf-head">
+          {showTotp && (
+            <TotpPanel
+              enrolled={!!(config?.user?.totp_enrolled ?? user?.totp_enrolled)}
+              required={!!config?.require_totp}
+              onEnrolled={() => setConfig((c) => (c ? { ...c, user: { ...(c.user || {}), totp_enrolled: true } } : c))}
             />
           )}
-          <button
-            type="button"
-            className="pf-icon"
-            aria-label="About this screen"
-            aria-expanded={showInfo}
-            onClick={() => setShowInfo((v) => !v)}
-          >
-            ⓘ
-          </button>
-        </div>
-        {showInfo && (
+          <div className="pf-title-row">
+            <div>
+              <AreaChip area="platform" label="KloudC RetailOps platform" />
+              <div className="kc-page-title-row">
+                <h2 className="pf-title">{current.label}</h2>
+                <InfoButton pageId={current.pageId} />
+              </div>
+            </div>
+          </div>
+          <div className="pf-tabs" role="tablist" aria-label="Console sections">
+            {PLATFORM_TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.key}
+                className={`pf-tab${tab === t.key ? " active" : ""}`}
+                data-testid={`pf-tab-${t.key}`}
+                onClick={() => choose(t.key)}
+              >
+                <span className="pf-tab-icon" aria-hidden="true">
+                  <Icon name={t.icon} size={18} />
+                </span>
+                <span className="pf-tab-text">
+                  <span className="pf-tab-label">{t.label}</span>
+                  <span className="pf-tab-sub">{t.sub}</span>
+                </span>
+                {counts[t.key] ? <span className="pf-count">{counts[t.key]}</span> : null}
+              </button>
+            ))}
+          </div>
+          {listTab && (
+            <div className="pf-head-row pf-list-header">
+              <label className="kc-search-field pf-search">
+                <Icon name="search" size={16} />
+                <input
+                  type="search"
+                  placeholder={tab === "audit" ? "Store ID" : "Search"}
+                  value={tab === "audit" ? filter.auditStore || "" : search}
+                  onChange={(e) =>
+                    tab === "audit" ? setFilter((f) => ({ ...f, auditStore: e.target.value })) : setSearch(e.target.value)
+                  }
+                  aria-label="Search"
+                />
+              </label>
+              {filterOptions ? (
+                <select
+                  aria-label="Filter by status"
+                  value={filter[tab]}
+                  onChange={(e) => setFilter((f) => ({ ...f, [tab]: e.target.value }))}
+                >
+                  {filterOptions.map((s) => (
+                    <option key={s || "all"} value={s}>
+                      {s ? s.replace(/_/g, " ") : "All"}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  aria-label="Action"
+                  placeholder="Action, e.g. login.failed"
+                  style={{ maxWidth: "11rem" }}
+                  value={filter.audit}
+                  onChange={(e) => setFilter((f) => ({ ...f, audit: e.target.value }))}
+                />
+              )}
+              <button
+                type="button"
+                className="kc-icon-btn pf-icon"
+                aria-label="About this screen"
+                aria-expanded={showInfo}
+                onClick={() => setShowInfo((v) => !v)}
+              >
+                <Icon name="info" size={18} />
+              </button>
+            </div>
+          )}
+        {showInfo && listTab && (
           <div className="pf-info">
             <p>
               <strong>Requests</strong>: new stores asking to join. Approve sets the store up automatically (database,
@@ -219,6 +327,62 @@ export default function PlatformConsolePage() {
       {tab === "stores" && <StoresTab status={filter.stores} search={search} />}
       {tab === "hosting" && <HostingTab status={filter.hosting} search={search} />}
       {tab === "audit" && <AuditTab store={filter.auditStore || ""} action={filter.audit} />}
+      {tab === "help" && <MasterHelp />}
+      </div>
+    </div>
+  );
+}
+
+// Help tab: the Help Center (track H) when this build has it, else the
+// master's start-here steps and how to reach KloudC support.
+const MASTER_STEPS = [
+  ["Sign in", "Store ID PLATFORM, your username and password, then the 6-digit code from your authenticator app."],
+  ["Review requests", "Requests lists new stores. Approve with a starter pack, or reject with a note."],
+  ["Watch the set-up", "An approved store is provisioned automatically. A failed set-up can be retried from Stores."],
+  ["Look after stores", "Stores shows every store's status. Suspend stops sign-in and jobs; Resume undoes it; Archive is final."],
+  ["Hosting", "A store can ask for its own server. Nothing moves until you approve, and a move can be rolled back."],
+  ["Audit", "Everything done on the platform, newest first. Filter by Store ID or action."],
+  ["Helping a store", "You can see a store's set-up and status, never its passwords. Ask the owner for screenshots when needed."],
+];
+
+function MasterHelp() {
+  if (HelpCenter) return <HelpCenter audience="master" />;
+  return (
+    <div className="pf-help">
+      <section className="card">
+        <h2>Start here</h2>
+        <ol className="pf-steps">
+          {MASTER_STEPS.map(([title, text]) => (
+            <li key={title}>
+              <strong>{title}</strong>
+              <span className="muted">{text}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <section className="card">
+        <h2>Contact</h2>
+        <div className="kc-drawer-links">
+          <a className="kc-hub-tile" data-area="help" href={supportMailto({ storeCode: "PLATFORM", page: "Platform console" })}>
+            <span className="kc-hub-icon">
+              <Icon name="mail" size={18} />
+            </span>
+            <span>
+              <strong>{KLOUDC.email}</strong>
+              <span className="muted">Opens your mail app. Never send a password.</span>
+            </span>
+          </a>
+          <a className="kc-hub-tile" data-area="help" href={KLOUDC_LINKS.support} target="_blank" rel="noopener noreferrer">
+            <span className="kc-hub-icon">
+              <Icon name="external-link" size={18} />
+            </span>
+            <span>
+              <strong>KloudC support site</strong>
+              <span className="muted">kloudc.com/kloudc-support</span>
+            </span>
+          </a>
+        </div>
+      </section>
     </div>
   );
 }
@@ -324,6 +488,9 @@ function SignupRow({ req, packs, zones, onDone }) {
   return (
     <div className="pf-row" data-testid={`signup-${req.id}`}>
       <div className="pf-row-top">
+        <span className="pf-avatar pf-avatar-request" aria-hidden="true">
+          {initials(req.store_name)}
+        </span>
         <span className="pf-row-title">{req.store_name}</span>
         <span className="pf-code">{req.requested_code}</span>
         <Chip chip={signupStatusChip(req.status)} />
@@ -495,6 +662,9 @@ function StoreRow({ store, onDone }) {
   return (
     <div className="pf-row" data-testid={`store-${store.code}`}>
       <div className="pf-row-top">
+        <span className="pf-avatar" aria-hidden="true">
+          {initials(store.name)}
+        </span>
         <span className="pf-row-title">{store.name}</span>
         <span className="pf-code">{store.code}</span>
         <Chip chip={storeStatusChip(store.status)} />
@@ -918,7 +1088,7 @@ function TotpPanel({ enrolled, required, onEnrolled }) {
                 data-testid="pf-totp-qr"
                 width={200}
                 height={200}
-                style={{ background: "#fff", padding: "6px", borderRadius: "8px", display: "block" }}
+                style={{ background: "white", padding: "6px", borderRadius: "8px", display: "block" }}
               />
             </div>
           )}

@@ -21,11 +21,12 @@ import {
   storeStatusChip,
 } from "./platformModel.js";
 
-test("tabs: Requests, Stores, Hosting, Audit; the last one is remembered", () => {
+test("tabs: Requests, Stores, Hosting, Audit, Help; the last one is remembered", () => {
   assert.deepEqual(
     PLATFORM_TABS.map((t) => t.label),
-    ["Requests", "Stores", "Hosting", "Audit"],
+    ["Requests", "Stores", "Hosting", "Audit", "Help"],
   );
+  for (const t of PLATFORM_TABS) assert.ok(t.icon && t.pageId, t.key);
   const data = {};
   const s = { getItem: (k) => data[k] ?? null, setItem: (k, v) => (data[k] = v) };
   assert.equal(readLastTab(s), "requests");

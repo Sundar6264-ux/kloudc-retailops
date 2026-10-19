@@ -18,7 +18,7 @@ import {
   validateSignup,
 } from "../signup/signupModel.js";
 import "../platform/platform.css";
-import ProductLockup from "../components/ProductLockup.jsx";
+import AuthLayout from "../components/AuthLayout.jsx";
 
 function browserTimezones() {
   try {
@@ -142,11 +142,10 @@ export default function SignupPage() {
   );
 
   return (
-    <div className="signup-page">
-      <form className="card signup-card" onSubmit={handleSubmit} noValidate>
-        <div className="page-header" style={{ paddingRight: 0, marginBottom: "1rem" }}>
-          <ProductLockup height={40} className="signup-lockup" />
-          <h1>Create your store</h1>
+    <AuthLayout wide>
+      <form className="auth-card signup-card" onSubmit={handleSubmit} noValidate>
+        <div className="auth-head">
+          <h1 className="auth-title">Create your store</h1>
           <p className="muted">
             Tell us about your store. We review every request; once it's approved your store is set up and you sign in
             with the Store ID and login you choose here.
@@ -299,6 +298,6 @@ export default function SignupPage() {
           <Link to="/login">Already have a Store ID? Sign in</Link>
         </div>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

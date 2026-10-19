@@ -6,7 +6,8 @@ import PasswordInput from "../components/PasswordInput.jsx";
 import StoreLogo from "../components/StoreLogo.jsx";
 import { useBranding } from "../store/StoreContext.jsx";
 import { safeUrl } from "../store/branding.js";
-import ProductLockup from "../components/ProductLockup.jsx";
+import AuthLayout from "../components/AuthLayout.jsx";
+import Icon from "../ui/icons.jsx";
 import {
   cleanTotp,
   initialStoreId,
@@ -134,21 +135,28 @@ export default function LoginPage() {
   const productHeader = platform || (!found && !ownStore);
 
   return (
-    <div className="login-page">
-      <form onSubmit={handleSubmit} className="card login-card" noValidate>
+    <AuthLayout testId="login-page">
+      <form onSubmit={handleSubmit} className="auth-card login-card" noValidate>
         {productHeader ? (
-          <div className="login-head login-head-product">
-            <ProductLockup height={48} />
-            <strong className="login-title" data-testid="login-store-name">
+          <div className="auth-head">
+            <h1 className="auth-title" data-testid="login-store-name">
               {platform ? "Platform console" : "Sign in to your store"}
-            </strong>
+            </h1>
+            <p className="auth-sub">
+              {platform ? "KloudC staff only. You'll be asked for your 6-digit code." : "Use the Store ID, username and password your store gave you."}
+            </p>
           </div>
         ) : (
-          <div className="login-head">
-            <StoreLogo store={header} size={36} className="login-logo" />
-            <strong className="login-title" data-testid="login-store-name">
-              {title}
-            </strong>
+          <div className="auth-head">
+            <div className="auth-store-chip">
+              <StoreLogo store={header} size={40} className="login-logo" />
+              <span className="auth-store-text">
+                <span className="auth-store-kicker">Signing in to</span>
+                <h1 className="login-title" data-testid="login-store-name">
+                  {title}
+                </h1>
+              </span>
+            </div>
           </div>
         )}
 
@@ -174,7 +182,12 @@ export default function LoginPage() {
             spellCheck={false}
             placeholder="e.g. MAIN_STREET"
             autoFocus={!storeId}
+            className="kc-mono-input"
+            aria-describedby="login-store-hint"
           />
+          <span className="field-hint" id="login-store-hint">
+            It's in your welcome email, or ask your store owner.
+          </span>
         </label>
         <label className="login-field">
           Username
@@ -207,18 +220,21 @@ export default function LoginPage() {
               onChange={(e) => setTotp(cleanTotp(e.target.value))}
               placeholder="123456"
               autoFocus
+              className="kc-mono-input"
             />
           </label>
         )}
 
         {error && (
-          <p className="error" role="alert" data-testid="login-error" style={{ margin: 0 }}>
-            {error}
+          <p className="error auth-error" role="alert" data-testid="login-error">
+            <Icon name="octagon-alert" size={16} />
+            <span>{error}</span>
           </p>
         )}
 
         <button
           type="submit"
+          className="auth-submit"
           disabled={loading || !storeId.trim() || !username || !password || (needTotp && totp.length !== 6)}
         >
           {loading ? "Signing in…" : "Sign in"}
@@ -226,10 +242,7 @@ export default function LoginPage() {
         <p className="login-links">
           New store? <Link to="/signup">Request access</Link>
         </p>
-        <p className="muted login-foot">
-          {brand.productName} by {brand.company}
-        </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

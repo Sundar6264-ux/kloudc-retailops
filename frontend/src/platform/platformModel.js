@@ -2,11 +2,15 @@
 // 14): Requests, Stores, Hosting and Audit on one screen. Pure helpers -
 // tested by platformModel.test.mjs.
 
+// Tile tabs of the one-screen master console (DESIGN_SYSTEM 2.2): icon,
+// label, the help registry page id, and a count badge where the console
+// knows one. Help is the master guide (no list header).
 export const PLATFORM_TABS = [
-  { key: "requests", label: "Requests" },
-  { key: "stores", label: "Stores" },
-  { key: "hosting", label: "Hosting" },
-  { key: "audit", label: "Audit" },
+  { key: "requests", label: "Requests", icon: "inbox", pageId: "platform_requests", sub: "New stores asking to join" },
+  { key: "stores", label: "Stores", icon: "store", pageId: "platform_stores", sub: "Every store and its status" },
+  { key: "hosting", label: "Hosting", icon: "server", pageId: "platform_hosting", sub: "Moves to a store's own server" },
+  { key: "audit", label: "Audit", icon: "scroll-text", pageId: "platform_audit", sub: "Everything done, newest first" },
+  { key: "help", label: "Help", icon: "life-buoy", pageId: "help", sub: "The master guide and support" },
 ];
 
 export const LAST_TAB_KEY = "retailops_platform_tab";
