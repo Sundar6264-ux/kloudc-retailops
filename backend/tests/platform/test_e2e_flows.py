@@ -232,6 +232,9 @@ def test_full_flow_two_stores(client, pdb, fake_testers, fake_toast, paused_sche
         assert res and res["status"] == "active", (code, res)
     # Each approval told the scheduler: one sync job per store now.
     assert _jobs(paused_scheduler, "daily_sales_sync") == ["daily_sales_sync:ALPHA", "daily_sales_sync:BRAVO"]
+    # ... each in its own store's timezone (from the sign-up).
+    zones = {code: str(paused_scheduler.get_job(f"daily_sales_sync:{code}").trigger.inner.timezone) for code in ids}
+    assert zones == {"ALPHA": "America/Chicago", "BRAVO": "America/New_York"}, zones
 
     # 4. Each owner signs in (website cookie; Store ID typed in any case).
     ann, r = _web_login(client, " alpha ", "Ann", PW_A)

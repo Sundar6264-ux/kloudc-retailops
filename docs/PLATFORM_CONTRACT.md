@@ -2379,6 +2379,9 @@ carries on -> resume.
 | `tests/platform/test_e2e_flows.py` (PostgreSQL) | 5 passed (F1-F4 failed before their fixes) |
 | Website flows, real server (`run_flows.sh`, 1280 + 375) | 104 checks, 0 failures; 148 fake-Toast calls, all with the calling store's own keys |
 | App live test against the real server | 3 passed |
+| Backend full suite, PostgreSQL 16 (`TZ`/`PGTZ` New York, as CI) | 2893 passed, 21 skipped |
+| Backend full suite, SQLite | 2884 passed, 30 skipped |
+| Migration round trip (`scripts/pg/migration_roundtrip.py`) | 0 failures |
 
 ### Checked and fine (dismissed)
 
