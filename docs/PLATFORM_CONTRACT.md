@@ -3241,7 +3241,7 @@ its sends off, because the label dashboard signs users in against its
 sessions.
 
 The real private pack was copied unchanged to
-`~/.kloudc-retailops/pilot/spicetown.pack.json` (mode 600, outside git).
+`~/.kloudc-retailops/pilot/store1.pack.json` (mode 600, outside git).
 Before this, it lived only in a scratch job folder. It validates with
 `app.store.pack.load_pack_file`.
 
