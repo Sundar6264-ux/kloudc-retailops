@@ -2413,3 +2413,58 @@ carries on -> resume.
   leader's reconcile reads. The default deployment (one process) is fine.
 - The in-session 403 for a suspended store could carry the master's
   maintenance message and send the website to the login page.
+
+## As built - Regression (final, on `main` @ `2e33357`)
+
+Run on 2026-10-18 on merged `main`, Mac mini, every heavy run via m1heavy.
+No product code changed: the run found no new defects.
+
+### Results
+
+| Check | Result |
+|---|---|
+| GitHub CI on `2e33357` (server: PostgreSQL, SQLite, website, Docker) / app `4222dc8` | all green |
+| Backend full suite, PostgreSQL 16 (`PGTZ`/`TZ` New York, as CI) | **2893 passed, 21 skipped** |
+| Backend full suite, SQLite | **2884 passed, 30 skipped** |
+| `scripts/pg/migration_roundtrip.py` (platform up/down/up, store baseline, refused downgrade, post-baseline up/down/up, provisioning + `migrate-all`) | **16/16** |
+| Store chain on PostgreSQL (fresh DB, `upgrade head` twice) / `make_baseline.py --check` / SQLite chain up -> base -> up | `0062 (head)` / ok / ok |
+| Parity, Spice Town pack: SQLite vs PostgreSQL recordings of the Oct 15 production copy (`--migrate`, read-only source) | 110 endpoints, all 200 on both; 0 network attempts. **14 differences, all the classes of "As built - A"**: 4 forecast floats in the last digit (2 items; PostgreSQL's exact decimal sum), 4 + 4 fingerprint columns stamped "now" by migrations 0060/0061 during `--migrate`, 2 `fingerprint_after` columns holding second-precision text on SQLite. Recordings deleted after. |
+| Website `node --test` / `vite build` / built bundle contains the origin store's name | 277 pass, 0 fail / clean / no |
+| Website flows, real multi-mode server (`run_flows.sh`, 1280 + 375): sign-up -> approve -> login, Integrations + Test connection, sync with own keys, staff (no Integrations/Users/Notifications, `/#/notifications` redirects), suspend/resume, two tabs on two stores | **114 checks, 0 failures**; 148 fake-Toast calls, each with its own store's keys |
+| Website platform checks, real server (`run_real.sh`, 1280 + 375): login page, sign-up, master console (requests, stores, hosting, audit, two-step), integrations, owner set-up link | **144 checks, 0 failures** |
+| App `flutter analyze` / full `flutter test --concurrency=2` | no issues / **5518 passed, 8 skipped** |
+| Simulator, iPhone 17 and iPad Pro 11 (M5), against the preview server (one shared server, 3 stores) | one login screen -> Toast store (Scan tab, Open Checks, Insights) -> Switch store -> Clover store (no Insights, no "Toast", no stale store) -> Switch store -> DEMO (made-up data): **every step and expectation passes on both**; flutter_test then reports the SemanticsHandle the simulator's accessibility leaves open (same as the M2 run, not app code) |
+
+The browser checks now also assert, on every screen they photograph, that the
+origin store's name is not shown (page text, title, alt/title/placeholder/
+aria-label): 10 + 24 of the checks above.
+
+### Added
+
+- `backend/scripts/preview/preview_server.py` (+ `~/storeops/preview.sh`,
+  outside git): a local preview of the shared service on 127.0.0.1:8870:
+  - the platform DB and a master;
+  - `STOREOPS_TEST_TOAST` / `STOREOPS_TEST_CLOVER`, provisioned through
+    `create_store_manually` with their packs and the fixture settings;
+  - DEMO: `generate_demo_data.py --pg-url` into its own database, registered
+    as an active store with `demo_mode`.
+
+  The databases are `so_preview_*` and are kept between runs (`--reset`,
+  `--drop`). The key ring and the generated logins are in
+  `~/storeops/.preview/` (0600). Schedulers are off, all outside bases point at
+  the discard port, httpx refuses every call, and the connection tests are
+  fakes.
+- App `integration_test/m2_live_stores_test.dart`: runs against the platform
+  lookup (`PLATFORM_API_URL`), switch-store helper, optional third store DEMO
+  (`E2E_PASSWORD_DEMO`).
+
+Screenshots: `/Users/sundar/storeops/screenshots/platform/web/` (34) and
+`/Users/sundar/storeops/screenshots/platform/app/` (24).
+
+### Noted, not changed
+
+- At 375 px the floating menu and cart buttons sit over the top of a card
+  while the page is scrolled (Integrations). This is cosmetic and predates
+  this work.
+- The reorder-candidates `note` names Toast's Purchasing API on every store,
+  including CSV stores. This is the known M2 "Toast strings" gap.
