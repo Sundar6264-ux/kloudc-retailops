@@ -11,6 +11,7 @@
 //   - master console tabs (Hosting off state, Audit), no sideways scroll.
 // Exit code 1 on any failure. Screenshots: $PLATFORM_E2E_WORK/shots.
 import { chromium } from "playwright";
+import { createHmac } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -21,6 +22,10 @@ const MASTER_PW = process.env.MOCK_MASTER_PASSWORD;
 const SHOTS = join(WORK, "shots");
 mkdirSync(SHOTS, { recursive: true });
 const WIDTHS = [1280, 375];
+// The real server (run_real.sh) differs from the mock in two set-ups: its
+// packs (no grocery_us) and dedicated hosting switched on (MOVED_MART needs it).
+const APPROVE_PACK = process.env.E2E_APPROVE_PACK || "grocery_us";
+const HOSTING_ON = process.env.E2E_HOSTING_ENABLED === "1";
 
 const failures = [];
 let checks = 0;
@@ -247,7 +252,7 @@ async function run(browser, width) {
     const row = page.locator(".pf-row", { hasText: code });
     check((await row.count()) === 1, T("the request is listed"));
     await row.locator('button:has-text("Approve")').first().click();
-    await row.locator('select').first().selectOption("grocery_us");
+    await row.locator('select').first().selectOption(APPROVE_PACK);
     await shot(page, `platform-approve-${width}`);
     await row.locator('button:has-text("Approve and set up")').click();
     await settle(page, 300);
@@ -270,7 +275,8 @@ async function run(browser, width) {
 
     await page.click('[data-testid="pf-tab-hosting"]');
     await settle(page);
-    check(await page.isVisible('[data-testid="hosting-disabled"]'), T("Hosting tab: off state"));
+    if (HOSTING_ON) check(!(await page.isVisible('[data-testid="hosting-disabled"]')), T("Hosting tab: on"));
+    else check(await page.isVisible('[data-testid="hosting-disabled"]'), T("Hosting tab: off state"));
     await page.click('[data-testid="pf-tab-audit"]');
     await settle(page);
     check(await page.isVisible("text=signup.approved"), T("audit lists the approval"));
@@ -307,9 +313,97 @@ async function run(browser, width) {
   }
 }
 
+// ---- real server only (run_real.sh): owner set-up link and two-step sign-in ----
+function totpNow(secretB32) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const ch of secretB32.replace(/[\s=]/g, "").toUpperCase()) bits += alphabet.indexOf(ch).toString(2).padStart(5, "0");
+  const key = Buffer.from(bits.match(/.{8}/g).map((b) => parseInt(b, 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 1000 / 30)));
+  const h = createHmac("sha1", key).update(counter).digest();
+  const o = h[h.length - 1] & 15;
+  return String((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000).padStart(6, "0");
+}
+
+async function realOnly(browser) {
+  const T = (s) => `real: ${s}`;
+  // A master makes a one-time set-up link for DEMO_GROCERY's owner (its
+  // staff user is locked out by the lockout check above).
+  const ml = await fetch(`${BASE}/api/auth/mobile-login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ store_code: "PLATFORM", username: "owner", password: MASTER_PW }),
+  }).then((r) => r.json());
+  const link = await fetch(`${BASE}/api/platform/stores/DEMO_GROCERY/owner-setup-link`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ml.token}` },
+    body: JSON.stringify({ username: "owner" }),
+  }).then((r) => r.json());
+  check(typeof link.setup_url === "string" && link.setup_url.includes("/#/setup?"), T(`set-up link made (${link.setup_url})`));
+  {
+    const { ctx, page, errors } = await newPage(browser, 375);
+    await page.goto(link.setup_url.replace(/^https?:\/\/[^/]+/, BASE));
+    await page.waitForSelector('[data-testid="owner-setup"]');
+    check((await page.getAttribute('[data-testid="owner-setup"]', "data-state")) === "form", T("set-up page shows the form"));
+    const pws = page.locator('input[type="password"]');
+    const NEWPW = `owner-new-pass-${Date.now()}`;
+    await pws.nth(0).fill(NEWPW);
+    await pws.nth(1).fill(NEWPW);
+    await noSideways(page, T("set-up page"));
+    await shot(page, "owner-setup-375");
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[data-testid="setup-sign-in"]', { timeout: 8000 }).catch(() => {});
+    check((await page.getAttribute('[data-testid="owner-setup"]', "data-state")) === "done", T("password set"));
+    await page.click('[data-testid="setup-sign-in"]');
+    await page.waitForSelector('[data-testid="login-store-id"]');
+    check((await page.inputValue('[data-testid="login-store-id"]')) === "DEMO_GROCERY", T("login prefilled after set-up"));
+    await login(page, "DEMO_GROCERY", "owner", NEWPW);
+    await page.waitForSelector("nav.sidebar", { timeout: 8000 }).catch(() => {});
+    check(await page.isVisible("nav.sidebar"), T("the owner signs in with the new password"));
+    // The link works once.
+    await page.goto(link.setup_url.replace(/^https?:\/\/[^/]+/, BASE));
+    check(errors.length === 0, T(`set-up page errors: ${errors.join(" | ")}`));
+    await ctx.close();
+  }
+  // Two-step sign-in: switch it on in the console, then sign in with a code.
+  {
+    const { ctx, page, errors } = await newPage(browser, 1280);
+    await page.goto(`${BASE}/#/login`);
+    await login(page, "platform", "owner", MASTER_PW);
+    await page.waitForSelector('[data-testid="pf-totp-toggle"]', { timeout: 8000 });
+    await page.click('[data-testid="pf-totp-toggle"]');
+    await page.click('[data-testid="pf-totp"] button:has-text("Set up two-step sign-in")');
+    await page.waitForSelector('[data-testid="pf-totp-secret"]');
+    const secret = (await page.textContent('[data-testid="pf-totp-secret"]')) || "";
+    await page.fill('[data-testid="pf-totp-code"]', totpNow(secret));
+    await page.click('[data-testid="pf-totp"] button:has-text("Switch on")');
+    await settle(page, 300);
+    check((await page.textContent('[data-testid="pf-totp"]'))?.includes("Two-step sign-in is on"), T("two-step switched on"));
+    await shot(page, "platform-totp-1280");
+    await page.click('button:has-text("Log out")');
+    await page.waitForSelector('[data-testid="login-store-id"]');
+    await login(page, "PLATFORM", "owner", MASTER_PW);
+    await page.waitForSelector('[data-testid="login-totp"]', { timeout: 8000 }).catch(() => {});
+    check(await page.isVisible('[data-testid="login-totp"]'), T("login asks for the 6-digit code"));
+    check((await page.textContent('[data-testid="login-error"]'))?.includes("6-digit code"), T("the code prompt says why"));
+    await page.fill('[data-testid="login-totp"]', "000000");
+    await page.click('button[type="submit"]');
+    await settle(page);
+    check((await page.textContent('[data-testid="login-error"]'))?.includes("Incorrect"), T("a wrong code is refused"));
+    await page.fill('[data-testid="login-totp"]', totpNow(secret));
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[data-testid="pf-tab-requests"]', { timeout: 8000 }).catch(() => {});
+    check(new URL(page.url()).hash.startsWith("#/platform"), T("master signs in with the code"));
+    check(errors.length === 0, T(`console page errors: ${errors.join(" | ")}`));
+    await ctx.close();
+  }
+}
+
 const browser = await chromium.launch();
 try {
   for (const w of WIDTHS) await run(browser, w);
+  if (process.env.E2E_REAL === "1") await realOnly(browser);
 } finally {
   await browser.close();
 }

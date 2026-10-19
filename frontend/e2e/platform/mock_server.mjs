@@ -269,7 +269,8 @@ async function api(req, res, url) {
     const code = norm(url.searchParams.get("code"));
     const taken = stores.has(code) || signups.some((r) => r.status === "pending" && r.requested_code === code);
     const reserved = RESERVED.has(code);
-    return send(res, 200, { code, available: !taken && !reserved, ...(taken ? { reason: "That Store ID is taken." } : reserved ? { reason: "That Store ID is reserved." } : {}) });
+    // As the real server: `reason` is a code, `message` its text.
+    return send(res, 200, { code, available: !taken && !reserved, ...(taken ? { reason: "taken", message: "That code is already used by another store." } : reserved ? { reason: "reserved", message: "That code is reserved." } : {}) });
   }
   if (p === "/api/signup" && method === "POST") {
     const b = await readBody(req);
@@ -364,7 +365,9 @@ async function api(req, res, url) {
     if ((m = /^\/stores\/([A-Z0-9_]+)\/hosting-requests$/.exec(sub)) && method === "POST") {
       if (!DEDICATED_HOSTING_ENABLED) return send(res, 409, { error: "dedicated_hosting_disabled", message: "Dedicated hosting is off." });
     }
-    if (sub === "/hosting-requests" || /^\/hosting-requests\/\d+\//.test(sub)) {
+    // As the real server: the list answers {enabled, requests}; the actions 409 while off.
+    if (sub === "/hosting-requests") return send(res, 200, { enabled: DEDICATED_HOSTING_ENABLED, requests: DEDICATED_HOSTING_ENABLED ? hosting : [] });
+    if (/^\/hosting-requests\/\d+\//.test(sub)) {
       if (!DEDICATED_HOSTING_ENABLED) return send(res, 409, { error: "dedicated_hosting_disabled", message: "Dedicated hosting is off." });
       return send(res, 200, hosting);
     }
@@ -373,7 +376,12 @@ async function api(req, res, url) {
       const action = url.searchParams.get("action");
       return send(res, 200, audit.filter((a) => (!store || a.store_code === store) && (!action || a.action === action)).slice(0, 200));
     }
-    if (sub === "/packs") return send(res, 200, ["grocery_us", "restaurant_us"]);
+    if (sub === "/packs") {
+      return send(res, 200, [
+        { pack_id: "grocery_us", label: "US grocery", private: false },
+        { pack_id: "restaurant_us", label: "US restaurant", private: false },
+      ]);
+    }
     return send(res, 404, { error: "not_found" });
   }
 
