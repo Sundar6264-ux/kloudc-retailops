@@ -15,16 +15,20 @@ of the shared service (onboarding the first real stores).
    source file is never written.
 3. The snapshot (never the source) is upgraded to this release's schema
    head (``alembic upgrade head``).
-4. The store's database is dropped and created again empty, then
-   scripts/pg/copy_sqlite_to_pg.py copies every table (one transaction) and
-   compares every table's row count and a checksum of every column with the
-   snapshot. Any difference fails the import.
-5. After the verified copy (all reported): the store identity stamp is set
+4. A new staging database ``<db_name>__import`` is created and
+   scripts/pg/copy_sqlite_to_pg.py copies every table into it (one
+   transaction) and compares every table's row count and a checksum of
+   every column with the snapshot. Any difference fails the import, the
+   staging database is dropped and the store's own database is exactly as
+   it was (``store.import_failed`` in the audit log).
+5. After the verified copy (all reported, on the staging database): the store identity stamp is set
    to CODE and the registry's instance id; sign-in sessions and push
    device tokens of the old system are removed (people sign in again; their
    phones register again); the owner login made at provisioning is added
    back when the imported data has no user with that name (--no-keep-owner
-   skips it). With --uploads, the old system's upload folders (invoices,
+   skips it). Then the staging database replaces the store's database
+   (old renamed aside, staging renamed into place, old dropped). With
+   --uploads, the old system's upload folders (invoices,
    team media, flyers) are copied in (existing files are never overwritten).
 6. The registry is updated (schema revision, settings version) and
    ``store.imported`` is written to the audit log with the counts, the
@@ -195,32 +199,132 @@ def _release_own_connections(code: str) -> None:
                 pass
 
 
-def _recreate_database(db_name: str, code: str) -> None:
-    from sqlalchemy import text
+STAGING_SUFFIX = "__import"
+RETIRED_SUFFIX = "__replaced"
 
+
+def _side_name(db_name: str, suffix: str) -> str:
+    """<db_name><suffix>, kept within PostgreSQL's 63-byte names."""
+    return db_name[: 63 - len(suffix)] + suffix
+
+
+def _admin_engine():
     from app.platform import bridge
     from app.platform.db import make_engine
 
+    return make_engine(bridge.admin_url(), isolation_level="AUTOCOMMIT", pool_size=1, max_overflow=0)
+
+
+def _other_connections(conn, db_name: str) -> int:
+    from sqlalchemy import text
+
+    return int(conn.execute(
+        text("SELECT count(*) FROM pg_stat_activity WHERE datname = :n AND pid <> pg_backend_pid()"),
+        {"n": db_name},
+    ).scalar() or 0)
+
+
+def _database_exists(conn, db_name: str) -> bool:
+    from sqlalchemy import text
+
+    return conn.execute(text("SELECT 1 FROM pg_database WHERE datname = :n"), {"n": db_name}).first() is not None
+
+
+def _refuse_if_connected(db_name: str, code: str) -> None:
     _release_own_connections(code)
-    admin = make_engine(bridge.admin_url(), isolation_level="AUTOCOMMIT", pool_size=1, max_overflow=0)
+    admin = _admin_engine()
     try:
         with admin.connect() as conn:
-            others = conn.execute(
-                text("SELECT count(*) FROM pg_stat_activity WHERE datname = :n AND pid <> pg_backend_pid()"),
-                {"n": db_name},
-            ).scalar()
-            if others:
-                raise StoreImportError(
-                    f"{others} other connection(s) are open on the store's database: suspend the store in the "
-                    "master console (or stop the server) and try again"
-                )
-            conn.execute(text(f"DROP DATABASE IF EXISTS {_quote_ident(db_name)}"))
+            others = _other_connections(conn, db_name)
+    finally:
+        admin.dispose()
+    if others:
+        raise StoreImportError(
+            f"{others} other connection(s) are open on the store's database: suspend the store in the "
+            "master console (or stop the server) and try again"
+        )
+
+
+def _create_staging_database(staging: str) -> None:
+    """A new, empty database for the copy (a leftover of an interrupted
+    import is dropped first). The store's own database is not touched."""
+    from sqlalchemy import text
+
+    admin = _admin_engine()
+    try:
+        with admin.connect() as conn:
+            conn.execute(text(f"DROP DATABASE IF EXISTS {_quote_ident(staging)} WITH (FORCE)"))
             conn.execute(
                 text(
-                    f"CREATE DATABASE {_quote_ident(db_name)} TEMPLATE template0 "
+                    f"CREATE DATABASE {_quote_ident(staging)} TEMPLATE template0 "
                     "ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C'"
                 )
             )
+    finally:
+        admin.dispose()
+
+
+def _drop_database_quietly(name: str) -> None:
+    from sqlalchemy import text
+
+    try:
+        admin = _admin_engine()
+        try:
+            with admin.connect() as conn:
+                conn.execute(text(f"DROP DATABASE IF EXISTS {_quote_ident(name)} WITH (FORCE)"))
+        finally:
+            admin.dispose()
+    except Exception:  # noqa: BLE001 - cleanup; the error that matters is already raised
+        logger.exception("Import: could not drop %s", name)
+
+
+def _wait_for_no_connections(conn, db_name: str, code: str, seconds: float = 10.0) -> int:
+    """Other sessions on `db_name` after this process's own pooled ones are
+    closed, waiting up to `seconds` for short-lived ones to finish."""
+    deadline = time.monotonic() + seconds
+    while True:
+        _release_own_connections(code)
+        others = _other_connections(conn, db_name)
+        if not others or time.monotonic() >= deadline:
+            return others
+        time.sleep(0.5)
+
+
+def _swap_in(staging: str, db_name: str, code: str) -> None:
+    """The verified staging database becomes the store's database: new
+    connections to the old one are refused, the old one is renamed aside,
+    the staging one renamed into place, the old one dropped. Refused (and
+    nothing changed) while anything else stays connected."""
+    from sqlalchemy import text
+
+    retired = _side_name(db_name, RETIRED_SUFFIX)
+    admin = _admin_engine()
+    try:
+        with admin.connect() as conn:
+            conn.execute(text(f"DROP DATABASE IF EXISTS {_quote_ident(retired)} WITH (FORCE)"))
+            had_old = _database_exists(conn, db_name)
+            if had_old:
+                conn.execute(text(f"ALTER DATABASE {_quote_ident(db_name)} WITH ALLOW_CONNECTIONS false"))
+            renamed = False
+            try:
+                if had_old:
+                    others = _wait_for_no_connections(conn, db_name, code)
+                    if others:
+                        raise StoreImportError(
+                            f"{others} other connection(s) opened on the store's database during the import: "
+                            "suspend the store in the master console (or stop the server) and try again"
+                        )
+                    conn.execute(text(f"ALTER DATABASE {_quote_ident(db_name)} RENAME TO {_quote_ident(retired)}"))
+                    renamed = True
+                conn.execute(text(f"ALTER DATABASE {_quote_ident(staging)} RENAME TO {_quote_ident(db_name)}"))
+            except Exception:
+                if renamed:
+                    conn.execute(text(f"ALTER DATABASE {_quote_ident(retired)} RENAME TO {_quote_ident(db_name)}"))
+                if had_old:
+                    conn.execute(text(f"ALTER DATABASE {_quote_ident(db_name)} WITH ALLOW_CONNECTIONS true"))
+                raise
+            if had_old:
+                conn.execute(text(f"DROP DATABASE IF EXISTS {_quote_ident(retired)} WITH (FORCE)"))
     finally:
         admin.dispose()
 
@@ -325,6 +429,11 @@ def import_sqlite(
             raise StoreImportError(f"store {code} is on its own server: import there")
         db_name, instance_id, owner_username = store.db_name, store.instance_id, store.owner_username
     url = bridge.store_url(db_name, None)
+    up = None
+    if uploads_from:
+        up = pathlib.Path(uploads_from).expanduser().resolve()
+        if not up.is_dir():
+            raise StoreImportError(f"{up} is not a folder")
 
     t = time.monotonic()
     state = _target_state(url, owner_username if keep_owner else None)
@@ -342,6 +451,9 @@ def import_sqlite(
     snap = work / f"{code.lower()}-import.db"
     if snap.exists():
         raise StoreImportError(f"{snap} already exists: use an empty work folder")
+    staging = _side_name(db_name, STAGING_SUFFIX)
+    staging_url = bridge.store_url(staging, None)
+    staged = False
     try:
         t = time.monotonic()
         log(f"Snapshot of {source.name} (read-only) -> {snap}")
@@ -359,28 +471,35 @@ def import_sqlite(
         counts = sqlite_counts(snap)
 
         t = time.monotonic()
-        log(f"Recreating the database of {code} (empty)")
-        _recreate_database(db_name, code)
-        timings["recreate_database"] = round(time.monotonic() - t, 2)
+        _refuse_if_connected(db_name, code)
+        log(f"Creating the staging database {staging} (the store's own database is not touched yet)")
+        _create_staging_database(staging)
+        staged = True
+        timings["staging_database"] = round(time.monotonic() - t, 2)
 
         t = time.monotonic()
         tool = _copy_tool()
         try:
-            problems: List[str] = tool.copy(str(snap), url, verify=True, log=log)
+            problems: List[str] = tool.copy(str(snap), staging_url, verify=True, log=log)
         except SystemExit as exc:  # the copy tool's refusals
             raise StoreImportError(f"copy refused: {exc}") from None
         timings["copy_and_verify"] = round(time.monotonic() - t, 2)
         if problems:
-            raise StoreImportError(f"{len(problems)} difference(s) after the copy: " + "; ".join(problems[:5]))
+            raise StoreImportError(
+                f"{len(problems)} difference(s) after the copy: " + "; ".join(problems[:5])
+                + " - nothing was changed: the store's database is as it was"
+            )
         log("Verified: every table's row count and column checksums match the snapshot")
 
         t = time.monotonic()
-        after = _after_copy(url, code, instance_id, state["owner"])
+        after = _after_copy(staging_url, code, instance_id, state["owner"])
+        log(f"Switching {code} to the imported database")
+        _swap_in(staging, db_name, code)
+        staged = False
+        timings["switch"] = round(time.monotonic() - t, 2)
+        t = time.monotonic()
         uploads = None
-        if uploads_from:
-            up = pathlib.Path(uploads_from).expanduser().resolve()
-            if not up.is_dir():
-                raise StoreImportError(f"{up} is not a folder")
+        if up is not None:
             uploads = _copy_uploads(up, store_uploads_root(code))
         timings["finish"] = round(time.monotonic() - t, 2)
         timings["total"] = round(time.monotonic() - t_all, 2)
@@ -410,7 +529,12 @@ def import_sqlite(
         bridge.store_changed(code)
         report["table_rows"] = counts
         return report
+    except Exception as exc:
+        _audit_failure(code, source.name, exc, actor)
+        raise
     finally:
+        if staged:
+            _drop_database_quietly(staging)
         if not keep_workdir:
             if own_workdir:
                 shutil.rmtree(work, ignore_errors=True)
@@ -420,3 +544,17 @@ def import_sqlite(
                         p.unlink()
                     except FileNotFoundError:
                         pass
+
+
+def _audit_failure(code: str, source_name: str, exc: BaseException, actor: str) -> None:
+    """``store.import_failed`` in the audit log (the reason, first 500 characters)."""
+    try:
+        from app.platform.audit import audit
+        from app.platform.db import platform_session
+
+        with platform_session() as pdb:
+            audit("store.import_failed", actor_type="system", actor_name=actor, store_code=code,
+                  details={"source": source_name, "error": f"{type(exc).__name__}: {exc}"[:500]}, db=pdb)
+            pdb.commit()
+    except Exception:  # noqa: BLE001 - the raised error is what the operator sees
+        logger.exception("Import: could not write store.import_failed")

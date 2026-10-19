@@ -13,6 +13,9 @@
 # 4. the private pack loaded (when --pack is given; it must be outside git);
 # 5. parity of the store against the copy (must be clean);
 # 6. readiness, then backup_all + restore drill of the scratch databases;
+#    "DRY RUN OK" only when every step passed (pilot mode still on after the
+#    import, parity clean, ready, backup and drill OK), else "DRY RUN FAILED"
+#    naming the steps, exit 1;
 # 7. unless --keep: every <prefix>* database dropped, the work folder deleted
 #    (also when a step fails).
 # Never sends anything (pilot mode, no credentials) and never writes the source.
@@ -71,6 +74,7 @@ export RETAILOPS_SECRET_KEYS="$(.venv/bin/python -m app.platform gen-key 2>/dev/
 export RETAILOPS_OWNER_PASSWORD="dry-run-$(python3 -c 'import secrets; print(secrets.token_hex(8))')"
 PY=.venv/bin/python
 
+FAILED=()
 step "1. platform database ${PREFIX}platform"
 TIMED_LABEL=createdb timed "$PG_BIN/psql" -X -d "$PSQL_URL" -qc \
   "CREATE DATABASE \"${PREFIX}platform\" TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'" || exit 1
@@ -92,17 +96,36 @@ print({k: d[k] for k in ("source_revision", "revision", "tables", "rows", "diffe
                          "owner_added", "snapshot_bytes")})
 print("import timings:", d["timings_s"])
 PYEOF
+TIMED_LABEL=pilot-check timed $PY - "$CODE" <<'PYEOF' || FAILED+=(pilot-mode-after-import)
+import sys
+from app.platform import sources
+sources.configure()
+from app.config import get_settings
+from app.tenancy import store_context
+with store_context(sys.argv[1], allow_inactive=True):
+    on = bool(get_settings().pilot_mode)
+print("pilot mode after the import:", "ON" if on else "OFF (it must stay on until switch-over)")
+sys.exit(0 if on else 1)
+PYEOF
 if [ -n "$PACK" ]; then
   step "4. private pack"
   TIMED_LABEL=load-pack timed $PY -m app.platform load-pack "$CODE" --file "$PACK" > "$WORK/pack.json" || { cat "$WORK/pack.json"; exit 1; }
   python3 -c "import json,sys; d=json.load(open('$WORK/pack.json')); print({k: d[k] for k in ('pack_id','written','inserted')})"
 fi
 step "5. parity against the copy"
-TIMED_LABEL=parity timed $PY -m app.platform parity "$CODE" --reference "$WORK/source-copy.db" --days 14 --log-dir "$WORK/logs" > "$WORK/parity.json"
-python3 -c "import json; d=json.load(open('$WORK/parity.json')); print({k: d[k] for k in ('ok','from','to','days_compared','days_with_differences','totals','seconds')})"
+TIMED_LABEL=parity timed $PY -m app.platform parity "$CODE" --reference "$WORK/source-copy.db" --days 14 --log-dir "$WORK/logs" > "$WORK/parity.json" || FAILED+=(parity)
+python3 -c "import json; d=json.load(open('$WORK/parity.json')); print({k: d.get(k) for k in ('ok','from','to','days_compared','days_with_differences','problems','totals','seconds')})"
 step "6. readiness, backup, restore drill"
-TIMED_LABEL=ready timed $PY -m app.ops ready | tr -d '\n' | cut -c1-200; echo
-TIMED_LABEL=backup_all timed $PY scripts/backup/backup_all.py backup --platform-url "$PLATFORM_DATABASE_URL" --dest "$WORK/backups" --pg-bin "$PG_BIN" | tail -4
+TIMED_LABEL=ready timed $PY -m app.ops ready > "$WORK/ready.json" || FAILED+=(ready)
+tr -d '\n' < "$WORK/ready.json" | cut -c1-200; echo
+TIMED_LABEL=backup_all timed $PY scripts/backup/backup_all.py backup --platform-url "$PLATFORM_DATABASE_URL" --dest "$WORK/backups" --pg-bin "$PG_BIN" > "$WORK/backup.out" || FAILED+=(backup)
+tail -4 "$WORK/backup.out"
 du -sh "$WORK/backups"/*/ 2>/dev/null | sed 's#'"$WORK"'/##'
-TIMED_LABEL=drill timed $PY scripts/backup/backup_all.py drill --platform-url "$PLATFORM_DATABASE_URL" --dest "$WORK/backups" --pg-bin "$PG_BIN" | tail -4
-echo; echo "DRY RUN OK"
+TIMED_LABEL=drill timed $PY scripts/backup/backup_all.py drill --platform-url "$PLATFORM_DATABASE_URL" --dest "$WORK/backups" --pg-bin "$PG_BIN" > "$WORK/drill.out" || FAILED+=(drill)
+tail -4 "$WORK/drill.out"
+echo
+if [ ${#FAILED[@]} -gt 0 ]; then
+  echo "DRY RUN FAILED: ${FAILED[*]}"
+  exit 1
+fi
+echo "DRY RUN OK"

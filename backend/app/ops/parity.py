@@ -226,6 +226,13 @@ def run_parity(
         ref.conn.close()
         pilot.conn.close()
     differences = compare(pilot_days, ref_days, window)
+    problems: List[str] = []
+    if not any(v["lines"] or v["voided_lines"] for v in ref_days.values()):
+        # Nothing to compare is not a clean comparison: a wrong --reference
+        # file (or a reference whose POS sync stopped) would otherwise pass
+        # every day against an equally empty store.
+        problems.append("the reference has no sales lines in the window (the right database? is its POS sync "
+                        "running?)")
     report = {
         "store_code": code,
         "at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
@@ -240,13 +247,16 @@ def run_parity(
             "store_lines": sum(v["lines"] for v in pilot_days.values()),
             "reference_lines": sum(v["lines"] for v in ref_days.values()),
         },
-        "ok": not differences,
+        "problems": problems,
+        "ok": not differences and not problems,
         "seconds": round(time.monotonic() - started, 2),
     }
     _write_log(report, log_dir)
     if differences:
         logger.warning("Parity %s: %d difference(s) on %s", code, len(differences), ", ".join(report["days_with_differences"]))
-    else:
+    if problems:
+        logger.warning("Parity %s: not comparable: %s", code, "; ".join(problems))
+    if report["ok"]:
         logger.info("Parity %s: OK, %d days compared (%s..%s)", code, len(window), first, last)
     if audit_run:
         try:
@@ -254,7 +264,8 @@ def run_parity(
 
             audit("parity.run", actor_type="system", actor_name="parity", store_code=code,
                   details={"ok": report["ok"], "from": report["from"], "to": report["to"],
-                           "differences": len(differences), "days_with_differences": report["days_with_differences"]})
+                           "differences": len(differences), "days_with_differences": report["days_with_differences"],
+                           "problems": len(problems)})
         except Exception:  # noqa: BLE001 - the log line above is the record that matters
             logger.exception("parity audit row failed")
     return report

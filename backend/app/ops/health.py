@@ -60,6 +60,7 @@ def _multi_checks() -> Dict[str, str]:
     from app.platform.db import platform_engine, platform_head_revision
 
     checks: Dict[str, str] = {}
+    step = "platform_database"
     try:
         with platform_engine().connect() as conn:
             conn.execute(text("SELECT 1"))
@@ -68,9 +69,11 @@ def _multi_checks() -> Dict[str, str]:
             except Exception:  # noqa: BLE001
                 conn.rollback()
                 current = None
-            head = platform_head_revision()
             checks["platform_database"] = "ok"
+            step = "platform_migrations"
+            head = platform_head_revision()
             checks["platform_migrations"] = "ok" if current == head else f"fail: at {current or 'none'}, head {head}"
+            step = "store_migrations"
             store_head = store_head_revision()
             behind = conn.execute(
                 text(
@@ -83,7 +86,9 @@ def _multi_checks() -> Dict[str, str]:
             checks["store_migrations"] = "ok" if not behind else f"fail: {behind} store(s) behind {store_head}"
             checks["active_stores"] = str(int(active or 0))
     except Exception as exc:  # noqa: BLE001
-        checks.setdefault("platform_database", _fail(exc))
+        # The check that was running fails (never left out: a check that
+        # could not run is not a passed check).
+        checks[step] = _fail(exc)
     return checks
 
 
