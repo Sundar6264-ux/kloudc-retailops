@@ -194,14 +194,12 @@ h1.auth-title,
   min-width: 0;
 }
 
-.auth-store-chip .kc-info-wrap,
-.auth-store-chip > :last-child:not(.auth-store-text) {
-  margin-left: auto;
-  flex-shrink: 0;
+.auth-title-row > .auth-store-chip {
+  flex: 1 1 auto;
 }
 
-.auth-store-text {
-  flex: 1 1 auto;
+.auth-head.auth-title-row {
+  flex-direction: row;
 }
 
 .auth-sub,
@@ -439,6 +437,12 @@ button.auth-submit:hover:not(:disabled) {
 
   .auth-card button {
     width: 100%;
+  }
+
+  /* ...but not the ⓘ beside a title. */
+  .auth-card .kc-info-btn {
+    width: 32px;
+    flex: 0 0 auto;
   }
 }
 

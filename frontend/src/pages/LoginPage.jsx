@@ -151,7 +151,7 @@ export default function LoginPage() {
             </p>
           </div>
         ) : (
-          <div className="auth-head">
+          <div className="auth-head auth-title-row">
             <div className="auth-store-chip">
               <StoreLogo store={header} size={40} className="login-logo" />
               <span className="auth-store-text">
@@ -160,8 +160,8 @@ export default function LoginPage() {
                   {title}
                 </h1>
               </span>
-              <InfoButton pageId="login" />
             </div>
+            <InfoButton pageId="login" />
           </div>
         )}
 
