@@ -3203,3 +3203,69 @@ placed"); app Fix Issues list names are Title Case ("Missing Barcodes");
 wide tables (Placed Orders, Invoices, Teams) scroll inside their card on a
 phone rather than turning into stacked cards (spec 2.7); the help text's
 {pos} reads "CSV upload" for a CSV-only store ("CSV upload sales").
+
+## As built - Final regression + handoff
+
+Last stage of the final pass, on `main` after `3cf819b`.
+
+**Fixes.**
+- `GET /api/orders/employees` answered a bare 500 when the POS could not be
+  reached. This happened with blank Toast keys, which is the state of a newly
+  approved store and of the pilot before Setup > Integrations is filled in.
+  `e2e/store` showed it as a note on the Toast test store. It now answers 503,
+  which `OpenOrders.jsx` already handles by hiding the Server filter. A POS
+  without an employee list still answers 409.
+  - Tests: `backend/tests/test_open_checks_employees_unavailable.py`.
+  - After the fix, `e2e/store` shows 503 for this route.
+- The preview's start-up banner now says "KloudC RetailOps" and lists the Help
+  Center and Glossary links.
+- `~/storeops/preview.sh` (outside git) gains `--stop`. It only ends a
+  `preview_server.py` on that port and leaves anything else alone.
+
+**Handoff.** `~/storeops/KLOUDC_RETAILOPS_HANDOFF.md`, copied to the
+owner's dev folder, is the plain-English owner handoff. It contains the
+go-live pilot checklist:
+1. install;
+2. master account and TOTP;
+3. Tailscale now, app.kloudc.com later;
+4. store #1: provision, then pilot mode on, then console Suspend, then
+   `import-sqlite`, then `load-pack`, then resume and restart, then
+   `config/parity.env`, then Toast keys in Setup > Integrations;
+5. first-week checks;
+6. switch-over and roll-back.
+
+The switch-over re-imports the latest data with `--replace` during a short
+pause of the old server. The old server's watchdog has to be stopped first,
+because it re-bootstraps the server. The old server is then restarted with
+its sends off, because the label dashboard signs users in against its
+sessions.
+
+The real private pack was copied unchanged to
+`~/.kloudc-retailops/pilot/spicetown.pack.json` (mode 600, outside git).
+Before this, it lived only in a scratch job folder. It validates with
+`app.store.pack.load_pack_file`.
+
+**Checked (2026-10-19, 06:25-07:15 EDT).**
+
+| Check | Result |
+|---|---|
+| Server, PostgreSQL 16 (full) | 2990 passed, 18 skipped, 0 failed |
+| Server, SQLite (full) | 2981 passed, 27 skipped, 0 failed |
+| New tests + name guard + Open Checks tests (PostgreSQL) | 27 passed |
+| Website node tests | 308 of 308 |
+| Website build | OK, title "KloudC RetailOps" |
+| `e2e/store` (Toast, Clover, DEMO; 1280 + 375) | 748 checks, 0 failed |
+| `e2e/platform` (mock) | 129 checks, 0 failed |
+| `e2e/platform/run_flows.sh` (real server, PostgreSQL) | 114 checks, 0 failed |
+| App `flutter analyze` | no issues |
+| App `flutter test --concurrency=2` | 5651 passed, 8 skipped |
+| Name guards (server, app, website) and grep of every tracked file | 0 hits outside the blocked-domain constant |
+| OCR of the 336 final screenshots (website and app) | 0 hits |
+| Scratch databases (`so_kreg*`) and ports | dropped and free |
+
+- The full server runs collected before the new test file existed. That file
+  passed on its own on both databases.
+- Not run: regression suites A and B, which need a copy of a real store's
+  database.
+- No simulator was run. The app is unchanged since `d558be7`, which the
+  visual review walked on iPhone 17 and iPad Pro 11.
