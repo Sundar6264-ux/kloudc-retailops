@@ -2594,3 +2594,164 @@ in the daytime. Screenshots: `~/storeops/screenshots/final-pass/rename/`
 **Owner actions.** Run `~/storeops/preview.sh --reset` once (the test stores
 are now `RETAILOPS_TEST_TOAST` / `RETAILOPS_TEST_CLOVER`). New servers should
 set `RETAILOPS_SECRET_KEYS` (the old `STOREOPS_SECRET_KEYS` still works).
+
+## As built - Final pass: server hardening + ops + pilot (track S)
+
+Branch `final/server` (not pushed). Owner-facing guide: `docs/PILOT_RUNBOOK.md`.
+
+**Production start-up checks** (`app/ops/prod_checks.py`, run first in the
+lifespan, by `python -m app.ops check-config`, by the image entrypoint and the
+pilot start script). With `APP_ENV=production` (the default) the server refuses
+to start on: `SESSION_COOKIE_SECURE=false`; `CORS_ORIGINS` with `*`; in multi
+mode a non-PostgreSQL platform database, no key ring, a development key ring
+(id starting `dev`, or a key also in the local dev ring file),
+`PLATFORM_REQUIRE_TOTP=false`, or `SIGNUP_ENABLED=true` with no active master
+(sign-ups always wait for a master; there is no auto-approve). Other
+environments log the same findings. Warnings: placeholder domain, Firebase,
+client-IP header, website build, `STORE_CODE`, `LOG_DIR`, dedicated hosting.
+`PLATFORM_REQUIRE_TOTP` is now `Optional[bool]`: blank = on in production, off
+elsewhere (`app.platform.config.require_totp()`, used by login, masters and
+the console config).
+
+**Logs, request ids, errors, headers** (`app/ops/logs.py`, `app/ops/http.py`).
+One outermost pure-ASGI middleware: request id (`X-Request-ID` accepted when a
+plain 8-64 char token, else new; always returned), one `retailops.access` line
+per request (method, path without query, status, ms, client), an unhandled
+error logged once with traceback + request id and answered
+`{"detail", "error": "server_error", "request_id"}`. Every log record carries
+`request_id` and `store` (record factory). `LOG_FORMAT=text|json`,
+`LOG_LEVEL`, `LOG_DIR` (app.log INFO+, error.log ERROR+, rotated). Headers
+(a route's own header wins): nosniff, `Referrer-Policy:
+strict-origin-when-cross-origin`, `X-Frame-Options: SAMEORIGIN`,
+Permissions-Policy (camera/microphone self), COOP same-origin, HSTS
+(`max-age=31536000`) in production with secure cookies, and on HTML a CSP of
+`'self'` only (inline scripts of the built index.html allowed by SHA-256,
+recomputed when the file changes; styles allow inline; images also data:,
+blob:, https:; frames/objects self + blob: for PDF previews;
+`frame-ancestors 'self'`). `SECURITY_HEADERS=enforce|report-only|off`. New
+settings are platform-only (`log_*`, `security_headers`).
+
+**Health / readiness / shutdown.** `/api/health` unchanged (liveness).
+`GET /api/ready` (public, in the route-gate PUBLIC list): single mode =
+database answers and is at the store head; multi = platform DB answers and is
+at its head, and no active shared store's registry `schema_revision` differs
+from the store head (no store database opened, no codes or addresses in the
+answer). 200 / 503. `python -m app.ops ready`. Lifespan shutdown runs every
+stop step even after a failure and logs its duration; uvicorn runs with
+`--timeout-graceful-shutdown 25`.
+
+**Pilot mode** (`app/ops/pilot.py`): store setting `pilot_mode` (store key and
+store-private, so never inherited from the platform env). The transports
+refuse while it is on: `whapi_client.send_whatsapp_message / upload_media /
+send_media_message` raise `WhapiPilotBlocked` (a `WhapiNotConfigured`),
+`toast_email.send_toast_invoice_email` and `po_send.send_email` raise
+`EmailPilotBlocked` (an `EmailNotConfigured`), `push.is_configured()` is False
+and `send_to_tokens` raises `PushNotConfigured` - every caller already treats
+these as "not sent, nothing to retry". POS sync and every page are unchanged.
+`python -m app.platform pilot-mode CODE on|off` (put_settings + audit).
+
+**Onboarding tools** (`python -m app.platform ...`):
+- `import-sqlite CODE --sqlite PATH` (`app/ops/store_import.py`): store must be
+  active/suspended, shared; refuses business data unless `--replace --confirm
+  CODE`, and refuses while another process holds connections (this process's
+  own engine is disposed first). Read-only snapshot (backup API; an idle WAL
+  copy is opened immutable), `quick_check`, upgrade of the snapshot to head,
+  DROP + CREATE of the store database, `copy_sqlite_to_pg.copy` (row counts +
+  per-column checksums; any difference fails), then identity re-stamped with
+  the registry instance id, `user_sessions` and `device_tokens` cleared, the
+  provisioned owner login added back when the username is free, optional
+  `--uploads` copy (never overwrites), registry revision + settings version,
+  audit `store.imported` (counts, snapshot SHA-256, timings).
+- `load-pack CODE --file PATH` (`app/ops/private_pack.py`): refuses a file inside
+  any git work tree; validates; `write_pack_row` + `insert_pack_rows`; audit
+  `store.pack_loaded` with file name + SHA-256 only. Restart to use.
+- `parity CODE --reference PATH` (`app/ops/parity.py`): per closed business day
+  (store time, default 14 days) lines, orders, quantity, net sales, tax and
+  voided lines from top-level `orders`, both sides read-only; inventory /
+  users / invoices / checklists / placed orders / sales cursor side by side
+  (info). JSON line to `<LOG_DIR>/parity-CODE.jsonl`, audit `parity.run`
+  (counts and dates only). Exit 1 on a difference.
+- The platform CLI now installs the registry/settings sources first
+  (`provision` from the command line failed at `store_init` in multi mode).
+- `backend/scripts/onboarding/dry_run.sh --source DB [--pack FILE]`: all of the
+  above on scratch `<prefix>*` databases, timed, dropped afterwards.
+
+**Backups** (`backend/scripts/backup/backup_all.py`, stdlib): `backup` =
+platform DB + every active/suspended shared store from the registry through
+`pg_backup.backup` (checked, kept `--keep-days`, never the newest), one
+failure never stopping the others, `last_backup_all.json`; `drill` = newest
+dump of each restored into a scratch DB and counted, `last_drill.json`.
+
+**Deploy.** `deploy/pilot-mac/`: `install.sh` (the one sudo command; renders
+`launchd/*.plist` for labels `com.kloudc.retailops.pilot.{postgres,server,
+backup,drill,parity}`, all `UserName` = the Mac user; `--dry-run DIR`,
+`--uninstall`, `--no-tailscale`), `prepare.sh` (user: `~/kloudc-retailops`,
+clone of `main`, venv, website build, `initdb` on port 5434 with the socket in
+`run/`, peer map so only the Mac user connects as `retailops`, no passwords,
+`max_connections=250`; `config/pilot.env` with single-quoted values,
+`secrets/retailops.env` with a new key ring), `setup-db.sh` (platform DB,
+migrate, first master), `start-server.sh` (check-config, migrate-platform,
+migrate-all --keep-going, uvicorn 127.0.0.1:8900, one worker, proxy headers
+from 127.0.0.1), `run-backup.sh`, `run-parity.sh` (reads
+`config/parity.env`), `update.sh` (no sudo: fetch, pip, build, check, restart
+via SIGTERM, wait for ready). Tailscale serve on https 10003 (tailnet only;
+existing mappings never changed). Cloud VM: `docker-compose.platform.yml`
+(Postgres `max_connections=250`, `caddy` profile `https` with
+`deploy/cloud-vm/Caddyfile`, `backup` profile from
+`deploy/cloud-vm/backup.Dockerfile` on `postgres:16-bookworm`),
+`deploy/cloud-vm/env.platform.example`. `docker/entrypoint.sh`: check-config,
+then migrate-platform + migrate-all in multi mode (alembic upgrade in single),
+graceful uvicorn. `Dockerfile` copies `content/` into the web stage
+(`/src/content`) and the runtime (`/app/content`) for track H's help content.
+
+**Dry runs (2026-10-19).**
+- Onboarding (`scripts/onboarding/dry_run.sh`, dev cluster 5433, scratch
+  `kfs_dry_*` databases dropped afterwards) on a made-up single-store
+  database (`generate_demo_data.py --days 365 --items 2000`, 145 MB, 162k
+  sales lines, downgraded to 0059 like an older system) plus the private
+  legacy pack: provision 1.6 s, pilot mode 0.5 s, read-only copy 0.5 s, import
+  24.4 s (snapshot 0.7, upgrade 0059->0062 1.1, recreate 0.2, copy + verify
+  22.3; 63 tables, 274,758 rows, 0 differences), private pack 1.0 s, parity 14
+  days clean (6,467 lines each side, 0.4 s), ready 200, backup_all 1.6 s
+  (store dump 11 MB), drill 4.6 s, all OK. A 446 MB database should import in
+  roughly 1-1.5 minutes.
+- The same run on a read-only copy of the live store database was refused by
+  the session's permission rules (copying production data); the owner can
+  run it with the command in docs/PILOT_RUNBOOK.md section 4.
+- Pilot kit in user space (scratch root, cluster on 5444, app on 8944):
+  prepare.sh (initdb, peer map, config, key ring), setup-db.sh (platform DB,
+  first master), start-server.sh (check-config, migrations, uvicorn), then
+  `/api/ready` 200 with HSTS / X-Frame-Options / request id headers, JSON
+  access lines in app.log, master login answering `totp_setup_required`,
+  store provision + owner login 200, pilot-mode, run-backup.sh backup and
+  drill OK over the unix socket, SIGTERM -> "shutting down" / "stopped" log
+  lines; everything deleted afterwards. `install.sh` itself (sudo, launchd,
+  tailscale serve) was not run: only `--dry-run` (plists render and lint).
+
+**Checked.**
+| Check | Result |
+|---|---|
+| Server tests on PostgreSQL 16 | 2936 passed, 21 skipped, 4 failed (2 late-CSV clock tests; 2 guards fixed in `0a8d6ec` and rerun green) |
+| Server tests on SQLite | 2928 passed, 30 skipped, 3 failed (2 late-CSV clock tests; 1 runbook check edited mid-run, rerun green) |
+| New ops tests | 59 (single store) + 9 (platform, PostgreSQL) |
+
+The late-CSV tests fail only between midnight and 04:00 (known "store date"
+gap, same on unchanged code).
+
+**Decisions (reversible).** TOTP required by default in production (blank
+setting); sign-ups closed in the pilot config; pilot mode blocks sends in the
+transports (not per caller); import clears old sessions and phone tokens and
+keeps the provisioned owner; pilot on its own cluster (5434, socket + peer
+auth, no passwords) and port 8900 under `~/kloudc-retailops`, run from a
+clone of `main` (not the dev checkout); Tailscale serve on 10003 tailnet-only;
+app.kloudc.com via Cloudflare Tunnel (DNS moved to Cloudflare) or a VM with an
+A record at Bluehost, not Funnel; HSTS without includeSubDomains; CSP allows
+https: images (store logos) and inline styles; backups at 03:15, drill on the
+1st, parity at 07:30.
+
+**Owner actions.** Run `sudo ~/storeops/storeops/deploy/pilot-mac/install.sh`
+after this branch is on `main`; copy `~/kloudc-retailops/secrets/retailops.env`
+offline; set up two-step sign-in at first master login; optionally run the
+onboarding dry run on a copy of the live store database
+(`backend/scripts/onboarding/dry_run.sh --source <copy>`); for app.kloudc.com
+pick option A or B in the runbook; Firebase file for push.
