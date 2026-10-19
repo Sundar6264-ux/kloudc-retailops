@@ -1353,7 +1353,7 @@ def test_flyer_routes_are_not_in_the_demo_allowlist():
 
 
 def test_feature_key_and_label():
-    assert {"key": "marketing_flyers", "label": "Marketing flyers"} in FEATURES
+    assert {"key": "marketing_flyers", "label": "Flyers"} in FEATURES
     assert "marketing_flyers" in FEATURE_KEYS
 
 

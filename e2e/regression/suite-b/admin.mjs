@@ -14,28 +14,28 @@ for (const width of WIDTHS) {
   // ---- Users
   await go(page, "/users");
   const feats = (await api(page, "GET", "/api/auth/features")).body?.features || [];
-  check(feats.some((f) => f.key === "sales_insights" && f.label === "Sales insights") &&
-    feats.some((f) => f.key === "marketing_flyers" && f.label === "Marketing flyers"), `feature list has Sales insights + Marketing flyers @${width}`);
+  check(feats.some((f) => f.key === "sales_insights" && f.label === "Insights") &&
+    feats.some((f) => f.key === "marketing_flyers" && f.label === "Flyers"), `feature list has Insights + Flyers @${width}`);
   const row = page.locator("tr", { hasText: "sb_chat" }).first();
   await row.getByRole("button", { name: /Edit access/ }).click();
-  const boxes = page.locator("label", { hasText: /^Sales insights$/ });
-  check(await boxes.count() >= 1 && await page.locator("label", { hasText: /^Marketing flyers$/ }).count() >= 1, `Edit access shows both checkboxes @${width}`);
+  const boxes = page.locator("label", { hasText: /^Insights$/ });
+  check(await boxes.count() >= 1 && await page.locator("label", { hasText: /^Flyers$/ }).count() >= 1, `Edit access shows both checkboxes @${width}`);
   await shot(page, `users-edit-${width}`);
   check((await hscroll(page)) <= 1, `users page no h-scroll @${width}`);
   // grant Sales insights to sb_chat, then take it away again
-  const cb = page.locator("tr", { hasText: "sb_chat" }).locator("..").locator("label", { hasText: /^Sales insights$/ }).locator("input").first();
-  const target = (await cb.count()) ? cb : page.locator("label", { hasText: /^Sales insights$/ }).locator("input").last();
+  const cb = page.locator("tr", { hasText: "sb_chat" }).locator("..").locator("label", { hasText: /^Insights$/ }).locator("input").first();
+  const target = (await cb.count()) ? cb : page.locator("label", { hasText: /^Insights$/ }).locator("input").last();
   await target.check();
   await page.getByRole("button", { name: "Save access" }).click();
   await sleep(1500);
   const chat = await as(browser, "sb_chat", width);
   const r1 = await api(chat.page, "GET", "/api/insights/prep-forecast");
-  check(r1.status === 200, `granted Sales insights takes effect for sb_chat (${r1.status}) @${width}`);
+  check(r1.status === 200, `granted Insights takes effect for sb_chat (${r1.status}) @${width}`);
   await chat.ctx.close();
   // restore
   await page.reload(); await settle(page);
   await page.locator("tr", { hasText: "sb_chat" }).first().getByRole("button", { name: /Edit access/ }).click();
-  await page.locator("label", { hasText: /^Sales insights$/ }).locator("input").last().uncheck();
+  await page.locator("label", { hasText: /^Insights$/ }).locator("input").last().uncheck();
   await page.getByRole("button", { name: "Save access" }).click();
   await sleep(1000);
   const me = (await api(page, "GET", "/api/auth/users")).body;

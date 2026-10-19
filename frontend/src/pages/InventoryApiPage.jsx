@@ -87,9 +87,15 @@ function SettingsCard({ status, onRecheck, rechecking, recheckMsg }) {
               {s.menu_barcode_recheck_minutes > 0 ? `Every ${s.menu_barcode_recheck_minutes} min` : "Off"}
               {!s.scheduler_enabled && <span className="muted"> (scheduler off on this server)</span>}
               <div className="muted">
-                {currentPosName()}'s menu last changed {when(status.menu_check.menu_last_updated)}; pulled{" "}
-                {when(status.menu_check.fetched_at)} ({status.menu_check.items} items). Missing and invalid barcodes
-                in Fix Issues use it when it is newer than the latest upload.
+                {status.menu_check.fetched_at ? (
+                  <>
+                    {currentPosName()}'s menu last changed {when(status.menu_check.menu_last_updated)}; pulled{" "}
+                    {when(status.menu_check.fetched_at)} ({status.menu_check.items} items).
+                  </>
+                ) : (
+                  <>{currentPosName()}'s menu hasn't been read yet.</>
+                )}{" "}
+                Missing and invalid barcodes in Fix Issues use it when it is newer than the latest upload.
               </div>
               {canRecheck && (
                 <button className="btn-secondary invapi-btn" disabled={rechecking} onClick={onRecheck}>

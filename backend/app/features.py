@@ -18,37 +18,39 @@ from fastapi import Depends, HTTPException
 from app.auth import get_current_user
 from app.models import User
 
+# Labels use the page names from the help registry (content/help/pages.json,
+# docs/DESIGN_SYSTEM.md 3.5: one name per thing on web and app).
 FEATURES = [
-    {"key": "overview", "label": "Overview"},
+    {"key": "overview", "label": "Home"},
     {"key": "open_orders", "label": "Open Checks"},
     {"key": "items_sold", "label": "Items Sold"},
-    {"key": "reorder_candidates", "label": "Reorder Candidates (All Suppliers)"},
-    {"key": "supplier_projection", "label": "Supplier Projection"},
-    {"key": "vendor_calendar", "label": "Vendor Order Calendar"},
+    {"key": "reorder_candidates", "label": "Reorder Candidates"},
+    {"key": "supplier_projection", "label": "New order"},
+    {"key": "vendor_calendar", "label": "Vendor Calendar"},
     {"key": "purchase_order_cart", "label": "Purchase Order Cart"},
     {"key": "delivery_review", "label": "Delivery Review"},
-    {"key": "transfer_review", "label": "Transfer Review"},
-    {"key": "inventory_reports", "label": "Inventory Reports"},
+    {"key": "transfer_review", "label": "Transfer Review (older app versions)"},
+    {"key": "inventory_reports", "label": "Inventory Reports and Fix Issues"},
     {"key": "reconciliation", "label": "Reconciliation"},
     # PO sections page (the heading each product prints under on vendor PO
     # PDFs; routers/po_sections.py). Key kept from the old Product categories
     # page so installed app builds keep working. Never auto-granted.
-    {"key": "category_edits", "label": "Edit PO sections"},
-    {"key": "invoice_submission", "label": "Invoice Submission"},
+    {"key": "category_edits", "label": "PO sections"},
+    {"key": "invoice_submission", "label": "Invoices"},
     {"key": "daily_checklists", "label": "Daily Checklists"},
     {"key": "ask_bot", "label": "Ask Inventory Bot"},
     # Team hub (app/team/). Announcements need no key - everyone gets them.
-    {"key": "team_tasks", "label": "Team Tasks"},
-    {"key": "team_chat", "label": "Team Chat"},
+    {"key": "team_tasks", "label": "Tasks"},
+    {"key": "team_chat", "label": "Chat"},
     # Flyers page (routers/flyers.py): upload a flyer, send it to the
     # WhatsApp groups an admin marked Marketing. Never auto-granted; the
     # App Review demo login is refused even if ticked.
-    {"key": "marketing_flyers", "label": "Marketing flyers"},
+    {"key": "marketing_flyers", "label": "Flyers"},
     # Insights from Toast Analytics (routers/insights.py): heatmap, channels,
     # compare, check trends, menu performance, add-ons, prep forecast,
     # returning customers; Loss watch / Odd checks are admin only on top.
     # Never auto-granted.
-    {"key": "sales_insights", "label": "Sales insights"},
+    {"key": "sales_insights", "label": "Insights"},
     {"key": "help", "label": "Help"},
 ]
 FEATURE_KEYS = {f["key"] for f in FEATURES}

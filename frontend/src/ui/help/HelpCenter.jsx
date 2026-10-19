@@ -90,7 +90,15 @@ export default function HelpCenter({ tab: forcedTab }) {
   }, [urlTab]);
 
   const myAudience = audienceFor(auth) || "owner";
-  const [audience, setAudience] = useState(() => (isPlatform ? "master" : readStored(AUDIENCE_KEY, myAudience)));
+  // A store login never needs the KloudC master track: its chip shows only
+  // for the master console or a signed-out reader.
+  const storeUser = Boolean(auth?.user) && !isPlatform;
+  const chips = [...AUDIENCES, { key: "all", label: "Everyone" }].filter((a) => a.key !== "master" || !storeUser);
+  const [audience, setAudience] = useState(() => {
+    if (isPlatform) return "master";
+    const stored = readStored(AUDIENCE_KEY, myAudience);
+    return storeUser && stored === "master" ? myAudience : stored;
+  });
   const [query, setQuery] = useState(params.get("q") || "");
   const searchRef = useRef(null);
   const canOpenPage = useMemo(() => canOpenPageFor(auth), [auth]);
@@ -159,7 +167,7 @@ export default function HelpCenter({ tab: forcedTab }) {
         </div>
         <div className="kc-chip-row" role="group" aria-label="Show help for">
           <span className="kc-chip-label">For</span>
-          {[...AUDIENCES, { key: "all", label: "Everyone" }].map((a) => (
+          {chips.map((a) => (
             <button
               key={a.key}
               type="button"
@@ -353,7 +361,7 @@ function StartHere({ audience, canOpenPage }) {
           })}
         </ol>
       </div>
-      <p className="kc-muted kc-small">Your ticks are kept on this browser only. Pick Staff or KloudC master above for the other tracks.</p>
+      <p className="kc-muted kc-small">Your ticks are kept on this browser only. Pick another chip under the search box for the other tracks.</p>
     </div>
   );
 }

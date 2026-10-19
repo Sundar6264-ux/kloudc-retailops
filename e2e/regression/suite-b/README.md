@@ -26,7 +26,7 @@ App Review demo `app_store_review`. Sessions are in `$SUITE_B_WORK/users.json`.
 | `flyers.mjs` | upload JPG / HEIC (stored as JPEG) / PDF, only "Use for flyers" groups offered, send through the mock with one group failing, Retry, document send, library search, drawer history, no chat ids, demo + no-feature refused |
 | `insights.mjs` | every page per role, Also in Toast (sidebar group, note, redirects), hide_sales sees no dollars (pages + APIs), admin-only pages, Loss watch Acknowledge, Prep forecast print layout |
 | `checklists.mjs` | builder list, WhatsApp groups panel (available via mock, add / rename, Use for flyers, built-ins can't be deleted, in-use 409), new checklist, publish, Settings group dropdown, Public link tab, staff fill -> summary to the chosen (mock) group, history, public `/c/<slug>-<code>` page with the store's header, bad link 404, demo posts nothing |
-| `admin.mjs` | Users feature list (Sales insights, Marketing flyers) and granting one, Help, Glossary, Overview per role, no em dashes, no red hover |
+| `admin.mjs` | Users feature list (Insights, Flyers) and granting one, Help, Glossary, Overview per role, no em dashes, no red hover |
 | `sweep.mjs` | `sweep-pages.mjs` x 5 roles x 3 widths: screenshot, console errors, failed API calls, page sideways scroll, where each role lands |
 
 `sheet.py '<glob>' out.png cols width` makes contact sheets of `$SUITE_B_WORK/shots` for looking through the screenshots.

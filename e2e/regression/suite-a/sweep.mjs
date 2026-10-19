@@ -5,7 +5,7 @@ import { launch, as, go, check, section, done, hscroll, shot, cleanPage, WIDTHS,
 
 const PAGES = [
   { hash: "/purchase-order", feature: "purchase_order_cart", heading: /Purchase Order Cart/i },
-  { hash: "/supplier-projection", feature: "supplier_projection", heading: /Supplier Projection/i },
+  { hash: "/supplier-projection", feature: "supplier_projection", heading: /New order/i },
   { hash: "/reorder", feature: "reorder_candidates", heading: /Reorder Candidates/i },
   { hash: "/vendor-calendar", feature: "vendor_calendar", heading: /Vendor (Order )?Calendar/i },
   { hash: "/fix-issues", feature: "inventory_reports", heading: /Fix Issues/i },

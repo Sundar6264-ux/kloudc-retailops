@@ -4,8 +4,8 @@ import PageHeader from "../ui/PageHeader.jsx";
 export default function SupplierProjectionPage() {
   return (
     <>
-      {/* "New order" everywhere (menu, the app's Home tile); its old name kept beside it. */}
-      <PageHeader pageId="new_order" titleSuffix={<span className="kc-title-aside">Supplier Projection</span>} />
+      {/* "New order" everywhere (menu, search, the app's Home tile); searching the old name "Supplier Projection" still finds it (glossary). */}
+      <PageHeader pageId="new_order" />
       <SupplierProjection />
     </>
   );

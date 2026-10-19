@@ -55,7 +55,7 @@ test("historyChange says where the old value came from", () => {
 test("sourceText", () => {
   const when = (iso) => `at ${iso}`;
   assert.equal(sourceText({ source: "page", changed_by: "boss", changed_at: "T" }, when), "Set here by boss, at T.");
-  assert.match(sourceText({ source: "env", env_default: false }, when), /INVENTORY_API_SNAPSHOTS is off/);
+  assert.match(sourceText({ source: "env", env_default: false }, when), /server's default \(off\)/);
 });
 
 test("thresholdsText quotes the numbers", () => {

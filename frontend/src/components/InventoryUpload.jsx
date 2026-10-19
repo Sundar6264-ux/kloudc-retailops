@@ -119,7 +119,13 @@ export default function InventoryUpload({ onUploaded }) {
   return (
     <section className="card upload-card">
       <h2>Upload today's inventory</h2>
-      <InfoBlock brief={`Upload today's ${currentPosName()} Retail export (CSV or XLSX).`}>
+      <InfoBlock
+        brief={
+          /csv/i.test(currentPosName())
+            ? "Upload today's inventory file (CSV or XLSX)."
+            : `Upload today's ${currentPosName()} Retail export (CSV or XLSX).`
+        }
+      >
         It's tagged with today's date automatically. Skipping a day is fine - reports just use
         whatever the latest upload says until the next one comes in, they don't error out or lose
         data for the gap, just report slightly stale numbers until you catch back up.

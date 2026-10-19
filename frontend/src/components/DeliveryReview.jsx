@@ -110,10 +110,10 @@ export default function DeliveryReview() {
         <section className="card">
           <h2>Review a delivery by hand</h2>
           <p className="muted" style={{ marginTop: 0 }}>
-            Something missing above? A manual review starts from the inventory upload: on Overview, check "We received a
+            Something missing above? A manual review starts from the inventory upload: on Home, check "We received a
             delivery today", pick the vendor(s), upload, and you'll be brought here to confirm what arrived.
           </p>
-          <button onClick={() => navigate("/")}>Go to Overview</button>
+          <button onClick={() => navigate("/")}>Go to Home</button>
         </section>
         <RecentDeliveries key={historyVersion} />
       </>
@@ -137,7 +137,7 @@ export default function DeliveryReview() {
         </ul>
         <div className="review-actions">
           <button className="link-button" onClick={() => navigate("/")}>
-            Back to Overview
+            Back to Home
           </button>
           <button onClick={() => navigate("/reconciliation")}>Go to Reconciliation →</button>
         </div>

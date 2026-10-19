@@ -11,6 +11,7 @@ import {
 } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import PasswordInput from "../components/PasswordInput.jsx";
+import { AREAS, FEATURE_ROUTES } from "../featureRoutes.js";
 import { Term } from "../glossary.jsx";
 import PageHeader from "../ui/PageHeader.jsx";
 
@@ -64,18 +65,34 @@ function SetPasswordRow({ user, onDone }) {
   );
 }
 
+// The grantable features grouped by the area their page lives in (same
+// groups and order as the sidebar), so 20 checkboxes read as 6 short lists.
+const AREA_ORDER = ["home", "ordering", "stock", "sales", "team", "setup"];
+function featureArea(key) {
+  const route = FEATURE_ROUTES.find((r) => r.feature === key && !r.retired);
+  return route ? route.area : "other";
+}
+
 function FeatureCheckboxes({ features, selected, onChange }) {
   function toggle(key) {
     onChange(selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key]);
   }
+  const groups = [...AREA_ORDER, "other"]
+    .map((area) => ({ area, items: features.filter((f) => featureArea(f.key) === area) }))
+    .filter((g) => g.items.length);
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem 1.1rem" }}>
-      {features.map((f) => (
-        <label key={f.key} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.85rem" }}>
-          <input type="checkbox" checked={selected.includes(f.key)} onChange={() => toggle(f.key)} />
-          {f.label}
-        </label>
+    <div className="kc-access-groups">
+      {groups.map((g) => (
+        <fieldset key={g.area} className="kc-access-group" data-area={g.area === "other" ? undefined : g.area}>
+          <legend>{g.area === "other" ? "Other" : AREAS[g.area].label}</legend>
+          {g.items.map((f) => (
+            <label key={f.key}>
+              <input type="checkbox" checked={selected.includes(f.key)} onChange={() => toggle(f.key)} />
+              {f.label}
+            </label>
+          ))}
+        </fieldset>
       ))}
     </div>
   );

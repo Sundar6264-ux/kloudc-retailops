@@ -120,3 +120,12 @@ export function storeDateOffsetStr(days) {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
+
+// "2026-10-18" -> "Oct 18, 2026": a store calendar day (no time, no zone
+// shift) shown the way the rest of the site writes dates. Anything that
+// isn't YYYY-MM-DD comes back unchanged.
+export function formatDayLabel(day) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day || ""))) return day;
+  const d = new Date(`${day}T12:00:00Z`);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}

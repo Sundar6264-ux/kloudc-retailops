@@ -124,17 +124,17 @@ _TREND_UP = _pct((FC.trend_max - 1) / FC.trend_dampening)
 _TREND_DOWN = _pct((1 - FC.trend_min) / FC.trend_dampening)
 
 CATEGORIES = [
-    {"key": "reorder", "label": "Reorder urgency", "where": "Reorder Candidates, Overview, app Reorder"},
-    {"key": "forecast", "label": "Item type and forecast", "where": "Supplier Projection, Reorder, Fix Issues"},
-    {"key": "review", "label": "Review reasons", "where": "Supplier Projection, Fix Issues (Slow moving - Review)"},
-    {"key": "projection", "label": "Projection numbers", "where": "Supplier Projection, Reorder, Vendor Calendar"},
-    {"key": "similar", "label": "Similar products and other vendors", "where": "Supplier Projection"},
+    {"key": "reorder", "label": "Reorder urgency", "where": "Reorder Candidates, Home, app Reorder"},
+    {"key": "forecast", "label": "Item type and forecast", "where": "New order, Reorder, Fix Issues"},
+    {"key": "review", "label": "Review reasons", "where": "New order, Fix Issues (Slow moving - Review)"},
+    {"key": "projection", "label": "Projection numbers", "where": "New order, Reorder, Vendor Calendar"},
+    {"key": "similar", "label": "Similar products and other vendors", "where": "New order"},
     {"key": "fix_issues", "label": "Fix Issues lists", "where": "Fix Issues (website and app)"},
     {"key": "placed_orders", "label": "Placed orders", "where": "Placed Orders, Purchase Order Cart, Home"},
     {"key": "open_orders", "label": "Open checks", "where": "Open Checks"},
-    {"key": "sales", "label": "Sales", "where": "Items Sold, Overview (Sales accuracy: admins)"},
+    {"key": "sales", "label": "Sales", "where": "Items Sold, Home (Sales accuracy: admins)"},
     {"key": "invoices", "label": "Invoices", "where": "Invoice Submission, app Invoices"},
-    {"key": "vendor_calendar", "label": "Vendor calendar", "where": "Vendor Order Calendar, Overview"},
+    {"key": "vendor_calendar", "label": "Vendor calendar", "where": "Vendor Calendar, Home"},
     {"key": "delivery", "label": "Delivery review", "where": "Delivery Review (Transfer Review is retired)"},
     {"key": "reconciliation", "label": "Reconciliation", "where": "Reconciliation"},
     {"key": "reports", "label": "Inventory reports", "where": "Inventory Reports (website), app Reports"},
@@ -368,7 +368,7 @@ TERMS = [
         "Sales window",
         "forecast",
         "How far back sales are looked at to work out demand (for example 3 months).",
-        f"Fix Issues uses the Supplier Projection default of {FORECAST_LOOKBACK_DAYS} days. Vendor Calendar and "
+        f"Fix Issues uses the New order default of {FORECAST_LOOKBACK_DAYS} days. Vendor Calendar and "
         "the Home Critical tile use the last 30 days.",
         None,
         ["lookback", "window"],
@@ -540,7 +540,7 @@ TERMS = [
         "suggested_order_qty",
         "Suggested order qty",
         "projection",
-        "The quantity filled in when you tick an item on Supplier Projection (and shown on each cart line), with "
+        "The quantity filled in when you tick an item on New order (and shown on each cart line), with "
         "the numbers it comes from beside it: sold per week, on hand (and its average), the next delivery.",
         "Need to order for the order window (projected demand + safety buffer - on hand, a negative count "
         f"counting as 0, rounded up to whole units; {_n(_OS.ROUND_DOWN_BELOW)} or less is dropped), minus what is "
@@ -550,7 +550,7 @@ TERMS = [
         "(1 = units). Never below 0; 0 means enough stock for the window. With no stock count it is the projected "
         f"sales for the window (stock not subtracted). \"avg\" is the average daily count over the last "
         f"{_n(_OS.AVG_ON_HAND_DAYS)} days. When the next delivery is already ordered, it says so and how many of "
-        "the item are on that order; the quantity is not lowered by it. Supplier Projection uses the projection "
+        "the item are on that order; the quantity is not lowered by it. New order uses the projection "
         "duration you picked; the cart uses its own order-for period (1 week unless changed). You can always "
         "change the quantity.",
         None,
@@ -725,7 +725,7 @@ TERMS = [
         "Slow moving - Review",
         "fix_issues",
         "Slow items whose forecast also has the red Review tag. Check the count and sales look right.",
-        f"Supplier Projection forecast ({FORECAST_LOOKBACK_DAYS}-day window) classes it Slow AND it needs Review "
+        f"New order forecast ({FORECAST_LOOKBACK_DAYS}-day window) classes it Slow AND it needs Review "
         "AND shelf + container is above 0 (an empty slow item isn't listed). \"Why review\" shows the reason.",
         None,
         ["slow review"],
@@ -1272,7 +1272,7 @@ TERMS = [
         "cal_items_needed",
         "Items needed",
         "vendor_calendar",
-        f"Supplier Projection says at least {VENDOR_MIN_ORDER_ITEMS} items need ordering for this delivery (shown in "
+        f"New order says at least {VENDOR_MIN_ORDER_ITEMS} items need ordering for this delivery (shown in "
         f"red). Fewer is shown as a count of low items, not as urgent - vendors have minimum orders.",
         f"Need to order above 0 over the days between this delivery and the next one (using the last 30 days of "
         f"sales), for {VENDOR_MIN_ORDER_ITEMS} or more items. Not shown for a skipped or placed order.",
@@ -1676,7 +1676,7 @@ TERMS = [
         "checklist_stale",
         "Checklist not submitted (amber)",
         "other",
-        "The Overview checklist tile turns amber when the latest closing checklist is more than 36 hours old, "
+        "The Home checklist tile turns amber when the latest closing checklist is more than 36 hours old, "
         "which usually means last night's wasn't submitted.",
         None,
         "warning",
@@ -1862,7 +1862,7 @@ TERMS = [
         "sales_live_today",
         "Today (live from {pos})",
         "sales",
-        "Today's Items Sold and the Overview sales tile come straight from {pos} when you open them, including "
+        "Today's Items Sold and the Home sales tile come straight from {pos} when you open them, including "
         "payments made after midnight for the previous day. Refresh asks {pos} again.",
         f"{{pos}}'s business dates yesterday, today and tomorrow are pulled live and replace the stored copy of those "
         f"dates, so nothing is counted twice. One pull is shared for {_n(_default('live_sales_cache_seconds'))} "
@@ -1917,7 +1917,7 @@ TERMS = [
         "live_stock",
         "Live stock",
         "projection",
-        "With Inventory from {pos} turned on by an admin, on hand on Reorder Candidates, Supplier Projection, "
+        "With Inventory from {pos} turned on by an admin, on hand on Reorder Candidates, New order, "
         "Negative inventory and Refill from container is {pos}'s current count, not the count from the last "
         "inventory snapshot.",
         f"{{pos}}'s stock list is read at most once every {_n(_default('live_stock_cache_seconds') / 60)} minutes. "

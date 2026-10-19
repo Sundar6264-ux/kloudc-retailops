@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
-import { storeTodayStr, storeDateOffsetStr } from "../format.js";
+import { formatDayLabel, storeDateOffsetStr, storeTodayStr } from "../format.js";
 import {
   searchItems,
   logPurchase,
@@ -481,7 +481,7 @@ function RecentEntries({ refreshSignal }) {
             <tbody>
               {entries.map((e) => (
                 <tr key={e.id}>
-                  <td>{e.received_date}</td>
+                  <td>{formatDayLabel(e.received_date)}</td>
                   <td>{e.item_name || e.item_id}</td>
                   <td>{e.supplier || "-"}</td>
                   <td>{e.quantity_received}</td>

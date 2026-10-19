@@ -91,7 +91,7 @@ export function sourceText(state, when) {
   if (state.source === "page") {
     return `Set here by ${state.changed_by || "an admin"}${state.changed_at ? `, ${when(state.changed_at)}` : ""}.`;
   }
-  return `Starting value from the server setting (INVENTORY_API_SNAPSHOTS is ${state.env_default ? "on" : "off"}) - nobody has changed it here yet.`;
+  return `Starting value from the server's default (${state.env_default ? "on" : "off"}) - nobody has changed it here yet.`;
 }
 
 export const NOTE_MAX = 500;

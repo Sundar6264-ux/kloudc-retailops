@@ -667,7 +667,7 @@ def test_demo_login_reads_but_never_acknowledges(db, filled, monkeypatch):
 def test_feature_is_listed_and_never_auto_granted(db):
     from app.features import FEATURES, get_allowed_features
 
-    assert {"key": "sales_insights", "label": "Sales insights"} in FEATURES
+    assert {"key": "sales_insights", "label": "Insights"} in FEATURES
     assert "sales_insights" not in get_allowed_features(make_user(db, "x", features=["overview"]))
 
 

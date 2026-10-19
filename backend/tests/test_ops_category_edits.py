@@ -43,7 +43,7 @@ def editor(db):
 
 def test_feature_key_listed_and_not_auto_granted(admin_client, staff):
     assert "category_edits" in FEATURE_KEYS
-    assert {"key": "category_edits", "label": "Edit PO sections"} in FEATURES
+    assert {"key": "category_edits", "label": "PO sections"} in FEATURES
     catalog = admin_client.get("/api/auth/features").json()["features"]
     assert "category_edits" in [f["key"] for f in catalog]
     assert "category_edits" not in (staff.allowed_features or "")

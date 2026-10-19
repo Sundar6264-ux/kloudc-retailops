@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { storeTodayStr, storeDateOffsetStr, formatRestaurantTime } from "../format.js";
+import { formatDayLabel, formatRestaurantTime, storeDateOffsetStr, storeTodayStr } from "../format.js";
 import { getItemsSold, downloadItemsSold } from "../api";
 import InfoBlock from "./InfoBlock.jsx";
 import { TermInfo } from "../glossary.jsx";
@@ -200,7 +200,9 @@ function ItemsSoldReport() {
         <>
           <div className="sp-toolbar">
             <p className="muted" style={{ margin: 0 }}>
-              {data.start_date === data.end_date ? data.start_date : `${data.start_date} → ${data.end_date}`}
+              {data.start_date === data.end_date
+                ? formatDayLabel(data.start_date)
+                : `${formatDayLabel(data.start_date)} → ${formatDayLabel(data.end_date)}`}
               {data.live_fetched_at && ` · today live as of ${formatRestaurantTime(data.live_fetched_at)}`}
             </p>
             <button disabled={exporting || loading || data.items.length === 0} onClick={handleExport}>
