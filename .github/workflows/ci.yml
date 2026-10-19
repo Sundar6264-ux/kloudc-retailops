@@ -71,6 +71,8 @@ jobs:
           alembic -x db_url=postgresql+psycopg://storeops@127.0.0.1:5432/so_ci_chain current | grep "(head)"
       - name: The PostgreSQL baseline matches the SQLite chain at 0062
         run: python scripts/pg/make_baseline.py --check
+      - name: Migration round trip (platform DB, store DBs, provisioning, migrate-all)
+        run: python scripts/pg/migration_roundtrip.py --pg-url "$STOREOPS_TEST_PG_URL" --prefix so_ci_mig
       - name: pytest (PostgreSQL)
         run: python -m pytest -q -p no:cacheprovider
 
