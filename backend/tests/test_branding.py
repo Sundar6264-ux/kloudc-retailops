@@ -65,7 +65,7 @@ def test_branding_etag_and_304(anon_client, monkeypatch):
     etag = r.headers["etag"]
     assert re.fullmatch(r'"[0-9a-f]{32}"', etag)
     assert r.headers["cache-control"] == "public, max-age=300, stale-while-revalidate=86400"
-    assert r.headers["vary"] == "Accept-Encoding"
+    assert r.headers["vary"] == "Accept-Encoding, X-Store, Authorization, Cookie"
     again = anon_client.get("/api/app/branding", headers={"If-None-Match": etag})
     assert again.status_code == 304 and again.content == b"" and again.headers["etag"] == etag
     other = anon_client.get("/api/app/branding", headers={"If-None-Match": '"0000"'})

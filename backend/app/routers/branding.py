@@ -26,6 +26,25 @@ ASSETS_DIR = pathlib.Path(__file__).resolve().parents[1] / "assets" / "branding"
 BUNDLED = {"logo.png": "logo-512.png", "icon.png": "app-icon-1024.png"}
 
 
+# What else picks the store on the shared service besides the URL
+# (app/tenancy/middleware.py): a shared cache must key on them too.
+STORE_VARY = "X-Store, Authorization, Cookie"
+
+
+def public_cache_headers(request: Request, cache_control: str) -> dict:
+    """Cache headers of a public per-store answer. On the shared service the
+    store may come from a login token or the X-Store header instead of
+    ``?store=``; such an answer is private (a shared cache must never hand
+    one store's answer to another store's URL), and every answer varies on
+    them."""
+    from app.tenancy import is_multi_tenant
+
+    headers = {"Cache-Control": cache_control, "Vary": "Accept-Encoding, " + STORE_VARY}
+    if is_multi_tenant() and "store" not in request.query_params:
+        headers["Cache-Control"] = "private, max-age=300"
+    return headers
+
+
 def _request_base(request: Request) -> str:
     return str(request.base_url).rstrip("/")
 
@@ -34,7 +53,7 @@ def _request_base(request: Request) -> str:
 def branding(request: Request) -> Response:
     body = compact_json(branding_payload(request_base=_request_base(request)))
     etag = etag_for(body)
-    headers = {"Cache-Control": CACHE_CONTROL, "ETag": etag, "Vary": "Accept-Encoding"}
+    headers = {**public_cache_headers(request, CACHE_CONTROL), "ETag": etag}
     wanted = [t.strip() for t in (request.headers.get("if-none-match") or "").split(",") if t.strip()]
     if etag in wanted or any(t == f"W/{etag}" for t in wanted) or "*" in wanted:
         return Response(status_code=304, headers=headers)
