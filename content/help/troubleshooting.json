@@ -1,0 +1,535 @@
+[
+ {
+  "id": "ts-cant-sign-in",
+  "symptom": "I can't sign in",
+  "causes": [
+   "The Store ID, username or password is wrong (the message is the same for all three, on purpose).",
+   "The login is locked after 5 wrong tries in 15 minutes.",
+   "A KloudC master's two-step code is wrong or out of date.",
+   "The store is suspended or not set up yet."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Check the Store ID in your welcome email. When it is right, the page shows your store's logo.",
+     "Type the password carefully: capital letters matter.",
+     "Locked? Wait 15 minutes and try again.",
+     "Still stuck? Ask an admin at your store to reset your password on Users."
+    ]
+   },
+   {
+    "type": "tip",
+    "text": "Masters: make sure your phone's clock is right; codes depend on it."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "login"
+  ]
+ },
+ {
+  "id": "ts-couldnt-load",
+  "symptom": "A tile or report says Couldn't load",
+  "causes": [
+   "A short network problem.",
+   "{pos} didn't answer in time.",
+   "Your login doesn't have that page."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Refresh the page, or pull down to refresh in the app.",
+     "Wait a minute and try again: {pos} is sometimes slow.",
+     "If it keeps happening on one page, email support with the page name and a screenshot."
+    ]
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "home"
+  ]
+ },
+ {
+  "id": "ts-sales-sync",
+  "symptom": "Sales sync failed or looks late",
+  "causes": [
+   "The {pos} connection stopped working (a changed or expired key).",
+   "{pos} was down when the nightly sync ran."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Open the job status card on Home and read the detail.",
+     "An admin opens Integrations and clicks Test connection on the POS tile.",
+     "If the test fails, re-enter the POS details and Save. A missed night is caught up on the next run."
+    ]
+   }
+  ],
+  "area": "home",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "home",
+   "integrations"
+  ]
+ },
+ {
+  "id": "ts-upload-rejected",
+  "symptom": "My inventory upload was rejected",
+  "causes": [
+   "It isn't {pos}'s retail items export.",
+   "The file was opened and re-saved, or columns were renamed.",
+   "The file is empty or cut off."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Export the retail items report from {pos} again.",
+     "Upload it straight away, without opening it in Excel.",
+     "If it still fails, email support with the file and the error message."
+    ]
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "upload_inventory"
+  ]
+ },
+ {
+  "id": "ts-numbers-old",
+  "symptom": "Numbers look old",
+  "causes": [
+   "No inventory upload for a few days.",
+   "Past sales are from last night's sync; only today is live.",
+   "{pos}'s analytics run 2 to 4 hours behind (Insights)."
+  ],
+  "fixes": [
+   {
+    "type": "bullets",
+    "items": [
+     "Check the job status card on Home for the last upload and sync.",
+     "Upload today's inventory, or ask an admin about Inventory from {pos}.",
+     "Each page's ⓘ says where its numbers come from and how fresh they are."
+    ]
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "home",
+   "upload_inventory"
+  ]
+ },
+ {
+  "id": "ts-page-missing",
+  "symptom": "A page is missing from my menu",
+  "causes": [
+   "Your login doesn't have access to it.",
+   "It is for admins only.",
+   "Your POS doesn't offer what the page needs."
+  ],
+  "fixes": [
+   {
+    "type": "p",
+    "text": "Ask an admin to tick the page for you on [Users](page:users). Search (Ctrl K) only finds pages you can open."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "users",
+   "no_access",
+   "not_available"
+  ]
+ },
+ {
+  "id": "ts-label-scanner",
+  "symptom": "The Label Scanner link is missing",
+  "causes": [
+   "Your store has no label app set up."
+  ],
+  "fixes": [
+   {
+    "type": "p",
+    "text": "The link only shows when your store has a label app. Ask your owner, or email support to have it added. In the phone app, labels print from the Scan tab."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "scan"
+  ]
+ },
+ {
+  "id": "ts-push",
+  "symptom": "Phone alerts aren't arriving",
+  "causes": [
+   "Notifications are off for RetailOps in the phone's settings.",
+   "The alert is switched off under More › Notifications.",
+   "It is quiet hours (10 PM to 7 AM store time).",
+   "You don't have access to the page the alert is about."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Allow notifications for RetailOps in your phone's settings.",
+     "In the app, open More › Notifications and check the alert is on. Tap Reset to recommended if unsure.",
+     "Sign out and in again so the phone registers afresh."
+    ]
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "notifications"
+  ]
+ },
+ {
+  "id": "ts-whatsapp",
+  "symptom": "A WhatsApp message wasn't sent",
+  "causes": [
+   "The WhatsApp connection has stopped working.",
+   "The store's number was removed from the group.",
+   "WhatsApp was slow; it can take a couple of minutes."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Wait a minute: Sending can take a while.",
+     "Click Resend on the invoice (or Retry on a flyer).",
+     "An admin checks WhatsApp on Integrations with Test connection, and that the number is still in the group."
+    ]
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "invoices",
+   "flyers",
+   "integrations"
+  ]
+ },
+ {
+  "id": "ts-po-email",
+  "symptom": "The PO email failed or is uncertain",
+  "causes": [
+   "The email connection isn't set up or has stopped working.",
+   "A vendor contact's address is wrong.",
+   "The connection broke mid-send (uncertain)."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Failed: read the reason, fix it, then Try again. Nothing in the cart changed.",
+     "Uncertain: check the store mailbox's Sent folder, then It went out or Send again.",
+     "An admin checks Email on Integrations and the vendor's contacts."
+    ]
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "cart",
+   "vendor_contacts",
+   "integrations"
+  ]
+ },
+ {
+  "id": "ts-delivery-missing",
+  "symptom": "A delivery isn't suggested",
+  "causes": [
+   "It wasn't received in {pos}, and too few items rose to look like a delivery.",
+   "No inventory upload since it arrived.",
+   "That vendor's delivery is already logged, or it was dismissed."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Receive the delivery in {pos}, then upload today's inventory.",
+     "Or tick We received a delivery today on the upload, then Review delivery.",
+     "Or log the purchase by hand on Reconciliation."
+    ]
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "delivery_review",
+   "reconciliation"
+  ]
+ },
+ {
+  "id": "ts-invoice-stuck",
+  "symptom": "An invoice is stuck in In progress",
+  "causes": [
+   "WhatsApp or the {pos} email is still sending, or one of them failed."
+  ],
+  "fixes": [
+   {
+    "type": "p",
+    "text": "Each upload shows WhatsApp and the {pos} email separately. A failed one gets **Resend**. Your upload itself is always saved."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "invoices"
+  ]
+ },
+ {
+  "id": "ts-app-update",
+  "symptom": "The app says an update is required",
+  "causes": [
+   "Your app is older than your store needs for something to work."
+  ],
+  "fixes": [
+   {
+    "type": "p",
+    "text": "Update KloudC RetailOps from the App Store or Google Play, then open it again. Your sign-in is kept."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "about"
+  ]
+ },
+ {
+  "id": "ts-camera",
+  "symptom": "The camera won't scan",
+  "causes": [
+   "Camera permission is off for RetailOps.",
+   "Poor light, glare or a damaged barcode."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Allow the camera for RetailOps in your phone's settings.",
+     "Hold the phone steady, a little further away, with good light.",
+     "Search by name or SKU instead."
+    ]
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "scan",
+   "manual_lookup"
+  ]
+ },
+ {
+  "id": "ts-face-id",
+  "symptom": "Face ID stopped working",
+  "causes": [
+   "Your password was reset, or you signed out.",
+   "Face ID was changed on the phone."
+  ],
+  "fixes": [
+   {
+    "type": "p",
+    "text": "Sign in once with your password, then turn Face ID on again under More › Account."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "face_id"
+  ]
+ },
+ {
+  "id": "ts-voice-note",
+  "symptom": "A voice note won't record",
+  "causes": [
+   "Microphone permission is off.",
+   "Your browser can't record the audio format the phones play."
+  ],
+  "fixes": [
+   {
+    "type": "bullets",
+    "items": [
+     "App: allow the microphone for RetailOps in your phone's settings.",
+     "Website: recording works in Safari and recent Chrome and Edge. Everyone can play voice notes."
+    ]
+   }
+  ],
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "team_chat"
+  ]
+ },
+ {
+  "id": "ts-demo-send",
+  "symptom": "The demo store won't send anything",
+  "causes": [
+   "The demo store never sends messages, emails or POs, on purpose."
+  ],
+  "fixes": [
+   {
+    "type": "p",
+    "text": "Everything else works so you can look around. Sign in to your own store to send."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "login"
+  ]
+ },
+ {
+  "id": "ts-website-looks-wrong",
+  "symptom": "The website looks wrong or out of date",
+  "causes": [
+   "Your browser is showing an old copy.",
+   "An old or unsupported browser."
+  ],
+  "fixes": [
+   {
+    "type": "steps",
+    "items": [
+     "Refresh the page (Ctrl Shift R, or ⌘ Shift R on a Mac).",
+     "Use a recent Chrome, Edge, Safari or Firefox.",
+     "Still wrong? Email support with a screenshot and your browser's name."
+    ]
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": []
+ },
+ {
+  "id": "ts-good-request",
+  "symptom": "How to send us a good support request",
+  "causes": [
+   "We can only fix what we can see."
+  ],
+  "fixes": [
+   {
+    "type": "bullets",
+    "items": [
+     "Your **Store ID** and the page you were on.",
+     "What you did, what you expected, and what happened instead.",
+     "A screenshot, and the time it happened.",
+     "Never your password."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "The Help Center's Contact tab writes this email for you. Send it to {support_email}."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": []
+ },
+ {
+  "id": "ts-wrong-count",
+  "symptom": "Reorder says Check count",
+  "causes": [
+   "{pos} shows 0 or less on hand, but the item still sold in the last 7 days."
+  ],
+  "fixes": [
+   {
+    "type": "p",
+    "text": "You can't sell what isn't there, so the count in {pos} is wrong. Count the shelf, fix it in {pos}, and the next upload clears it."
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "reorder",
+   "fix_issues"
+  ]
+ }
+]

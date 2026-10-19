@@ -24,6 +24,7 @@ from app.routers import (
     digest,
     flyers,
     glossary,
+    help as help_router,
     inventory,
     invoices,
     issues,
@@ -135,6 +136,9 @@ app.include_router(category_overrides.router)
 app.include_router(po_sections.router)
 app.include_router(issues.router)
 app.include_router(glossary.router)
+# Help content (docs/DESIGN_SYSTEM.md 5.2): /api/help and the logged-out /api/public/help.
+app.include_router(help_router.router)
+app.include_router(help_router.public_router)
 app.include_router(checklist_admin.router)
 app.include_router(flyers.router)
 # Public checklist link: the ONLY logged-out routes besides login/health

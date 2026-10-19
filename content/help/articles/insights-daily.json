@@ -1,0 +1,37 @@
+{
+ "id": "insights-daily",
+ "title": "Daily compare",
+ "area": "sales",
+ "group": "sales",
+ "order": 511,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "One day's sales next to the same weekday last week, the 4-week average and the same day last year.",
+ "pages": [
+  "insights_daily"
+ ],
+ "related": [
+  "insights"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Pick a day (yesterday by default). It is shown next to:"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "the same weekday last week,",
+    "the average of that weekday over the 4 weeks before,",
+    "the same day last year, once there is a year of history."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "Today can be picked too: it is compared with the same hours of the earlier days. ▲ is higher, ▼ lower, and a change under half a percent shows as =. The same line is added to the daily sales alert and the weekly digest."
+  }
+ ]
+}

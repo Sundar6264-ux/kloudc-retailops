@@ -1,0 +1,30 @@
+{
+ "id": "insights-addons",
+ "title": "Add-ons",
+ "area": "sales",
+ "group": "sales",
+ "order": 514,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Every modifier customers picked: how often, what it earned, and its attach rate.",
+ "pages": [
+  "insights_addons"
+ ],
+ "related": [
+  "insights",
+  "items-sold"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Add-ons lists every modifier customers chose (a spice level, an extra topping, a side): how often, the extra charged for paid ones, and the **attach rate**, how often it was picked per unit of the item it belongs to."
+  },
+  {
+   "type": "warning",
+   "text": "Add-on money is already inside the item's own sales. Don't add the two together."
+  }
+ ]
+}

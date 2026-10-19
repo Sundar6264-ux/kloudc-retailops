@@ -1,0 +1,72 @@
+{
+ "id": "setup-checklist-builder",
+ "title": "Checklist builder",
+ "area": "setup",
+ "group": "setup",
+ "order": 708,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins: build checklists like a form builder, publish versions, choose the WhatsApp group, and share public links.",
+ "pages": [
+  "checklist_builder",
+  "public_checklist"
+ ],
+ "related": [
+  "daily-checklists",
+  "flyers"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Setup › **Checklist builder** works like a form builder. Create a checklist, duplicate one, turn it on or off, and set the order staff see them in."
+  },
+  {
+   "type": "h",
+   "text": "Questions"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Click a question to edit it and pick its type: short answer, paragraph, multiple choice, checkboxes, dropdown, linear scale, rating, grids, date, time or photo upload.",
+    "Add titles, images and sections. Each option can flag an issue (Critical, Low stock and so on).",
+    "The ⋮ menu has the extras: description, response checks, go to section based on answer, shuffle, Other, and more.",
+    "The preview on the right shows exactly what staff see. Try it: nothing is sent."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Draft, publish and versions"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Save draft** keeps your changes without staff seeing them.",
+    "**Publish** lists what changed and makes it live as a new version.",
+    "Every publish is kept. View an old version or revert to it (which publishes it again)."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Settings"
+  },
+  {
+   "type": "p",
+   "text": "Active or not, whether it counts as a closing checklist (9:30 PM alert and nightly task), which **WhatsApp group** gets the summary, and the All as usual button. These apply at once."
+  },
+  {
+   "type": "h",
+   "text": "Public link",
+   "id": "public-link"
+  },
+  {
+   "type": "p",
+   "text": "A link that lets someone without an account fill in this one checklist and nothing else. Turn it on, set the names they pick from (or let them type one), set how many submissions an hour it allows, then **Copy link**. Turning it off, renaming it or **Make a new link** stops the old link at once."
+  },
+  {
+   "type": "note",
+   "text": "Phones on an older app build can only fill simple checklists. A checklist using newer question types shows \"App build 6+\", and older phones are asked to update."
+  }
+ ]
+}

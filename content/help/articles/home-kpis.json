@@ -1,0 +1,47 @@
+{
+ "id": "home-kpis",
+ "title": "The numbers on Home",
+ "area": "home",
+ "group": "home",
+ "order": 202,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "What each tile on Home counts, and where it takes you.",
+ "pages": [
+  "home"
+ ],
+ "related": [
+  "home-today",
+  "home-job-status"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Each tile is one number from another page. Click or tap it to open that page."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Today's sales** and **Yesterday's sales**: net sales from {pos}. Today is live, shared for 1 minute.",
+    "**Need reordering**: items Critical or Order now on Reorder Candidates.",
+    "**PO cart**: lines waiting in the Purchase Order Cart.",
+    "**Open checks**: checks {pos} still has open.",
+    "**Invoices today** and **Last invoice**: what was uploaded on Invoices.",
+    "**Order due**: items to order for vendors due soon.",
+    "**Closing checklists**: tonight's closing checklists, done or not.",
+    "**Last delivery**: the latest delivery confirmed in Delivery Review."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "With Hide sales numbers, the sales tiles say Hidden. Everything else stays."
+  },
+  {
+   "type": "p",
+   "text": "Admins also see **Sales accuracy** at the bottom: each of the last 14 days compared with {pos}'s own totals. A day that differs is synced again by itself."
+  }
+ ]
+}

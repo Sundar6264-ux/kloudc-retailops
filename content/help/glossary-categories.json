@@ -1,0 +1,50 @@
+[
+ {
+  "key": "concept_basics",
+  "label": "Store and sign-in",
+  "area": "help",
+  "where": "Sign in, Users, every page"
+ },
+ {
+  "key": "concept_data",
+  "label": "POS and data",
+  "area": "home",
+  "where": "Home, Integrations, every report"
+ },
+ {
+  "key": "concept_ordering",
+  "label": "Ordering basics",
+  "area": "ordering",
+  "where": "Ordering pages"
+ },
+ {
+  "key": "concept_stock",
+  "label": "Stock basics",
+  "area": "stock",
+  "where": "Stock pages"
+ },
+ {
+  "key": "concept_sales",
+  "label": "Sales basics",
+  "area": "sales",
+  "where": "Sales pages and Insights"
+ },
+ {
+  "key": "concept_team",
+  "label": "Team basics",
+  "area": "team",
+  "where": "Tasks, Chat, News, Checklists, Flyers"
+ },
+ {
+  "key": "concept_setup",
+  "label": "Setup and connections",
+  "area": "setup",
+  "where": "Setup pages"
+ },
+ {
+  "key": "concept_platform",
+  "label": "KloudC platform",
+  "area": "platform",
+  "where": "Sign-up and the master console"
+ }
+]

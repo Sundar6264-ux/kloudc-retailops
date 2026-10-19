@@ -2594,3 +2594,71 @@ in the daytime. Screenshots: `~/storeops/screenshots/final-pass/rename/`
 **Owner actions.** Run `~/storeops/preview.sh --reset` once (the test stores
 are now `RETAILOPS_TEST_TOAST` / `RETAILOPS_TEST_CLOVER`). New servers should
 set `RETAILOPS_SECRET_KEYS` (the old `STOREOPS_SECRET_KEYS` still works).
+
+## As built - Final pass: help, glossary and ⓘ info (track H)
+
+Branch `final/help` (worktree `wt-final-help`), built to docs/DESIGN_SYSTEM.md
+sections 4 and 5.
+
+**One content source: `content/help/`** (repo root, next to `backend/` and
+`frontend/`), checked against `content/help/schema.json`:
+
+| File | What |
+|---|---|
+| `manifest.json` | `{version, updated, locale, product}`; bump `version` on every change |
+| `pages.json` | 66 page ids: title, area, audience, `web.route`, `app.location`, `gating {feature, admin, salesOnly}`, `public`, `info {summary, points, source, freshness}`, `sections`, `terms`, `article` |
+| `articles/*.json` | 62 guides in 9 groups (basics, home, ordering, stock, sales, team, setup, account, master); blocks `h p steps bullets tip note warning example` |
+| `getting-started.json` | tracks `owner` (10 steps), `staff` (7), `master` (7) |
+| `faq.json`, `troubleshooting.json` | 36 answers, 20 symptom → causes → fixes |
+| `glossary.json`, `glossary-categories.json` | 94 concept terms (`concept_*`) in 8 categories; a concept never repeats a status term's label (those keep their keys, e.g. `lead_time`, `po_section`, `send_po`) |
+| `contact.json` | support@kloudc.com, support / contact / privacy URLs, `terms_url: ""` |
+
+Text: `**bold**` and links `[t](page:id)`, `(article:id)`, `(term:key)`,
+`(https://...)`, `(mailto:...)`; placeholders `{pos}`, `{store}`,
+`{store_city}`, `{support_email}`; no en/em dashes; summaries ≤160 and points
+≤120 characters, ≤5 points. POS names appear only where the UI itself shows
+both tiles (Integrations); the glossary never says Toast to a Clover store.
+
+**Server.** `app/help_content.py` loads the folder once (`HELP_CONTENT_DIR`
+overrides the path; a missing folder logs a warning and serves empty help),
+enforces `schema.json` with a small JSON Schema subset (no new package), and
+fills the store's words. `app/routers/help.py`: `GET /api/help` (signed in;
+everything; ETag + 304, gzip) and `GET /api/public/help` (logged out; public
+pages + contact, generic words; `TERMS_URL` shown only when https). Both are
+in `tests/test_review_route_gates.py`. `/api/glossary` is version 2: concept
+terms and categories merged from content/help; every term gains `area`,
+`pages`, `where`, `related`. Dockerfile copies `content/` (track S).
+
+**Website** (`frontend/src/ui/help/`, imported at build time through the
+`@help` Vite alias): `HelpProvider` (main.jsx) / `useHelp()` (`page`,
+`section`, `article`, `term`, `terms`, `search`, `pageIdForPath`,
+`openPanel`, `togglePanel`, `hasPanel` ...), `InfoButton` (page-level → Help
+panel when one is mounted, else popover; sections/fields → popover; phones →
+bottom sheet), `FieldInfo`, `HelpLink`, `HelpPanel` (W mounts it once),
+`HelpCenter` (`/help`, `/help?tab=`, `/help?a=<guide>&s=<heading>`,
+`/help?q=`), `GlossaryList` (`/glossary?k=`). Tabs, audience and Start-here
+ticks are remembered in localStorage (`kc.tab.help`, `kc.help.audience`,
+`kc.help.start.<track>`, `kc.tab.glossary`). `pages/HelpPage.jsx` and
+`GlossaryPage.jsx` are thin wrappers; the 1.9k-line JSX help is gone; old
+`<Link state={{section}}>` links open the matching guide (`LEGACY_SECTIONS`).
+`help.css` uses only tokens (older variables as fallbacks).
+
+**App** (track M renders it): `scripts/help/sync_help_to_app.sh [app]` copies
+content/help to `<app>/assets/help/` (manifest gets `hash`;
+`articles/index.json` lists the guide files) and regenerates
+`lib/core/glossary/glossary_data.dart` (`export_glossary.py --app-repo`);
+`scripts/help/check_help_sync.sh` exits 1 when the copy is stale. The app's
+`pubspec.yaml` must list `assets/help/` and `assets/help/articles/`.
+
+**Checks.** `backend/tests/test_help_content.py` (schema, ids, every
+reference and inline link, writing rules, both endpoints, glossary merge);
+`frontend/src/ui/help/help.test.mjs` (content valid; every `pageId` /
+`InfoButton` / `openPanel` id used in `src/` has info text and its section;
+every menu route and platform tab has a registry page; every glossary link
+resolves; search, access, mailto helpers).
+
+**For the integrator.** W's `PageHeader` / `helpBridge.jsx` already use this
+API. M runs the sync script and points its help screens at `assets/help`.
+`tests/test_ops_glossary.py` still looks for the app at `../mobile`, so its
+bundled-copy test skips; point `MOBILE_LIB` at `../storeops-app` once M has
+synced.

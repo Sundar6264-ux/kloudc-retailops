@@ -1,0 +1,97 @@
+{
+ "id": "new-order",
+ "title": "New order (Supplier Projection)",
+ "area": "ordering",
+ "group": "ordering",
+ "order": 302,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Build one vendor's order: projected need for the period you pick, with a suggested quantity for each item.",
+ "pages": [
+  "new_order"
+ ],
+ "related": [
+  "reorder",
+  "po-cart",
+  "vendor-calendar"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "Build an order"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Pick a **vendor**.",
+    "Pick a **lookback**: how much sales history to average (3 months is the default, or choose exact dates).",
+    "Pick a **projection duration**: how far ahead to cover (1 week to 3 months, or a date).",
+    "Click **Generate projection**. Every item that vendor supplies in the latest inventory is listed, most needed first.",
+    "Tick the items you want. Each gets an **Order qty** box filled with its suggestion. Change any of them.",
+    "Click **Add to cart**. You stay on the page, so you can keep going or switch vendor."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "The columns"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Avg/day** and **Avg/week**: the same sales rate at two scales, counting only days the item was in stock. Click either to see the weeks it comes from, each with its average on hand.",
+    "**On hand**: includes the item's Container row, shown as \"(+N container)\".",
+    "**Need**: projected sales for the period plus a small safety buffer, minus what is on hand. An asterisk means stock isn't counted for that item, so Need is just projected sales."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "The suggested order qty",
+   "id": "suggested-qty"
+  },
+  {
+   "type": "p",
+   "text": "The suggestion is the Need for the period you picked, rounded up, minus anything already in another vendor's cart for the same item. When the pack size is known it is in cases. 0 means you have enough for that period. The note under each item shows the numbers it comes from, for example \"sold ~14/week · on hand 6 · next delivery Thu · suggested 10 for 1 month\"."
+  },
+  {
+   "type": "p",
+   "text": "An item already in the cart shows **In cart: N**. Add to cart never changes it; its own **Update** button sets the cart to the number in its box."
+  },
+  {
+   "type": "h",
+   "text": "Filter chips"
+  },
+  {
+   "type": "p",
+   "text": "Narrow the list by forecast type (Regular, Intermittent, Slow, Dead), **Review** or **Needs order**. Each chip shows how many rows it would leave and has its own (i)."
+  },
+  {
+   "type": "h",
+   "text": "Review",
+   "id": "review"
+  },
+  {
+   "type": "p",
+   "text": "A red **Review** tag means the forecast may be off: not enough history, a long stockout, a sales spike that was capped, an unusual trend, a negative count, or a forecast very different from the simple average. Check those before trusting the suggestion."
+  },
+  {
+   "type": "h",
+   "text": "Also at and Similar",
+   "id": "similar"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Also at**: the other vendors {pos} lists for the item, with each vendor's own code. Handy when this vendor is out or another is cheaper.",
+    "**Similar**: other products of the same kind in your store: other brands and sizes first, then close variants, each with stock, price, vendors and recent sales, and Add to cart.",
+    "Similar products are matched by name inside RetailOps (no internet). Kitchen items and Container rows are never listed."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "Every product search also finds an item by its SKU, barcode or {pos} item ID, or part of one."
+  }
+ ]
+}

@@ -1,0 +1,36 @@
+{
+ "id": "team-rules",
+ "title": "Team rules",
+ "area": "team",
+ "group": "team",
+ "order": 606,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "What everyone agrees to before using Tasks, Chat and News, and how reports and blocks work.",
+ "pages": [
+  "team_rules",
+  "team_moderation"
+ ],
+ "related": [
+  "team-chat",
+  "setup-moderation"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "The first time you open Team you are shown the Team rules. Tap **I agree** to start. If the rules change you are asked again."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "There is zero tolerance for objectionable content or abusive behaviour.",
+    "Managers review every report within 24 hours, remove what breaks the rules, and the person who posted it can lose access.",
+    "Report a chat message from its menu (long-press in the app), a task from its menu, or a comment from its ⋮.",
+    "Block someone from your direct message with them. In team chats their messages fold away, and search leaves them out."
+   ]
+  }
+ ]
+}

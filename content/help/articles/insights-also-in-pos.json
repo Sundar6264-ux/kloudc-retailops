@@ -1,0 +1,41 @@
+{
+ "id": "insights-also-in-pos",
+ "title": "Also in {pos}",
+ "area": "sales",
+ "group": "sales",
+ "order": 518,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Sales channels, Check size & guests, Busy hours and Best & worst sellers: {pos}'s own numbers, kept here for convenience.",
+ "pages": [
+  "insights_channels",
+  "insights_check_size",
+  "insights_busy_hours",
+  "insights_best_sellers"
+ ],
+ "related": [
+  "insights"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "These four show the same numbers as {pos}'s own reports. They are here so you don't have to switch to {pos} to see them."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Sales channels**: weekly net sales by how the order came in (counter, kiosk, online, delivery apps, catering), with each channel's share of the week. The current week runs to yesterday and is marked *.",
+    "**Check size & guests**: average check, and orders and guests per day. It shows whether sales moved because more people came or because each spent more.",
+    "**Busy hours**: a weekday by hour grid, darker is busier. Each square is that hour's average over the last 4, 8 or 12 weeks. Point at a square, or use the arrow keys, to read it.",
+    "**Best & worst sellers**: the top and bottom items by net sales, with the Kitchen and Grocery filter."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "With Hide sales numbers, only Busy hours shows, as order counts."
+  }
+ ]
+}

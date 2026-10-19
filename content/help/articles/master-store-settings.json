@@ -1,0 +1,32 @@
+{
+ "id": "master-store-settings",
+ "title": "Store settings",
+ "area": "platform",
+ "group": "master",
+ "order": 903,
+ "audience": [
+  "master"
+ ],
+ "summary": "KloudC masters: the settings a master may change for a store, such as its name, contact details and brand colours.",
+ "pages": [
+  "platform_stores"
+ ],
+ "related": [
+  "master-stores",
+  "setup-branding"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Open a store on the Stores tab to see its settings. Only the settings on the allowed list can be changed, such as the store's display name, address, phone, brand colours and logo, and the AI switch."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Changes apply to that store straight away.",
+    "Connection keys (POS, WhatsApp, email, AI) are never shown here. The store's admin sets them on Integrations.",
+    "Every change is written to the audit log."
+   ]
+  }
+ ]
+}

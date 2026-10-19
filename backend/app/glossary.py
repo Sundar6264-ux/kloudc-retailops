@@ -12,6 +12,13 @@ this too). A few thresholds live as literals inside a function
 checks them against the function's actual behaviour.
 
 Wording: plain English for store staff, 1-2 sentences, no em/en dashes.
+
+Final pass (docs/DESIGN_SYSTEM.md 4.2): the response also carries the
+**concept terms** (Store ID, Lead time, Container...) written once in
+content/help/glossary.json (keys "concept_*", categories in
+glossary-categories.json) and merged here, and every term gains `area`
+(the colour family it belongs to), `pages` (the help page ids where it shows),
+`where` (text) and `related` (keys).
 """
 
 import datetime as dt
@@ -55,7 +62,8 @@ from app.services import insights_data as _INSD
 from app.config import Settings as _Settings
 from app.services import order_suggestion as _OS
 
-GLOSSARY_VERSION = 1
+# 2: concept terms merged in; area / pages / where / related on every term.
+GLOSSARY_VERSION = 2
 
 # Literals inside demand_forecast.exception_flags (checked by the tests).
 PROLONGED_STOCKOUT_DAYS = 7
@@ -2491,7 +2499,7 @@ TERMS_BY_KEY = {t["key"]: t for t in TERMS}
 # They are filled in when the glossary is served, so one server's glossary
 # reads in its own store's terms; for a Toast store in New York the text is
 # exactly what it was before.
-_TEXT_FIELDS = ("label", "definition", "rule")
+_TEXT_FIELDS = ("label", "definition", "rule", "where")
 
 
 def _store_words() -> dict:
@@ -2531,8 +2539,121 @@ def reason_term(issue_type: str, reason: str) -> Optional[dict]:
     return localize_term(term)
 
 
+# ---- area and pages per category (final pass) ----
+# The area a status term's category belongs to (its colour family on the
+# glossary page) and the help page ids (content/help/pages.json) it shows on.
+CATEGORY_AREA = {
+    "reorder": "ordering",
+    "forecast": "ordering",
+    "review": "ordering",
+    "projection": "ordering",
+    "similar": "ordering",
+    "placed_orders": "ordering",
+    "vendor_calendar": "ordering",
+    "fix_issues": "stock",
+    "invoices": "stock",
+    "delivery": "stock",
+    "reconciliation": "stock",
+    "reports": "stock",
+    "open_orders": "sales",
+    "sales": "sales",
+    "insights": "sales",
+    "marketing": "team",
+    "other": None,
+}
+CATEGORY_PAGES = {
+    "reorder": ["reorder", "home"],
+    "forecast": ["new_order", "reorder", "fix_issues"],
+    "review": ["new_order", "fix_issues"],
+    "projection": ["new_order", "reorder", "cart"],
+    "similar": ["new_order"],
+    "placed_orders": ["placed_orders", "cart"],
+    "vendor_calendar": ["vendor_calendar", "home"],
+    "fix_issues": ["fix_issues"],
+    "invoices": ["invoices"],
+    "delivery": ["delivery_review"],
+    "reconciliation": ["reconciliation"],
+    "reports": ["inventory_reports"],
+    "open_orders": ["open_checks"],
+    "sales": ["items_sold", "home"],
+    "insights": ["insights"],
+    "marketing": ["flyers"],
+    "other": [],
+}
+# "Other labels" are spread over the product: their area and pages by key prefix.
+_OTHER_BY_PREFIX = [
+    ("checklist_", "team", ["daily_checklists", "checklist_builder"]),
+    ("chat_", "team", ["team_chat"]),
+    ("task_", "team", ["team_tasks"]),
+    ("announcement_", "team", ["team_news"]),
+    ("user_", "setup", ["users"]),
+    ("hide_sales", "setup", ["users"]),
+    ("label_", "stock", ["print_labels", "scan"]),
+    ("job_status", "home", ["home"]),
+    ("on_sale", "stock", ["scan"]),
+    ("clearance", "stock", ["scan"]),
+    ("category_correction", "setup", ["po_sections"]),
+]
+
+
+def _area_pages(term: dict):
+    cat = term.get("category")
+    if cat == "other":
+        for prefix, area, pages in _OTHER_BY_PREFIX:
+            if term["key"].startswith(prefix):
+                return area, list(pages)
+        return None, []
+    return CATEGORY_AREA.get(cat), list(CATEGORY_PAGES.get(cat, []))
+
+
+def _with_place(term: dict, cat_where: dict) -> dict:
+    area, pages = _area_pages(term)
+    return {
+        **term,
+        "area": area,
+        "pages": pages,
+        "where": cat_where.get(term.get("category"), ""),
+        "related": [],
+    }
+
+
+def _concepts():
+    """Concept terms and their categories from content/help (empty when the
+    folder isn't there, so the status glossary always works)."""
+    from app import help_content
+
+    terms = []
+    for t in help_content.concept_terms():
+        terms.append(
+            {
+                "key": t["key"],
+                "label": t["label"],
+                "category": t["category"],
+                "definition": t["definition"],
+                "rule": None,
+                "tone": None,
+                "aliases": list(t.get("aliases") or []),
+                "area": t.get("area"),
+                "pages": list(t.get("pages") or []),
+                "where": t.get("where") or "",
+                "related": list(t.get("related") or []),
+            }
+        )
+    cats = [
+        {"key": c["key"], "label": c["label"], "where": c.get("where", ""), "area": c.get("area")}
+        for c in help_content.concept_categories()
+    ]
+    return cats, terms
+
+
 def get_glossary() -> dict:
     words = _store_words()
-    terms = [localize_term(t, words) for t in TERMS]
-    categories = [{**c, "label": _fill(c.get("label"), words)} for c in CATEGORIES]
+    cat_where = {c["key"]: c.get("where", "") for c in CATEGORIES}
+    concept_cats, concept_terms = _concepts()
+    terms = [localize_term(_with_place(t, cat_where), words) for t in TERMS]
+    terms += [localize_term(t, words) for t in concept_terms if t["key"] not in TERMS_BY_KEY]
+    categories = [
+        {**c, "label": _fill(c.get("label"), words), "area": CATEGORY_AREA.get(c["key"])} for c in CATEGORIES
+    ]
+    categories += [{**c, "label": _fill(c.get("label"), words)} for c in concept_cats]
     return {"version": GLOSSARY_VERSION, "categories": categories, "terms": terms}

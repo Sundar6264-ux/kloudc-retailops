@@ -1,0 +1,96 @@
+{
+ "id": "fix-issues",
+ "title": "Fix Issues",
+ "area": "stock",
+ "group": "stock",
+ "order": 401,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Lists of inventory records that need attention, how to close an item with a reason, and what Came back means.",
+ "pages": [
+  "fix_issues",
+  "issue_leads"
+ ],
+ "related": [
+  "setup-leads",
+  "setup-po-sections",
+  "inventory-reports"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Fix Issues lists the records in your latest inventory upload that need attention: barcode problems, duplicates, and stock problems. Kitchen and catering items are left out, since they are made in the store. The number on each tile is how many are still open. Click an item's name for its details."
+  },
+  {
+   "type": "h",
+   "text": "The lists",
+   "id": "lists"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Missing barcodes**: no barcode on file. Checked again every hour against {pos}'s menu, so a fix in {pos} drops off without waiting for an upload.",
+    "**Invalid barcodes**: the wrong length or a failed check digit. It catches typos, but can't prove a well-formed code is the right one.",
+    "**Duplicates**: two or more priced items with exactly the same name.",
+    "**Negative inventory**: counted below zero, which can't be right. Usually sold before the delivery was received in {pos}, or rung up as the wrong item.",
+    "**Refill from container**: the shelf row shows 5 or less while the Container still has stock.",
+    "**Slow moving - Review**: slow sellers whose forecast needs a second look.",
+    "**Dead with stock**: no sale in 60 days while in stock, and still on hand. Sorted by value tied up.",
+    "**Dead - zero stock**: not selling and nothing left. Decide whether to reorder.",
+    "**Dead - newly arrived**: brand new products that haven't sold, 5 to 30 days after arriving."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Sections, leads and daily tasks",
+   "id": "leads"
+  },
+  {
+   "type": "p",
+   "text": "Every list is grouped by **PO section**. Each item shows its **lead**: the section's lead, else its vendor's lead, else the everything-else lead. Each day at the set time (10:00 AM unless an admin changes it), each lead gets one Team task with their open items and a link to just theirs. Admins set leads on [Category & vendor leads](page:issue_leads)."
+  },
+  {
+   "type": "h",
+   "text": "Closing an item",
+   "id": "close"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Click **Close** on a row (or tick several and use Close selected).",
+    "Pick the reason that fits. Each reason says what it will do.",
+    "If you pick Other, type a few words about why."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Not an issue**: never shown on that list again.",
+    "**Fixed** reasons (Barcode added in {pos}, Count corrected in {pos}...): checked again on the next upload. If the problem is still there, the item comes back.",
+    "**Negative inventory and Refill from container** come and go, so closing one covers this time only.",
+    "**New item, giving it more time**: one week. If it still hasn't sold, it moves back to Open by itself.",
+    "Closed items stay in the Closed view for 7 days, where a mistake can be reopened."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Came back",
+   "id": "came-back"
+  },
+  {
+   "type": "p",
+   "text": "An item that was closed and is open again is marked **Came back**, with how: more time ended, still showing after fix, or happened again. The **Came back only** chip shows just those."
+  },
+  {
+   "type": "h",
+   "text": "Closed report"
+  },
+  {
+   "type": "p",
+   "text": "The last tile shows everything closed from every list in a date range, grouped by day, with a count per reason."
+  }
+ ]
+}

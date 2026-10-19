@@ -1,0 +1,79 @@
+{
+ "id": "basics-navigation",
+ "title": "Finding your way",
+ "area": "help",
+ "group": "basics",
+ "order": 102,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "The menu groups, the top bar with search and help, the ⓘ on every page, and the phone app's tabs.",
+ "pages": [
+  "home",
+  "help"
+ ],
+ "related": [
+  "basics-roles",
+  "basics-app"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "The menu (website)"
+  },
+  {
+   "type": "p",
+   "text": "The menu on the left has the same groups, names and order as the phone app. You only see the pages you may open. A group with just one page for you shows as that page."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Home** and **Daily Checklists** at the top.",
+    "**Ordering**: Reorder Candidates, New order, Vendor Calendar, Purchase Order Cart and Placed Orders.",
+    "**Stock**: Fix Issues, Delivery Review, Invoices, Inventory Reports and Reconciliation.",
+    "**Sales**: Items Sold, Open Checks and Insights.",
+    "**Team**: Tasks, Chat, News and Flyers.",
+    "**Setup** (mostly admins): people, connections, ordering setup and team setup."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "Each group has its own colour, so you always know which part of RetailOps you are in: violet for Ordering, teal for Stock, raspberry for Sales, orange for Team and slate for Setup."
+  },
+  {
+   "type": "h",
+   "text": "The top bar"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Search** (press Ctrl K, or ⌘K on a Mac, or /) finds pages, guides, answers and glossary terms in one box.",
+    "**Cart** shows how many lines are in the Purchase Order Cart.",
+    "**?** opens the Help panel for the page you are on.",
+    "Your **user menu** has Change password, Appearance (light or dark), Help Center, Glossary, Contact support, Privacy and Sign out."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "The ⓘ button"
+  },
+  {
+   "type": "p",
+   "text": "Every page has an ⓘ next to its title. It explains what the page shows, where the numbers come from, how fresh they are, the words it uses and who can see it. Lists, cards and form fields have their own ⓘ where it helps."
+  },
+  {
+   "type": "h",
+   "text": "The phone app"
+  },
+  {
+   "type": "p",
+   "text": "The app has five tabs: **Home** (Today card and quick actions), **Store** (Ordering, Stock and Sales tools on one screen), **Scan** (barcodes and labels), **Team** (Tasks, Chat, News, Flyers) and **More** (your account, Help & info and Setup). Search on Home or Store finds any tool and shows where it lives."
+  },
+  {
+   "type": "tip",
+   "text": "Old links and bookmarks keep working. They open the page in its new place."
+  }
+ ]
+}

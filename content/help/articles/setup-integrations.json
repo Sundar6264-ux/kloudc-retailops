@@ -1,0 +1,82 @@
+{
+ "id": "setup-integrations",
+ "title": "Integrations: POS, WhatsApp, email and AI",
+ "area": "setup",
+ "group": "setup",
+ "order": 703,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins: connect your POS, WhatsApp, email and the AI key. Save, then Test connection.",
+ "pages": [
+  "integrations"
+ ],
+ "related": [
+  "setup-inventory-from-pos",
+  "flyers",
+  "po-cart"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Setup › **Integrations** is where a store admin connects the services RetailOps works with. Pick a tile, fill in the fields, **Save**, then **Test connection**. The chip turns green when it works."
+  },
+  {
+   "type": "h",
+   "text": "Point of sale",
+   "id": "pos"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Toast**: your Toast API client ID and secret and the restaurant's GUID, from Toast's developer portal or your Toast contact. The analytics client is optional and turns on Insights.",
+    "**Clover**: the Connect button arrives with a later release. KloudC support can help connect a Clover store now.",
+    "Saving the POS starts a catch-up of recent sales."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "WhatsApp",
+   "id": "whatsapp"
+  },
+  {
+   "type": "p",
+   "text": "The WhatsApp connection sends invoice messages, checklist summaries and flyers from the store's WhatsApp number to its groups. It needs the API token from your WhatsApp gateway account, and the groups the number is in."
+  },
+  {
+   "type": "h",
+   "text": "Email",
+   "id": "email"
+  },
+  {
+   "type": "p",
+   "text": "The mailbox that sends POs and invoice emails: the mail server (host and port), the username and an app password. Many providers need an app password rather than your normal one."
+  },
+  {
+   "type": "h",
+   "text": "AI",
+   "id": "ai"
+  },
+  {
+   "type": "p",
+   "text": "An Anthropic API key turns on Ask Inventory Bot and the weekly digest's sentences. Nothing else depends on it."
+  },
+  {
+   "type": "h",
+   "text": "Keys stay secret"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Keys and passwords are encrypted and never shown again. A saved one shows as \"saved •••• 1234\".",
+    "Leave a key box empty to keep the saved key, or type a new one to replace it.",
+    "Test connection uses the saved values, or the ones you just typed before saving."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "The demo store can't change integrations."
+  }
+ ]
+}

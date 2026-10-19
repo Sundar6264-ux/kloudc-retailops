@@ -1,0 +1,696 @@
+[
+ {
+  "id": "faq-store-id",
+  "q": "What is a Store ID and where do I find it?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Your **Store ID** is your store's short code, like MAIN_STORE. Everyone at the store types it to sign in. It is in your welcome email, and an admin can see it in the top bar. Ask your owner if you don't have it."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "login"
+  ]
+ },
+ {
+  "id": "faq-missing-page",
+  "q": "Why can't I see a page my colleague sees?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Each person sees only the pages an admin ticked for them on [Users](page:users). Some pages are for admins only, and some depend on what your POS offers. Ask an admin to tick the page for you."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "users",
+   "no_access"
+  ]
+ },
+ {
+  "id": "faq-hidden-sales",
+  "q": "Why are sales numbers hidden for me?",
+  "a": [
+   {
+    "type": "p",
+    "text": "An admin ticked [Hide sales numbers](term:hide_sales) for your login. You still see everything for ordering and stock, such as units per week and suggested quantities. Only an admin can change it."
+   }
+  ],
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "home",
+   "users"
+  ]
+ },
+ {
+  "id": "faq-sales-update",
+  "q": "How often do sales update?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Today's sales are read live from {pos} when you open Home or Items Sold, shared for 1 minute. Past days are synced every night and checked against {pos} several times a day. See [What's live and what's on a schedule](article:basics-data-freshness)."
+   }
+  ],
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "items_sold",
+   "home"
+  ]
+ },
+ {
+  "id": "faq-upload-daily",
+  "q": "Do I have to upload inventory every day?",
+  "a": [
+   {
+    "type": "p",
+    "text": "It helps, but it isn't required. Every report uses the latest upload. Once an admin turns on [Inventory from {pos}](article:setup-inventory-from-pos), RetailOps builds each day's inventory from {pos} by itself, and a file now and then keeps costs and vendor codes fresh."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "upload_inventory"
+  ]
+ },
+ {
+  "id": "faq-missed-day",
+  "q": "What if I miss a day?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Nothing breaks. Reports quietly use the most recent upload until the next one. Counts and prices are just a little older in between."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "upload_inventory"
+  ]
+ },
+ {
+  "id": "faq-critical",
+  "q": "What does Critical mean?",
+  "a": [
+   {
+    "type": "p",
+    "text": "A steady seller (2 or more a week) that is empty or has 2 days of stock or less. A vendor is Critical with 3 or more Critical items, or one that sells 7 or more a week. See [Critical](term:urgency_critical)."
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "reorder",
+   "home"
+  ]
+ },
+ {
+  "id": "faq-suggested-qty",
+  "q": "How is the suggested quantity worked out?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Projected sales for the period you picked, plus a small safety buffer, minus what is on hand, rounded up. Anything already in another vendor's cart for the same item is taken off, and it is in cases when the pack size is known. See [New order](article:new-order)."
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "new_order",
+   "cart"
+  ]
+ },
+ {
+  "id": "faq-vendor-minimum",
+  "q": "Why does an order need 5 items before it turns red?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Most vendors have a minimum order, so a couple of low items isn't worth an order on its own. The Order due chip turns red with 5 or more items to order; fewer show as \"(2 low)\"."
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "vendor_calendar"
+  ]
+ },
+ {
+  "id": "faq-container",
+  "q": "What is the Container?",
+  "a": [
+   {
+    "type": "p",
+    "text": "A second storage place, like a back room. In {pos} it is a second row for the same item with no price. RetailOps adds it to the shelf count, and [Refill from container](term:issue_refill_from_container) tells you when to bring stock out."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "inventory_reports",
+   "fix_issues"
+  ]
+ },
+ {
+  "id": "faq-undo-close",
+  "q": "Can I undo a closed issue?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Yes. Open the list's **Closed** view (the last 7 days) and reopen the item."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "fix_issues"
+  ]
+ },
+ {
+  "id": "faq-snooze",
+  "q": "What happens when I give a new item more time?",
+  "a": [
+   {
+    "type": "p",
+    "text": "It leaves the open list for one week. If it still hasn't sold by then, it comes back to Open by itself and is marked Came back. If it sold, it stays closed."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "fix_issues"
+  ]
+ },
+ {
+  "id": "faq-send-po",
+  "q": "How do I send a PO by email, and who gets a copy?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Click **Send PO** on the vendor in the cart. It goes to the vendor's contacts marked Gets POs, plus any CC addresses: the contact's defaults, and any you add for that send. See [Send PO](article:po-cart)."
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "cart",
+   "vendor_contacts"
+  ]
+ },
+ {
+  "id": "faq-uncertain",
+  "q": "What does uncertain mean on a sent PO?",
+  "a": [
+   {
+    "type": "p",
+    "text": "The connection broke mid-send, so it isn't known whether the email left. The cart is left alone. Check the store mailbox's Sent folder, then choose **It went out** or **Send again**."
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "cart"
+  ]
+ },
+ {
+  "id": "faq-deliveries",
+  "q": "How do deliveries get logged?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Delivery Review suggests deliveries from your uploads and {pos}'s receiving records. Check the quantities and click **Confirm & log**. Nothing is logged by itself. You can also log a purchase by hand on Reconciliation."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "delivery_review",
+   "reconciliation"
+  ]
+ },
+ {
+  "id": "faq-variance",
+  "q": "Why does Reconciliation show a variance on almost everything?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Usually because purchases haven't been logged yet, so any restock looks like missing stock. Once deliveries are confirmed routinely, the variance becomes a real signal."
+   }
+  ],
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "reconciliation"
+  ]
+ },
+ {
+  "id": "faq-loss-watch",
+  "q": "Who sees Loss watch and Odd checks?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Only admins, because they name employees. Admins also get one combined alert at 9 AM when something is flagged."
+   }
+  ],
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "pages": [
+   "insights_loss_watch",
+   "insights_odd_checks"
+  ]
+ },
+ {
+  "id": "faq-also-in-pos",
+  "q": "Which reports repeat {pos}'s own?",
+  "a": [
+   {
+    "type": "p",
+    "text": "The four under **Also in {pos}**: Sales channels, Check size & guests, Busy hours and Best & worst sellers. They are kept for convenience. The others are things {pos}'s own screens don't give you."
+   }
+  ],
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "insights"
+  ]
+ },
+ {
+  "id": "faq-add-user",
+  "q": "How do I add a user or reset a password?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Admins open [Users](page:users). **Add user** creates a login; **Reset password** sets a new one and signs that person out everywhere."
+   }
+  ],
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "pages": [
+   "users"
+  ]
+ },
+ {
+  "id": "faq-checklist-whatsapp",
+  "q": "How do I set up a checklist and its WhatsApp group?",
+  "a": [
+   {
+    "type": "p",
+    "text": "In the [Checklist builder](page:checklist_builder), create the checklist, add questions, choose the WhatsApp group in Settings, then **Publish**."
+   }
+  ],
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "pages": [
+   "checklist_builder"
+  ]
+ },
+ {
+  "id": "faq-public-checklist",
+  "q": "Can someone fill in a checklist without logging in?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Yes, with a **public link** for that one checklist. Turn it on in the Checklist builder and send the link. It opens only that checklist."
+   }
+  ],
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "checklist_builder",
+   "public_checklist"
+  ]
+ },
+ {
+  "id": "faq-tasks-chat-news",
+  "q": "How do Tasks, Chat and News differ?",
+  "a": [
+   {
+    "type": "bullets",
+    "items": [
+     "**Tasks**: something to do, with a due time, that someone finishes.",
+     "**Chat**: conversation, in team chats and direct messages.",
+     "**News**: announcements from managers, sometimes asking you to confirm you read them."
+    ]
+   }
+  ],
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "team_tasks",
+   "team_chat",
+   "team_news"
+  ]
+ },
+ {
+  "id": "faq-reported",
+  "q": "Who sees a reported message?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Admins, on Setup › Reported messages. They review every report within 24 hours."
+   }
+  ],
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "team_moderation"
+  ]
+ },
+ {
+  "id": "faq-alerts",
+  "q": "How do I choose phone alerts?",
+  "a": [
+   {
+    "type": "p",
+    "text": "In the app: More › Notifications. Alerts are per phone. No alerts are sent between 10 PM and 7 AM store time."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "notifications"
+  ]
+ },
+ {
+  "id": "faq-offline",
+  "q": "Does the app work offline?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Partly. Screens you opened keep what they showed, and a banner says you are offline. New numbers, sending and saving need a connection. A chat message that couldn't be sent waits with Not sent, tap to retry."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "scan"
+  ]
+ },
+ {
+  "id": "faq-switch-store",
+  "q": "How do I switch store on the phone?",
+  "a": [
+   {
+    "type": "p",
+    "text": "More › **Switch store**, then sign in with the other Store ID. Each store has its own logins."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "login"
+  ]
+ },
+ {
+  "id": "faq-dark-mode",
+  "q": "How do I change light or dark?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Website: your user menu › **Appearance**. App: More › Account › **Appearance**. Choose System, Light or Dark."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "appearance"
+  ]
+ },
+ {
+  "id": "faq-delete-account",
+  "q": "How do I delete my account?",
+  "a": [
+   {
+    "type": "p",
+    "text": "In the app: More › Account › **Delete my account**, then your password. The store's records you created stay. See [Deleting your account](article:account-delete)."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "delete_account"
+  ]
+ },
+ {
+  "id": "faq-privacy",
+  "q": "What data does KloudC keep, and where?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Each store's data sits in its own separate database. Passwords are stored scrambled, and connection keys are encrypted. Read the [privacy policy](https://kloudc.com/kloudc-privacy-policy/) and [Privacy and your data](article:account-privacy)."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "about"
+  ]
+ },
+ {
+  "id": "faq-connect-pos",
+  "q": "How do I connect my POS?",
+  "a": [
+   {
+    "type": "p",
+    "text": "An admin opens Setup › [Integrations](page:integrations), picks the POS tile, fills in the details, saves and clicks Test connection. Sales start syncing that night. Need a hand? Email {support_email}."
+   }
+  ],
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "pages": [
+   "integrations"
+  ]
+ },
+ {
+  "id": "faq-demo",
+  "q": "What is the demo store?",
+  "a": [
+   {
+    "type": "p",
+    "text": "A made-up store (Store ID DEMO) with sample data, reset every night. You can look around everything, but nothing can be changed and nothing is ever sent."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "login"
+  ]
+ },
+ {
+  "id": "faq-dedicated",
+  "q": "How do I ask for a dedicated server?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Email {support_email}. A KloudC master reviews the request; nothing moves without approval, and a move can be rolled back within 7 days."
+   }
+  ],
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "pages": [
+   "platform_hosting"
+  ]
+ },
+ {
+  "id": "faq-contact",
+  "q": "How do I contact support?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Email **{support_email}** with your Store ID, the page you were on, and what happened. A screenshot helps. Never send your password. The Help Center's Contact tab writes the email for you."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": []
+ },
+ {
+  "id": "faq-forgot-password",
+  "q": "I forgot my password. What now?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Ask an admin at your store to reset it on Users. There is no self-service reset, on purpose."
+   }
+  ],
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "login",
+   "users"
+  ]
+ },
+ {
+  "id": "faq-order-placed-outside",
+  "q": "We ordered by phone. How do I record that?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Admins: on the Critical vendor (Reorder Candidates or Home) or the Order due chip (Vendor Calendar), choose **Order already placed**. The vendor shows as Ordered and reminders leave it alone. Undo removes it."
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "pages": [
+   "reorder",
+   "vendor_calendar"
+  ]
+ },
+ {
+  "id": "faq-cart-shared",
+  "q": "Is the cart shared with my team?",
+  "a": [
+   {
+    "type": "p",
+    "text": "Yes. There is one cart per vendor, shared by everyone with cart access, on the website and in the app. Adding never replaces a quantity someone already put in."
+   }
+  ],
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "pages": [
+   "cart"
+  ]
+ }
+]

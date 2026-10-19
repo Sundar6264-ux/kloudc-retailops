@@ -1,0 +1,32 @@
+{
+ "id": "master-audit",
+ "title": "The audit log",
+ "area": "platform",
+ "group": "master",
+ "order": 905,
+ "audience": [
+  "master"
+ ],
+ "summary": "KloudC masters: every sign-in and change on the platform, who did it and when.",
+ "pages": [
+  "platform_audit"
+ ],
+ "related": [
+  "master-support-playbook",
+  "master-security"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "The **Audit** tab lists everything done on the platform, newest first: sign-ins (good and failed), approvals, status changes, settings changes, hosting steps and support sessions."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Filter by store, or by action (for example login.failed).",
+    "Entries can't be edited or deleted.",
+    "Use it to answer \"who changed this, and when?\" before asking anyone."
+   ]
+  }
+ ]
+}

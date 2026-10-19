@@ -1,0 +1,1843 @@
+[
+ {
+  "key": "concept_store_id",
+  "label": "Store ID",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "The short code for your store, like MAIN_STORE. Everyone at the store types it to sign in, on the website and the app.",
+  "aliases": [
+   "store code",
+   "store id"
+  ],
+  "where": "Sign in, top bar, welcome email",
+  "pages": [
+   "login",
+   "signup"
+  ],
+  "related": [
+   "concept_store",
+   "concept_two_step"
+  ]
+ },
+ {
+  "key": "concept_store",
+  "label": "Store",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "One shop or restaurant using RetailOps. Each store has its own data, its own logins and its own settings, kept apart from every other store.",
+  "aliases": [
+   "location",
+   "shop"
+  ],
+  "where": "Everywhere",
+  "pages": [
+   "home"
+  ],
+  "related": [
+   "concept_store_id",
+   "concept_owner"
+  ]
+ },
+ {
+  "key": "concept_owner",
+  "label": "Owner",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "The person who asked for the store's account. Their login is the store's first admin, so they can add everyone else.",
+  "aliases": [
+   "store owner"
+  ],
+  "where": "Sign-up, Users",
+  "pages": [
+   "signup",
+   "users"
+  ],
+  "related": [
+   "user_admin",
+   "concept_staff"
+  ]
+ },
+ {
+  "key": "concept_staff",
+  "label": "Staff",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "Anyone at the store who isn't an admin. Staff see only the pages an admin ticked for them on Users.",
+  "aliases": [
+   "employee",
+   "team member",
+   "non-admin"
+  ],
+  "where": "Users",
+  "pages": [
+   "users"
+  ],
+  "related": [
+   "user_admin",
+   "user_features",
+   "hide_sales"
+  ]
+ },
+ {
+  "key": "concept_master",
+  "label": "KloudC master",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "A KloudC team login that reviews new stores and looks after the platform. Masters sign in with Store ID PLATFORM and a two-step code. They don't use a store's pages.",
+  "aliases": [
+   "master",
+   "platform admin",
+   "kloudc admin"
+  ],
+  "where": "Master console",
+  "pages": [
+   "platform_requests",
+   "platform_stores"
+  ],
+  "related": [
+   "concept_two_step",
+   "concept_audit_log"
+  ]
+ },
+ {
+  "key": "concept_two_step",
+  "label": "Two-step sign-in",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "A second check at sign-in: after your password you type a 6-digit code from an authenticator app on your phone. The code changes every 30 seconds.",
+  "aliases": [
+   "2fa",
+   "two factor",
+   "totp",
+   "authenticator",
+   "6-digit code"
+  ],
+  "where": "Master sign-in",
+  "pages": [
+   "login",
+   "platform_security"
+  ],
+  "related": [
+   "concept_master"
+  ]
+ },
+ {
+  "key": "concept_request_access",
+  "label": "Request access",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "How a new store asks for a RetailOps account. A person at KloudC reviews every request before the store is set up.",
+  "aliases": [
+   "sign up",
+   "signup",
+   "create your store"
+  ],
+  "where": "Sign-up page, master Requests",
+  "pages": [
+   "signup",
+   "signup_pending",
+   "platform_requests"
+  ],
+  "related": [
+   "concept_provisioning",
+   "concept_starter_pack"
+  ]
+ },
+ {
+  "key": "concept_demo_store",
+  "label": "Demo store",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "A made-up store with sample data (Store ID DEMO), reset every night. You can look around everything, but nothing can be changed and nothing is ever sent.",
+  "aliases": [
+   "demo",
+   "sample store",
+   "test store"
+  ],
+  "where": "Sign in with Store ID DEMO",
+  "pages": [
+   "login"
+  ],
+  "related": [
+   "concept_store"
+  ]
+ },
+ {
+  "key": "concept_store_timezone",
+  "label": "Store time zone",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "The time zone your store runs on. Every date, deadline, alert and \"today\" in RetailOps uses it, wherever you are.",
+  "aliases": [
+   "time zone",
+   "timezone",
+   "store time"
+  ],
+  "where": "Every date and time",
+  "pages": [
+   "home"
+  ],
+  "related": [
+   "concept_business_day",
+   "concept_store_week"
+  ]
+ },
+ {
+  "key": "concept_store_week",
+  "label": "Store week",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "Monday to Sunday in the store's time zone. Skip this week lasts until Monday at midnight.",
+  "aliases": [
+   "week"
+  ],
+  "where": "Reorder Candidates, Vendor Calendar",
+  "pages": [
+   "reorder",
+   "vendor_calendar"
+  ],
+  "related": [
+   "critical_skip_week",
+   "concept_store_timezone"
+  ]
+ },
+ {
+  "key": "concept_appearance",
+  "label": "Appearance (light and dark)",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "Whether RetailOps shows light or dark colours, or follows your device. Each person chooses for themselves.",
+  "aliases": [
+   "dark mode",
+   "light mode",
+   "theme"
+  ],
+  "where": "Website user menu, app More › Account",
+  "pages": [
+   "appearance"
+  ],
+  "related": [
+   "concept_brand_colour"
+  ]
+ },
+ {
+  "key": "concept_face_id",
+  "label": "Face ID",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "Sign in to the app with your face or fingerprint instead of typing your password. It only works on the phone where you turned it on.",
+  "aliases": [
+   "touch id",
+   "fingerprint",
+   "biometrics"
+  ],
+  "where": "App, More › Account",
+  "pages": [
+   "face_id"
+  ],
+  "related": [
+   "concept_store_id"
+  ]
+ },
+ {
+  "key": "concept_pos",
+  "label": "POS (point of sale)",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "The till system your store rings sales on: for you, {pos}. RetailOps reads sales, menus and stock from it. It never changes anything in your POS.",
+  "aliases": [
+   "point of sale",
+   "register",
+   "till"
+  ],
+  "where": "Integrations, every sales report",
+  "pages": [
+   "integrations",
+   "items_sold"
+  ],
+  "related": [
+   "concept_sales_sync",
+   "concept_integration"
+  ]
+ },
+ {
+  "key": "concept_sales_sync",
+  "label": "Sales sync",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "The nightly copy of yesterday's orders from {pos} into RetailOps. Past days are then checked against {pos} during the day and fixed if they changed.",
+  "aliases": [
+   "sync",
+   "nightly sync",
+   "sales update"
+  ],
+  "where": "Home (job status), Items Sold",
+  "pages": [
+   "home",
+   "items_sold"
+  ],
+  "related": [
+   "job_status",
+   "sales_live_today"
+  ]
+ },
+ {
+  "key": "concept_inventory_upload",
+  "label": "Inventory upload",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "The daily stock file from {pos} that you upload, with each item's count, price, cost and vendor. Reports always use the most recent one.",
+  "aliases": [
+   "upload",
+   "inventory file",
+   "stock file"
+  ],
+  "where": "Home, Store › Stock › Upload inventory",
+  "pages": [
+   "upload_inventory",
+   "home"
+  ],
+  "related": [
+   "concept_retail_items_export",
+   "inventory_upload_due",
+   "inventory_api_snapshot"
+  ]
+ },
+ {
+  "key": "concept_retail_items_export",
+  "label": "Retail items export",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "The file {pos} gives you with every retail item and its stock (CSV or Excel). Upload it exactly as it comes: columns are matched by their header names.",
+  "aliases": [
+   "export",
+   "csv",
+   "xlsx"
+  ],
+  "where": "Upload inventory",
+  "pages": [
+   "upload_inventory"
+  ],
+  "related": [
+   "concept_inventory_upload"
+  ]
+ },
+ {
+  "key": "concept_on_hand",
+  "label": "On hand",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "How many of an item the store has right now, from the latest inventory upload (or {pos}'s live count when Inventory from {pos} is on). It includes the Container.",
+  "aliases": [
+   "stock",
+   "in stock",
+   "count",
+   "qty on hand"
+  ],
+  "where": "Reorder, New order, cart, Fix Issues",
+  "pages": [
+   "reorder",
+   "new_order",
+   "cart"
+  ],
+  "related": [
+   "concept_container",
+   "live_stock"
+  ]
+ },
+ {
+  "key": "concept_container",
+  "label": "Container",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "A second storage place, like a back room or shipping container. In {pos} it is a second row for the same item with no price. RetailOps adds it to the shelf count.",
+  "aliases": [
+   "back stock",
+   "storage",
+   "warehouse row"
+  ],
+  "where": "New order, Fix Issues, Inventory Reports",
+  "pages": [
+   "inventory_reports",
+   "fix_issues"
+  ],
+  "related": [
+   "container_qty",
+   "store_vs_container",
+   "issue_refill_from_container"
+  ]
+ },
+ {
+  "key": "concept_item",
+  "label": "Item",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "One product your store sells, as it is set up in {pos}: a name, a price, a barcode and the vendors it comes from.",
+  "aliases": [
+   "product",
+   "sku"
+  ],
+  "where": "Everywhere",
+  "pages": [
+   "fix_issues"
+  ],
+  "related": [
+   "concept_sku",
+   "concept_barcode"
+  ]
+ },
+ {
+  "key": "concept_sku",
+  "label": "SKU (vendor item code)",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "The vendor's own code for an item. It prints on the PO so the vendor knows exactly what you mean. Every product search also finds items by SKU.",
+  "aliases": [
+   "supplier code",
+   "item code",
+   "vendor code"
+  ],
+  "where": "PO PDF, cart, search",
+  "pages": [
+   "cart",
+   "manual_lookup"
+  ],
+  "related": [
+   "concept_barcode",
+   "concept_purchase_order"
+  ]
+ },
+ {
+  "key": "concept_barcode",
+  "label": "Barcode (UPC/EAN)",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "The scannable number on the package. A valid one has the right length and check digit. Fix Issues lists items with a missing or invalid barcode.",
+  "aliases": [
+   "upc",
+   "ean",
+   "gtin",
+   "scan code"
+  ],
+  "where": "Scan, Fix Issues",
+  "pages": [
+   "scan",
+   "fix_issues"
+  ],
+  "related": [
+   "issue_missing_barcode",
+   "issue_invalid_barcode"
+  ]
+ },
+ {
+  "key": "concept_business_day",
+  "label": "Business day",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "{pos}'s day for its own reports, which ends at 4 AM instead of midnight. Insights count by it. Items Sold counts by when each item was paid for.",
+  "aliases": [
+   "reporting day"
+  ],
+  "where": "Insights, Items Sold",
+  "pages": [
+   "insights",
+   "items_sold"
+  ],
+  "related": [
+   "concept_store_timezone"
+  ]
+ },
+ {
+  "key": "concept_receiving_number",
+  "label": "Receiving number",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "The number {pos} gives a delivery when it is received there (like IN378). It comes with the next inventory upload and helps find deliveries.",
+  "aliases": [
+   "receiving",
+   "received"
+  ],
+  "where": "Delivery Review",
+  "pages": [
+   "delivery_review"
+  ],
+  "related": [
+   "delivery_suggested"
+  ]
+ },
+ {
+  "key": "concept_kitchen_item",
+  "label": "Kitchen item",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "Food made in the store from the kitchen or catering menus. Kitchen items are left out of stock checks because they have no barcode or shelf count.",
+  "aliases": [
+   "prepared food",
+   "catering item",
+   "menu item"
+  ],
+  "where": "Fix Issues, Prep forecast, Menu trends",
+  "pages": [
+   "fix_issues",
+   "insights_prep"
+  ],
+  "related": [
+   "insights_menu_kitchen"
+  ]
+ },
+ {
+  "key": "concept_vendor",
+  "label": "Vendor",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "A supplier you buy from. Items are linked to vendors in {pos}, and each vendor gets its own cart, PO and schedule.",
+  "aliases": [
+   "supplier",
+   "distributor"
+  ],
+  "where": "Ordering pages",
+  "pages": [
+   "reorder",
+   "new_order",
+   "cart"
+  ],
+  "related": [
+   "concept_vendor_contact",
+   "concept_vendor_schedule",
+   "concept_vendor_minimum_order"
+  ]
+ },
+ {
+  "key": "concept_vendor_contact",
+  "label": "Vendor contact",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "An email address saved for a vendor on Vendor contacts. Send PO can only email addresses saved here.",
+  "aliases": [
+   "supplier email",
+   "rep"
+  ],
+  "where": "Vendor contacts, Send PO",
+  "pages": [
+   "vendor_contacts",
+   "cart"
+  ],
+  "related": [
+   "vendor_contact_gets_pos",
+   "concept_cc",
+   "send_po"
+  ]
+ },
+ {
+  "key": "concept_vendor_minimum_order",
+  "label": "Vendor minimum order",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "Most vendors only deliver when an order is big enough. That is why an Order due chip turns red only when 5 or more items need ordering.",
+  "aliases": [
+   "minimum",
+   "min order",
+   "order minimum"
+  ],
+  "where": "Vendor Calendar, Home",
+  "pages": [
+   "vendor_calendar",
+   "home"
+  ],
+  "related": [
+   "cal_order_due",
+   "cal_items_needed"
+  ]
+ },
+ {
+  "key": "concept_delivery_days",
+  "label": "Delivery days",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "The weekdays a vendor delivers to your store. Set once per vendor on the Vendor Calendar.",
+  "aliases": [
+   "delivery day"
+  ],
+  "where": "Vendor Calendar",
+  "pages": [
+   "vendor_calendar"
+  ],
+  "related": [
+   "concept_order_deadline",
+   "concept_vendor_schedule"
+  ]
+ },
+ {
+  "key": "concept_order_deadline",
+  "label": "Order deadline",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "The last day to place an order so it comes on the next delivery day. It is set as a number of days before delivery.",
+  "aliases": [
+   "order by",
+   "cut-off",
+   "order due"
+  ],
+  "where": "Vendor Calendar, Home, New order",
+  "pages": [
+   "vendor_calendar",
+   "new_order"
+  ],
+  "related": [
+   "concept_delivery_days",
+   "cal_order_due"
+  ]
+ },
+ {
+  "key": "concept_vendor_schedule",
+  "label": "Vendor schedule",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "A vendor's delivery days plus its order deadline. With a schedule, lead times, Orders due and reminders work out by themselves.",
+  "aliases": [
+   "schedule",
+   "delivery schedule"
+  ],
+  "where": "Vendor Calendar",
+  "pages": [
+   "vendor_calendar"
+  ],
+  "related": [
+   "schedule_suggested",
+   "lead_time",
+   "concept_delivery_days"
+  ]
+ },
+ {
+  "key": "concept_lookback",
+  "label": "Lookback",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "How many days of past sales are used to work out an average. Longer is steadier. Shorter reacts faster to change.",
+  "aliases": [
+   "sales window",
+   "history window"
+  ],
+  "where": "Reorder Candidates, New order",
+  "pages": [
+   "reorder",
+   "new_order"
+  ],
+  "related": [
+   "sales_window",
+   "avg_demand"
+  ]
+ },
+ {
+  "key": "concept_weekly_sales",
+  "label": "Weekly sales",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "Units of an item sold per week on average, counting only days it was in stock. Click it to see the week by week numbers.",
+  "aliases": [
+   "per week",
+   "/week",
+   "sold per week"
+  ],
+  "where": "Reorder, New order, cart",
+  "pages": [
+   "reorder",
+   "new_order"
+  ],
+  "related": [
+   "avg_demand",
+   "concept_lookback"
+  ]
+ },
+ {
+  "key": "concept_days_of_stock",
+  "label": "Days of stock",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "How many days the stock on hand will last at the current rate of sales. Few days left on a steady seller makes it Critical.",
+  "aliases": [
+   "days left",
+   "runway",
+   "cover"
+  ],
+  "where": "Reorder Candidates",
+  "pages": [
+   "reorder"
+  ],
+  "related": [
+   "urgency_critical",
+   "lead_time"
+  ]
+ },
+ {
+  "key": "concept_reorder_candidate",
+  "label": "Reorder candidate",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "An item expected to run out before the next delivery you could still order for. Reorder Candidates lists them for every vendor at once.",
+  "aliases": [
+   "low stock",
+   "running low"
+  ],
+  "where": "Reorder Candidates",
+  "pages": [
+   "reorder"
+  ],
+  "related": [
+   "urgency_order_now",
+   "concept_days_of_stock"
+  ]
+ },
+ {
+  "key": "concept_supplier_projection",
+  "label": "Supplier Projection (New order)",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "The page that builds one vendor's order: how much of each item you need for the period you pick, with a suggested quantity.",
+  "aliases": [
+   "new order",
+   "projection",
+   "supplier projection"
+  ],
+  "where": "Store › Ordering",
+  "pages": [
+   "new_order"
+  ],
+  "related": [
+   "need_to_order",
+   "suggested_order_qty"
+  ]
+ },
+ {
+  "key": "concept_purchase_order",
+  "label": "Purchase order (PO)",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "The order document for one vendor: your store's letterhead, then each item's SKU, name and quantity, grouped by PO section. It is a PDF.",
+  "aliases": [
+   "po",
+   "order",
+   "po pdf"
+  ],
+  "where": "Purchase Order Cart, Placed Orders",
+  "pages": [
+   "cart",
+   "placed_orders"
+  ],
+  "related": [
+   "po_section",
+   "send_po",
+   "concept_purchase_order_cart"
+  ]
+ },
+ {
+  "key": "concept_purchase_order_cart",
+  "label": "Purchase Order Cart",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "One shared cart per vendor where the next order is built. Everyone with cart access sees the same lines, on the website and the app.",
+  "aliases": [
+   "cart",
+   "po cart"
+  ],
+  "where": "Store › Ordering, top bar",
+  "pages": [
+   "cart"
+  ],
+  "related": [
+   "concept_purchase_order",
+   "in_cart",
+   "cart_removal_requested"
+  ]
+ },
+ {
+  "key": "concept_case_of",
+  "label": "Case of (pack size)",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "How many units are in one case. In the cart, Qty is cases and Case of is units per case, so Qty 2 with Case of 12 is 24 units.",
+  "aliases": [
+   "pack size",
+   "case size",
+   "units per case"
+  ],
+  "where": "Purchase Order Cart",
+  "pages": [
+   "cart",
+   "new_order"
+  ],
+  "related": [
+   "suggested_order_qty"
+  ]
+ },
+ {
+  "key": "concept_cc",
+  "label": "CC",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "Extra email addresses that get a copy of a PO sent with Send PO. A vendor contact can have up to 10 default CC addresses.",
+  "aliases": [
+   "copy",
+   "carbon copy"
+  ],
+  "where": "Send PO, Vendor contacts",
+  "pages": [
+   "cart",
+   "vendor_contacts"
+  ],
+  "related": [
+   "send_po",
+   "concept_vendor_contact"
+  ]
+ },
+ {
+  "key": "concept_placed_order",
+  "label": "Placed order",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "An order that really went to the vendor: marked Order placed, or emailed with Send PO. Only placed orders count as ordered.",
+  "aliases": [
+   "ordered",
+   "order placed"
+  ],
+  "where": "Placed Orders, Reorder, Vendor Calendar",
+  "pages": [
+   "placed_orders"
+  ],
+  "related": [
+   "placed_status_placed",
+   "placed_status_pdf",
+   "order_placed_outside"
+  ]
+ },
+ {
+  "key": "concept_delivery",
+  "label": "Delivery",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "Stock arriving from a vendor. Confirming a delivery in Delivery Review logs it as a purchase.",
+  "aliases": [
+   "receiving",
+   "drop"
+  ],
+  "where": "Delivery Review, Vendor Calendar",
+  "pages": [
+   "delivery_review",
+   "vendor_calendar"
+  ],
+  "related": [
+   "delivery_suggested",
+   "concept_purchase_log"
+  ]
+ },
+ {
+  "key": "concept_unassigned",
+  "label": "Unassigned",
+  "category": "concept_ordering",
+  "area": "ordering",
+  "definition": "Items with no vendor in {pos}. They can't go into a vendor's cart from Reorder. Add them by hand on the cart under the right vendor.",
+  "aliases": [
+   "no vendor"
+  ],
+  "where": "Reorder Candidates",
+  "pages": [
+   "reorder",
+   "cart"
+  ],
+  "related": [
+   "concept_vendor"
+  ]
+ },
+ {
+  "key": "concept_delivery_review",
+  "label": "Delivery Review",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "The page where deliveries found in your uploads are checked and confirmed. Confirming writes the purchase log.",
+  "aliases": [
+   "review delivery"
+  ],
+  "where": "Store › Stock",
+  "pages": [
+   "delivery_review"
+  ],
+  "related": [
+   "delivery_suggested",
+   "concept_purchase_log"
+  ]
+ },
+ {
+  "key": "concept_net_change",
+  "label": "Net change",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "How much an item's count went up between two uploads, plus what sold in between. 100 on hand, 400 delivered and 50 sold shows 400.",
+  "aliases": [
+   "count change"
+  ],
+  "where": "Delivery Review",
+  "pages": [
+   "delivery_review"
+  ],
+  "related": [
+   "delivery_suggested_qty"
+  ]
+ },
+ {
+  "key": "concept_purchase_log",
+  "label": "Purchase log",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "The record of what the store bought: item, vendor, quantity, date and cost. Delivery Review and Log a purchase write it. Reconciliation reads it.",
+  "aliases": [
+   "purchases",
+   "logged purchase"
+  ],
+  "where": "Reconciliation, Delivery Review",
+  "pages": [
+   "reconciliation",
+   "delivery_review"
+  ],
+  "related": [
+   "concept_reconciliation",
+   "delivery_source"
+  ]
+ },
+ {
+  "key": "concept_invoice",
+  "label": "Invoice",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "A vendor's bill for a delivery. Upload it on Invoices: it is saved, shared on WhatsApp and emailed to {pos} as a PDF.",
+  "aliases": [
+   "bill"
+  ],
+  "where": "Store › Stock › Invoices",
+  "pages": [
+   "invoices"
+  ],
+  "related": [
+   "invoice_type_return",
+   "invoice_transfer",
+   "invoice_close_suggested"
+  ]
+ },
+ {
+  "key": "concept_reconciliation",
+  "label": "Reconciliation",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "Comparing what you bought, sold and counted for each item to spot missing stock. Expected closing = opening count + purchased - sold.",
+  "aliases": [
+   "shrinkage",
+   "loss check"
+  ],
+  "where": "Store › Stock",
+  "pages": [
+   "reconciliation"
+  ],
+  "related": [
+   "recon_variance",
+   "recon_expected_closing",
+   "concept_purchase_log"
+  ]
+ },
+ {
+  "key": "concept_issue_list",
+  "label": "Issue list",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "One of the lists on Fix Issues, such as Missing barcodes or Negative inventory. Each tile shows how many are still open.",
+  "aliases": [
+   "list",
+   "fix issues list"
+  ],
+  "where": "Fix Issues",
+  "pages": [
+   "fix_issues"
+  ],
+  "related": [
+   "concept_close_reason",
+   "issue_came_back"
+  ]
+ },
+ {
+  "key": "concept_close_reason",
+  "label": "Close reason",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "Why you closed an item on Fix Issues. Fixed reasons are checked again on the next upload. Not an issue stays closed for good.",
+  "aliases": [
+   "reason",
+   "close"
+  ],
+  "where": "Fix Issues",
+  "pages": [
+   "fix_issues"
+  ],
+  "related": [
+   "issue_closed",
+   "reason_not_an_issue",
+   "issue_came_back"
+  ]
+ },
+ {
+  "key": "concept_snooze",
+  "label": "Snooze",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "Hide something for a while. It comes back by itself: a new item given more time on Fix Issues, or a Critical vendor set to Remind me later.",
+  "aliases": [
+   "more time",
+   "remind me later",
+   "later"
+  ],
+  "where": "Fix Issues, Reorder, Home",
+  "pages": [
+   "fix_issues",
+   "reorder"
+  ],
+  "related": [
+   "issue_snoozed",
+   "critical_snooze"
+  ]
+ },
+ {
+  "key": "concept_category_lead",
+  "label": "Category lead",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "The person who looks after one PO section's items on Fix Issues. They get one Team task a day with their open items.",
+  "aliases": [
+   "section lead",
+   "lead"
+  ],
+  "where": "Fix Issues, Category & vendor leads",
+  "pages": [
+   "issue_leads",
+   "fix_issues"
+  ],
+  "related": [
+   "concept_vendor_lead",
+   "po_section"
+  ]
+ },
+ {
+  "key": "concept_vendor_lead",
+  "label": "Vendor lead",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "The person who looks after one vendor's items on Fix Issues when the item's PO section has no lead.",
+  "aliases": [
+   "lead"
+  ],
+  "where": "Fix Issues, Category & vendor leads",
+  "pages": [
+   "issue_leads",
+   "fix_issues"
+  ],
+  "related": [
+   "concept_category_lead"
+  ]
+ },
+ {
+  "key": "concept_shelf_row",
+  "label": "Shelf row",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "The priced row for an item in {pos}, the stock out on the shop floor. Its pair with no price is the Container row.",
+  "aliases": [
+   "store row",
+   "store qty"
+  ],
+  "where": "Store vs Container, Fix Issues",
+  "pages": [
+   "inventory_reports",
+   "fix_issues"
+  ],
+  "related": [
+   "concept_container",
+   "store_vs_container"
+  ]
+ },
+ {
+  "key": "concept_ask_bot",
+  "label": "Ask Inventory Bot",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "A chat helper that answers questions in plain words by reading the same reports you see. It can't change anything.",
+  "aliases": [
+   "bot",
+   "ai",
+   "assistant",
+   "chat bubble"
+  ],
+  "where": "Store › Stock, chat bubble",
+  "pages": [
+   "ask_bot"
+  ],
+  "related": [
+   "concept_integration"
+  ]
+ },
+ {
+  "key": "concept_label_scanner",
+  "label": "Label Scanner",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "The store's label app for scanning items and printing price labels. On the website it opens from the menu when the store has one.",
+  "aliases": [
+   "labels",
+   "label app"
+  ],
+  "where": "Website menu, app Scan tab",
+  "pages": [
+   "scan",
+   "print_labels"
+  ],
+  "related": [
+   "concept_print_label",
+   "concept_barcode"
+  ]
+ },
+ {
+  "key": "concept_print_label",
+  "label": "Print label",
+  "category": "concept_stock",
+  "area": "stock",
+  "definition": "Send an item's price label to the store's label printer from the Scan tab. Print label history lets you reprint.",
+  "aliases": [
+   "price label",
+   "shelf label",
+   "print"
+  ],
+  "where": "App Scan tab",
+  "pages": [
+   "scan",
+   "print_labels"
+  ],
+  "related": [
+   "label_print_status",
+   "concept_label_scanner"
+  ]
+ },
+ {
+  "key": "concept_insights",
+  "label": "Insights",
+  "category": "concept_sales",
+  "area": "sales",
+  "definition": "Reports built from {pos}'s analytics that {pos}'s own screens don't give you, like Daily compare and Prep forecast. Admins grant them.",
+  "aliases": [
+   "analytics",
+   "reports"
+  ],
+  "where": "Store › Sales › Insights",
+  "pages": [
+   "insights"
+  ],
+  "related": [
+   "insights_source",
+   "concept_also_in_pos"
+  ]
+ },
+ {
+  "key": "concept_also_in_pos",
+  "label": "Also in {pos}",
+  "category": "concept_sales",
+  "area": "sales",
+  "definition": "Insights that repeat {pos}'s own reports (Sales channels, Check size & guests, Busy hours, Best & worst sellers), kept here so you don't have to switch.",
+  "aliases": [
+   "also in toast",
+   "also in clover"
+  ],
+  "where": "Insights hub",
+  "pages": [
+   "insights"
+  ],
+  "related": [
+   "concept_insights"
+  ]
+ },
+ {
+  "key": "concept_check",
+  "label": "Check",
+  "category": "concept_sales",
+  "area": "sales",
+  "definition": "One bill in {pos}. An order can be split into several checks.",
+  "aliases": [
+   "bill",
+   "ticket",
+   "tab"
+  ],
+  "where": "Open Checks, Insights",
+  "pages": [
+   "open_checks"
+  ],
+  "related": [
+   "concept_open_check",
+   "insights_avg_check"
+  ]
+ },
+ {
+  "key": "concept_open_check",
+  "label": "Open check",
+  "category": "concept_sales",
+  "area": "sales",
+  "definition": "A check {pos} hasn't closed yet. Some are fine (paid orders waiting for pickup). Others were simply forgotten.",
+  "aliases": [
+   "open order",
+   "unclosed check"
+  ],
+  "where": "Open Checks",
+  "pages": [
+   "open_checks"
+  ],
+  "related": [
+   "open_order_scheduled",
+   "open_order_too_long"
+  ]
+ },
+ {
+  "key": "concept_menu_trends",
+  "label": "Menu trends",
+  "category": "concept_sales",
+  "area": "sales",
+  "definition": "Which items sold more or less than in the days just before, and which menu items didn't sell at all.",
+  "aliases": [
+   "rising",
+   "falling",
+   "trends"
+  ],
+  "where": "Insights",
+  "pages": [
+   "insights_menu_trends"
+  ],
+  "related": [
+   "insights_menu_rising",
+   "insights_menu_falling",
+   "insights_menu_not_sold"
+  ]
+ },
+ {
+  "key": "concept_team",
+  "label": "Team",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A group of people at the store, such as Kitchen or Front. Teams get their own chat, and a task sent to a team can be done by anyone in it.",
+  "aliases": [
+   "group",
+   "crew"
+  ],
+  "where": "Teams, Tasks, Chat",
+  "pages": [
+   "teams",
+   "team_tasks",
+   "team_chat"
+  ],
+  "related": [
+   "concept_task",
+   "concept_chat_channel"
+  ]
+ },
+ {
+  "key": "concept_task",
+  "label": "Task",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "Something one person or team needs to do, with an optional due time, steps, photo or note. Finish it with a swipe or a tap.",
+  "aliases": [
+   "to do",
+   "job"
+  ],
+  "where": "Team › Tasks",
+  "pages": [
+   "team_tasks"
+  ],
+  "related": [
+   "task_status",
+   "concept_recurring_task"
+  ]
+ },
+ {
+  "key": "concept_recurring_task",
+  "label": "Recurring task",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A task template that creates itself on a schedule (daily, weekdays, weekly or monthly), with the same steps each time.",
+  "aliases": [
+   "template",
+   "repeating task",
+   "schedule"
+  ],
+  "where": "Setup › Recurring tasks",
+  "pages": [
+   "team_templates",
+   "team_tasks"
+  ],
+  "related": [
+   "concept_task"
+  ]
+ },
+ {
+  "key": "concept_task_stats",
+  "label": "Task stats",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "Admins only: per person, how many tasks were done, on time or late, and the usual time from created to done.",
+  "aliases": [
+   "stats",
+   "performance"
+  ],
+  "where": "Team › Tasks",
+  "pages": [
+   "team_tasks"
+  ],
+  "related": [
+   "concept_task"
+  ]
+ },
+ {
+  "key": "concept_chat_channel",
+  "label": "Team chat",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "The chat for one team. Everyone in the team can read and post in it.",
+  "aliases": [
+   "channel",
+   "group chat"
+  ],
+  "where": "Team › Chat",
+  "pages": [
+   "team_chat"
+  ],
+  "related": [
+   "concept_direct_message",
+   "concept_pinned_message"
+  ]
+ },
+ {
+  "key": "concept_direct_message",
+  "label": "Direct message",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A private chat between two people. Either person can pin messages, hide the conversation or block the other.",
+  "aliases": [
+   "dm",
+   "private message"
+  ],
+  "where": "Team › Chat",
+  "pages": [
+   "team_chat"
+  ],
+  "related": [
+   "chat_blocked",
+   "concept_chat_channel"
+  ]
+ },
+ {
+  "key": "concept_pinned_message",
+  "label": "Pinned message",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A chat message kept at the top of the chat. Up to 20 per chat.",
+  "aliases": [
+   "pin"
+  ],
+  "where": "Team › Chat",
+  "pages": [
+   "team_chat"
+  ],
+  "related": [
+   "concept_chat_channel"
+  ]
+ },
+ {
+  "key": "concept_mention",
+  "label": "@mention",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "Type @ and a name in chat. That person is told even if they muted the chat.",
+  "aliases": [
+   "mention",
+   "@"
+  ],
+  "where": "Team › Chat",
+  "pages": [
+   "team_chat"
+  ],
+  "related": [
+   "chat_muted"
+  ]
+ },
+ {
+  "key": "concept_voice_note",
+  "label": "Voice note",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A recorded message in chat, up to 5 minutes. Everyone can play them. Recording works in the app and in browsers that support it.",
+  "aliases": [
+   "voice",
+   "audio"
+  ],
+  "where": "Team › Chat",
+  "pages": [
+   "team_chat"
+  ],
+  "related": [
+   "concept_chat_channel"
+  ]
+ },
+ {
+  "key": "concept_seen_by",
+  "label": "Seen by",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "On your own chat message, who has read it and who hasn't yet.",
+  "aliases": [
+   "read receipts",
+   "read by"
+  ],
+  "where": "Team › Chat",
+  "pages": [
+   "team_chat"
+  ],
+  "related": [
+   "announcement_ack"
+  ]
+ },
+ {
+  "key": "concept_news",
+  "label": "News",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "Announcements from managers to teams. Some ask you to confirm you read them.",
+  "aliases": [
+   "announcements",
+   "announcement"
+  ],
+  "where": "Team › News",
+  "pages": [
+   "team_news"
+  ],
+  "related": [
+   "announcement_ack",
+   "announcement_pinned"
+  ]
+ },
+ {
+  "key": "concept_reported_message",
+  "label": "Reported message",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A message, task or comment someone flagged as breaking the Team rules. Admins review every report within 24 hours.",
+  "aliases": [
+   "report",
+   "flagged message"
+  ],
+  "where": "Setup › Reported messages",
+  "pages": [
+   "team_moderation",
+   "team_chat"
+  ],
+  "related": [
+   "concept_team_rules",
+   "chat_report_status"
+  ]
+ },
+ {
+  "key": "concept_team_rules",
+  "label": "Team rules",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "What everyone agrees to before using Tasks, Chat and News: no abusive or objectionable content, and reports are acted on.",
+  "aliases": [
+   "rules",
+   "community rules"
+  ],
+  "where": "Team tab (first visit)",
+  "pages": [
+   "team_rules"
+  ],
+  "related": [
+   "concept_reported_message"
+  ]
+ },
+ {
+  "key": "concept_daily_checklist",
+  "label": "Daily checklist",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A list of questions staff answer each day, such as the closing checks. Submitting saves it under your login and shares a summary on WhatsApp.",
+  "aliases": [
+   "checklist",
+   "closing list"
+  ],
+  "where": "Home › Daily Checklists",
+  "pages": [
+   "daily_checklists"
+  ],
+  "related": [
+   "checklist_closing",
+   "checklist_issues",
+   "concept_checklist_builder"
+  ]
+ },
+ {
+  "key": "concept_checklist_builder",
+  "label": "Checklist builder",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "Where admins build and change checklists, like a form builder: questions, sections, photos, versions and public links.",
+  "aliases": [
+   "form builder"
+  ],
+  "where": "Setup › Checklist builder",
+  "pages": [
+   "checklist_builder"
+  ],
+  "related": [
+   "concept_daily_checklist",
+   "checklist_public_link"
+  ]
+ },
+ {
+  "key": "concept_public_checklist_link",
+  "label": "Public checklist link",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A web link that lets someone without an account fill in one checklist and nothing else. Turning it off stops the old link at once.",
+  "aliases": [
+   "public link",
+   "checklist link"
+  ],
+  "where": "Checklist builder",
+  "pages": [
+   "checklist_builder",
+   "public_checklist"
+  ],
+  "related": [
+   "checklist_public_link",
+   "checklist_public_link_submission"
+  ]
+ },
+ {
+  "key": "concept_whatsapp_group",
+  "label": "WhatsApp group",
+  "category": "concept_team",
+  "area": "team",
+  "definition": "A WhatsApp group the store's WhatsApp number is in. Checklists, invoices and flyers post to the groups an admin chooses.",
+  "aliases": [
+   "whatsapp",
+   "group"
+  ],
+  "where": "Checklist builder, Flyers, Integrations",
+  "pages": [
+   "checklist_builder",
+   "flyers",
+   "integrations"
+  ],
+  "related": [
+   "marketing_group",
+   "concept_integration"
+  ]
+ },
+ {
+  "key": "concept_today_card",
+  "label": "Today card",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "The card at the top of Home with what needs doing today: orders due, critical vendors and the closing checklist.",
+  "aliases": [
+   "today",
+   "all caught up"
+  ],
+  "where": "Home",
+  "pages": [
+   "home"
+  ],
+  "related": [
+   "concept_critical_vendor",
+   "cal_order_due",
+   "checklist_closing"
+  ]
+ },
+ {
+  "key": "concept_critical_vendor",
+  "label": "Critical vendor",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "A vendor with steady sellers that are out of stock or about to be. It shows on Home until it is dealt with.",
+  "aliases": [
+   "critical"
+  ],
+  "where": "Home, Reorder Candidates",
+  "pages": [
+   "home",
+   "reorder"
+  ],
+  "related": [
+   "home_critical",
+   "urgency_critical",
+   "vendor_urgency"
+  ]
+ },
+ {
+  "key": "concept_weekly_digest",
+  "label": "Weekly digest",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "A short written summary of the last 7 days, made when you ask for it. The numbers come from the reports; the AI only writes the sentences.",
+  "aliases": [
+   "digest",
+   "weekly summary"
+  ],
+  "where": "Home",
+  "pages": [
+   "home"
+  ],
+  "related": [
+   "concept_ask_bot"
+  ]
+ },
+ {
+  "key": "concept_quiet_hours",
+  "label": "Quiet hours",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "No phone alerts are sent between 10 PM and 7 AM store time. Alerts due then wait until morning.",
+  "aliases": [
+   "do not disturb",
+   "night"
+  ],
+  "where": "Phone alerts",
+  "pages": [
+   "notifications"
+  ],
+  "related": [
+   "concept_push_alert"
+  ]
+ },
+ {
+  "key": "concept_push_alert",
+  "label": "Phone alert",
+  "category": "concept_data",
+  "area": "home",
+  "definition": "A notification on your phone from the RetailOps app, such as Order due or Task assigned. Choose yours in the app under More › Notifications.",
+  "aliases": [
+   "notification",
+   "push",
+   "alert"
+  ],
+  "where": "App, More › Notifications",
+  "pages": [
+   "notifications"
+  ],
+  "related": [
+   "concept_quiet_hours"
+  ]
+ },
+ {
+  "key": "concept_integration",
+  "label": "Integration",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "A connection to another service: your POS, WhatsApp, email or the AI key. An admin sets each one up on Integrations and tests it.",
+  "aliases": [
+   "connection",
+   "connect"
+  ],
+  "where": "Setup › Integrations",
+  "pages": [
+   "integrations"
+  ],
+  "related": [
+   "concept_pos",
+   "concept_whatsapp_group"
+  ]
+ },
+ {
+  "key": "concept_brand_colour",
+  "label": "Brand colour",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "Your store's own colour, used on buttons and the menu. A master sets it with your logo. Text always stays easy to read.",
+  "aliases": [
+   "brand color",
+   "colour",
+   "color",
+   "logo"
+  ],
+  "where": "Every page",
+  "pages": [
+   "platform_stores"
+  ],
+  "related": [
+   "concept_appearance"
+  ]
+ },
+ {
+  "key": "concept_starter_pack",
+  "label": "Starter pack",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "The ready-made set a new store starts with: checklists, PO sections, leads, flyer types and menu groups. A master picks it when approving a request.",
+  "aliases": [
+   "pack"
+  ],
+  "where": "Master Requests",
+  "pages": [
+   "platform_requests"
+  ],
+  "related": [
+   "concept_provisioning"
+  ]
+ },
+ {
+  "key": "concept_provisioning",
+  "label": "Provisioning",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "Setting up a newly approved store by itself: its database, starter pack and owner login. It takes a minute or two.",
+  "aliases": [
+   "setting up",
+   "set up"
+  ],
+  "where": "Master Stores",
+  "pages": [
+   "platform_stores",
+   "platform_requests"
+  ],
+  "related": [
+   "concept_starter_pack",
+   "concept_request_access"
+  ]
+ },
+ {
+  "key": "concept_suspend",
+  "label": "Suspend",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "Pause a store: nobody can sign in and the app shows a maintenance message. Its data stays. Resume undoes it.",
+  "aliases": [
+   "pause",
+   "maintenance"
+  ],
+  "where": "Master Stores",
+  "pages": [
+   "platform_stores"
+  ],
+  "related": [
+   "concept_resume",
+   "concept_archive"
+  ]
+ },
+ {
+  "key": "concept_resume",
+  "label": "Resume",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "Turn a suspended store back on. People can sign in again straight away.",
+  "aliases": [
+   "unsuspend"
+  ],
+  "where": "Master Stores",
+  "pages": [
+   "platform_stores"
+  ],
+  "related": [
+   "concept_suspend"
+  ]
+ },
+ {
+  "key": "concept_archive",
+  "label": "Archive",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "Off-board a store: sign-in is refused and the store is hidden. Its data is kept until it is purged. You type the Store ID to confirm.",
+  "aliases": [
+   "close store",
+   "offboard"
+  ],
+  "where": "Master Stores",
+  "pages": [
+   "platform_stores"
+  ],
+  "related": [
+   "concept_suspend"
+  ]
+ },
+ {
+  "key": "concept_shared_hosting",
+  "label": "Shared hosting",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "The normal set-up: a store runs on KloudC's shared servers with its own separate database.",
+  "aliases": [
+   "shared"
+  ],
+  "where": "Master Stores, Hosting",
+  "pages": [
+   "platform_hosting",
+   "platform_stores"
+  ],
+  "related": [
+   "concept_dedicated_server"
+  ]
+ },
+ {
+  "key": "concept_dedicated_server",
+  "label": "Dedicated server",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "A store's own server, for stores that need it. A move needs a master's approval and can be rolled back within 7 days.",
+  "aliases": [
+   "dedicated hosting",
+   "own server"
+  ],
+  "where": "Master Hosting",
+  "pages": [
+   "platform_hosting"
+  ],
+  "related": [
+   "concept_shared_hosting"
+  ]
+ },
+ {
+  "key": "concept_audit_log",
+  "label": "Audit log",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "The record of every sign-in and every change on the platform: who, what, which store and when. Entries can't be changed.",
+  "aliases": [
+   "audit",
+   "log",
+   "history"
+  ],
+  "where": "Master Audit",
+  "pages": [
+   "platform_audit"
+  ],
+  "related": [
+   "concept_master"
+  ]
+ },
+ {
+  "key": "concept_support_session",
+  "label": "Support session",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "A short, time-limited sign-in to a store by a KloudC master to help with a problem. The reason is written to the audit log.",
+  "aliases": [
+   "support login",
+   "impersonate"
+  ],
+  "where": "Master Stores",
+  "pages": [
+   "platform_stores"
+  ],
+  "related": [
+   "concept_audit_log",
+   "concept_master"
+  ]
+ }
+]

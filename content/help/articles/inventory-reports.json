@@ -1,0 +1,61 @@
+{
+ "id": "inventory-reports",
+ "title": "Inventory Reports",
+ "area": "stock",
+ "group": "stock",
+ "order": 404,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Price changes, Store vs Container and vendor price comparison, from your inventory uploads.",
+ "pages": [
+  "inventory_reports"
+ ],
+ "related": [
+  "fix-issues",
+  "delivery-review"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Three reports, each with Download CSV. Pick one from the tabs at the top."
+  },
+  {
+   "type": "h",
+   "text": "Price change log",
+   "id": "price-changes"
+  },
+  {
+   "type": "p",
+   "text": "Every item whose price or cost changed recently, found by comparing one upload with the next. Search to see any item's full price history. A change during days you didn't upload is caught on the next upload."
+  },
+  {
+   "type": "h",
+   "text": "Store vs Container",
+   "id": "store-vs-container"
+  },
+  {
+   "type": "p",
+   "text": "Only the products with both a shelf row and a Container row in {pos}, with Store, Container and Total side by side, plus totals. Items **Low on shelf** (5 or less on the shelf while the Container has stock) come first. Search, pick a vendor, or sort by any column."
+  },
+  {
+   "type": "h",
+   "text": "Vendor price comparison",
+   "id": "vendor-price"
+  },
+  {
+   "type": "p",
+   "text": "Flags an item where the vendor you last bought it from costs more than another vendor on file, and how much per unit you could save."
+  },
+  {
+   "type": "note",
+   "text": "This one starts empty, and that's expected. {pos}'s cost is one blended number per item, so vendors can't be compared from it. Instead, every confirmed delivery records that day's cost against the vendor you picked. Once an item has costs from two vendors, it shows here."
+  },
+  {
+   "type": "p",
+   "text": "Barcode problems, duplicates, negative counts and dead stock are on [Fix Issues](page:fix_issues), where each item can be closed with a reason."
+  }
+ ]
+}

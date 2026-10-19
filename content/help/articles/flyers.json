@@ -1,0 +1,68 @@
+{
+ "id": "flyers",
+ "title": "Flyers",
+ "area": "team",
+ "group": "team",
+ "order": 605,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Send a marketing flyer to your customer WhatsApp groups and keep every flyer in one library.",
+ "pages": [
+  "flyers"
+ ],
+ "related": [
+  "setup-integrations",
+  "setup-checklist-builder"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Team › Flyers sends a picture or PDF to the store's customer WhatsApp groups. Admins always have it; an admin can give it to staff with the **Marketing flyers** access."
+  },
+  {
+   "type": "h",
+   "text": "Sending a flyer"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Drag the flyer onto the box, or **Choose a file**. Pictures (JPEG, PNG, WebP or iPhone HEIC) up to 25 MB; PDFs up to 20 MB.",
+    "Give it a title you will recognise, and pick its type.",
+    "Add a message if you like (up to 1,000 characters). *bold*, _italic_ and ~strikethrough~ work as in WhatsApp.",
+    "Tick the groups, click **Send…**, check the preview, then **Send to N groups**."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "It goes to one group at a time, a few seconds apart, so WhatsApp doesn't treat the store's number as spam.",
+    "Each group shows Waiting, Sending, Sent or Failed. You can close the window; the app tells you when it's done.",
+    "**Save to library** keeps a flyer to send later.",
+    "**Retry** sends to a failed group again; **Retry failed** does them all."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Which groups"
+  },
+  {
+   "type": "p",
+   "text": "Only groups an admin marked **Use for flyers** are listed, so a flyer can't go to a staff group by mistake. Admins manage this under Checklist builder › WhatsApp groups, or **Manage groups** on Flyers."
+  },
+  {
+   "type": "h",
+   "text": "The library"
+  },
+  {
+   "type": "p",
+   "text": "Every flyer, newest first, with type filters and search. Open one to see it big, download it, edit it, send it again or see every send. Deleting moves its file to a _Deleted folder on the store's server; it is never erased."
+  },
+  {
+   "type": "note",
+   "text": "If WhatsApp isn't connected, Send is off and flyers can only be saved. The demo store never sends."
+  }
+ ]
+}

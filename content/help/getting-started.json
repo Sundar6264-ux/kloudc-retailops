@@ -1,0 +1,174 @@
+{
+ "owner": {
+  "title": "Owners and admins",
+  "intro": "Ten steps from a new account to a smooth daily routine. Tick each one off as you go; this page remembers.",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "steps": [
+   {
+    "title": "Request your store's account",
+    "text": "Fill in Create your store with your store's name, the Store ID your team will type, your POS and your time zone. A person at KloudC reviews it.",
+    "page": "signup",
+    "article": "basics-signin"
+   },
+   {
+    "title": "Sign in for the first time",
+    "text": "Once approved, sign in with your Store ID, your username and the password you chose. If KloudC set the store up for you, use the one-time set-up link to choose your password.",
+    "page": "login",
+    "article": "basics-signin"
+   },
+   {
+    "title": "Connect your POS",
+    "text": "On Setup › Integrations, add your {pos} details, Save, then Test connection. Sales start syncing that night.",
+    "page": "integrations",
+    "article": "setup-integrations"
+   },
+   {
+    "title": "Load your first inventory",
+    "text": "Upload {pos}'s retail items export on Home, exactly as {pos} gives it. Or, later, turn on Inventory from {pos}.",
+    "page": "upload_inventory",
+    "article": "home-upload-inventory"
+   },
+   {
+    "title": "Set vendor schedules",
+    "text": "On the Vendor Calendar, add each vendor's delivery days and order deadline. Suggested schedules can fill most of them in one go.",
+    "page": "vendor_calendar",
+    "article": "vendor-calendar"
+   },
+   {
+    "title": "Set up PO sections and vendor contacts",
+    "text": "Check how items group on your POs, and save each vendor's email so Send PO can reach them.",
+    "page": "vendor_contacts",
+    "article": "setup-vendor-contacts"
+   },
+   {
+    "title": "Add your team",
+    "text": "On Users, add a login for each person and tick the pages they may open. Use Hide sales numbers for anyone who shouldn't see dollar amounts.",
+    "page": "users",
+    "article": "setup-users"
+   },
+   {
+    "title": "Teams, checklists and News",
+    "text": "Create teams, build your daily checklists in the Checklist builder, and post a welcome on News.",
+    "page": "checklist_builder",
+    "article": "setup-checklist-builder"
+   },
+   {
+    "title": "Install the app and choose alerts",
+    "text": "Install KloudC RetailOps on your phone, sign in, and pick your alerts under More › Notifications. Connect WhatsApp and email on Integrations too.",
+    "page": "notifications",
+    "article": "basics-app"
+   },
+   {
+    "title": "Your daily routine",
+    "text": "Each morning: check Home and the Today card, build orders with Reorder Candidates or New order, send the PO, and confirm deliveries in Delivery Review.",
+    "page": "home",
+    "article": "home-today"
+   }
+  ]
+ },
+ "staff": {
+  "title": "Staff",
+  "intro": "Seven steps to find your way around. You only see the pages your admin gave you, so skip any you don't have.",
+  "audience": [
+   "staff"
+  ],
+  "steps": [
+   {
+    "title": "Sign in",
+    "text": "Use your store's Store ID, the username your admin gave you, and your password. Change the password to your own on Change password.",
+    "page": "login",
+    "article": "basics-signin"
+   },
+   {
+    "title": "Home and the Today card",
+    "text": "Home shows what needs doing today. Each tile opens the page behind it.",
+    "page": "home",
+    "article": "home-today"
+   },
+   {
+    "title": "Fill in your daily checklist",
+    "text": "Open Daily Checklists, answer each question and Submit. A summary goes to your team's WhatsApp group.",
+    "page": "daily_checklists",
+    "article": "daily-checklists"
+   },
+   {
+    "title": "Upload an invoice",
+    "text": "When a delivery comes, upload the invoice on Invoices: pick the vendor, take a photo, Submit.",
+    "page": "invoices",
+    "article": "invoices"
+   },
+   {
+    "title": "Fix issues assigned to you",
+    "text": "On Fix Issues, close the items you have dealt with, with the reason that fits.",
+    "page": "fix_issues",
+    "article": "fix-issues"
+   },
+   {
+    "title": "Tasks, chat and News",
+    "text": "Check Team for your tasks, chat with your team, and confirm you've read any News that asks.",
+    "page": "team_tasks",
+    "article": "team-tasks"
+   },
+   {
+    "title": "Scan and print a label",
+    "text": "In the app, the Scan tab looks an item up by its barcode and prints its price label.",
+    "page": "scan",
+    "article": "basics-app"
+   }
+  ]
+ },
+ "master": {
+  "title": "KloudC master",
+  "intro": "Seven steps for running the platform: requests, stores, hosting, the audit log and support.",
+  "audience": [
+   "master"
+  ],
+  "steps": [
+   {
+    "title": "Sign in with two-step",
+    "text": "Use Store ID PLATFORM, your username and password, then the 6-digit code. Set up two-step first if you haven't.",
+    "page": "platform_security",
+    "article": "master-security"
+   },
+   {
+    "title": "Review requests",
+    "text": "On Requests, check each new store and approve it with a starter pack, or reject it with a friendly note.",
+    "page": "platform_requests",
+    "article": "master-requests"
+   },
+   {
+    "title": "Watch provisioning",
+    "text": "On Stores, a new store moves from Setting up to Active. Retry set-up if it fails.",
+    "page": "platform_stores",
+    "article": "master-requests"
+   },
+   {
+    "title": "Store status",
+    "text": "Suspend a store to pause it, Resume to turn it back on, and Archive to off-board it.",
+    "page": "platform_stores",
+    "article": "master-stores"
+   },
+   {
+    "title": "Hosting requests",
+    "text": "Approve or reject moves to a dedicated server, and roll back within 7 days if needed.",
+    "page": "platform_hosting",
+    "article": "master-hosting"
+   },
+   {
+    "title": "The audit log",
+    "text": "Every sign-in and change is listed on Audit. Check it before asking anyone what happened.",
+    "page": "platform_audit",
+    "article": "master-audit"
+   },
+   {
+    "title": "Helping a store",
+    "text": "Answer support emails with the right guide, look only at what the case needs, and never ask for a password.",
+    "page": "platform_stores",
+    "article": "master-support-playbook"
+   }
+  ]
+ }
+}

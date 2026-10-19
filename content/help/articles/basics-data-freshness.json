@@ -1,0 +1,79 @@
+{
+ "id": "basics-data-freshness",
+ "title": "What's live and what's on a schedule",
+ "area": "help",
+ "group": "basics",
+ "order": 104,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Which numbers come straight from {pos} when you open a page, which are synced each night, and why.",
+ "pages": [
+  "home",
+  "items_sold",
+  "open_checks"
+ ],
+ "related": [
+  "home-job-status",
+  "setup-inventory-from-pos"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Where {pos} lets RetailOps ask quickly, a page asks {pos} when you open it, with a short shared cache so many people opening it at once don't flood {pos}. Scheduled jobs still run as a safety net."
+  },
+  {
+   "type": "h",
+   "text": "Live when you open it"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Today's Items Sold and Home's sales tile (shared for 1 minute; Refresh asks again).",
+    "Today's part of Open Checks (checked again when the last check is over 2 minutes old).",
+    "Suggested deliveries, Looks closed in {pos} and suggested schedules (worked out on request, and again after an upload or a confirm)."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Live once an admin turns on Inventory from {pos}"
+  },
+  {
+   "type": "p",
+   "text": "On hand on Reorder Candidates, New order, Negative inventory and Refill from container uses {pos}'s count, at most 5 minutes old. See [Inventory from {pos}](article:setup-inventory-from-pos)."
+  },
+  {
+   "type": "h",
+   "text": "On a schedule"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Past days of sales: synced each night, then compared with {pos} and corrected several times a day.",
+    "Barcode re-check against {pos}'s menu: every hour.",
+    "The nightly inventory snapshot from {pos}: 4:05 AM, when turned on.",
+    "The full Open Checks history sweep: once a day.",
+    "Phone alerts: at their set times, never between 10 PM and 7 AM."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Not live, and why"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Past days of sales come from the stored copy. Asking {pos} live would cost one request per day of the range.",
+    "{pos}'s own analytics run 2 to 4 hours behind, so they are only used for Insights and to check past days.",
+    "Deliveries received in {pos} show up with the next inventory upload.",
+    "Cost, vendor codes and last-received dates only come from an uploaded file."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "Each page's ⓘ has a Where the numbers come from line with its own source and freshness."
+  }
+ ]
+}

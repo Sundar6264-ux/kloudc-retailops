@@ -1,0 +1,33 @@
+{
+ "id": "insights-menu-trends",
+ "title": "Menu trends",
+ "area": "sales",
+ "group": "sales",
+ "order": 513,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Which items sold more or less than in the days just before, and menu items that didn't sell at all.",
+ "pages": [
+  "insights_menu_trends"
+ ],
+ "related": [
+  "insights"
+ ],
+ "blocks": [
+  {
+   "type": "bullets",
+   "items": [
+    "**Rising** and **Falling**: the biggest changes in units against the same number of days just before. Only items that sold at least 3 then are compared, so 1 to 3 isn't \"up 200%\".",
+    "**Not sold**: kitchen items still on the menu that didn't sell at all in the period.",
+    "Filter to **Kitchen** (prepared-food menus) or **Grocery** (the other menus)."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "The top and bottom sellers by sales are under [Best & worst sellers](article:insights-also-in-pos)."
+  }
+ ]
+}

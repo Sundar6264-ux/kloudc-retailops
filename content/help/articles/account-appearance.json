@@ -1,0 +1,36 @@
+{
+ "id": "account-appearance",
+ "title": "Light and dark",
+ "area": null,
+ "group": "account",
+ "order": 803,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Show RetailOps in light or dark colours, or follow your device.",
+ "pages": [
+  "appearance"
+ ],
+ "related": [
+  "basics-navigation"
+ ],
+ "blocks": [
+  {
+   "type": "bullets",
+   "items": [
+    "**Website**: open your user menu, then **Appearance**: System, Light or Dark. System follows your computer's setting.",
+    "**App**: More › Account › **Appearance**. The app starts in Dark."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "Your choice is remembered on that browser or phone. It only changes what you see, not anyone else."
+  },
+  {
+   "type": "note",
+   "text": "Your store's own colour is used in both, adjusted so text always stays easy to read."
+  }
+ ]
+}

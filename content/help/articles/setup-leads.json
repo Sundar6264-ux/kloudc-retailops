@@ -1,0 +1,35 @@
+{
+ "id": "setup-leads",
+ "title": "Category & vendor leads",
+ "area": "setup",
+ "group": "setup",
+ "order": 707,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins: who looks after each PO section and vendor on Fix Issues, and their daily task.",
+ "pages": [
+  "issue_leads",
+  "fix_issues"
+ ],
+ "related": [
+  "fix-issues",
+  "setup-po-sections"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "A **lead** looks after a part of the store on Fix Issues. An item's lead is its PO section's lead, else its vendor's lead, else the **everything-else** lead (an admin)."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Set the leads on Setup › Category & vendor leads. A proposal is shown first; nothing is assigned until you save.",
+    "Each day at the set time (10:00 AM unless you change it), each lead gets **one Team task** with how many open items they have and a link to just theirs.",
+    "The task is due after the hours you set (6 by default). Overdue reminders work like any task.",
+    "Items closed or fixed drop off the next day's task, which replaces the day before's."
+   ]
+  }
+ ]
+}

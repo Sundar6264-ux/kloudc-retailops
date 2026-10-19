@@ -1,0 +1,63 @@
+{
+ "id": "basics-roles",
+ "title": "Owners, admins and staff",
+ "area": "help",
+ "group": "basics",
+ "order": 103,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Who can see what: admins see everything, staff see the pages an admin ticks for them, and Hide sales numbers hides dollar amounts.",
+ "pages": [
+  "users",
+  "no_access"
+ ],
+ "related": [
+  "setup-users",
+  "basics-navigation"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "Three kinds of login"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Owner**: the person who asked for the store's account. Their login is the first admin.",
+    "**Admin**: can open every page, always sees sales, manages users and settings, and can assign tasks.",
+    "**Staff**: sees only the pages an admin ticked for them. With none ticked they can sign in but see nothing."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Page access"
+  },
+  {
+   "type": "p",
+   "text": "On [Users](page:users) an admin ticks the pages each person may open, such as Invoices or Reorder Candidates. Pages they can't open are not in their menu, and the server refuses them too. Some pages are for admins only, such as Users, Integrations and Loss watch."
+  },
+  {
+   "type": "h",
+   "text": "Hide sales numbers"
+  },
+  {
+   "type": "p",
+   "text": "An admin can tick [Hide sales numbers](term:hide_sales) for a staff member. That person no longer sees dollar amounts: today's and yesterday's sales, Items Sold, open check totals, weekly dollar columns and the digest's sales section. They still see everything needed for ordering and stock, such as units per week and suggested quantities. The server enforces this, so it can't be worked around."
+  },
+  {
+   "type": "h",
+   "text": "Can assign tasks"
+  },
+  {
+   "type": "p",
+   "text": "Shift leads can be allowed to give tasks to other people and pin chat messages, without being admins."
+  },
+  {
+   "type": "note",
+   "text": "Admins see an extra line in some ⓘ panels called Who can see this. It tells you which access a page needs."
+  }
+ ]
+}

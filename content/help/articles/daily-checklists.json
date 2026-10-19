@@ -1,0 +1,65 @@
+{
+ "id": "daily-checklists",
+ "title": "Daily Checklists",
+ "area": "team",
+ "group": "team",
+ "order": 601,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Filling in the day's checklists, what happens when you submit, and links for people without an account.",
+ "pages": [
+  "daily_checklists",
+  "public_checklist"
+ ],
+ "related": [
+  "setup-checklist-builder",
+  "team-tasks"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Daily Checklists are the lists your team fills in each day, such as store closing and kitchen closing, plus any an admin builds. Each submission is saved under your login (you are never asked for your name) and a summary goes to that checklist's WhatsApp group."
+  },
+  {
+   "type": "h",
+   "text": "Filling one in"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Open Daily Checklists (Home in the app) and pick the checklist.",
+    "Answer every question marked with a red *. Some answers take you to a different section.",
+    "**All as usual** fills the normal answer for every row you haven't answered yet in that section. Answers you gave aren't changed.",
+    "Photo questions use your camera or photo library.",
+    "Click **Submit**. If something is missing, a red message shows under that question."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Answers that count as a problem are marked ⚠️. Picking one marks the submission **Issues** and lists it in the summary.",
+    "When a checklist asks \"Is there anything unusual?\", type None if nothing was.",
+    "**History** shows every past answer, drawn with the version of the checklist that was filled in."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Closing reminders"
+  },
+  {
+   "type": "p",
+   "text": "At 9:30 PM one \"Closing checklist not done\" alert lists any closing checklists still missing tonight. Home's checklist tile turns amber when the latest closing checklist is more than 36 hours old."
+  },
+  {
+   "type": "h",
+   "text": "Without an account"
+  },
+  {
+   "type": "p",
+   "text": "An admin can turn on a **public link** for one checklist, for part-time helpers without a login. A submission through the link is saved and shared just like one from the app, and shows in History with the person's name and \"via public link\". See [Checklist builder](article:setup-checklist-builder)."
+  }
+ ]
+}

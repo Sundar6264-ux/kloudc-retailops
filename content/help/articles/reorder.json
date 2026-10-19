@@ -1,0 +1,94 @@
+{
+ "id": "reorder",
+ "title": "Reorder Candidates",
+ "area": "ordering",
+ "group": "ordering",
+ "order": 301,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "An early-warning list across every vendor: what will run out before you could restock it, grouped by vendor and sorted by urgency.",
+ "pages": [
+  "reorder"
+ ],
+ "related": [
+  "new-order",
+  "po-cart",
+  "vendor-calendar"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Reorder Candidates looks at every vendor at once and lists the items that will run short before the next delivery you could still order for. To build one vendor's order, use [New order](article:new-order) instead."
+  },
+  {
+   "type": "h",
+   "text": "Urgency labels",
+   "id": "urgency"
+  },
+  {
+   "type": "p",
+   "text": "**Lead time** below is the vendor's real number of days until its next delivery when it has a schedule on the [Vendor Calendar](page:vendor_calendar), otherwise the lead time you type on this page."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Critical**: sells at least 2 a week and is either empty (0 or less on hand, no sale in the last 7 days) or has 2 days of stock or less. You are losing sales now, or will be soon.",
+    "**Order now**: runs out within the lead time, so it needs to go on this order. Includes empty items that sell 1 or 2 a week.",
+    "**Check count**: shows 0 or less on hand but still sold in the last 7 days, so the {pos} count is wrong. Fix the count in {pos} before deciding how much to order.",
+    "**Can wait**: runs out between the lead time and twice the lead time. It can go on the next order.",
+    "**Low priority**: more than twice the lead time of stock, or empty and selling under 1 a week."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "A **vendor** takes its most urgent item's label, except that a vendor is Critical only with 3 or more Critical items, or one Critical item that sells 7 or more a week. Each vendor also shows its counts, like \"7 critical · 10 order now\"."
+  },
+  {
+   "type": "h",
+   "text": "How it's worked out",
+   "id": "lookback"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Avg/day**: average units sold per day over the **Lookback** you choose. Click it to see week by week sales with the average on hand each week.",
+    "**Forecast (lead time)**: Avg/day times the lead time.",
+    "**Shortfall**: the forecast minus what is on hand. Only items that will really run short are listed.",
+    "Only items with a known count are included, so a kitchen item that is never counted doesn't show as out of stock."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Adding to the cart"
+  },
+  {
+   "type": "p",
+   "text": "With Purchase Order Cart access, each vendor's list has tick boxes:"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Add 1 to cart** puts 1 of an item in that vendor's cart.",
+    "**Add selected** and **Add all Critical + Order now** open a panel where each item starts at its suggested quantity (its shortfall, in units). Change any quantity or untick items, then add them all at once.",
+    "Items already in the vendor's cart show **In cart ✓** and are left out, so a quantity in the cart is never replaced.",
+    "Items under **Unassigned** have no vendor in {pos}. Add them on the cart page under the vendor you buy them from."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Hiding a Critical vendor from Today (admins)",
+   "id": "critical"
+  },
+  {
+   "type": "p",
+   "text": "A Critical vendor you have dealt with can be hidden from Home's Critical tile and the morning alert, for everyone. It stays here with a **Hidden from Today** tag. Choose Order already placed, Other, Close (with a reason), Skip this week or Remind me later. **Show again** brings it back at once. See [Home and the Today card](article:home-today)."
+  },
+  {
+   "type": "note",
+   "text": "Nothing here is sent to a vendor. Adding items only puts them in the shared cart, where you check the order and make the PO."
+  }
+ ]
+}

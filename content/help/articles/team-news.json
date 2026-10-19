@@ -1,0 +1,38 @@
+{
+ "id": "team-news",
+ "title": "News",
+ "area": "team",
+ "group": "team",
+ "order": 604,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Announcements from managers: reading, confirming you've read one, and posting (admins).",
+ "pages": [
+  "team_news"
+ ],
+ "related": [
+  "team-chat",
+  "team-tasks"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Team › News shows what managers posted to your teams, pinned ones first."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "When a post asks you to confirm, tap **I've read this**. Until you do, Home shows a reminder.",
+    "Admins post with **Announce**, choose the teams, and can pin a post or ask everyone to confirm.",
+    "Admins see \"7 of 9 acknowledged\" with who is still waiting, and can send them a reminder."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "News is for everyone the post is sent to; no page access is needed."
+  }
+ ]
+}

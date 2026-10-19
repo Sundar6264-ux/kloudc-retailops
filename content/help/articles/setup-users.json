@@ -1,0 +1,63 @@
+{
+ "id": "setup-users",
+ "title": "Users",
+ "area": "setup",
+ "group": "setup",
+ "order": 701,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins: add logins, choose what each person can open, hide sales numbers, reset passwords and delete logins.",
+ "pages": [
+  "users"
+ ],
+ "related": [
+  "basics-roles",
+  "setup-teams"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "Add a login"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Open Setup › **Users** and click **Add user**.",
+    "Type a username and a first password. Share them with the person privately.",
+    "Tick the pages they may open (Select all and Select none help), or make them an admin.",
+    "Tick **Hide sales numbers** if they shouldn't see dollar amounts, and **Can assign tasks** for shift leads.",
+    "Save. They can sign in straight away and change their password."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Page access"
+  },
+  {
+   "type": "p",
+   "text": "A non-admin sees only the pages ticked for them, on the website and in the app. With none ticked they can sign in but see nothing. Admins always see everything. Some pages are admins-only whatever is ticked: Users, Teams, Integrations, Inventory from {pos}, Checklist builder, Category & vendor leads, Loss watch and Odd checks."
+  },
+  {
+   "type": "h",
+   "text": "Hide sales numbers"
+  },
+  {
+   "type": "p",
+   "text": "Hides today's and yesterday's sales, Items Sold and its download, open check totals, weekly dollar columns and the digest's sales part from that person. Units, suggested quantities and everything for ordering stay. It takes effect on their next page load, and the server enforces it."
+  },
+  {
+   "type": "h",
+   "text": "Passwords and leaving"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Reset password** sets a new one and signs that person out everywhere at once. There is no self-service reset.",
+    "**Delete** removes a login and signs them out everywhere. Their past work stays in the store's records.",
+    "You can't delete your own login or the last admin."
+   ]
+  }
+ ]
+}

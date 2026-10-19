@@ -1,0 +1,2894 @@
+[
+ {
+  "id": "login",
+  "title": "Sign in",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff",
+   "master"
+  ],
+  "web": {
+   "route": "/"
+  },
+  "app": {
+   "location": "Sign in"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": true,
+  "info": {
+   "summary": "Sign in with your Store ID, your username and your password.",
+   "points": [
+    "Your **Store ID** is in your welcome email. Ask your owner if you don't have it.",
+    "Usernames are not case sensitive. Passwords are.",
+    "Forgot your password? Ask an admin at your store to reset it. There is no self-service reset.",
+    "KloudC staff sign in with Store ID **PLATFORM** and a 6-digit two-step code.",
+    "New store? Use **Request access** to ask for an account."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "store_id": {
+    "title": "Store ID",
+    "summary": "The short code for your store, like MAIN_STORE. It is in your welcome email.",
+    "points": [
+     "Letters, numbers and underscores only. A dash works too and becomes an underscore."
+    ]
+   },
+   "two_step": {
+    "title": "Two-step code",
+    "summary": "A 6-digit code from the authenticator app on your phone. It changes every 30 seconds.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_store_id",
+   "concept_two_step"
+  ],
+  "article": "basics-signin",
+  "new_until": null
+ },
+ {
+  "id": "signup",
+  "title": "Create your store",
+  "area": null,
+  "audience": [
+   "owner"
+  ],
+  "web": {
+   "route": "/signup"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": true,
+  "info": {
+   "summary": "Ask KloudC for a RetailOps account for your store. A person reviews every request.",
+   "points": [
+    "Pick the Store ID your team will type when they sign in. You can't change it later.",
+    "Choose your POS ({pos} or another) and your store's time zone.",
+    "The username and password you choose become the store's first admin login (10 characters or more).",
+    "A person at KloudC reviews every request before the store is set up."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "store_code": {
+    "title": "Store ID",
+    "summary": "3 to 24 letters, numbers or underscores. Everyone at your store types it to sign in.",
+    "points": [
+     "Pick something short and easy to say, like your store's name."
+    ]
+   },
+   "pos": {
+    "title": "Point of sale",
+    "summary": "The POS your store uses. RetailOps reads sales and stock from it once it is connected.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_request_access",
+   "concept_store_id",
+   "concept_pos"
+  ],
+  "article": "basics-signin",
+  "new_until": null
+ },
+ {
+  "id": "signup_pending",
+  "title": "Your store request",
+  "area": null,
+  "audience": [
+   "owner"
+  ],
+  "web": {
+   "route": "/signup/pending"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": true,
+  "info": {
+   "summary": "Your request is waiting for review. This page checks by itself and shows the answer here.",
+   "points": [
+    "It checks every 30 seconds while the page is open. **Check now** checks at once.",
+    "This browser remembers the request, so you can come back to this page later.",
+    "When it is approved, a button signs you in with your new Store ID.",
+    "Questions? Email {support_email}."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_request_access",
+   "concept_provisioning"
+  ],
+  "article": "basics-signin",
+  "new_until": null
+ },
+ {
+  "id": "owner_setup",
+  "title": "Set up your owner login",
+  "area": null,
+  "audience": [
+   "owner"
+  ],
+  "web": {
+   "route": "/setup"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": true,
+  "info": {
+   "summary": "A one-time link to set the password for your store's first admin login.",
+   "points": [
+    "The link works once and expires. Ask KloudC support for a new one if it has.",
+    "Use at least 10 characters. A short sentence is easy to remember and hard to guess.",
+    "Then sign in with your Store ID, username and the new password."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_owner",
+   "concept_store_id"
+  ],
+  "article": "basics-signin",
+  "new_until": null
+ },
+ {
+  "id": "public_checklist",
+  "title": "Public checklist",
+  "area": "team",
+  "audience": [
+   "staff"
+  ],
+  "web": null,
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": true,
+  "info": {
+   "summary": "Fill in this one checklist without an account. It is saved and shared just like one sent from the app.",
+   "points": [
+    "Pick your name from the list, or type it if the list allows.",
+    "Answer every question marked with a red star.",
+    "Photo questions open your camera or photo library.",
+    "Nothing else in RetailOps opens from this link."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_public_checklist_link",
+   "checklist_public_link"
+  ],
+  "article": "daily-checklists",
+  "new_until": null
+ },
+ {
+  "id": "home",
+  "title": "Home",
+  "area": "home",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/"
+  },
+  "app": {
+   "location": "Home"
+  },
+  "gating": {
+   "feature": "overview",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "What needs doing today, how sales are going and the state of your data, on one screen.",
+   "points": [
+    "The **Today** card lists vendor orders due, critical vendors and the closing checklist.",
+    "KPI tiles open the page behind each number.",
+    "Users with **Hide sales numbers** see Hidden instead of dollar amounts.",
+    "Upload today's inventory file from the Upload inventory card."
+   ],
+   "source": "{pos} sales, your latest inventory upload and the vendor calendar.",
+   "freshness": "Today's sales: live, shared for 1 minute. Past days: synced each night."
+  },
+  "sections": {
+   "today": {
+    "title": "Today",
+    "summary": "What needs doing today: orders due, critical vendors and the closing checklist.",
+    "points": [
+     "When nothing is due it says All caught up."
+    ]
+   },
+   "critical_vendors": {
+    "title": "Critical vendors",
+    "summary": "Vendors with at least one Critical item on Reorder Candidates.",
+    "points": [
+     "Admins can hide a vendor from Today once it is dealt with. It still shows on Reorder Candidates."
+    ]
+   },
+   "orders_due": {
+    "title": "Orders due",
+    "summary": "Vendor orders due today or tomorrow, from the Vendor Calendar.",
+    "points": [
+     "Admins can mark one as already placed, skip it this week, or choose Other with a note."
+    ]
+   },
+   "kpis": {
+    "title": "Numbers at a glance",
+    "summary": "Each tile is a number from another page. Tap it to open that page.",
+    "points": []
+   },
+   "upload_inventory": {
+    "title": "Upload inventory",
+    "summary": "Upload today's {pos} retail items export, unchanged.",
+    "points": [
+     "Missing a day is fine: every report uses the latest upload."
+    ]
+   },
+   "vendor_schedule": {
+    "title": "Vendor schedule",
+    "summary": "This week's order and delivery days from the Vendor Calendar.",
+    "points": []
+   },
+   "weekly_digest": {
+    "title": "Weekly digest",
+    "summary": "A short written summary of the last 7 days, made when you ask for it.",
+    "points": [
+     "Every number comes from the reports. The AI only writes the sentences."
+    ]
+   },
+   "job_status": {
+    "title": "Job status",
+    "summary": "When sales last synced from {pos} and when inventory was last uploaded.",
+    "points": [
+     "Green finished, amber running, red failed. Open the detail to see why."
+    ]
+   },
+   "sales_accuracy": {
+    "title": "Sales accuracy",
+    "summary": "Admins only. Each of the last 14 days compared with {pos}'s own totals.",
+    "points": [
+     "A day that differs is synced again by itself."
+    ]
+   }
+  },
+  "terms": [
+   "concept_today_card",
+   "concept_critical_vendor",
+   "job_status",
+   "concept_weekly_digest",
+   "hide_sales"
+  ],
+  "article": "home-today",
+  "new_until": null
+ },
+ {
+  "id": "daily_checklists",
+  "title": "Daily Checklists",
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/daily-checklists"
+  },
+  "app": {
+   "location": "Home › Daily Checklists"
+  },
+  "gating": {
+   "feature": "daily_checklists",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "The checklists your team fills in each day, such as store closing and kitchen closing.",
+   "points": [
+    "Your login is saved with each submission. You are never asked for your name.",
+    "**All as usual** fills the normal answer for every row you haven't answered yet.",
+    "A summary goes to the checklist's WhatsApp group when you submit.",
+    "At 9:30 PM one alert lists any closing checklist still missing tonight."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "history": {
+    "title": "History",
+    "summary": "Every past submission, shown with the version of the checklist that was filled in.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_daily_checklist",
+   "checklist_closing",
+   "checklist_issues",
+   "checklist_all_clear"
+  ],
+  "article": "daily-checklists",
+  "new_until": null
+ },
+ {
+  "id": "reorder",
+  "title": "Reorder Candidates",
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/reorder"
+  },
+  "app": {
+   "location": "Store › Ordering"
+  },
+  "gating": {
+   "feature": "reorder_candidates",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "What to reorder now, across every vendor, grouped by vendor and sorted by urgency.",
+   "points": [
+    "**Critical** means a steady seller is out, or will be within 2 days.",
+    "Lead time is the vendor's real days to its next delivery when it has a schedule.",
+    "Tick items and add them to the vendor's cart. Nothing is sent to a vendor from here.",
+    "Admins can hide a Critical vendor from Today once it is dealt with."
+   ],
+   "source": "{pos} sales and your latest inventory upload (or {pos}'s live count when Inventory from {pos} is on).",
+   "freshness": "Sales: through last night. Stock: latest upload, or at most 5 minutes old."
+  },
+  "sections": {
+   "urgency": {
+    "title": "Urgency",
+    "summary": "Each item gets one label: Critical, Order now, Check count, Can wait or Low priority.",
+    "points": [
+     "A vendor takes its most urgent item's label, with a stricter rule for Critical."
+    ]
+   },
+   "lookback": {
+    "title": "Lookback",
+    "summary": "How many days of sales the average uses. Longer is steadier, shorter reacts faster.",
+    "points": []
+   },
+   "critical": {
+    "title": "Hidden from Today",
+    "summary": "Critical vendors an admin has hidden from Home and the morning alert.",
+    "points": [
+     "They still show here, with a tag. Show again brings one back at once."
+    ]
+   }
+  },
+  "terms": [
+   "urgency_critical",
+   "urgency_order_now",
+   "urgency_check_count",
+   "urgency_can_wait",
+   "urgency_low_priority",
+   "lead_time",
+   "concept_lookback",
+   "concept_reorder_candidate"
+  ],
+  "article": "reorder",
+  "new_until": null
+ },
+ {
+  "id": "new_order",
+  "title": "New order",
+  "subtitle": "Supplier Projection",
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/supplier-projection"
+  },
+  "app": {
+   "location": "Store › Ordering"
+  },
+  "gating": {
+   "feature": "supplier_projection",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Build one vendor's order: projected need for the period you pick, with a suggested quantity per item.",
+   "points": [
+    "Pick a vendor, a lookback and how far ahead to project, then Generate.",
+    "**Need** is projected sales plus a safety buffer, minus what is on hand.",
+    "Ticked items get an Order qty box filled with the suggestion. Change it freely.",
+    "**Review** flags items whose forecast deserves a second look.",
+    "**Similar** shows other brands and sizes of the same product."
+   ],
+   "source": "{pos} sales history and your latest inventory upload.",
+   "freshness": "Sales: through last night. Stock: latest upload, or live when Inventory from {pos} is on."
+  },
+  "sections": {
+   "suggested_qty": {
+    "title": "Suggested order qty",
+    "summary": "The Need for the period you picked, rounded up, in cases when the pack size is known.",
+    "points": [
+     "Anything already in another vendor's cart for the same item is taken off.",
+     "0 means you have enough for that period."
+    ]
+   },
+   "similar": {
+    "title": "Similar products",
+    "summary": "Other products of the same kind in your store, matched by name.",
+    "points": [
+     "Same product, other brand or size first, then close variants."
+    ]
+   },
+   "review": {
+    "title": "Review",
+    "summary": "The forecast for this item may be off: short history, a long stockout, a spike or an odd trend.",
+    "points": []
+   }
+  },
+  "terms": [
+   "need_to_order",
+   "suggested_order_qty",
+   "safety_buffer",
+   "review",
+   "class_regular",
+   "class_intermittent",
+   "class_slow",
+   "class_dead",
+   "concept_supplier_projection",
+   "similar_products"
+  ],
+  "article": "new-order",
+  "new_until": null
+ },
+ {
+  "id": "vendor_calendar",
+  "title": "Vendor Calendar",
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/vendor-calendar"
+  },
+  "app": {
+   "location": "Store › Ordering"
+  },
+  "gating": {
+   "feature": "vendor_calendar",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Each vendor's order deadlines and delivery days, set once and shown every week.",
+   "points": [
+    "An **Order due** chip turns red only when 5 or more items need ordering.",
+    "Fewer low items show as \"(2 low)\" because vendors have minimum orders.",
+    "Suggested schedules are read from the last 12 weeks of deliveries.",
+    "Open a chip's menu to mark an order placed, skip a week or add a note."
+   ],
+   "source": "Your saved schedules, plus invoices, deliveries and {pos} receiving records for suggestions.",
+   "freshness": "Suggestions are worked out when you open the page."
+  },
+  "sections": {
+   "schedules": {
+    "title": "Schedules",
+    "summary": "A vendor's delivery days and how many days ahead the order must go in.",
+    "points": []
+   },
+   "suggestions": {
+    "title": "Suggested schedules",
+    "summary": "Delivery days read from recent deliveries, with a confidence.",
+    "points": [
+     "Add schedule saves it. Edit lets you change it first. Dismiss hides it."
+    ]
+   },
+   "vendors_without_schedule": {
+    "title": "Vendors without a schedule",
+    "summary": "Every other vendor, and why there is no suggestion yet.",
+    "points": []
+   }
+  },
+  "terms": [
+   "cal_order_due",
+   "cal_items_needed",
+   "cal_upcoming",
+   "cal_delivered",
+   "cal_missed",
+   "cal_skipped",
+   "schedule_suggested",
+   "schedule_confidence",
+   "concept_vendor_schedule",
+   "concept_order_deadline",
+   "concept_vendor_minimum_order"
+  ],
+  "article": "vendor-calendar",
+  "new_until": null
+ },
+ {
+  "id": "cart",
+  "title": "Purchase Order Cart",
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/purchase-order"
+  },
+  "app": {
+   "location": "Store › Ordering"
+  },
+  "gating": {
+   "feature": "purchase_order_cart",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "One shared cart per vendor. Check quantities, then download the PO or send it by email.",
+   "points": [
+    "The cart is shared: everyone with cart access sees the same lines, on the website and the app.",
+    "**Qty** is cases. **Case of** is units in one case.",
+    "Only admins remove lines. Anyone else asks with Request removal.",
+    "**Send PO** emails the PDF to the vendor's contacts and records the order as placed.",
+    "Cost and stock figures are only for you. They never appear on the PDF."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "send_po": {
+    "title": "Send PO",
+    "summary": "Emails the vendor's PO from the store's email account, with the PDF attached.",
+    "points": [
+     "Pressing Send twice never emails twice.",
+     "If it is unclear whether it went, check the Sent folder before sending again."
+    ]
+   },
+   "send_log": {
+    "title": "Recent PO sends",
+    "summary": "Every send: who, when, to whom, CC, and whether it went out.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_purchase_order",
+   "po_section",
+   "send_po",
+   "concept_cc",
+   "cart_removal_requested",
+   "po_send_uncertain",
+   "concept_purchase_order_cart"
+  ],
+  "article": "po-cart",
+  "new_until": null
+ },
+ {
+  "id": "placed_orders",
+  "title": "Placed Orders",
+  "area": "ordering",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/placed-orders"
+  },
+  "app": {
+   "location": "Store › Ordering"
+  },
+  "gating": {
+   "feature": "purchase_order_cart",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Every order placed from the cart, newest first, with its items.",
+   "points": [
+    "**Placed** means someone marked it placed or Send PO sent it.",
+    "**PDF only** means a PO was made but never marked placed.",
+    "Only Placed orders count as ordered on Reorder and the Vendor Calendar.",
+    "**Order again** puts an order's items back in that vendor's cart."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "placed_status_placed",
+   "placed_status_pdf",
+   "order_again",
+   "concept_placed_order",
+   "order_placed_outside"
+  ],
+  "article": "placed-orders",
+  "new_until": null
+ },
+ {
+  "id": "vendor_contacts",
+  "title": "Vendor contacts",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/vendor-contacts"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": "purchase_order_cart",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Who gets each vendor's PO when someone presses Send PO, and who is copied.",
+   "points": [
+    "Only emails saved here can be a PO's To address.",
+    "Tick **Gets POs** for each address that should receive orders.",
+    "Default CC addresses (up to 10) are filled in on every send.",
+    "Only admins add or change contacts. Anyone with the cart can send."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "vendor_contact_gets_pos",
+   "concept_vendor_contact",
+   "concept_cc",
+   "send_po"
+  ],
+  "article": "setup-vendor-contacts",
+  "new_until": null
+ },
+ {
+  "id": "fix_issues",
+  "title": "Fix Issues",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/fix-issues"
+  },
+  "app": {
+   "location": "Store › Stock"
+  },
+  "gating": {
+   "feature": "inventory_reports",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Inventory records that need attention: barcodes, duplicates, negative counts, refills, slow and dead items.",
+   "points": [
+    "Every list is grouped by PO section and shows each item's lead.",
+    "**Close** an item with a reason. Fixed reasons are checked again on the next upload.",
+    "**Came back** marks an item that was closed and is open again.",
+    "Kitchen and catering items are left out: they don't need barcodes or shelf stock."
+   ],
+   "source": "Your latest inventory upload, plus an hourly barcode check against {pos}'s menu.",
+   "freshness": "Latest upload. Barcode lists: re-checked every hour."
+  },
+  "sections": {
+   "missing_barcode": {
+    "title": "Missing barcodes",
+    "summary": "Items with no barcode on file at all.",
+    "points": []
+   },
+   "invalid_barcode": {
+    "title": "Invalid barcodes",
+    "summary": "Barcodes with the wrong length or a failed check digit.",
+    "points": []
+   },
+   "duplicate": {
+    "title": "Duplicates",
+    "summary": "Two or more priced items with exactly the same name.",
+    "points": []
+   },
+   "negative_inventory": {
+    "title": "Negative inventory",
+    "summary": "Items counted below zero, which can't be right.",
+    "points": []
+   },
+   "refill_from_container": {
+    "title": "Refill from container",
+    "summary": "Shelf at 5 or less while the Container still has stock.",
+    "points": []
+   },
+   "slow_review": {
+    "title": "Slow moving - Review",
+    "summary": "Slow sellers whose forecast needs a second look.",
+    "points": []
+   },
+   "dead_with_stock": {
+    "title": "Dead with stock",
+    "summary": "No sale in 60 days while in stock, and still on hand.",
+    "points": []
+   },
+   "dead_zero_stock": {
+    "title": "Dead - zero stock",
+    "summary": "Not selling and nothing left. Decide whether to reorder.",
+    "points": []
+   },
+   "dead_new_arrival": {
+    "title": "Dead - newly arrived",
+    "summary": "Brand new products that haven't sold yet, 5 to 30 days after arriving.",
+    "points": []
+   },
+   "closed_report": {
+    "title": "Closed report",
+    "summary": "Everything closed from every list in a date range, with a count per reason.",
+    "points": []
+   }
+  },
+  "terms": [
+   "issue_missing_barcode",
+   "issue_invalid_barcode",
+   "issue_duplicate",
+   "issue_negative_inventory",
+   "issue_refill_from_container",
+   "issue_slow_review",
+   "issue_dead_with_stock",
+   "issue_dead_zero_stock",
+   "issue_dead_new_arrival",
+   "issue_came_back",
+   "concept_close_reason",
+   "concept_snooze",
+   "concept_category_lead"
+  ],
+  "article": "fix-issues",
+  "new_until": null
+ },
+ {
+  "id": "delivery_review",
+  "title": "Delivery Review",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/delivery-review"
+  },
+  "app": {
+   "location": "Store › Stock"
+  },
+  "gating": {
+   "feature": "delivery_review",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Deliveries found in your inventory uploads. Check the quantities, then confirm to log them as purchases.",
+   "points": [
+    "Most suggestions come from {pos}'s receiving records in the next inventory upload.",
+    "Quantity is count now, minus count before, plus units sold in between.",
+    "**Confirm & log** writes the purchase log. Nothing is logged by itself.",
+    "**Not a delivery - dismiss** hides a suggestion. Undo brings it back."
+   ],
+   "source": "Your inventory uploads, {pos} receiving numbers and {pos} sales.",
+   "freshness": "Worked out when you open the page, and again after each upload."
+  },
+  "sections": {},
+  "terms": [
+   "delivery_suggested",
+   "delivery_suggested_qty",
+   "delivery_new_item",
+   "concept_purchase_log",
+   "delivery_suggested"
+  ],
+  "article": "delivery-review",
+  "new_until": null
+ },
+ {
+  "id": "invoices",
+  "title": "Invoices",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/invoices"
+  },
+  "app": {
+   "location": "Store › Stock"
+  },
+  "gating": {
+   "feature": "invoice_submission",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Upload vendor invoices, returns and transfers. Each one is shared on WhatsApp and emailed to {pos}.",
+   "points": [
+    "Submit is instant. WhatsApp and the {pos} email follow in the background.",
+    "A failed send gets a **Resend** button. Your upload is always saved.",
+    "**Transfer** is for stock moved between the store and the Container. It goes to WhatsApp only.",
+    "**Looks closed in {pos}** suggests invoices that seem to be entered in {pos} already."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "upload": {
+    "title": "Upload",
+    "summary": "Pick the vendor and type, add the total if you like, attach a PDF or photo, then Submit.",
+    "points": []
+   },
+   "trash": {
+    "title": "Trash",
+    "summary": "Deleted uploads wait here. Admins can restore one or approve a delete request.",
+    "points": []
+   }
+  },
+  "terms": [
+   "invoice_pending",
+   "invoice_in_progress",
+   "invoice_completed",
+   "invoice_failed",
+   "invoice_transfer",
+   "invoice_close_suggested",
+   "invoice_trash",
+   "concept_invoice",
+   "invoice_type_return",
+   "invoice_transfer"
+  ],
+  "article": "invoices",
+  "new_until": null
+ },
+ {
+  "id": "inventory_reports",
+  "title": "Inventory Reports",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/inventory-reports"
+  },
+  "app": {
+   "location": "Store › Stock"
+  },
+  "gating": {
+   "feature": "inventory_reports",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Price changes, Store vs Container stock and vendor price comparison, from your inventory uploads.",
+   "points": [
+    "Every report has a Download CSV button.",
+    "Price changes are found by comparing one upload with the next.",
+    "Vendor price comparison fills in as you confirm deliveries with a cost."
+   ],
+   "source": "Your inventory uploads and confirmed deliveries.",
+   "freshness": "Latest upload."
+  },
+  "sections": {
+   "price_changes": {
+    "title": "Price change log",
+    "summary": "Items whose price or cost changed between uploads, plus any item's full history.",
+    "points": []
+   },
+   "store_vs_container": {
+    "title": "Store vs Container",
+    "summary": "Products with both a shelf row and a Container row, side by side.",
+    "points": [
+     "Low on shelf (5 or less with Container stock) is listed first."
+    ]
+   },
+   "vendor_price_comparison": {
+    "title": "Vendor price comparison",
+    "summary": "Items you last bought from a vendor that costs more than another vendor on file.",
+    "points": [
+     "It starts empty and fills in as you confirm deliveries."
+    ]
+   }
+  },
+  "terms": [
+   "store_vs_container",
+   "concept_container",
+   "store_vs_container",
+   "container_qty"
+  ],
+  "article": "inventory-reports",
+  "new_until": null
+ },
+ {
+  "id": "reconciliation",
+  "title": "Reconciliation",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/reconciliation"
+  },
+  "app": {
+   "location": "Store › Stock"
+  },
+  "gating": {
+   "feature": "reconciliation",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Purchased vs sold vs counted for each item, to spot loss and spoilage.",
+   "points": [
+    "Expected closing = opening count + purchased - sold.",
+    "A negative variance means less is on the shelf than the math says.",
+    "Purchases must be logged (Delivery Review or Log a purchase) for this to mean anything.",
+    "Until logging is routine, expect most items to show a variance."
+   ],
+   "source": "Inventory uploads (counted), {pos} sales (sold) and your purchase log (purchased).",
+   "freshness": "Latest upload and last night's sales."
+  },
+  "sections": {
+   "report": {
+    "title": "Report",
+    "summary": "Each item's opening count, purchased, sold, expected closing, counted and variance.",
+    "points": []
+   },
+   "invoice_gaps": {
+    "title": "Invoices without a logged purchase",
+    "summary": "Invoices with no purchase logged from that vendor within a few days.",
+    "points": [
+     "Matched by vendor and date only, never by item."
+    ]
+   },
+   "log_purchase": {
+    "title": "Log a purchase",
+    "summary": "Record a delivery by hand, or upload a CSV for a whole delivery.",
+    "points": []
+   }
+  },
+  "terms": [
+   "recon_expected_closing",
+   "recon_variance",
+   "recon_invoice_gap",
+   "concept_reconciliation",
+   "recon_variance",
+   "concept_purchase_log"
+  ],
+  "article": "reconciliation",
+  "new_until": null
+ },
+ {
+  "id": "upload_inventory",
+  "title": "Upload inventory",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "Store › Stock"
+  },
+  "gating": {
+   "feature": "overview",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Upload {pos}'s daily retail items export so every report has today's stock and prices.",
+   "points": [
+    "Upload the file exactly as {pos} gives it. Don't open and re-save it.",
+    "Missing a day is fine: reports use the latest upload.",
+    "Tick **We received a delivery today** to review that delivery after the upload."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_inventory_upload",
+   "concept_retail_items_export",
+   "inventory_upload_due"
+  ],
+  "article": "home-upload-inventory",
+  "new_until": null
+ },
+ {
+  "id": "ask_bot",
+  "title": "Ask Inventory Bot",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "Store › Stock"
+  },
+  "gating": {
+   "feature": "ask_bot",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Ask a question in plain words. The bot looks the answer up in the same reports you see.",
+   "points": [
+    "It only reads. It can't log, change or send anything.",
+    "Each answer says which reports it checked.",
+    "It can misunderstand a question. Check important numbers on the report itself.",
+    "Users with Hide sales numbers can't ask about sales."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_ask_bot"
+  ],
+  "article": "ask-bot",
+  "new_until": null
+ },
+ {
+  "id": "items_sold",
+  "title": "Items Sold",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/items-sold"
+  },
+  "app": {
+   "location": "Store › Sales"
+  },
+  "gating": {
+   "feature": "items_sold",
+   "admin": false,
+   "salesOnly": true
+  },
+  "public": false,
+  "info": {
+   "summary": "Units and revenue per item for the dates you pick, counted by when each item was paid for.",
+   "points": [
+    "Revenue is each item's own price after item discounts, before tax.",
+    "Today is read live from {pos}. Past days come from the nightly sync.",
+    "Totals can differ a little from {pos}'s dashboard, which counts by business day.",
+    "Download sales data under the table gives the raw line items."
+   ],
+   "source": "{pos} orders.",
+   "freshness": "Today: live, reused for 1 minute. Past days: synced each night and re-checked during the day."
+  },
+  "sections": {},
+  "terms": [
+   "sales_live_today",
+   "sales_addons",
+   "concept_sales_sync"
+  ],
+  "article": "items-sold",
+  "new_until": null
+ },
+ {
+  "id": "open_checks",
+  "title": "Open Checks",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/open-orders"
+  },
+  "app": {
+   "location": "Store › Sales"
+  },
+  "gating": {
+   "feature": "open_orders",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Checks {pos} still has open, read live when you open the page.",
+   "points": [
+    "**Needs a look** lists checks that should probably be closed.",
+    "**Scheduled for later** lists paid orders whose pickup time hasn't come yet.",
+    "**All-time** finds checks left open on older dates.",
+    "Close a check in {pos}. The next refresh drops it from this list."
+   ],
+   "source": "{pos} orders.",
+   "freshness": "Live. All-time reads a copy refreshed every 15 minutes and fully once a day."
+  },
+  "sections": {},
+  "terms": [
+   "open_order_scheduled",
+   "open_order_too_long",
+   "open_order_tab_name",
+   "concept_open_check"
+  ],
+  "article": "open-checks",
+  "new_until": null
+ },
+ {
+  "id": "insights",
+  "title": "Insights",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Reports from {pos}'s analytics that {pos}'s own screens don't give you, in one hub.",
+   "points": [
+    "Pick a tile. Your last choice is remembered.",
+    "**Also in {pos}** tiles repeat {pos}'s own reports, kept here for convenience.",
+    "Loss watch and Odd checks are for admins only.",
+    "With Hide sales numbers you see Prep forecast, Returning customers and Busy hours (counts only)."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": "{pos} Analytics run 2 to 4 hours behind. The last 14 days are re-read each night."
+  },
+  "sections": {},
+  "terms": [
+   "insights_source",
+   "insights_stale",
+   "concept_insights",
+   "concept_also_in_pos"
+  ],
+  "article": "insights",
+  "new_until": null
+ },
+ {
+  "id": "insights_daily",
+  "title": "Daily compare",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/daily"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": true
+  },
+  "public": false,
+  "info": {
+   "summary": "One day's sales next to the same weekday last week, the 4-week average and last year.",
+   "points": [
+    "Yesterday by default. Today compares the same hours of earlier days.",
+    "A change under half a percent shows as =."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_vs_last_week",
+   "insights_vs_4wk_avg",
+   "insights_vs_last_year",
+   "insights_compare"
+  ],
+  "article": "insights-daily",
+  "new_until": null
+ },
+ {
+  "id": "insights_loss_watch",
+  "title": "Loss watch",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/insights/loss-watch"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Discounts, voids, refunds and estimated comps by day and by employee, with checks that stand out.",
+   "points": [
+    "A flag is a prompt to look, not proof of a problem.",
+    "Admins get one combined alert at 9 AM the next day.",
+    "**Acknowledge** marks a flagged check as looked at."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_loss_watch",
+   "insights_discount",
+   "insights_void",
+   "insights_refund",
+   "insights_comp_estimate",
+   "insights_loss_watch"
+  ],
+  "article": "insights-loss-watch",
+  "new_until": null
+ },
+ {
+  "id": "insights_odd_checks",
+  "title": "Odd checks",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/insights/odd-checks"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Checks open too long, changed long after payment, or with a large refund.",
+   "points": [
+    "Look a check up in {pos} by its number and date.",
+    "Included in the same 9 AM alert as Loss watch."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_odd_checks",
+   "insights_odd_open_long",
+   "insights_odd_modified_after_paid",
+   "insights_odd_large_refund",
+   "insights_odd_checks"
+  ],
+  "article": "insights-odd-checks",
+  "new_until": null
+ },
+ {
+  "id": "insights_prep",
+  "title": "Prep forecast",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/prep-forecast"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "How many of each kitchen item to expect on a day, with a low to high range.",
+   "points": [
+    "Uses the same weekday over the last 8 weeks, nudged by the recent trend.",
+    "**Print** gives a prep sheet with a tick box per item.",
+    "It doesn't know about catering orders, holidays or weather."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_prep_expected",
+   "insights_prep_range",
+   "insights_prep"
+  ],
+  "article": "insights-prep",
+  "new_until": null
+ },
+ {
+  "id": "insights_menu_trends",
+  "title": "Menu trends",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/menu-trends"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": true
+  },
+  "public": false,
+  "info": {
+   "summary": "The biggest risers and fallers in units, and menu items that didn't sell at all.",
+   "points": [
+    "Compared with the same number of days just before.",
+    "Filter to Kitchen or Grocery."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_menu_rising",
+   "insights_menu_falling",
+   "insights_menu_not_sold",
+   "concept_menu_trends"
+  ],
+  "article": "insights-menu-trends",
+  "new_until": null
+ },
+ {
+  "id": "insights_addons",
+  "title": "Add-ons",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/add-ons"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": true
+  },
+  "public": false,
+  "info": {
+   "summary": "Every modifier customers picked, how often, what it earned and its attach rate.",
+   "points": [
+    "Add-on money is already inside the item's own sales. Don't add the two."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_attach_rate",
+   "sales_addons"
+  ],
+  "article": "insights-addons",
+  "new_until": null
+ },
+ {
+  "id": "insights_returning",
+  "title": "Returning customers",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/returning-customers"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "How many different cards paid each week, and how many of them came back.",
+   "points": [
+    "Only a scrambled code of each card is kept. Never a card number or a name.",
+    "Cash customers aren't counted. Read it as a trend."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_card_customers",
+   "insights_returning_customer",
+   "insights_returning_rate",
+   "insights_returning_customer"
+  ],
+  "article": "insights-returning",
+  "new_until": null
+ },
+ {
+  "id": "insights_channels",
+  "title": "Sales channels",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/channels"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": true
+  },
+  "public": false,
+  "info": {
+   "summary": "Weekly net sales split by how the order came in: counter, online, delivery apps and more.",
+   "points": [
+    "Same numbers as {pos}'s own reports, kept here for convenience."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_channel",
+   "insights_channel_share",
+   "insights_channel"
+  ],
+  "article": "insights-also-in-pos",
+  "new_until": null
+ },
+ {
+  "id": "insights_check_size",
+  "title": "Check size & guests",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/check-trends"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": true
+  },
+  "public": false,
+  "info": {
+   "summary": "Average check, orders and guests per day, to see whether more people came or each spent more.",
+   "points": [
+    "Same numbers as {pos}'s own reports, kept here for convenience."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_avg_check",
+   "insights_guests",
+   "insights_avg_check"
+  ],
+  "article": "insights-also-in-pos",
+  "new_until": null
+ },
+ {
+  "id": "insights_busy_hours",
+  "title": "Busy hours",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/busy-hours"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "A weekday by hour grid. Darker squares are busier.",
+   "points": [
+    "Each square is that hour's average over the last 4, 8 or 12 weeks.",
+    "With Hide sales numbers it shows order counts instead of dollars."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_heatmap",
+   "insights_busiest",
+   "insights_quietest",
+   "insights_heatmap"
+  ],
+  "article": "insights-also-in-pos",
+  "new_until": null
+ },
+ {
+  "id": "insights_best_sellers",
+  "title": "Best & worst sellers",
+  "area": "sales",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/insights/best-sellers"
+  },
+  "app": {
+   "location": "Store › Sales › Insights"
+  },
+  "gating": {
+   "feature": "sales_insights",
+   "admin": false,
+   "salesOnly": true
+  },
+  "public": false,
+  "info": {
+   "summary": "The top and bottom items by net sales in the period.",
+   "points": [
+    "Same Kitchen and Grocery filter as Menu trends."
+   ],
+   "source": "{pos} Analytics.",
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "insights_menu_top",
+   "insights_menu_bottom"
+  ],
+  "article": "insights-also-in-pos",
+  "new_until": null
+ },
+ {
+  "id": "team_tasks",
+  "title": "Tasks",
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/team/tasks"
+  },
+  "app": {
+   "location": "Team › Tasks"
+  },
+  "gating": {
+   "feature": "team_tasks",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Tasks for you and your teams, as a list or a board.",
+   "points": [
+    "A task for a team is one task: whoever finishes it first closes it for everyone.",
+    "A task sent to several people gives each of them their own copy.",
+    "Some tasks need a photo or a note before they can be marked done.",
+    "**Overdue only** shows open tasks past their due time."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "stats": {
+    "title": "Stats",
+    "summary": "Admins only. Done, on time, late and overdue per person over the last 7 to 90 days.",
+    "points": []
+   },
+   "templates": {
+    "title": "Recurring tasks",
+    "summary": "Tasks that create themselves on a schedule. Set up by admins.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_task",
+   "concept_recurring_task",
+   "task_requires",
+   "task_status",
+   "concept_task_stats"
+  ],
+  "article": "team-tasks",
+  "new_until": null
+ },
+ {
+  "id": "team_chat",
+  "title": "Chat",
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/team/chat"
+  },
+  "app": {
+   "location": "Team › Chat"
+  },
+  "gating": {
+   "feature": "team_chat",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "A chat for each of your teams, plus direct messages.",
+   "points": [
+    "Type @ and a name to mention someone. They are told even if the chat is muted.",
+    "Send voice notes (up to 5 minutes) and PDFs (up to 10 MB).",
+    "Pin important messages to the top of a chat.",
+    "Report any message from its menu. Managers review reports within 24 hours."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "settings": {
+    "title": "Chat settings",
+    "summary": "Mute chats, hide message text in notifications and unblock people.",
+    "points": []
+   },
+   "search": {
+    "title": "Search",
+    "summary": "Finds messages and PDF names in the chats you can see.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_chat_channel",
+   "concept_direct_message",
+   "concept_pinned_message",
+   "chat_muted",
+   "chat_blocked",
+   "concept_reported_message"
+  ],
+  "article": "team-chat",
+  "new_until": null
+ },
+ {
+  "id": "team_news",
+  "title": "News",
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/team/announcements"
+  },
+  "app": {
+   "location": "Team › News"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Announcements from your managers, pinned ones first.",
+   "points": [
+    "When a post asks you to confirm, tap **I've read this**.",
+    "Until you do, Home shows a reminder.",
+    "Admins see who has acknowledged and can remind the rest."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_news",
+   "announcement_ack",
+   "announcement_pinned"
+  ],
+  "article": "team-news",
+  "new_until": null
+ },
+ {
+  "id": "flyers",
+  "title": "Flyers",
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/flyers"
+  },
+  "app": {
+   "location": "Team › Flyers"
+  },
+  "gating": {
+   "feature": "marketing_flyers",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Send a marketing flyer to your customer WhatsApp groups, and keep every flyer in one library.",
+   "points": [
+    "Pictures up to 25 MB, PDFs up to 20 MB.",
+    "Only groups marked **Use for flyers** are listed, so staff groups are never picked by mistake.",
+    "Groups are sent one at a time, a few seconds apart.",
+    "The demo store never sends."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "flyer",
+   "marketing_group",
+   "flyer",
+   "concept_whatsapp_group"
+  ],
+  "article": "flyers",
+  "new_until": null
+ },
+ {
+  "id": "team_rules",
+  "title": "Team rules",
+  "area": "team",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "Team"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "What everyone agrees to before using Tasks, Chat and News.",
+   "points": [
+    "Zero tolerance for abusive or objectionable content.",
+    "Managers review every report within 24 hours.",
+    "If the rules change you are asked to agree again."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_team_rules",
+   "concept_reported_message"
+  ],
+  "article": "team-rules",
+  "new_until": null
+ },
+ {
+  "id": "users",
+  "title": "Users",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/users"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Add logins, choose what each person can open, and reset passwords.",
+   "points": [
+    "Tick the pages each person may open. They never see the rest.",
+    "**Hide sales numbers** hides dollar amounts from a non-admin.",
+    "Resetting a password signs that person out everywhere at once.",
+    "You can't delete yourself or the last admin."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "user_admin",
+   "user_features",
+   "hide_sales",
+   "user_can_assign",
+   "user_features",
+   "user_admin"
+  ],
+  "article": "setup-users",
+  "new_until": null
+ },
+ {
+  "id": "teams",
+  "title": "Teams",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/teams"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Group people into teams for tasks, chat, checklists and news.",
+   "points": [
+    "Each team gets its own chat.",
+    "A task sent to a team can be done by anyone in it."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_team"
+  ],
+  "article": "setup-teams",
+  "new_until": null
+ },
+ {
+  "id": "checklist_builder",
+  "title": "Checklist builder",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/checklists/admin"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Build and change your daily checklists, like a form builder.",
+   "points": [
+    "**Save draft** keeps changes without staff seeing them. **Publish** makes them live.",
+    "Each checklist sends its summary to the WhatsApp group you choose.",
+    "Every publish is kept as a version you can view or revert to."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "public_links": {
+    "title": "Public link",
+    "summary": "A link that lets someone without an account fill in this one checklist.",
+    "points": [
+     "Turning it off, or making a new link, stops the old one at once."
+    ]
+   }
+  },
+  "terms": [
+   "concept_checklist_builder",
+   "checklist_version",
+   "checklist_draft",
+   "concept_public_checklist_link"
+  ],
+  "article": "setup-checklist-builder",
+  "new_until": null
+ },
+ {
+  "id": "issue_leads",
+  "title": "Category & vendor leads",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/issue-leads"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Who looks after each PO section and vendor on Fix Issues, and their daily task.",
+   "points": [
+    "An item's lead is its PO section's lead, else its vendor's lead, else the everything-else lead.",
+    "Each lead gets one Team task a day with their open items."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_category_lead",
+   "concept_vendor_lead"
+  ],
+  "article": "setup-leads",
+  "new_until": null
+ },
+ {
+  "id": "po_sections",
+  "title": "PO sections",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/po-sections"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": "category_edits",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "The heading each item prints under on a vendor's PO, so the vendor can pick it aisle by aisle.",
+   "points": [
+    "**Automatic** is the section picked from the item's category and name.",
+    "Vendor rules put every item from one vendor in a section.",
+    "Every change is recorded and the latest one can be undone."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "po_section",
+   "po_section"
+  ],
+  "article": "setup-po-sections",
+  "new_until": null
+ },
+ {
+  "id": "inventory_from_pos",
+  "title": "Inventory from {pos}",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/inventory-api"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Build each day's inventory from {pos} itself at 4:05 AM, so the daily upload becomes optional.",
+   "points": [
+    "Off until an admin turns it on. It applies at once.",
+    "Seven good nights in a row marks it ready.",
+    "A file uploaded for a day always replaces {pos}'s snapshot.",
+    "Cost and vendor codes still only come from a file. Upload one now and then."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "inventory_api_snapshot",
+   "live_stock",
+   "inventory_upload_due"
+  ],
+  "article": "setup-inventory-from-pos",
+  "new_until": null
+ },
+ {
+  "id": "integrations",
+  "title": "Integrations",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/settings/integrations"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Connect your POS, WhatsApp, email and the AI key. Save, then Test connection.",
+   "points": [
+    "Keys are encrypted and never shown again. A saved one shows its last 4 characters.",
+    "Leave a key box empty to keep the saved key.",
+    "The chip turns green when the test works."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "pos": {
+    "title": "POS",
+    "summary": "Connects {pos} so RetailOps can read sales, menus and stock.",
+    "points": []
+   },
+   "whatsapp": {
+    "title": "WhatsApp",
+    "summary": "The number that sends invoice, checklist and flyer messages to your groups.",
+    "points": []
+   },
+   "email": {
+    "title": "Email",
+    "summary": "The mailbox that sends POs and invoice emails.",
+    "points": []
+   },
+   "ai": {
+    "title": "AI",
+    "summary": "The key for Ask Inventory Bot and the weekly digest's sentences.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_integration",
+   "concept_pos",
+   "concept_whatsapp_group"
+  ],
+  "article": "setup-integrations",
+  "new_until": null
+ },
+ {
+  "id": "team_moderation",
+  "title": "Reported messages",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/team/moderation"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": "team_chat",
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Messages, tasks and comments people reported. Review each within 24 hours.",
+   "points": [
+    "**Resolve** a report, and tick Delete the message to remove it for everyone.",
+    "**Dismiss** a report that doesn't break the Team rules.",
+    "Add a note so other admins know why.",
+    "Direct-message blocks lists who has blocked whom."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_reported_message",
+   "chat_report_status"
+  ],
+  "article": "setup-moderation",
+  "new_until": null
+ },
+ {
+  "id": "team_templates",
+  "title": "Recurring tasks",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/team/templates"
+  },
+  "app": {
+   "location": "More › Setup"
+  },
+  "gating": {
+   "feature": "team_tasks",
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Reusable tasks with steps, created by themselves on a schedule or when you choose.",
+   "points": [
+    "Give particular weekdays to a different person or team.",
+    "**Create task now** makes one straight away."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_recurring_task",
+   "task_sections"
+  ],
+  "article": "team-tasks",
+  "new_until": null
+ },
+ {
+  "id": "help",
+  "title": "Help Center",
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff",
+   "master"
+  ],
+  "web": {
+   "route": "/help"
+  },
+  "app": {
+   "location": "More › Help & info"
+  },
+  "gating": {
+   "feature": "help",
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Guides, getting started, answers and fixes for every part of RetailOps.",
+   "points": [
+    "Search finds pages, guides, answers and terms.",
+    "The ⓘ on any page explains that page.",
+    "Still stuck? Email {support_email}."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [],
+  "article": "basics-navigation",
+  "new_until": null
+ },
+ {
+  "id": "glossary",
+  "title": "Glossary",
+  "area": "help",
+  "audience": [
+   "owner",
+   "admin",
+   "staff",
+   "master"
+  ],
+  "web": {
+   "route": "/glossary"
+  },
+  "app": {
+   "location": "More › Help & info"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "What every word, status and label in RetailOps means.",
+   "points": [
+    "Search, or pick a category.",
+    "Tap a term's (i) on any page to see it there."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [],
+  "article": "basics-navigation",
+  "new_until": null
+ },
+ {
+  "id": "change_password",
+  "title": "Change password",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/change-password"
+  },
+  "app": {
+   "location": "More › Account"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Change your own password. You need your current one.",
+   "points": [
+    "Use at least 8 characters. Longer is safer.",
+    "Your other signed-in devices stay signed in.",
+    "Forgot it? An admin resets it on Users, which signs you out everywhere."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [],
+  "article": "account-password",
+  "new_until": null
+ },
+ {
+  "id": "notifications",
+  "title": "Notifications",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "More › Account"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Choose which phone alerts you get on this phone.",
+   "points": [
+    "**Reset to recommended** goes back to the store's defaults.",
+    "No alerts are sent between 10 PM and 7 AM store time.",
+    "Admins also set the store's defaults."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [],
+  "article": "account-alerts",
+  "new_until": null
+ },
+ {
+  "id": "appearance",
+  "title": "Appearance",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "More › Account"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Light, dark, or follow your device.",
+   "points": [
+    "On the website it is in your user menu. In the app it is under More › Account."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_appearance"
+  ],
+  "article": "account-appearance",
+  "new_until": null
+ },
+ {
+  "id": "face_id",
+  "title": "Face ID",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "More › Account"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Sign in to the app with Face ID or your fingerprint instead of typing your password.",
+   "points": [
+    "Your password is still needed after a reset or an app update that signs you out."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [],
+  "article": "basics-signin",
+  "new_until": null
+ },
+ {
+  "id": "delete_account",
+  "title": "Delete my account",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "More › Account"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Remove your own login for good. The store's records stay.",
+   "points": [
+    "You need your password.",
+    "The last admin can't delete their account.",
+    "To come back, your manager creates a new login."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [],
+  "article": "account-delete",
+  "new_until": null
+ },
+ {
+  "id": "about",
+  "title": "About",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "More › Help & info"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "KloudC RetailOps by KloudC LLC, the app version and the privacy policy.",
+   "points": [],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [],
+  "article": "account-privacy",
+  "new_until": null
+ },
+ {
+  "id": "scan",
+  "title": "Scan",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "Scan"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Scan a barcode to look an item up and print its price label.",
+   "points": [
+    "Point the camera at the barcode and hold still.",
+    "Search by name if a barcode won't scan."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_barcode",
+   "concept_print_label"
+  ],
+  "article": "basics-app",
+  "new_until": null
+ },
+ {
+  "id": "manual_lookup",
+  "title": "Manual lookup",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "Scan"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Type a name, SKU or barcode to find an item.",
+   "points": [],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_sku",
+   "concept_barcode"
+  ],
+  "article": "basics-app",
+  "new_until": null
+ },
+ {
+  "id": "print_labels",
+  "title": "Print label history",
+  "area": "stock",
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": null,
+  "app": {
+   "location": "Scan"
+  },
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Recent label prints, with Reprint.",
+   "points": [
+    "A print still in the printer's queue shows as still printing."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "label_print_status",
+   "concept_label_scanner"
+  ],
+  "article": "basics-app",
+  "new_until": null
+ },
+ {
+  "id": "no_access",
+  "title": "No access",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/no-access"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Your login can't open any page yet.",
+   "points": [
+    "Ask an admin at your store to tick the pages you need on Users."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "user_features"
+  ],
+  "article": "basics-roles",
+  "new_until": null
+ },
+ {
+  "id": "not_available",
+  "title": "Not available",
+  "area": null,
+  "audience": [
+   "owner",
+   "admin",
+   "staff"
+  ],
+  "web": {
+   "route": "/not-available"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "This page isn't available for your store, usually because your POS doesn't offer what it needs.",
+   "points": [],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_pos"
+  ],
+  "article": "basics-limits",
+  "new_until": null
+ },
+ {
+  "id": "platform_requests",
+  "title": "Requests",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": {
+   "route": "/platform"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Store sign-up requests waiting for review. Approve with a starter pack, or reject with a note.",
+   "points": [
+    "Approving creates the store and its owner login by itself.",
+    "Watch provisioning on the Stores tab. Retry if a step fails."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_request_access",
+   "concept_starter_pack",
+   "concept_provisioning"
+  ],
+  "article": "master-requests",
+  "new_until": null
+ },
+ {
+  "id": "platform_stores",
+  "title": "Stores",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": {
+   "route": "/platform"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Every store, its status, POS and hosting. Suspend, resume or archive from here.",
+   "points": [
+    "**Suspend** stops sign-in and shows a maintenance message.",
+    "**Archive** off-boards a store. You type its Store ID to confirm.",
+    "Store settings open in a side panel."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "store_settings": {
+    "title": "Store settings",
+    "summary": "Name, address, colours and other store settings a master may change.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_suspend",
+   "concept_resume",
+   "concept_archive",
+   "concept_shared_hosting"
+  ],
+  "article": "master-stores",
+  "new_until": null
+ },
+ {
+  "id": "platform_hosting",
+  "title": "Hosting",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": {
+   "route": "/platform"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Requests to move a store to its own dedicated server, and their progress.",
+   "points": [
+    "Only a master can approve a move.",
+    "A move can be rolled back within 7 days."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_shared_hosting",
+   "concept_dedicated_server"
+  ],
+  "article": "master-hosting",
+  "new_until": null
+ },
+ {
+  "id": "platform_audit",
+  "title": "Audit",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": {
+   "route": "/platform"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Every sign-in and every change made on the platform, newest first.",
+   "points": [
+    "Filter by store or action.",
+    "Entries can't be edited or deleted."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_audit_log"
+  ],
+  "article": "master-audit",
+  "new_until": null
+ },
+ {
+  "id": "platform_security",
+  "title": "Two-step sign-in",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": null,
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Protect master logins with a 6-digit code from an authenticator app.",
+   "points": [
+    "Scan the QR code, then type the code to turn it on.",
+    "Scan the QR code on a second device too if you want a spare.",
+    "Lost every device? The server's operator has to clear two-step for your login."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_two_step"
+  ],
+  "article": "master-security",
+  "new_until": null
+ }
+]

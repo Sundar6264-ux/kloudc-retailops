@@ -1,0 +1,42 @@
+{
+ "id": "master-requests",
+ "title": "Reviewing store requests",
+ "area": "platform",
+ "group": "master",
+ "order": 901,
+ "audience": [
+  "master"
+ ],
+ "summary": "KloudC masters: review a new store's request, approve it with a starter pack, or reject it with a note.",
+ "pages": [
+  "platform_requests",
+  "platform_stores"
+ ],
+ "related": [
+  "master-stores",
+  "master-support-playbook"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "The **Requests** tab lists stores asking to join, waiting for review. Open one to see the store's name, requested Store ID, contact, time zone and POS."
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Check the request looks real and the Store ID is sensible.",
+    "Pick the **starter pack** (and change the Store ID or time zone if needed).",
+    "Click **Approve and set up**. RetailOps creates the store's database, loads the pack and creates the owner's admin login.",
+    "Watch it on the **Stores** tab. The owner signs in with the Store ID and the password they chose."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**Reject** asks why. The note is shown on the requester's status page, so keep it friendly and clear."
+  },
+  {
+   "type": "tip",
+   "text": "If set-up fails, the store shows Setup failed on Stores with the step it stopped at. Fix the cause, then **Retry set-up**."
+  }
+ ]
+}

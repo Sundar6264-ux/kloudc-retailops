@@ -1,0 +1,61 @@
+{
+ "id": "home-upload-inventory",
+ "title": "Uploading inventory",
+ "area": "stock",
+ "group": "home",
+ "order": 203,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Upload {pos}'s daily retail items export so every report has today's stock and prices. Missing a day is fine.",
+ "pages": [
+  "upload_inventory",
+  "home"
+ ],
+ "related": [
+  "delivery-review",
+  "setup-inventory-from-pos"
+ ],
+ "blocks": [
+  {
+   "type": "steps",
+   "items": [
+    "In {pos}, export the **retail items** report (CSV or Excel).",
+    "In RetailOps, open Home (website) or Store › Stock › Upload inventory (app).",
+    "Choose the file exactly as {pos} gave it. Don't open and re-save it first.",
+    "If a delivery came today, tick **We received a delivery today** and pick the vendors.",
+    "Wait for the upload bar, then Processing. Large files take a little while."
+   ]
+  },
+  {
+   "type": "warning",
+   "text": "Don't edit the file. Columns are matched by their exact header text, so a renamed or re-saved column can make the upload fail."
+  },
+  {
+   "type": "h",
+   "text": "Missing a day is fine"
+  },
+  {
+   "type": "p",
+   "text": "Every report always uses the most recent upload. Skip a few days and reports quietly use the last file: counts and prices are just a little older until the next one."
+  },
+  {
+   "type": "h",
+   "text": "We received a delivery today"
+  },
+  {
+   "type": "p",
+   "text": "If an invoice was already uploaded today for a vendor, that vendor is ticked for you. Change it freely. After the upload, **Review delivery** opens a page per vendor with the items that probably arrived. See [Delivery Review](article:delivery-review)."
+  },
+  {
+   "type": "h",
+   "text": "Do I still need to upload?"
+  },
+  {
+   "type": "p",
+   "text": "Once an admin turns on [Inventory from {pos}](article:setup-inventory-from-pos), RetailOps builds each day's inventory from {pos} at 4:05 AM, so the daily upload becomes optional. Cost, vendor codes and last-received dates still only come from a file, so upload one now and then. The **Inventory upload due** alert reminds you once the last file is 7 days old."
+  }
+ ]
+}

@@ -1,0 +1,64 @@
+{
+ "id": "items-sold",
+ "title": "Items Sold",
+ "area": "sales",
+ "group": "sales",
+ "order": 501,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Units and revenue per item for the dates you pick, counted by when each item was paid for.",
+ "pages": [
+  "items_sold"
+ ],
+ "related": [
+  "open-checks",
+  "basics-data-freshness",
+  "basics-downloads"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Items Sold shows how many of each item sold, and for how much, over the dates you pick: Today, Last 7 days, Month, 3 months or your own range."
+  },
+  {
+   "type": "h",
+   "text": "How it's counted"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "An item counts on the day it was **paid for**, not the day {pos} files the order under. Pay tonight for tomorrow's pickup and it counts tonight.",
+    "Revenue is each item's own price after item discounts, before tax.",
+    "Add-ons like an extra topping are already inside their item's price in {pos}, so they aren't counted again.",
+    "An order that isn't paid yet doesn't count on any day until it is."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "Totals can differ a little from {pos}'s own dashboard, on purpose. {pos} groups by its business day and uses each check's total (after check-level discounts). Both are right; they answer different questions."
+  },
+  {
+   "type": "h",
+   "text": "How fresh it is"
+  },
+  {
+   "type": "p",
+   "text": "Today is read live from {pos} when you open the page (a read under a minute old is reused; Refresh reads again). Past days come from the nightly sync. A few times a day the last 14 days are compared with {pos}'s own totals and any day that changed (a void the next morning, a late payment) is synced again."
+  },
+  {
+   "type": "h",
+   "text": "Downloads"
+  },
+  {
+   "type": "p",
+   "text": "**Download CSV** saves the whole range. **Download sales data** under the table gives every line item sold, with price, tax and void status, as CSV or PDF."
+  },
+  {
+   "type": "note",
+   "text": "People with Hide sales numbers don't get this page."
+  }
+ ]
+}

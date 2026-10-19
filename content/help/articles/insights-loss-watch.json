@@ -1,0 +1,41 @@
+{
+ "id": "insights-loss-watch",
+ "title": "Loss watch",
+ "area": "sales",
+ "group": "sales",
+ "order": 516,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins only: discounts, voids, refunds and estimated comps by day and by employee, and the checks that stand out.",
+ "pages": [
+  "insights_loss_watch"
+ ],
+ "related": [
+  "insights-odd-checks",
+  "insights"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Loss watch shows discounts, voids, refunds and estimated comps by day and by employee, built from {pos}'s check report each night at 4:30 AM. Checks that stand out are flagged:"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "well above that employee's usual (3 times their 30-day median),",
+    "a large discount (over $50), void (over $50) or refund (over $25),",
+    "or comped 100%."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "When something is flagged, admins get one combined alert at 9 AM the next day (held during quiet hours). **Acknowledge** marks a flagged check as looked at."
+  },
+  {
+   "type": "warning",
+   "text": "A flag is a prompt to look, not proof of a problem. Look the check up in {pos} before talking to anyone."
+  }
+ ]
+}

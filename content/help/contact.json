@@ -1,0 +1,18 @@
+{
+ "email": "support@kloudc.com",
+ "support_url": "https://kloudc.com/kloudc-support/",
+ "contact_url": "https://kloudc.com/contact/",
+ "privacy_url": "https://kloudc.com/kloudc-privacy-policy/",
+ "terms_url": "",
+ "website_url": "https://kloudc.com",
+ "company": "KloudC LLC",
+ "location": "Connecticut, USA",
+ "product": "KloudC RetailOps",
+ "intro": "Email us about anything in RetailOps. A person at KloudC reads every message.",
+ "tips": [
+  "Say your **Store ID** and the page you were on.",
+  "Say what you did, what you expected and what happened instead.",
+  "Attach a screenshot if you can.",
+  "Never send your password. KloudC will never ask for it."
+ ]
+}

@@ -1,0 +1,73 @@
+{
+ "id": "invoices",
+ "title": "Invoices",
+ "area": "stock",
+ "group": "stock",
+ "order": 403,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Upload vendor invoices, returns and transfers. Each is saved, shared on WhatsApp and emailed to {pos}.",
+ "pages": [
+  "invoices"
+ ],
+ "related": [
+  "delivery-review",
+  "reconciliation",
+  "setup-integrations"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "Upload an invoice",
+   "id": "upload"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Pick the **vendor** and the type: Invoice, Return, Something else or Transfer.",
+    "Add the total if you like.",
+    "Attach the file: a PDF or a photo.",
+    "Click **Submit**."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "Submit is instant: it only saves the record and the file. Right after, in the background, two things happen for every type except a transfer: a WhatsApp message goes to the staff group with a link to the file, and an email goes to {pos}'s invoicing inbox with the file as a PDF (a photo is turned into a PDF). {pos} turns that email into a draft bill."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Each upload shows Sending, Sent or Failed for WhatsApp and for the {pos} email, live.",
+    "Your upload is always saved, even if a send fails. A failed one gets **Resend**."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Transfers"
+  },
+  {
+   "type": "p",
+   "text": "**Transfer** is for stock moved between the store and the Container. Pick the direction. A transfer goes to WhatsApp only, never to {pos}, and never counts as a vendor delivery."
+  },
+  {
+   "type": "h",
+   "text": "Looks closed in {pos}"
+  },
+  {
+   "type": "p",
+   "text": "Someone still has to enter each invoice in {pos} and mark it closed here. When a later upload shows {pos} received a delivery from that vendor after the invoice, it is listed under **Looks closed in {pos}** with the reason. **Mark closed in {pos}** closes it; **Not closed yet** hides the suggestion. Nothing is closed by itself."
+  },
+  {
+   "type": "h",
+   "text": "Trash",
+   "id": "trash"
+  },
+  {
+   "type": "p",
+   "text": "A deleted upload goes to **Trash**, where an admin can restore it or delete it for good. Staff ask for a delete with Delete requested, and an admin approves or rejects it."
+  }
+ ]
+}

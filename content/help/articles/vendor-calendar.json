@@ -1,0 +1,79 @@
+{
+ "id": "vendor-calendar",
+ "title": "Vendor Calendar",
+ "area": "ordering",
+ "group": "ordering",
+ "order": 303,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Each vendor's order deadlines and delivery days, set once. Suggested schedules, order due chips and how to deal with an order without opening it.",
+ "pages": [
+  "vendor_calendar"
+ ],
+ "related": [
+  "new-order",
+  "home-today",
+  "placed-orders"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Set each vendor's delivery days and how many days ahead the order must go in, once. The calendar then shows every order due and delivery day by itself, and Reorder, New order, Home and the reminders use it."
+  },
+  {
+   "type": "h",
+   "text": "Order due chips"
+  },
+  {
+   "type": "p",
+   "text": "An **Order due** chip turns red with a count, like \"(7)\", only when New order says 5 or more items need ordering for that delivery. Vendors have minimum orders, so 1 to 4 low items are not an order: those show as \"(2 low)\" without the red, and the 9 AM reminder says \"2 items low\"."
+  },
+  {
+   "type": "h",
+   "text": "Suggested schedules",
+   "id": "suggestions"
+  },
+  {
+   "type": "p",
+   "text": "For a vendor with no schedule, RetailOps reads the delivery days off the last 12 weeks of everything that records a delivery: invoice uploads, deliveries logged by hand, {pos}'s receiving records, Delivery Review confirms and stock rises. It suggests the weekdays most deliveries fall on, with the evidence (\"Delivered Tue x6, Fri x5\") and a confidence: High, Medium or Low."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Add schedule** saves it as shown. **Edit** lets you change it first. **Dismiss** hides it.",
+    "**Add all suggestions** lists them to confirm. High and Medium start ticked, Low ones don't.",
+    "A vendor that delivers only every few weeks is marked \"weekly isn't right\" and starts unticked.",
+    "A vendor that already has a schedule is never changed by a suggestion."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Vendors without a schedule",
+   "id": "without"
+  },
+  {
+   "type": "p",
+   "text": "Every other vendor {pos} has on an item, and why there is no suggestion yet (too few deliveries, scattered days, or dismissed), each with **Set schedule**."
+  },
+  {
+   "type": "h",
+   "text": "Dealing with an order without opening it"
+  },
+  {
+   "type": "p",
+   "text": "Click an Order due chip for its menu. Besides **Review order**:"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Order already placed** (admins): the order went in another way. The chip turns Ordered and reminders leave it alone.",
+    "**Skip this week**: no order for that delivery. The delivery shows as skipped.",
+    "**Other** (admins, with a note): hides that one order for this cycle and shows the note.",
+    "Each one is for everyone and has **Undo**. An order placed from the cart is undone on Placed Orders."
+   ]
+  }
+ ]
+}

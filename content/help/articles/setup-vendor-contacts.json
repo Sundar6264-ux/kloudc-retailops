@@ -1,0 +1,41 @@
+{
+ "id": "setup-vendor-contacts",
+ "title": "Vendor contacts",
+ "area": "setup",
+ "group": "setup",
+ "order": 706,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Who gets each vendor's PO from Send PO, and who is copied.",
+ "pages": [
+  "vendor_contacts"
+ ],
+ "related": [
+  "po-cart"
+ ],
+ "blocks": [
+  {
+   "type": "steps",
+   "items": [
+    "Open Setup › **Vendor contacts** (or Contacts on a vendor in the cart).",
+    "Add each email address for the vendor, with a name if you like.",
+    "Tick **Gets POs** for the addresses that should receive orders.",
+    "Add default **CC** addresses (up to 10) for people who should always get a copy."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Send PO can only email addresses saved here. CC on a single send can be any address.",
+    "Only admins add or change contacts. Anyone with the cart can send.",
+    "**Recent PO sends** lists every send: who, when, to whom, CC, and whether it went out."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "Contacts are real people's details, so the demo login never sees this page."
+  }
+ ]
+}

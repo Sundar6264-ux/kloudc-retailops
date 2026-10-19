@@ -1,0 +1,66 @@
+{
+ "id": "setup-inventory-from-pos",
+ "title": "Inventory from {pos}",
+ "area": "setup",
+ "group": "setup",
+ "order": 704,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins: build each day's inventory from {pos} itself, so the daily upload becomes optional. Readiness, live stock and what still needs a file.",
+ "pages": [
+  "inventory_from_pos",
+  "upload_inventory"
+ ],
+ "related": [
+  "home-upload-inventory",
+  "basics-data-freshness"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Instead of uploading a file every day, RetailOps can build an inventory snapshot from {pos} each night at 4:05 AM: counts, prices, barcodes and categories from {pos}, and 7, 30 and 90-day sales counted from your synced sales."
+  },
+  {
+   "type": "h",
+   "text": "Turning it on"
+  },
+  {
+   "type": "p",
+   "text": "It is off until an admin clicks **Use {pos} for inventory** on Setup › Inventory from {pos}. It applies at once, and every change is listed there with who and when. Until then, the nightly run only compares what it built with that day's file."
+  },
+  {
+   "type": "h",
+   "text": "Readiness"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Each nightly comparison is scored. On hand must match the file on 99% of counted items, price and barcode on 99%, category on 100%, with at most 10 unexplained differences.",
+    "Seven good nights in a row means ready. Admins get one alert at 9 AM while it is still off.",
+    "A night that misses starts the count again, and the page says which night and why."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "The file still wins"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "A file uploaded for a day always replaces {pos}'s snapshot of that day.",
+    "{pos} has no cost, vendor code or last-received date, so those come from the latest file. Upload one now and then; the **Inventory upload due** alert reminds you after 7 days.",
+    "{pos} only says out of stock for anything at 0 or below, so those show 0, except on Negative inventory."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Live stock"
+  },
+  {
+   "type": "p",
+   "text": "With it on, New order, Reorder Candidates and Fix Issues' Negative inventory and Refill from container use {pos}'s current count, at most 5 minutes old. Barcodes are re-checked every hour when {pos}'s menu changes."
+  }
+ ]
+}
