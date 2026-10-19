@@ -3125,3 +3125,81 @@ then swap (needs CREATEDB + database ownership, as provisioning already
 does); backups without a snapshot still succeed (old live comparison);
 multi-mode sends with no store are refused; hard-linked packs refused;
 an empty parity reference is a failure, not a pass.
+
+## As built - Final pass: visual + UX review
+
+A design-critic pass over the merged product, run on a separate review
+preview (`PREVIEW_PORT=8872 PREVIEW_DB_PREFIX=so_vrev PREVIEW_STATE=<tmp>
+~/storeops/preview.sh`; `preview.sh` now takes `PREVIEW_STATE`, outside git)
+and on the iPhone 17 and iPad Pro 11 simulators (debug simulator build of a
+throwaway walk test, ML Kit stubbed, driven with `simctl`; never committed).
+Every website page at 1440 / 1280 / 375 in light and dark, both app themes.
+
+**New check.** `frontend/e2e/screens/audit.mjs`: walks the same pages as
+`screens.mjs` and reports text under WCAG AA contrast (4.5:1, 3:1 for large
+text; gradients skipped) and controls running past the right edge. Before the
+fixes: 17 page/theme hits, all dark mode. After: 0 at 1440, 1280 and 375 in
+both themes.
+
+**Website fixes.**
+- Dark mode: selected Flyers type chip and Category & vendor leads tab were
+  white-on-white (1.2:1) - now `--brand-soft` + `--brand-text` (the spec's
+  filter-chip look) in both themes; the password Show/Hide toggle used the
+  light-theme fill on dark (2.0:1) - now `--brand-text`; a store brand's
+  dark-theme text is lifted to 6:1 on the surface (was 4.5) and the avatar
+  sits on `--brand-soft`, so tinted fills still pass; unsaved leads rows get a
+  warning edge instead of an olive wash over the whole table.
+- The hidden skip link's shadow bled a grey smudge into the top-left corner
+  of every page; it now has a shadow only while shown.
+- Real icons instead of emoji glyphs: Chat search/settings, pinned tag and
+  pins bar, checklist builder duplicate/delete (`trash-2`, `pin` added to
+  `ui/icons.jsx`). The "? More" toggle on ~50 cards is now "ⓘ More" (the
+  same info icon as page headers) and "Less" with a chevron.
+- Phone: the cart's Order placed / Send / PDF row wrapped past the vendor
+  panel at 375 px - it now wraps inside it. Sign-in: a long store name
+  wraps to two lines instead of "KloudC RetailOp...".
+- Names (spec 3.5, one name per thing): Delivery Review said "Overview" (now
+  Home); the New order header dropped its inline "Supplier Projection" aside
+  (search still finds the old name through the glossary); Users access
+  checkboxes use page names (Home, New order, Vendor Calendar, Invoices,
+  PO sections, Tasks, Chat, Flyers, Insights, "Inventory Reports and Fix
+  Issues", "Transfer Review (older app versions)") from
+  `backend/app/features.py` (keys unchanged, so stored access and installed
+  apps are unaffected), and are grouped by area (Home, Ordering, Stock,
+  Sales, Team, Setup, Other) with the area colour on each group; glossary
+  "Shown on" lines and definitions say Home / New order / Vendor Calendar
+  (app bundle regenerated).
+- Copy: a CSV-only store's upload card read "Upload today's CSV upload
+  Retail export" - now "Upload today's inventory file"; Inventory from
+  {pos} no longer shows the env name `INVENTORY_API_SNAPSHOTS` or "menu last
+  changed -; pulled -" before the first read; Items Sold and Reconciliation
+  show "Oct 18, 2026" instead of `2026-10-18` (`formatDayLabel`).
+- Help Center: a store login no longer sees the "KloudC master" audience
+  chip (master console and signed-out readers still do).
+
+**App fixes** (`kloudc-retailops-app`): Help Center Start here hides the
+KloudC master track for a signed-in store user; Home quick action "New
+order" (was "New Order", matching Store and the website); the New order
+search/Store subtitle no longer repeats "Supplier Projection:" (kept as a
+search keyword); "Change password" and "Sign out" in sentence case like the
+rest of More; bundled glossary regenerated.
+
+**Checks.** Website `node --test` 308/308, build OK; screenshot suite 282
+shots, no sideways scroll, no crash; audit 0 findings; `e2e/store` 748
+checks, 0 failures. Server full suite 2989 passed / 18 skipped / 1 failed
+(`test_a_corrupted_copy_fails_the_import...`, timing under load; passes
+8/8 when its file is rerun). App `flutter analyze` clean, `flutter test
+--concurrency=2` 5651 passed / 8 skipped. Simulator walk (DEMO, both
+themes): iPhone 17 and iPad Pro 11, every screen reached; the iPhone run
+ends with the known SemanticsHandle note. Regression suite B's
+`admin.mjs` and suite A's sweep updated to the new labels (not run here).
+
+Screenshots: `~/storeops/screenshots/final/web/<theme>/<width>/` (282) and
+`~/storeops/screenshots/final/app/{iphone-17,ipad-pro-11}/` (28 each).
+
+**Left as is (owner's call).** The app's cart is titled "Purchase Cart"
+and its button says "Mark placed" (website: Purchase Order Cart, "Order
+placed"); app Fix Issues list names are Title Case ("Missing Barcodes");
+wide tables (Placed Orders, Invoices, Teams) scroll inside their card on a
+phone rather than turning into stacked cards (spec 2.7); the help text's
+{pos} reads "CSV upload" for a CSV-only store ("CSV upload sales").
