@@ -1,7 +1,7 @@
 #!/bin/bash
 # KloudC RetailOps pilot on this Mac - the ONE command the owner runs:
 #
-#   sudo /Users/sundar/storeops/storeops/deploy/pilot-mac/install.sh
+#   sudo ~/storeops/storeops/deploy/pilot-mac/install.sh
 #
 # What it does (docs/PILOT_RUNBOOK.md has the long version):
 #  1. as you (not root): prepare.sh - folders under ~/kloudc-retailops, the

@@ -130,7 +130,7 @@ def test_cloud_vm_compose_has_backups_https_and_enough_connections():
 
 def test_runbook_names_the_one_sudo_command():
     runbook = (REPO / "docs" / "PILOT_RUNBOOK.md").read_text()
-    assert "sudo /Users/sundar/storeops/storeops/deploy/pilot-mac/install.sh" in runbook
+    assert "sudo ~/storeops/storeops/deploy/pilot-mac/install.sh" in runbook
     for topic in ("Tailscale", "app.kloudc.com", "Cloudflare", "pilot-mode", "import-sqlite", "load-pack", "parity",
                   "/api/ready", "Restore"):
         assert topic in runbook, topic

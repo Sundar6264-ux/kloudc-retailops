@@ -19,7 +19,7 @@ Contents:
 
 From your own account in a real Terminal:
 
-    sudo /Users/sundar/storeops/storeops/deploy/pilot-mac/install.sh
+    sudo ~/storeops/storeops/deploy/pilot-mac/install.sh
 
 It asks for your Mac password once (sudo), and once for the password of the
 first master account. It takes 5-10 minutes the first time (Python packages
@@ -257,5 +257,5 @@ no client-IP header behind a proxy, no website build, no `LOG_DIR`.
   restarts the server (launchd starts it again at once; the start script
   migrates the databases) and waits for `/api/ready`.
 - **Restart** (no sudo): `pkill -TERM -u $(id -u) -f "kloudc-retailops/app/backend/.venv/bin/uvicorn"`.
-- **Stop everything**: `sudo /Users/sundar/storeops/storeops/deploy/pilot-mac/install.sh --uninstall`
+- **Stop everything**: `sudo ~/storeops/storeops/deploy/pilot-mac/install.sh --uninstall`
   (data, backups and secrets stay in `~/kloudc-retailops`).

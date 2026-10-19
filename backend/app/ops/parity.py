@@ -50,9 +50,17 @@ _DAY_SQL = (
     "sum(CASE WHEN voided = {f} THEN net_price ELSE 0 END) AS net_sales, "
     "sum(CASE WHEN voided = {f} THEN tax_amount ELSE 0 END) AS tax, "
     "sum(CASE WHEN voided = {t} THEN 1 ELSE 0 END) AS voided_lines "
-    "FROM orders WHERE parent_selection_guid IS NULL AND business_date >= {p} AND business_date <= {p} "
+    "FROM orders WHERE {top_level} AND business_date >= {p} AND business_date <= {p} "
     "GROUP BY business_date ORDER BY business_date"
 )
+
+
+def _top_level_sql() -> str:
+    """Order.top_level() (real sold items, not modifier lines) as SQL text -
+    the one definition, the same on SQLite and PostgreSQL."""
+    from app.models import Order
+
+    return str(Order.top_level().compile(compile_kwargs={"literal_binds": True}))
 
 
 def _iso(value) -> str:
@@ -80,9 +88,10 @@ class _Side:
         self.conn = conn
 
     def sql(self, template: str) -> str:
+        top = _top_level_sql()
         if self.kind == "sqlite":
-            return template.format(f="0", t="1", p="?")
-        return template.format(f="false", t="true", p="%s")
+            return template.format(f="0", t="1", p="?", top_level=top)
+        return template.format(f="false", t="true", p="%s", top_level=top)
 
     def rows(self, template: str, params: Tuple = ()) -> List[tuple]:
         if self.kind == "sqlite":
