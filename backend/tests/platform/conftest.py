@@ -89,47 +89,10 @@ TABLES = (
 )
 
 
-def create_all_migrator(url: str) -> str:
-    """Stand-in for track A's ``app.migrate.upgrade_store_db`` until it is
-    merged: the store schema from the models (the one Boolean default that
-    PostgreSQL refuses fixed on the fly) stamped at the Alembic head."""
-    import sqlalchemy as sa
-
-    import app.main  # noqa: F401 - every model registered
-    from app.db import Base
-    from app.store.__main__ import _alembic_heads
-
-    patched = []
-    for table in Base.metadata.tables.values():
-        for col in table.columns:
-            sd = col.server_default
-            if isinstance(col.type, sa.Boolean) and sd is not None and hasattr(sd, "arg"):
-                raw = str(getattr(sd.arg, "text", sd.arg)).strip("'\"")
-                if raw in ("0", "1"):
-                    patched.append((col, sd))
-                    col.server_default = sa.schema.DefaultClause(sa.true() if raw == "1" else sa.false())
-    eng = create_engine(url)
-    try:
-        Base.metadata.create_all(eng)
-        head = _alembic_heads()[0]
-        with eng.begin() as c:
-            c.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) PRIMARY KEY)"))
-            c.execute(text("DELETE FROM alembic_version"))
-            c.execute(text("INSERT INTO alembic_version VALUES (:v)"), {"v": head})
-        return head
-    finally:
-        eng.dispose()
-        for col, sd in patched:
-            col.server_default = sd
-
-
 def store_migrator():
-    try:
-        from app.migrate import upgrade_store_db  # track A
+    from app.migrate import upgrade_store_db  # track A: the PostgreSQL baseline + chain
 
-        return upgrade_store_db
-    except ImportError:
-        return create_all_migrator
+    return upgrade_store_db
 
 
 @pytest.fixture(autouse=True)
