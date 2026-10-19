@@ -133,6 +133,19 @@ test("every page id the website uses has info text in the registry", () => {
   }
 });
 
+test("every registry page with a website route is wired to an ⓘ", () => {
+  // The other direction of the test above: a page the website shows must
+  // render <InfoButton pageId=...> (directly, through PageHeader/ListHeader,
+  // or by a route/tab table's pageId), so no page is left without info.
+  const wired = new Set();
+  for (const { text } of SOURCES) {
+    for (const m of text.matchAll(/pageId=\{?"([a-z_]+)"\}?/g)) wired.add(m[1]);
+    for (const m of text.matchAll(/pageId:\s*"([a-z_]+)"/g)) wired.add(m[1]);
+  }
+  const missing = [...HELP.pages.values()].filter((p) => p.web?.route && !wired.has(p.id)).map((p) => p.id);
+  assert.deepEqual(missing, [], `website pages without an ⓘ: ${missing.join(", ")}`);
+});
+
 test("every page in the menu and every platform tab has a registry page", () => {
   for (const r of FEATURE_ROUTES.filter((x) => !x.retired)) {
     const id = pageIdForPath(HELP, r.path);
@@ -143,7 +156,13 @@ test("every page in the menu and every platform tab has a registry page", () => 
       if (r.admin) assert.ok(page.gating.admin, `${id}: admins only like the route`);
     }
   }
-  for (const t of PLATFORM_TABS) assert.ok(HELP.pages.has(`platform_${t.key}`), `platform tab ${t.key}`);
+  // Each master console tab names its registry page (the Help tab shows the
+  // Help Center, page "help"; the others are platform_<key>).
+  for (const t of PLATFORM_TABS) {
+    assert.ok(t.pageId, `platform tab ${t.key} names a pageId`);
+    assert.ok(HELP.pages.has(t.pageId), `platform tab ${t.key} -> ${t.pageId}`);
+    if (t.key !== "help") assert.equal(t.pageId, `platform_${t.key}`, `platform tab ${t.key}`);
+  }
   for (const id of ["help", "glossary", "change_password", "no_access", "not_available", "login", "signup"]) {
     assert.ok(HELP.pages.has(id), id);
   }

@@ -19,6 +19,7 @@ import {
 } from "../signup/signupModel.js";
 import "../platform/platform.css";
 import AuthLayout from "../components/AuthLayout.jsx";
+import { InfoButton } from "../ui/helpBridge.jsx";
 
 function browserTimezones() {
   try {
@@ -145,7 +146,10 @@ export default function SignupPage() {
     <AuthLayout wide>
       <form className="auth-card signup-card" onSubmit={handleSubmit} noValidate>
         <div className="auth-head">
-          <h1 className="auth-title">Create your store</h1>
+          <div className="auth-title-row">
+            <h1 className="auth-title">Create your store</h1>
+            <InfoButton pageId="signup" />
+          </div>
           <p className="muted">
             Tell us about your store. We review every request; once it's approved your store is set up and you sign in
             with the Store ID and login you choose here.

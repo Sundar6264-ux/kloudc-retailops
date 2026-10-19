@@ -5,6 +5,7 @@ import PasswordInput from "../components/PasswordInput.jsx";
 import { ownerSetupParams, ownerSetupProblem } from "../signup/signupModel.js";
 import "../platform/platform.css";
 import AuthLayout from "../components/AuthLayout.jsx";
+import { InfoButton } from "../ui/helpBridge.jsx";
 
 // A store owner's one-time set-up link (docs/PLATFORM_CONTRACT.md "As built -
 // C": POST /api/signup/owner-setup). A master makes the link for a store
@@ -44,7 +45,10 @@ export default function OwnerSetupPage() {
     <AuthLayout>
       <div className="auth-card signup-card" data-testid="owner-setup" data-state={done ? "done" : link ? "form" : "invalid"}>
         <div className="auth-head">
-          <h1 className="auth-title">Set your password</h1>
+          <div className="auth-title-row">
+            <h1 className="auth-title">Set your password</h1>
+            <InfoButton pageId="owner_setup" />
+          </div>
         </div>
         {!link ? (
           <>

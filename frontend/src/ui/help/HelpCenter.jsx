@@ -112,7 +112,10 @@ export default function HelpCenter({ tab: forcedTab }) {
     return (
       <div className="kc-help" data-area="help">
         <header className="kc-help-hero kc-help-hero-slim">
-          <h1 className="kc-help-title">Glossary</h1>
+          <div className="kc-help-title-row">
+            <h1 className="kc-help-title">Glossary</h1>
+            <InfoButton pageId="glossary" />
+          </div>
           <p className="kc-help-lead">What every word, status and label in RetailOps means.</p>
         </header>
         <GlossaryList />

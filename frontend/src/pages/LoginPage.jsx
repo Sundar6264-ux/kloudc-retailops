@@ -7,6 +7,7 @@ import StoreLogo from "../components/StoreLogo.jsx";
 import { useBranding } from "../store/StoreContext.jsx";
 import { safeUrl } from "../store/branding.js";
 import AuthLayout from "../components/AuthLayout.jsx";
+import { InfoButton } from "../ui/helpBridge.jsx";
 import Icon from "../ui/icons.jsx";
 import {
   cleanTotp,
@@ -139,9 +140,12 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="auth-card login-card" noValidate>
         {productHeader ? (
           <div className="auth-head">
-            <h1 className="auth-title" data-testid="login-store-name">
-              {platform ? "Platform console" : "Sign in to your store"}
-            </h1>
+            <div className="auth-title-row">
+              <h1 className="auth-title" data-testid="login-store-name">
+                {platform ? "Platform console" : "Sign in to your store"}
+              </h1>
+              <InfoButton pageId="login" />
+            </div>
             <p className="auth-sub">
               {platform ? "KloudC staff only. You'll be asked for your 6-digit code." : "Use the Store ID, username and password your store gave you."}
             </p>
@@ -156,6 +160,7 @@ export default function LoginPage() {
                   {title}
                 </h1>
               </span>
+              <InfoButton pageId="login" />
             </div>
           </div>
         )}

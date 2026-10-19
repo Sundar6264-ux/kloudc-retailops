@@ -4,6 +4,7 @@ import { getSignupStatus } from "../api";
 import { PENDING_POLL_MS, SIGNUP_STORAGE_KEY, pendingView, shouldPoll } from "../signup/signupModel.js";
 import "../platform/platform.css";
 import AuthLayout from "../components/AuthLayout.jsx";
+import { InfoButton } from "../ui/helpBridge.jsx";
 
 // Logged out there is no store yet: the viewer's own clock.
 function viewerZone() {
@@ -65,7 +66,10 @@ export default function SignupPendingPage() {
     <AuthLayout>
       <div className="auth-card signup-card" data-testid="signup-pending" data-state={view.state}>
         <div className="auth-head">
-          <h1 className="auth-title">Your store request</h1>
+          <div className="auth-title-row">
+            <h1 className="auth-title">Your store request</h1>
+            <InfoButton pageId="signup_pending" />
+          </div>
         </div>
         <p className="pending-state">{view.title}</p>
         {view.text && <p className="muted">{view.text}</p>}

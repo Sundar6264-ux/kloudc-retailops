@@ -184,6 +184,26 @@ h1.auth-title,
   color: var(--text);
 }
 
+/* Title + its ⓘ (page info from the help registry; public pages show no
+   signed-in links). */
+.auth-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.auth-store-chip .kc-info-wrap,
+.auth-store-chip > :last-child:not(.auth-store-text) {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.auth-store-text {
+  flex: 1 1 auto;
+}
+
 .auth-sub,
 .auth-head > p {
   margin: 0;
