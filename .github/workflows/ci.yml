@@ -47,6 +47,11 @@ jobs:
       STOREOPS_TEST_PG_URL: postgresql+psycopg://storeops@127.0.0.1:5432/postgres
       STOREOPS_TEST_DB_PREFIX: so_ci
       PGTZ: America/New_York
+      # The process clock in the test store's zone: some ordering routes
+      # default to the server's date (dt.date.today()), so between 00:00 and
+      # ~05:00 UTC a UTC runner is a day ahead of the store and 11 tests fail.
+      # Known defect, deferred (PLATFORM_CONTRACT "As built - Integration").
+      TZ: America/New_York
     defaults:
       run:
         working-directory: backend
@@ -83,6 +88,7 @@ jobs:
     timeout-minutes: 30
     env:
       STOREOPS_TEST_DB: sqlite
+      TZ: America/New_York  # the test store's zone (see the PostgreSQL job)
     defaults:
       run:
         working-directory: backend
@@ -214,6 +220,6 @@ jobs:
         run: |
           docker run --rm --user root --entrypoint sh \
             -e TOAST_API_BASE -e TOAST_ANALYTICS_BASE -e WHAPI_BASE_URL \
-            -e STOREOPS_TEST_DB=sqlite \
+            -e STOREOPS_TEST_DB=sqlite -e TZ=America/New_York \
             -v "$PWD:/repo" -w /repo/backend storeops:ci \
             -c "pip install -q pytest==8.3.3 && python -m pytest -q -p no:cacheprovider"

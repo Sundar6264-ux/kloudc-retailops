@@ -45,7 +45,9 @@ def make_engine(url: str, **kwargs) -> Engine:
         return create_engine(url, connect_args={"check_same_thread": False}, **kwargs)
     connect_args = kwargs.pop("connect_args", {})
     connect_args.setdefault("options", "-c timezone=UTC")
-    return create_engine(url, pool_pre_ping=True, connect_args=connect_args, **kwargs)
+    from app.dbcompat import force_utc_sessions  # PGTZ would override the option alone
+
+    return force_utc_sessions(create_engine(url, pool_pre_ping=True, connect_args=connect_args, **kwargs))
 
 
 def platform_engine() -> Engine:

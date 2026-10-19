@@ -140,3 +140,26 @@ def group_order(*keys) -> list:
     (Store databases use the C collation, so text keys sort bytewise like
     SQLite's BINARY.)"""
     return [nulls_first(k) for k in keys]
+
+
+def force_utc_sessions(engine: Engine) -> Engine:
+    """Every new PostgreSQL connection of `engine` runs ``SET TIME ZONE 'UTC'``
+    (contract 5.2). The ``options=-c timezone=UTC`` connect argument alone is
+    not enough: libpq's PGTZ environment variable (CI sets one on purpose)
+    overrides it. Timestamps are stored UTC either way (UTCDateTime); this
+    keeps raw SQL date functions and timestamptz values read back in UTC."""
+    from sqlalchemy import event
+
+    if engine.dialect.name != "postgresql":
+        return engine
+
+    @event.listens_for(engine, "connect")
+    def _utc(dbapi_connection, _record):  # pragma: no cover - exercised on PostgreSQL
+        cur = dbapi_connection.cursor()
+        try:
+            cur.execute("SET TIME ZONE 'UTC'")
+        finally:
+            cur.close()
+        dbapi_connection.commit()
+
+    return engine

@@ -102,7 +102,9 @@ def create_store_engine(url: str, *, tenant: bool = True) -> Engine:
         )
     else:
         kwargs["pool_pre_ping"] = True
-    return create_engine(url, **kwargs)
+    from app.dbcompat import force_utc_sessions
+
+    return force_utc_sessions(create_engine(url, **kwargs))
 
 
 # --- URLs ------------------------------------------------------------------------------
