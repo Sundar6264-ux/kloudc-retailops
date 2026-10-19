@@ -2100,3 +2100,102 @@ used by this track (clients only).
   server's message).
 - Optional C routes (`/api/settings/store`, `/api/settings/hosting/request`)
   have no website page yet.
+
+## As built - Integration (A + B + C + D on main)
+
+Merged on `main` with `--no-ff` in the order A (`cc468cf`), B (`23fb49e`),
+C (`130a4a1`), D (`99c7e79`); app repo `storeops-app` `plat/clients` ->
+`main` (`f638c4c`, no conflicts).
+
+### Conflicts
+
+- `docs/PLATFORM_CONTRACT.md` (B, C, D): each track appended its own
+  "As built" section at the end - all kept, in track order.
+- C's branch carried B's interface commit as a cherry-pick (`f1e986d` =
+  `bc3fb00`) and never changed those files afterwards, so the add/add
+  conflicts in `app/tenancy/{cache,engines,locks,middleware,settings}.py`
+  and the one in `app/auth.py` were resolved to B's later versions.
+- Auto-merged files touched by two tracks and reviewed by hand:
+  `app/main.py` (B's `TenantMiddleware` + multi-mode lifespan + the
+  `{error, message}` HTTPException handler, C's `install(app)`),
+  `app/services/checklist_public.py` (A's ordering, C's `/c/<CODE>/` links).
+
+### Glue
+
+- **Scheduler**: C's `PLATFORM_JOBS` (prune `login_attempts`, 03:30 UTC) run on
+  B's leader-only platform scheduler (`start_multi_tenant_schedulers`).
+- **Cache lint**: C's control-plane module state added to
+  `app/tenancy/global_state_allowlist.txt`, each with a reason (platform DB
+  engine, key ring, rate limiters, provisioning threads keyed by code,
+  constant tables).
+- **Dialect helpers**: `tenancy.locks.advisory_lock` and provisioning's row
+  lock use A's `dbcompat.is_postgres`. B's and C's SQL otherwise passed the
+  rules of "As built - A" (total ORDER BYs, no boolean sums, no SQLite-only
+  SQL); B's notes for A (Boolean default, `sum(boolean)`,
+  `current_cursor`) were already fixed by A.
+- **Tenant on every path**: every route that opens a store database either
+  needs a login (the token's store) or is a registered public store route
+  (`?store=`/path code: the 4 public checklist routes, branding, config,
+  legal); C's public routes (`/api/public/stores`, `/api/signup*`) use only
+  the platform DB. B's middleware + C's attack suite (canary crawl of every
+  GET route) cover it.
+- **Integrations -> connectors**: saving/removing a credential calls
+  `bridge.store_changed(code)` -> `invalidate_store_settings` +
+  `on_store_changed` -> `pos.registry.reset_cache(code)`, so the store's next
+  connector is built from the new values; the store's jobs are reconciled.
+- **Provisioning** migrates with A's `app.migrate.upgrade_store_db` (C's
+  test-only `create_all` stand-in removed); C's 17 `needs_b` tests now run.
+- **B's test** `test_no_store_means_401_and_platform_scope_403`: a master's
+  token is checked on a store route (`/api/auth/users`), since C's
+  `/api/auth/me` answers masters with the platform body (4.5).
+- `requirements.txt` pins `cryptography` (the vault used it only through
+  google-auth).
+
+### Website on the real API (D was built on a mock)
+
+Running D's `platform.mjs` against the merged server found three shape
+mismatches, fixed in the website (and the mock now answers the real shapes):
+`/api/platform/packs` is `[{pack_id, label, private}]` (the approve form's
+pack list was empty); `GET /api/platform/hosting-requests` answers 200
+`{"enabled": false, ...}` while dedicated hosting is off (only the write
+routes 409) - the console now shows the off state for either; sign-up's
+`code-available` `reason` is a code (`taken`/`reserved`/`requested`/
+`invalid`) shown in "Store ID" words, and a clash on submit marks the field.
+
+Pages for C's routes D had deferred:
+- `/#/setup?store=&token=` (`OwnerSetupPage.jsx`): redeems a master's
+  one-time owner set-up link (`POST /api/signup/owner-setup`).
+- Login: a "6-digit code" field after `401 totp_required`; `login()` sends
+  `totp`.
+- Console: "Two-step" panel (`POST /users/me/totp/setup` + `/enable`); it
+  opens by itself when `PLATFORM_REQUIRE_TOTP` is on and the master has no
+  TOTP; a 403 `totp_setup_required` says what to do.
+
+`frontend/e2e/platform/run_real.sh` runs the same checks against the real
+server in multi mode (`real_server.py`: throwaway platform + per-store
+databases named `E2E_DB_PREFIX_*`, dropped on exit; a run-only key ring;
+every connection test faked; schedulers off) plus the set-up link and
+two-step sign-in.
+
+### Results (Mac mini, via m1heavy)
+
+| Check | Result |
+|---|---|
+| Backend, full suite on PostgreSQL 16 | **2840 passed, 21 skipped** (2702 A + 57 B + 81 C; 0 platform skips) |
+| Migration round trip (`scripts/pg/migration_roundtrip.py`, also in CI) | platform up/down/up identical; store baseline 0062, no-op re-upgrade, refused downgrade below the baseline; a scratch post-baseline revision up/down/up identical; provisioning + `migrate-all` to head: 16/16 |
+| Website `node --test` | 272 pass, 0 fail |
+| Website `vite build` | clean |
+| Platform e2e, real multi-mode server (1280 + 375) | 120 checks, 0 failures |
+| Platform e2e, mock (1280 + 375) | 107 checks, 0 failures |
+| Backend, full suite on SQLite (`STOREOPS_TEST_DB=sqlite`) | 2831 passed, 30 skipped |
+| App `flutter analyze` | no issues |
+| App full `flutter test --concurrency=2` (main after the merge) | 5517 passed, 6 skipped |
+
+### Deferred
+
+- App against a running multi-mode server (simulator): Regression stage.
+- Masters' user-management page; website pages for `/api/settings/store`
+  and `/api/settings/hosting/request` (the master console can file an
+  own-server request).
+- Platform jobs in single mode (no platform DB there; lockout is off).
+- Everything listed as deferred by A, B, C and D above.
