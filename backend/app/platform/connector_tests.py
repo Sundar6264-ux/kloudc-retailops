@@ -7,9 +7,12 @@ replace ``TESTERS[kind]`` with fakes; the suite's network guard refuses any
 real connection.
 """
 
+import ipaddress
 import smtplib
+import socket
 import ssl as ssl_mod
-from typing import Callable, Dict, NamedTuple
+from typing import Callable, Dict, NamedTuple, Optional
+from urllib.parse import urlsplit
 
 TIMEOUT = 10.0
 
@@ -20,6 +23,32 @@ class TestResult(NamedTuple):
 
 
 TestResult.__test__ = False  # not a pytest test class
+
+
+NOT_ALLOWED = "That address is not allowed: it points at a private or local network."
+
+
+def private_target(host: Optional[str], port: int) -> bool:
+    """True when `host` resolves to a non-public address (the shared server
+    itself or its private network). A name that does not resolve is left to
+    the connection attempt (it fails there with the usual message)."""
+    try:
+        infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    except (OSError, UnicodeError):
+        return False
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(str(info[4][0]).split("%", 1)[0])
+        except ValueError:
+            return True
+        if not ip.is_global:
+            return True
+    return False
+
+
+def _url_private(url: str) -> bool:
+    parts = urlsplit(url)
+    return private_target(parts.hostname, parts.port or 443)
 
 
 def _http_status_message(service: str, status: int) -> TestResult:
@@ -41,6 +70,8 @@ def test_toast(public: dict, secrets: dict) -> TestResult:
     base = (public.get("api_base") or "https://ws-api.toasttab.com").rstrip("/")
     if not client_id or not secret or not guid:
         return TestResult(False, "Enter the Toast client ID, client secret and restaurant GUID first.")
+    if _url_private(base):
+        return TestResult(False, NOT_ALLOWED)
     try:
         with httpx.Client(timeout=TIMEOUT) as client:
             resp = client.post(
@@ -72,6 +103,8 @@ def test_whatsapp(public: dict, secrets: dict) -> TestResult:
     base = (public.get("base_url") or "https://gate.whapi.cloud").rstrip("/")
     if not token:
         return TestResult(False, "Enter the WhatsApp (Whapi) API token first.")
+    if _url_private(base):
+        return TestResult(False, NOT_ALLOWED)
     try:
         with httpx.Client(timeout=TIMEOUT) as client:
             resp = client.get(f"{base}/settings", headers={"Authorization": f"Bearer {token}"})
@@ -90,6 +123,8 @@ def test_smtp(public: dict, secrets: dict) -> TestResult:
     password = secrets.get("password") or ""
     if not host or not username or not password:
         return TestResult(False, "Enter the mail server, username and password first.")
+    if private_target(host, port):
+        return TestResult(False, NOT_ALLOWED)
     try:
         if use_ssl:
             server = smtplib.SMTP_SSL(host, port, timeout=TIMEOUT, context=ssl_mod.create_default_context())

@@ -11,7 +11,9 @@ inputs); ``clear`` names secret fields to remove.
 """
 
 import datetime as dt
+import ipaddress
 import json
+import re
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -39,11 +41,48 @@ class StoreNotFound(LookupError):
     pass
 
 
+_HOST_RE = re.compile(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*")
+
+
+def host_problem(host: Any) -> Optional[str]:
+    """Why `host` may not be an integration's address, or None.
+
+    The shared service connects to these addresses for every store (Test
+    connection, syncs, sends), so a store's settings must not point it at
+    the server itself or its private network: no localhost, no private /
+    loopback / link-local / reserved IP literal, and a name must end in a
+    real top-level label (refuses ``127.1``, ``2130706433``, ``0x7f.1``,
+    which resolvers read as loopback). Names are also checked after DNS by
+    the connection tests (``connector_tests``)."""
+    h = str(host or "").strip().lower()
+    if h.startswith("[") and h.endswith("]"):
+        h = h[1:-1]
+    h = h.rstrip(".")
+    if not h:
+        return "is empty"
+    try:
+        ip = ipaddress.ip_address(h)
+    except ValueError:
+        ip = None
+    if ip is not None:
+        return None if ip.is_global else "is a private or local address"
+    if h == "localhost" or h.endswith(".localhost") or h.endswith(".local") or h.endswith(".internal"):
+        return "is a private or local address"
+    if len(h) > 253 or not _HOST_RE.fullmatch(h):
+        return "is not a valid host name"
+    if not any(c.isalpha() for c in h.rsplit(".", 1)[-1]):
+        return "is not a valid host name"
+    return None
+
+
 def _https_url(value: Any, name: str) -> str:
     v = str(value or "").strip().rstrip("/")
     parts = urlsplit(v)
     if parts.scheme != "https" or not parts.hostname or parts.username or parts.password:
         raise CredentialError(f"{name} must be an https:// URL")
+    problem = host_problem(parts.hostname)
+    if problem:
+        raise CredentialError(f"{name}: that address {problem}")
     from app.config import refused_host
 
     if refused_host(v):
@@ -62,6 +101,14 @@ def _text(value: Any, name: str, max_len: int = 200) -> str:
     if any(ord(c) < 32 for c in v):
         raise CredentialError(f"{name} has control characters")
     return v
+
+
+def _mail_host(value: Any, name: str) -> str:
+    v = _text(value, name)
+    problem = host_problem(v)
+    if problem:
+        raise CredentialError(f"{name}: that address {problem}")
+    return v.lower().rstrip(".")
 
 
 def _port(value: Any, name: str) -> int:
@@ -179,7 +226,7 @@ KINDS: Dict[str, CredentialSpec] = {
         kind="smtp",
         label="Email (SMTP)",
         public=(
-            FieldSpec("host", required=True),
+            FieldSpec("host", _mail_host, required=True),
             FieldSpec("port", _port, 465),
             FieldSpec("ssl", _bool, True),
             FieldSpec("username", required=True),
@@ -207,6 +254,23 @@ KINDS: Dict[str, CredentialSpec] = {
 }
 
 MAX_SECRET_LEN = 4096
+
+# Public fields that say WHERE a kind's secrets are sent. When one changes,
+# the saved secrets are not carried to the new address (save and Test
+# connection): whoever changes the address types the secret again, so a
+# stored secret can never be redirected to a server of someone's choosing.
+ADDRESS_FIELDS: Dict[str, Tuple[str, ...]] = {"toast": ("api_base",), "whatsapp": ("base_url",), "smtp": ("host",)}
+
+
+def _address(kind: str, public: Optional[Mapping[str, Any]], name: str) -> str:
+    default = next((f.default for f in KINDS[kind].public if f.name == name), "")
+    value = (public or {}).get(name, default)
+    return str(value or default or "").strip().rstrip("/").rstrip(".").lower()
+
+
+def address_changed(kind: str, old_public: Optional[Mapping[str, Any]], new_public: Mapping[str, Any]) -> bool:
+    """True when `new_public` sends this kind's secrets somewhere else."""
+    return any(_address(kind, old_public, f) != _address(kind, new_public, f) for f in ADDRESS_FIELDS.get(kind, ()))
 
 
 def spec(kind: str) -> CredentialSpec:
@@ -418,8 +482,17 @@ def save_credential(
             existing_secrets = _decrypt_or_none(code, row) or {}
         merged_public = clean_public(kind, public, existing_public)
         merged = {k: v for k, v in existing_secrets.items() if k in sp.secrets and k not in clear}
+        moved = bool(merged) and address_changed(kind, existing_public, merged_public)
+        if moved:
+            # A new address: only the secrets typed now go there.
+            merged = {}
         merged.update(new_secrets)
         if sp.primary_secret not in merged and kind != "clover":
+            if moved:
+                raise CredentialError(
+                    f"Enter the {sp.primary_secret.replace('_', ' ')} again: the address changed, "
+                    "so the saved one is not sent there."
+                )
             raise CredentialError(f"{sp.primary_secret} is required for {sp.label}")
         sealed = crypto.encrypt(
             json.dumps(merged, sort_keys=True).encode("utf-8"), crypto.aad_for(code, kind)

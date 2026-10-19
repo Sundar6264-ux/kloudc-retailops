@@ -175,6 +175,7 @@ app/platform/audit.py:_ALLOWED_KEYS  # constant table (audit detail keys kept un
 app/platform/config.py:DEFAULTS  # constant table (platform setting defaults)
 app/platform/config.py:_TRUE  # constant table
 app/platform/connector_tests.py:TESTERS  # constant table (connector test functions by kind)
+app/platform/credentials.py:ADDRESS_FIELDS  # constant table (credential kind -> address fields)
 app/platform/credentials.py:KINDS  # constant table (credential kinds -> Settings fields)
 app/platform/crypto.py:_lock  # guards the one process key ring
 app/platform/crypto.py:global _ring  # the process key ring (STOREOPS_SECRET_KEYS); one for the whole platform

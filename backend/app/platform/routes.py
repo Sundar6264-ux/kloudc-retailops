@@ -554,7 +554,15 @@ def test_integration(kind: str, request: Request, body: Optional[IntegrationBody
         new_secrets = creds.clean_secrets(kind, body.secrets) if unsaved else {}
     except creds.CredentialError as exc:
         raise PlatformError(400, "invalid", str(exc)) from None
-    secrets_now = {**stored_secrets, **new_secrets}
+    if unsaved and stored_secrets and creds.address_changed(kind, stored_public, public):
+        # A new address: the saved secrets are never sent there.
+        primary = creds.KINDS[kind].primary_secret
+        if primary not in new_secrets:
+            raise PlatformError(400, "invalid", f"Enter the {primary.replace('_', ' ')} again to test a new address.",
+                                field=primary)
+        secrets_now = dict(new_secrets)
+    else:
+        secrets_now = {**stored_secrets, **new_secrets}
     result = run_test(kind, public, secrets_now)
     creds.record_test_result(code, kind, result.ok, result.message, actor=_store_actor(code, user),
                              client_ip=_ip(request), saved=not unsaved)
