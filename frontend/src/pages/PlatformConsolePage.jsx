@@ -904,8 +904,24 @@ function TotpPanel({ enrolled, required, onEnrolled }) {
         </button>
       ) : (
         <form onSubmit={enable}>
+          {setup.qr_svg && (
+            <div style={{ margin: "0.25rem 0 0.75rem" }}>
+              <p style={{ marginBottom: "0.4rem" }}>
+                Scan this with your authenticator app (Google Authenticator, Microsoft Authenticator, Authy or the
+                iPhone Passwords app):
+              </p>
+              <img
+                src={setup.qr_svg}
+                alt="QR code for your authenticator app"
+                data-testid="pf-totp-qr"
+                width={200}
+                height={200}
+                style={{ background: "#fff", padding: "6px", borderRadius: "8px", display: "block" }}
+              />
+            </div>
+          )}
           <p>
-            Add this key to your authenticator app (shown once):{" "}
+            {setup.qr_svg ? "Can't scan? Add this key instead (shown once): " : "Add this key to your authenticator app (shown once): "}
             <code data-testid="pf-totp-secret" style={{ wordBreak: "break-all" }}>
               {groupSecret(setup.secret)}
             </code>

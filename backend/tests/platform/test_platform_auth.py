@@ -90,6 +90,8 @@ def test_user_lockout_and_ip_lockout(client, master, platform_env, monkeypatch, 
 def test_totp_enrolment_and_login(client, master_client, platform_env, monkeypatch):
     setup = master_client.post("/api/platform/users/me/totp/setup").json()
     assert setup["otpauth_uri"].startswith("otpauth://totp/")
+    # A scannable QR code of that same URI, ready for an <img>.
+    assert setup["qr_svg"].startswith("data:image/svg+xml")
     bad = master_client.post("/api/platform/users/me/totp/enable", json={"pending": setup["pending"], "code": "000000"})
     assert bad.status_code == 400
     ok = master_client.post("/api/platform/users/me/totp/enable",

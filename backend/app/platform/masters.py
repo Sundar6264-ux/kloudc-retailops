@@ -11,6 +11,7 @@ import hashlib
 import secrets
 from typing import Any, Dict, Optional, Tuple
 
+import segno
 from fastapi import Cookie, Depends, Header, Request
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -217,7 +218,11 @@ def totp_begin(db: Session, user: PlatformUser) -> Dict[str, str]:
     # Stateless enrolment: the new secret goes back to the client sealed
     # (bound to this username) and is stored only when a code confirms it.
     pending = crypto.seal_text(secret + _PENDING_SUFFIX, crypto.totp_aad(user.username))
-    return {"secret": secret, "otpauth_uri": totp.otpauth_uri(secret, user.username, str(pget("product_name") or "StoreOps")), "pending": pending}
+    uri = totp.otpauth_uri(secret, user.username, str(pget("product_name") or "StoreOps"))
+    # The same URI as a scannable QR code, drawn here so the website needs no
+    # QR package: an SVG data URI it can put straight into an <img>.
+    qr = segno.make(uri, error="m").svg_data_uri(scale=6, border=2, dark="#111827", light="#ffffff")
+    return {"secret": secret, "otpauth_uri": uri, "qr_svg": qr, "pending": pending}
 
 
 def totp_enable(db: Session, user: PlatformUser, pending: str, code: str, client_ip: Optional[str]) -> None:
