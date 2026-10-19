@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- TEMPLATE (deploy/pilot-mac/install.sh fills in the placeholders): the pilot's
+     own PostgreSQL 16 cluster. LaunchDaemon: starts at boot with nobody
+     logged in, runs as the Mac user, restarted on a crash. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>__LABEL_PREFIX__.postgres</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PG_BIN__/postgres</string>
+        <string>-D</string>
+        <string>__ROOT__/pgdata</string>
+    </array>
+    <key>UserName</key><string>__USER__</string>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+    <key>ThrottleInterval</key><integer>10</integer>
+    <!-- SIGTERM = smart shutdown: give open sessions time to close. -->
+    <key>ExitTimeOut</key><integer>60</integer>
+    <key>StandardOutPath</key><string>__ROOT__/logs/postgres.log</string>
+    <key>StandardErrorPath</key><string>__ROOT__/logs/postgres.log</string>
+</dict>
+</plist>

@@ -2,15 +2,19 @@
 # TENANCY_MODE=multi, one PostgreSQL 16 with the platform database
 # (so_platform) and one database per store.
 #
-#   cp backend/.env.example .env.platform    # fill the secrets (never in git):
+# A cloud VM (docs/PILOT_RUNBOOK.md "Cloud VM"):
+#   cp deploy/cloud-vm/env.platform.example .env.platform && chmod 600 .env.platform
+#                                            # fill the secrets (never in git):
 #                                            #   RETAILOPS_SECRET_KEYS (python -m app.platform gen-key),
-#                                            #   POSTGRES_PASSWORD, PLATFORM_DOMAIN, ...
+#                                            #   POSTGRES_PASSWORD, PLATFORM_HOST, ...
 #   docker compose -f docker-compose.platform.yml up -d db
 #   docker compose -f docker-compose.platform.yml run --rm app python -m app.platform migrate-platform
 #   docker compose -f docker-compose.platform.yml run --rm app python -m app.platform create-master --username <you>
-#   docker compose -f docker-compose.platform.yml up -d
+#   docker compose -f docker-compose.platform.yml --profile https --profile backup up -d
 #
-# Releases: `python -m app.platform migrate-all` (platform DB + every shared store).
+# Releases: the app container runs migrate-platform + migrate-all (platform
+# DB + every shared store) on every start (docker/entrypoint.sh).
+# Probes: /api/health (alive) and /api/ready (databases answer, migrated).
 #
 # Client IPs (login lockout, sign-up / lookup rate limits): behind the reverse
 # proxy or tunnel set DIRECTORY_CLIENT_IP_HEADER or FORWARDED_ALLOW_IPS in
@@ -25,6 +29,11 @@ services:
       POSTGRES_USER: retailops_admin          # CREATEDB: provisioning creates store databases
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       POSTGRES_DB: so_platform
+    # One database per store: 40 open stores x 5 pooled connections + reserve
+    # (TENANT_MAX_ENGINES; the app refuses to start when it does not fit).
+    command: ["postgres", "-c", "max_connections=250", "-c", "shared_buffers=512MB", "-c", "timezone=UTC"]
+    shm_size: 256mb
+    stop_grace_period: 60s
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
@@ -57,6 +66,47 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
 
+  # HTTPS for PLATFORM_HOST (e.g. app.kloudc.com -> this VM's IP, a DNS A
+  # record). Profile "https".
+  caddy:
+    image: caddy:2
+    profiles: ["https"]
+    env_file:
+      - .env.platform
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/cloud-vm/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  # Nightly pg_dump of the platform database and every store database, kept
+  # BACKUP_KEEP_DAYS days in the "backups" volume, plus a monthly restore
+  # drill (backend/scripts/backup/backup_all.py). Copy the volume off the
+  # machine. Profile "backup"; one run now:
+  #   docker compose -f docker-compose.platform.yml run --rm backup now
+  backup:
+    build:
+      context: .
+      dockerfile: deploy/cloud-vm/backup.Dockerfile
+    profiles: ["backup"]
+    env_file:
+      - .env.platform
+    environment:
+      BACKUP_PLATFORM_URL: postgresql://retailops_admin@db:5432/so_platform
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   pg-data:
   platform-files:
+  caddy-data:
+  backups:

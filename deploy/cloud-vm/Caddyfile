@@ -1,0 +1,13 @@
+# HTTPS in front of the shared service on a cloud VM (docker-compose.platform.yml,
+# profile "https"). Caddy gets and renews the certificate by itself once
+# PLATFORM_HOST (e.g. app.kloudc.com) points at this VM (DNS A record).
+{$PLATFORM_HOST} {
+	encode zstd gzip
+	reverse_proxy app:8000 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+	log {
+		output stdout
+		format json
+	}
+}

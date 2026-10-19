@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- TEMPLATE: the KloudC RetailOps server (API + website + scheduled jobs)
+     on 127.0.0.1:__APP_PORT__. start-server.sh checks the config and
+     migrates the databases before starting uvicorn. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>__LABEL_PREFIX__.server</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__ROOT__/app/deploy/pilot-mac/start-server.sh</string>
+    </array>
+    <key>WorkingDirectory</key><string>__ROOT__/app/backend</string>
+    <key>UserName</key><string>__USER__</string>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+    <!-- A failing config check retries every 30 s instead of spinning. -->
+    <key>ThrottleInterval</key><integer>30</integer>
+    <!-- uvicorn waits up to 25 s for open requests, then the jobs stop. -->
+    <key>ExitTimeOut</key><integer>40</integer>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+        <key>HOME</key><string>__HOME__</string>
+        <key>PILOT_ROOT</key><string>__ROOT__</string>
+        <key>FORWARDED_ALLOW_IPS</key><string>127.0.0.1</string>
+    </dict>
+    <key>StandardOutPath</key><string>__ROOT__/logs/server.out.log</string>
+    <key>StandardErrorPath</key><string>__ROOT__/logs/server.err.log</string>
+</dict>
+</plist>

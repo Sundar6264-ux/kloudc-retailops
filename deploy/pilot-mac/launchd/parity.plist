@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- TEMPLATE: daily parity check of the pilot store (config/parity.env; does nothing until it is set up). -->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>__LABEL_PREFIX__.parity</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__ROOT__/app/deploy/pilot-mac/run-parity.sh</string>
+    </array>
+    <key>WorkingDirectory</key><string>__ROOT__/app/backend</string>
+    <key>UserName</key><string>__USER__</string>
+    <key>StartCalendarInterval</key>
+    <dict><key>Hour</key><integer>__PARITY_HOUR__</integer><key>Minute</key><integer>__PARITY_MINUTE__</integer></dict>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+        <key>HOME</key><string>__HOME__</string>
+        <key>PILOT_ROOT</key><string>__ROOT__</string>
+    </dict>
+    <key>StandardOutPath</key><string>__ROOT__/logs/parity.log</string>
+    <key>StandardErrorPath</key><string>__ROOT__/logs/parity.log</string>
+</dict>
+</plist>
