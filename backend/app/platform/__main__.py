@@ -14,6 +14,15 @@
     python -m app.platform purge-store CODE --confirm CODE
     python -m app.platform prune-logins [--days 7]
 
+Onboarding a store that already runs on another system (app/ops,
+docs/PILOT_RUNBOOK.md):
+
+    python -m app.platform pilot-mode CODE on|off
+    python -m app.platform import-sqlite CODE --sqlite PATH [--workdir DIR] [--uploads DIR]
+                                         [--replace --confirm CODE] [--no-keep-owner] [--keep-workdir]
+    python -m app.platform load-pack CODE --file PATH_OUTSIDE_GIT [--no-rows]
+    python -m app.platform parity CODE --reference PATH [--days 14] [--log-dir DIR]
+
 Passwords come from a prompt, or RETAILOPS_MASTER_PASSWORD /
 RETAILOPS_OWNER_PASSWORD (never a command-line argument). Every command
 uses PLATFORM_DATABASE_URL (and the store URL template) from the settings.
@@ -212,6 +221,63 @@ def cmd_prune_logins(args) -> int:
     return 0
 
 
+def cmd_pilot_mode(args) -> int:
+    from app.platform.db import platform_session
+    from app.platform.stores import put_settings
+
+    on = args.state == "on"
+    with platform_session() as db:
+        values = put_settings(db, args.code.upper(), {"pilot_mode": on}, actor=ACTOR, actor_type="system")
+    state = "ON - nothing is sent from this store" if values.get("pilot_mode") else "off - the store sends as usual"
+    print(f"{args.code.upper()}: pilot mode {state}")
+    return 0
+
+
+def cmd_import_sqlite(args) -> int:
+    from app.ops.store_import import StoreImportError, import_sqlite
+
+    code = args.code.upper()
+    if args.replace and (args.confirm or "").upper() != code:
+        print(f"Refused: --replace needs --confirm {code}", file=sys.stderr)
+        return 1
+    try:
+        report = import_sqlite(code, args.sqlite, workdir=args.workdir, replace=args.replace,
+                               keep_owner=not args.no_keep_owner, uploads_from=args.uploads,
+                               keep_workdir=args.keep_workdir, actor=ACTOR,
+                               log=lambda line: print(line, file=sys.stderr))
+    except StoreImportError as exc:
+        print(f"Import refused: {exc}", file=sys.stderr)
+        return 1
+    report.pop("table_rows", None)
+    _print(report)
+    print("Restart the server (or resume the store) so it opens the imported database.", file=sys.stderr)
+    return 0
+
+
+def cmd_load_pack(args) -> int:
+    from app.ops.private_pack import PrivatePackError, load_private_pack
+
+    try:
+        out = load_private_pack(args.code, args.file, rows=not args.no_rows, actor=ACTOR)
+    except PrivatePackError as exc:
+        print(f"Refused: {exc}", file=sys.stderr)
+        return 1
+    _print(out)
+    return 0
+
+
+def cmd_parity(args) -> int:
+    from app.ops.parity import ParityError, run_parity
+
+    try:
+        report = run_parity(args.code, args.reference, days=args.days, log_dir=args.log_dir)
+    except ParityError as exc:
+        print(f"Refused: {exc}", file=sys.stderr)
+        return 2
+    _print(report)
+    return 0 if report["ok"] else 1
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     from app.platform.errors import PlatformError
 
@@ -269,7 +335,38 @@ def main(argv: Optional[List[str]] = None) -> int:
     p = sub.add_parser("prune-logins")
     p.add_argument("--days", type=int, default=7)
     p.set_defaults(func=cmd_prune_logins)
+    p = sub.add_parser("pilot-mode", help="pilot mode on/off: nothing is sent from the store while on")
+    p.add_argument("code")
+    p.add_argument("state", choices=("on", "off"))
+    p.set_defaults(func=cmd_pilot_mode)
+    p = sub.add_parser("import-sqlite", help="copy a single-store SQLite database into a provisioned store")
+    p.add_argument("code")
+    p.add_argument("--sqlite", required=True, help="the source database (opened read-only)")
+    p.add_argument("--workdir", default=None, help="folder for the snapshot (default: a temporary folder)")
+    p.add_argument("--uploads", default=None, help="the old system's upload folder to copy in (optional)")
+    p.add_argument("--replace", action="store_true", help="overwrite a store that already has data")
+    p.add_argument("--confirm", default=None)
+    p.add_argument("--no-keep-owner", action="store_true", help="don't add the provisioned owner login back")
+    p.add_argument("--keep-workdir", action="store_true")
+    p.set_defaults(func=cmd_import_sqlite)
+    p = sub.add_parser("load-pack", help="load a private store pack from a file outside git")
+    p.add_argument("code")
+    p.add_argument("--file", required=True)
+    p.add_argument("--no-rows", action="store_true", help="only the pack, no checklists / roles / rules")
+    p.set_defaults(func=cmd_load_pack)
+    p = sub.add_parser("parity", help="compare the store's key numbers with a reference SQLite database")
+    p.add_argument("code")
+    p.add_argument("--reference", required=True, help="the reference database (opened read-only)")
+    p.add_argument("--days", type=int, default=14)
+    p.add_argument("--log-dir", default=None)
+    p.set_defaults(func=cmd_parity)
     args = ap.parse_args(argv)
+    # Multi mode: the platform registry / settings sources, as the server
+    # installs them at start - without them a store context in this process
+    # (provisioning's store-init step, pilot-mode, load-pack) finds no store.
+    from app.platform import sources
+
+    sources.configure()
     try:
         return args.func(args)
     except PlatformError as exc:

@@ -48,7 +48,7 @@ from app.po_send_models import PoSend, VendorContact
 from app.services import whapi_client
 from app.services.po_cart import list_cart
 from app.services.po_export import export_simple_po_pdf
-from app.services.toast_email import EmailNotConfigured
+from app.services.toast_email import EmailNotConfigured, pilot_guard
 from app.timeutil import restaurant_today, utcnow
 from app.tenancy import advisory_lock, tenant_lock
 
@@ -416,6 +416,7 @@ def send_email(
     invoice emails' transport). Returns our Message-ID. Raises
     EmailNotConfigured or _ChannelError (maybe_sent when the connection broke
     after the message was handed over)."""
+    pilot_guard("PO email")
     cfg = sv.smtp_config()
     if not cfg.username or not cfg.password:
         raise EmailNotConfigured("Email isn't set up on the server (SMTP_USERNAME / SMTP_PASSWORD).")
