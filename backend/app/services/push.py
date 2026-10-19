@@ -84,7 +84,18 @@ def _get_app():
     return _app
 
 
+def _pilot_blocked() -> bool:
+    """Pilot mode (app/ops/pilot.py): the store sends no push - every caller
+    treats it exactly like "Firebase not set up" (a dry run, nothing
+    recorded as sent)."""
+    from app.ops import pilot
+
+    return pilot.pilot_mode()
+
+
 def is_configured() -> bool:
+    if _pilot_blocked():
+        return False
     return _get_app() is not None
 
 
@@ -131,6 +142,10 @@ def send_to_tokens(
     Android tag - a newer one replaces the older) - e.g. one chat
     conversation instead of a stack of separate messages.
     """
+    from app.ops import pilot
+
+    if pilot.blocked("push", f"{len(tokens)} devices"):
+        raise PushNotConfigured()
     app = _get_app()
     if app is None:
         raise PushNotConfigured()

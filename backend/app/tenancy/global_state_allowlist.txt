@@ -202,3 +202,7 @@ app/platform/stores.py:_MIRRORED  # constant table (store setting -> registry co
 app/platform/throttle.py:_limiters  # rate limiters keyed by (name, limits); each counts per caller key (IP, or store code for per-store limits)
 app/platform/throttle.py:_limiters_lock  # guards _limiters
 app/migrate.py:ALEMBIC_LOCK  # one Alembic run at a time per process (Alembic's context proxy is process-global)
+app/ops/http.py:_hash_cache  # CSP hashes of the built index.html, keyed by file path + mtime (one website for every store)
+app/ops/logs.py:_state  # logging is configured once per process (root logger, record factory)
+app/ops/pilot.py:_blocked  # counts of sends blocked by pilot mode, keyed "<STORE>:<channel>" (log/tests only)
+app/ops/pilot.py:_lock  # guards _blocked

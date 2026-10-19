@@ -30,6 +30,20 @@ class EmailNotConfigured(Exception):
     pass
 
 
+class EmailPilotBlocked(EmailNotConfigured):
+    """The store is in pilot mode (app/ops/pilot.py): nothing was sent."""
+
+
+def pilot_guard(what: str) -> None:
+    """Raises EmailPilotBlocked when the current store is in pilot mode -
+    called first by every email transport (here and services/po_send.py)."""
+    from app.ops import pilot
+
+    reason = pilot.blocked("email", what)
+    if reason:
+        raise EmailPilotBlocked(reason)
+
+
 def ap_inbox_address(settings) -> str:
     """Where the invoice PDF goes: AP_INBOX_EMAIL, else the old
     TOAST_INVOICE_EMAIL (multi-store MT6; Settings keeps the two equal)."""
@@ -53,6 +67,7 @@ def send_toast_invoice_email(
     photo - the attachment is built from it for best quality. Either way
     the attachment goes through toast_pdf first (Letter-sized pages + a
     text layer, see that module); the stored files are never modified."""
+    pilot_guard("invoice email")
     settings = get_settings()
     smtp = sv.smtp_config(settings)
     if not smtp.username or not smtp.password:

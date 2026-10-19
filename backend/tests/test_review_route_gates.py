@@ -26,6 +26,9 @@ PUBLIC = {
     ("POST", "/api/notifications/unregister"),
     ("GET", "/api/app/config"),
     ("GET", "/api/health"),
+    # Readiness (app/ops/health.py): ok / fail per check, no store data, no
+    # store codes, no addresses.
+    ("GET", "/api/ready"),
     # Legal links + AI consent notice (M2 MT13, app/routers/legal.py).
     ("GET", "/api/app/legal"),
     # Public checklist link (routers/checklist_public.py): reach only the one

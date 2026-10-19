@@ -14,6 +14,9 @@ WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
+# The shared help content (docs/DESIGN_SYSTEM.md 5.2): the website imports it
+# at build time through the @help alias (../content/help).
+COPY content/ /src/content/
 RUN npx vite build
 
 # --- 2. Runtime ------------------------------------------------------------------------------
@@ -41,6 +44,9 @@ COPY backend/requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 
 COPY backend/ ./
+# The same help content, served by GET /api/help (backend/app/help_content.py
+# reads /app/content/help).
+COPY content/ /app/content/
 COPY --from=web /src/frontend/dist /app/frontend/dist
 COPY docker/entrypoint.sh /usr/local/bin/retailops-entrypoint
 RUN chmod 0755 /usr/local/bin/retailops-entrypoint \
@@ -62,6 +68,8 @@ USER retailops
 VOLUME ["/data"]
 EXPOSE 8000
 
+# Liveness (/api/health): the process answers. Readiness (/api/ready: the
+# databases answer and are migrated) is for a load balancer or an uptime check.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD ["python", "-c", "import os, sys, urllib.request; r = urllib.request.urlopen('http://127.0.0.1:%s/api/health' % os.environ.get('PORT', '8000'), timeout=4); sys.exit(0 if r.status == 200 else 1)"]
 

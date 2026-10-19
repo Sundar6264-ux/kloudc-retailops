@@ -52,6 +52,19 @@ class WhapiNotConfigured(Exception):
     pass
 
 
+class WhapiPilotBlocked(WhapiNotConfigured):
+    """The store is in pilot mode (app/ops/pilot.py): nothing was sent.
+    A WhapiNotConfigured, so every caller already records it as not sent."""
+
+
+def _pilot_guard(what: str) -> None:
+    from app.ops import pilot
+
+    reason = pilot.blocked("whatsapp", what)
+    if reason:
+        raise WhapiPilotBlocked(reason)
+
+
 class WhapiAmbiguousTimeout(Exception):
     """Raised when the request to Whapi timed out - the message may or may
     not have actually been sent/delivered. Deliberately a distinct exception
@@ -81,6 +94,7 @@ def send_whatsapp_message(text: str, to: Optional[str] = None) -> None:
     for invoice callers) is a safe, no-downside default - a plain-text
     checklist message has no link to preview either way.
     """
+    _pilot_guard("message")
     settings = get_settings()
     target = to or settings.whapi_chat_id
     if not settings.whapi_api_token or not target:
@@ -258,6 +272,7 @@ def upload_media(data: bytes, mime: str) -> str:
     """POST /media with the raw file -> its MediaID, reusable for 30 days.
     Uploading sends nothing to anyone. Raises WhapiNotConfigured,
     httpx.HTTPError or ValueError (no id in the answer)."""
+    _pilot_guard("media upload")
     token = _require_token()
     resp = httpx.post(
         f"{get_settings().whapi_base_url}/media",
@@ -284,6 +299,7 @@ def send_media_message(
     have been sent) or WhapiMediaError."""
     if kind not in MEDIA_KINDS:
         raise ValueError(f"unknown media kind {kind!r}")
+    _pilot_guard(kind)
     token = _require_token()
     if not to:
         raise WhapiNotConfigured("No WhatsApp chat id to send to.")

@@ -32,7 +32,7 @@ _EXPLICIT_STORE_KEYS = frozenset(
     {
         "store_name", "store_short_name", "store_address", "store_phone", "store_email", "store_description",
         "logo_url", "icon_url", "brand_color", "brand_secondary_color", "store_timezone", "currency",
-        "store_locale", "demo_mode", "business_day_cutoff_hour", "first_sales_date", "pos_provider",
+        "store_locale", "demo_mode", "pilot_mode", "business_day_cutoff_hour", "first_sales_date", "pos_provider",
         "ap_inbox_email", "labels_url", "ai_enabled", "ai_consent_notice", "email_from_name",
         "po_whatsapp_enabled", "sales_sync_hour", "sales_sync_minute", "sales_sync_backfill_days",
         "sales_repull_enabled", "sales_repull_days", "sales_repull_times", "insights_nightly_enabled",
@@ -64,7 +64,7 @@ _EXPLICIT_PRIVATE_KEYS = frozenset(
         "whapi_kitchen_checklist_group_id", "toast_invoice_email", "ap_inbox_email", "insights_hmac_secret",
         "store_name", "store_short_name", "store_address", "store_phone", "store_email", "store_description",
         "logo_url", "icon_url", "document_logo_file", "labels_url", "public_base_url", "email_from_name",
-        "first_sales_date", "demo_mode",
+        "first_sales_date", "demo_mode", "pilot_mode",
     }
 )
 
@@ -80,7 +80,7 @@ _EXPLICIT_PLATFORM_KEYS = frozenset(
         "cors_origins", "platform_domain", "product_name", "company_name", "app_bundle_id", "apple_team_id",
         "android_cert_sha256", "firebase_credentials_file", "scheduler_enabled", "notifications_enabled",
         "team_jobs_enabled", "frontend_dist_dir", "uploads_root", "store_pack_file", "store_identity_adopt",
-        "store_code", "public_host",
+        "store_code", "public_host", "log_format", "log_level", "log_dir", "security_headers",
     }
 )
 _PLATFORM_KEY_PREFIXES = ("session_", "directory_")

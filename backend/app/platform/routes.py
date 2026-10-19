@@ -24,7 +24,7 @@ from app.platform import credentials as creds
 from app.platform import hosting, masters, provisioning, signup, stores, throttle
 from app.platform.audit import audit, list_audit
 from app.platform.bridge import current_store_code, is_multi_tenant
-from app.platform.config import dedicated_enabled, login_code, pget, platform_public_url
+from app.platform.config import dedicated_enabled, login_code, pget, platform_public_url, require_totp
 from app.platform.connector_tests import run_test
 from app.platform.db import get_platform_db, platform_session
 from app.platform.errors import PlatformError, platform_error_handler
@@ -65,7 +65,7 @@ def platform_config(user: PlatformUser = Depends(masters.require_master_any)):
         "login_code": login_code(),
         "public_url": platform_public_url(),
         "dedicated_hosting_enabled": dedicated_enabled(),
-        "require_totp": bool(pget("platform_require_totp")),
+        "require_totp": require_totp(),
         "signup_enabled": bool(pget("signup_enabled")),
         "user": masters.user_view(user),
     }
