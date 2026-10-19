@@ -11,6 +11,11 @@
 #   docker compose -f docker-compose.platform.yml up -d
 #
 # Releases: `python -m app.platform migrate-all` (platform DB + every shared store).
+#
+# Client IPs (login lockout, sign-up / lookup rate limits): behind the reverse
+# proxy or tunnel set DIRECTORY_CLIENT_IP_HEADER or FORWARDED_ALLOW_IPS in
+# .env.platform (see backend/.env.example) - otherwise every visitor is the
+# proxy's address and 30 bad logins anywhere lock every store out.
 # A dedicated store server: docs/DEDICATED_HOSTING_RUNBOOK.md.
 
 services:

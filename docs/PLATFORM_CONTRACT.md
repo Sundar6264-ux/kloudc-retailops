@@ -2215,3 +2215,89 @@ two-step sign-in.
   own-server request).
 - Platform jobs in single mode (no platform DB there; lockout is off).
 - Everything listed as deferred by A, B, C and D above.
+
+## As built - Verifier: cross-store isolation and security
+
+Adversarial pass over integrated `main` (`d912357`). Probes live in
+`backend/tests/platform/test_security_verifier.py` (each fix's probe failed
+on `d912357`) and `frontend/src/sessionStore.test.mjs`.
+
+### Confirmed and fixed
+
+1. **Saved secrets followed a changed address** (`ab1a4d1`). Store admin:
+   change Toast `api_base` / WhatsApp `base_url` / SMTP `host`, leave the
+   secret blank, press Test connection (or Save): the stored secret was sent
+   to the new server. Now `credentials.ADDRESS_FIELDS`: an address change
+   carries no saved secret - Save answers 400 "Enter the ... again: the
+   address changed" unless typed; Test answers 400 "... again to test a new
+   address". Other public fields still keep the saved secret.
+2. **Integrations as an SSRF / port scanner** (`ab1a4d1`). SMTP host:port was
+   free text and Test connection's messages told "refused" from "could not
+   connect"; https bases could name internal hosts. Save refuses localhost,
+   `*.localhost/.local/.internal`, non-global IP literals and numeric forms
+   (`127.1`, `2130706433`); the real testers refuse names that RESOLVE to a
+   non-public address (`connector_tests.private_target`). Residual: a name
+   can still re-resolve between the check and the connect, and the send
+   paths (scheduled syncs, PO emails) do not re-check - see Deferred.
+3. **`javascript:` links on the shared origin** (`d55c807`).
+   `PATCH /api/settings/store` (store admin) and the masters' settings route
+   took any text for `labels_url` / `logo_url` / `icon_url`; the website
+   puts `labels_url` in an `href` (React 18 renders `javascript:`), one
+   origin for every store and the master console. Both routes require
+   `https://` (`stores.URL_SETTING_KEYS`); the website keeps only http(s) or
+   a site path (`branding.safeUrl`) for logo/icon/labels/legal links.
+4. **Two tabs, two stores, one cookie** (`ae9028f`). Signing in to store B
+   in a second tab replaced the cookie; the first tab (still showing A) then
+   read and wrote store B. The website now sends `X-Store: <its store>` on
+   every store request and upload (`frontend/src/sessionStore.js`; not on
+   sign-in/out, `/me`, sign-up, public or platform routes); the middleware's
+   existing check answers 409 `store_mismatch` and the page reloads. The app
+   holds one store at a time (per-store token, restart on switch) - no change.
+5. **Per-store public answers cacheable by a shared cache** (`a3d4241`).
+   `/api/app/branding` and `/api/app/legal` were `public` with only
+   `Vary: Accept-Encoding` while the store may come from a token or
+   `X-Store`: now `private` unless `?store=` is in the URL, and always
+   `Vary: Accept-Encoding, X-Store, Authorization, Cookie`.
+6. **Hardening** (`66397b7`): store code, database name and the CREATE/DROP
+   DATABASE identifier checks use `fullmatch` (`$` let a trailing newline
+   through; inputs are stripped first, so not reachable).
+
+### Checked and holding (probes kept)
+
+Forged / lower-case / padded token prefixes; cookie of A + bearer of B (both
+auth and data follow the cookie); X-Store / `?store=` naming another store
+(409); every GET route crawled as ALPHA after BRAVO warmed every cache
+(report cache, settings, POS connectors, Toast tokens: no canary); IDOR on
+ids only BRAVO has; long-poll waiters keyed by store; uploads under
+`<UPLOADS_ROOT>/<CODE>` with escape checks; background tasks, flyer queue
+and `for_each_store` run in the right store; master token on store routes
+403, store token on `/api/platform/*` 403, store admin cannot approve /
+start / complete hosting or set `db_host_ref`; dedicated hosting 409 while
+off and a `dedicated` row is served as shared; pending / provisioning /
+failed stores 403 `store_not_ready` only for the sign-up owner, suspended
+403, archived 401, their tokens refused; support sessions <= 120 minutes,
+expiry enforced, ended sessions dead, both ends audited; DEMO store refused
+on every new write route (`/api/settings/*`); approve-override codes with
+quotes / newlines / non-ASCII refused (400) before any SQL; CREATE DATABASE
+names are prefix + validated code, quoted; credentials AES-GCM bound to
+store + kind (copy to another store does not open), key rotation re-seals
+credentials and TOTP; sign-up per-IP and overall limits, honeypot.
+
+### Owner actions (new)
+
+- Behind the reverse proxy / tunnel set `DIRECTORY_CLIENT_IP_HEADER`
+  (e.g. `CF-Connecting-IP`) or `FORWARDED_ALLOW_IPS` in `.env.platform`
+  (documented in `backend/.env.example` and `docker-compose.platform.yml`).
+  Without it every visitor is the proxy's address: the per-IP login
+  lockout (30 failures) then locks EVERY store and master out for 15
+  minutes, and the per-IP sign-up limit becomes global.
+
+### Deferred
+
+- Send-time address checks for scheduled syncs / emails (DNS re-resolution
+  after Test connection); an egress firewall on the server is the real fix.
+- A master who already has TOTP can re-enrol from a signed-in session
+  without the current code (a stolen console session could replace it).
+- The owner's sign-up password hash stays in `signup_requests` after
+  approval (used only while the store is not ready).
+- `change-password` keeps the user's other sessions (pre-existing M2).
