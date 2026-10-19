@@ -33,6 +33,7 @@ import base64
 import json
 import os
 import pathlib
+import re
 import secrets
 import shutil
 import subprocess
@@ -41,7 +42,11 @@ import tempfile
 
 BACKEND = pathlib.Path(__file__).resolve().parents[2]
 FIXTURES = BACKEND / "tests" / "fixtures" / "stores"
-PREFIX = "so_preview"
+# PREVIEW_DB_PREFIX runs a second, separate preview (screenshots, checks)
+# beside the usual one without touching its databases.
+PREFIX = os.environ.get("PREVIEW_DB_PREFIX") or "so_preview"
+if not re.fullmatch(r"so_[a-z0-9_]+", PREFIX):
+    raise SystemExit(f"PREVIEW_DB_PREFIX={PREFIX!r}: use so_<letters/digits>")
 PLATFORM_DB = f"{PREFIX}_platform"
 STORE_PREFIX = f"{PREFIX}_s_"
 DISCARD = "http://127.0.0.1:9"

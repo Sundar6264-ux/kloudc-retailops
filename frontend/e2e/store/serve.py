@@ -70,6 +70,9 @@ env = {
     "SCHEDULER_ENABLED": "false",
     "NOTIFICATIONS_ENABLED": "false",
     "SESSION_COOKIE_SECURE": "false",
+    # A local http test server, not production (the start-up checks in
+    # app/ops/prod_checks.py would refuse http-only cookies).
+    "APP_ENV": "test",
 }
 os.environ.update(env)
 os.chdir(STORE)  # no stray .env is read

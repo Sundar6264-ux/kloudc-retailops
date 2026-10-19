@@ -21,7 +21,7 @@ exec env -i HOME=$HOME PATH=/usr/bin:/bin \
   WHAPI_BASE_URL=http://127.0.0.1:9 \
   GMAIL_ADDRESS=orders-fake@retailops.test GMAIL_APP_PASSWORD=fake-not-real TOAST_INVOICE_EMAIL=toast-fake@retailops.test \
   ANTHROPIC_API_KEY= FIREBASE_CREDENTIALS_FILE= \
-  SESSION_COOKIE_SECURE=false SESSION_COOKIE_DOMAIN= \
+  SESSION_COOKIE_SECURE=false SESSION_COOKIE_DOMAIN= APP_ENV=test \
   DEMO_USERNAMES=app_store_review,appreview \
   FRONTEND_DIST_DIR=$REG_WORK/dist FLYERS_DIR=$REG_WORK/flyers \
   INVOICE_UPLOADS_DIR=$REG_WORK/uploads/invoices TEAM_UPLOADS_DIR=$REG_WORK/uploads/team \

@@ -180,6 +180,15 @@ async function runStore(browser, store) {
       if (role === "e2e_admin") {
         await page.goto(`${base}/#/`);
         await settle(page);
+        // "Closing checklists" is the placeholder until the store's closing
+        // checklists load; give a busy machine up to 15 s.
+        await page
+          .waitForFunction(
+            () => ![...document.querySelectorAll(".stat-tile-label")].some((e) => e.textContent.trim() === "Closing checklists"),
+            null,
+            { timeout: 15000 },
+          )
+          .catch(() => {});
         const tiles = await page.$$eval(".stat-tile-label", (els) => els.map((e) => e.textContent.trim()));
         check(tiles.includes("Store closing"), `${tag}: Overview has no Store closing tile (${tiles.join(", ")})`);
         check(!tiles.includes("Kitchen closing"), `${tag}: Overview shows a Kitchen closing tile for a pack without one`);

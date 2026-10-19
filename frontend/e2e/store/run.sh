@@ -56,7 +56,7 @@ if [ "$WITH_DEMO" = 1 ]; then
      PLATFORM_DOMAIN=retailops.invalid PUBLIC_HOST=https://demo.retailops.invalid \
      PRIVACY_URL=https://kloudc.com/kloudc-privacy-policy/ SUPPORT_URL=https://kloudc.com/kloudc-support/ \
      PLAY_STORE_URL="https://play.google.com/store/apps/details?id=com.kloudc.retailops" \
-     SCHEDULER_ENABLED=false NOTIFICATIONS_ENABLED=false SESSION_COOKIE_SECURE=false DEMO_REVIEW_PASSWORD="$DEMO_PW" \
+     SCHEDULER_ENABLED=false NOTIFICATIONS_ENABLED=false SESSION_COOKIE_SECURE=false APP_ENV=test DEMO_REVIEW_PASSWORD="$DEMO_PW" \
      "$PY" "$REPO/backend/scripts/demo/run_demo.py" --data-dir "$W/DEMO" --port $DEMO_PORT > "$W/DEMO-run/server.log" 2>&1) &
   pids+=($!)
   ports+=($DEMO_PORT)
