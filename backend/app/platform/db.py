@@ -134,16 +134,22 @@ def upgrade_platform_db(url: Optional[str] = None, revision: str = "head") -> st
     """Upgrade the platform database; returns the revision now applied."""
     from alembic import command
 
+    from app.migrate import ALEMBIC_LOCK
+
     url = url or platform_url()
-    command.upgrade(_alembic_config(url), revision)
+    with ALEMBIC_LOCK:  # Alembic's proxies are per process (app/migrate.py)
+        command.upgrade(_alembic_config(url), revision)
     return current_platform_revision(url) or ""
 
 
 def downgrade_platform_db(url: Optional[str], revision: str) -> Optional[str]:
     from alembic import command
 
+    from app.migrate import ALEMBIC_LOCK
+
     url = url or platform_url()
-    command.downgrade(_alembic_config(url), revision)
+    with ALEMBIC_LOCK:  # Alembic's proxies are per process (app/migrate.py)
+        command.downgrade(_alembic_config(url), revision)
     return current_platform_revision(url)
 
 

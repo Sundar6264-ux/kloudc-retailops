@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import pathlib
+import threading
 from typing import List, Optional
 
 from sqlalchemy import MetaData, Table, create_engine, inspect, pool, text
@@ -32,6 +33,13 @@ PG_BASELINE_REVISION = "0062"
 # pg_advisory_xact_lock(key1, key2): key1 marks "store schema migration",
 # key2 is hashtext(current_database()).
 _PG_MIGRATE_LOCK_KEY = 0x50_4F_4D_31  # "SOM1"
+
+# Alembic's `context` / `op` are module-level proxies (one per process): two
+# migrations running at once in two threads (two approvals provisioning
+# together, a retry during migrate-all) overwrite each other's proxy, so one
+# migrates the other's database or both hang/fail. Every in-process Alembic
+# run (store and platform databases) holds this lock.
+ALEMBIC_LOCK = threading.RLock()
 
 NOW_MARK = "__now__"
 NOW_SECONDS_MARK = "__now_seconds__"
@@ -74,7 +82,8 @@ def upgrade_store_db(url: str, revision: str = "head") -> str:
     database gets the baseline first). Returns the revision now applied."""
     from alembic import command
 
-    command.upgrade(_alembic_config(url), revision)
+    with ALEMBIC_LOCK:
+        command.upgrade(_alembic_config(url), revision)
     return current_store_revision(url) or ""
 
 
@@ -83,7 +92,8 @@ def downgrade_store_db(url: str, revision: str) -> str:
     baseline). Returns the revision now applied."""
     from alembic import command
 
-    command.downgrade(_alembic_config(url), revision)
+    with ALEMBIC_LOCK:
+        command.downgrade(_alembic_config(url), revision)
     return current_store_revision(url) or ""
 
 

@@ -195,3 +195,4 @@ app/platform/sources.py:global _configured  # the registry/settings sources are 
 app/platform/stores.py:_MIRRORED  # constant table (store setting -> registry column)
 app/platform/throttle.py:_limiters  # rate limiters keyed by (name, limits); each counts per caller key (IP, or store code for per-store limits)
 app/platform/throttle.py:_limiters_lock  # guards _limiters
+app/migrate.py:ALEMBIC_LOCK  # one Alembic run at a time per process (Alembic's context proxy is process-global)
