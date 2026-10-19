@@ -2594,3 +2594,75 @@ in the daytime. Screenshots: `~/storeops/screenshots/final-pass/rename/`
 **Owner actions.** Run `~/storeops/preview.sh --reset` once (the test stores
 are now `RETAILOPS_TEST_TOAST` / `RETAILOPS_TEST_CLOVER`). New servers should
 set `RETAILOPS_SECRET_KEYS` (the old `STOREOPS_SECRET_KEYS` still works).
+
+## As built - Final pass: mobile app design system, navigation and help (track M)
+
+App repo `kloudc-retailops-app`, branch `final/app` (not pushed), built to
+docs/DESIGN_SYSTEM.md sections 1-3 and 5.3.
+
+**Tokens and themes.** `lib/core/theme/kc_tokens.dart`: `KcColors`
+(ThemeExtension, light + dark) with the spec's cool slate neutrals, KloudC
+brand, one identity colour per area (`KcArea`: home, ordering violet, stock
+teal, sales raspberry, team orange, setup slate, platform, help) and six
+status tones (`KcStatus`); `KcTypography`, `KcMotion`; `context.kc`;
+`KcColors.active` for painters and colour helpers with no context.
+`AppTheme.forBrand` builds every ThemeData slot from the tokens and the
+store's brand (fill, brand-as-text at 4.5:1 on every surface and on its own
+wash, soft wash); the product blue uses #1F6FD1 / #6CB6F7 on dark. System
+font (no forced Roboto). Two tokens moved a shade for AA: light link/focus
+#0B6BB9 (#0C71C3 is 4.48:1 on surface-2) and input borders #8593A1 /
+#5E7084 (3:1). `AppColors` is a thin alias layer; ~900 dark-only uses were
+migrated to `context.kc`, so Light and System render correctly.
+Appearance (More › Account): Dark (default), Light, System, kept in
+shared_preferences `kc.theme`.
+
+**Help.** `assets/help/` is the copy of `content/help` made by
+`tool/sync_help_content.sh` (it runs `scripts/help/sync_help_to_app.sh` from
+this repo, which also regenerates the bundled glossary).
+`lib/core/help/`: models, `helpContentProvider` (bundle first, then
+`GET /api/help` when its version is newer, cached as `kc.help.cache`;
+`{pos}`, `{store}`, `{store_city}`, `{support_email}` filled, capitalised at a
+sentence start), `HelpText`, `InfoButton(pageId, section, extra)`,
+`showPageInfo`, `PageInfoBody`. `showInfoSheet(pageId:, section:)` and
+`CompactListHeader(infoPageId:, infoSection:, infoExtra:)` add the registry
+text under a screen's own live lines. `HelpCenterScreen` (More › Help & info,
+also `HelpScreen`): search, tile tabs Start here / Guides / FAQ /
+Troubleshooting / Glossary / Contact (remembered, `kc.tab.help`),
+`HelpArticleScreen` (On this page, tip/note/warning, the Reconciliation
+worked example, related guides, "Was this helpful? Email us"),
+`ContactSupportTile` / `emailSupport` (mailto: subject "RetailOps support -
+<Store ID>", screen, app version, device; never sent automatically).
+Glossary: concept terms merged, category chips remembered
+(`kc.glossary.category`). `FeatureEntry.helpPageId` maps every search entry
+to its registry page.
+
+**Navigation (same tabs).** Sign in: KloudC band (blue gradient, plane,
+name, tagline), "Signing in to <store>" chip, ⓘ, a card for Store ID
+PLATFORM with "Open the website" (sign-in disabled), Privacy · Support ·
+© 2026 KloudC LLC · Connecticut, USA. Home: brand-tinted greeting band,
+four tinted quick actions, ⓘ. Store: area colours on categories and tool
+badges, ⓘ listing the chosen tools with registry summaries. Team:
+segmented control on tokens, ⓘ per section. More: profile card (initials,
+Store ID); Account (Face ID, Notifications, Appearance, Change password,
+Delete my account); Help & info (Help Center, Glossary, Contact support,
+About, Privacy policy); Setup; Switch store; Sign out. About: KloudC card,
+email support, contact. ⓘ on every main screen's app bar. New search
+entries: Appearance, Contact support, Privacy policy, Recurring tasks.
+
+**Checks.** `test/core/theme/kc_tokens_test.dart` (every documented pair at
+4.5:1 / 3:1 in both themes, store brands #FFD400 / #111111 / teal / red,
+Appearance persistence), `no_raw_hex_test.dart`,
+`test/core/help/help_bundle_test.dart` (copy matches the manifest hash, every
+page id the app uses is in the registry, every cross-reference resolves,
+writing rules), `test/features/help/help_screen_test.dart`,
+`test/app/help_registry_reachability_test.dart`,
+`test/app/final_pass_matrix_test.dart` (sign-in, Home, Store, More +
+Appearance, Help Center tabs, a guide, an ⓘ sheet, Glossary, About on SE,
+SE 2x, 390, iPad mini, iPad Pro landscape, Split View 678 in Dark and Light;
+`--dart-define=SCREENSHOT_DIR=` writes PNGs).
+
+**Content notes for track H.** `pages.json`: `teams` says "More › Setup"
+but the app has no Teams screen (website only); `inventory_reports.terms`
+lists `store_vs_container` twice (the app shows each term once).
+`articles/index.json` lists itself (the app skips it). Several guides say
+"Click" (website wording) where the app is "Tap".
