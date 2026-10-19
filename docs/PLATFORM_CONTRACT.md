@@ -2570,3 +2570,27 @@ phone, private host, staff first names):
   too. The untouched originals stay in the M2 private folder.
 - Git history still holds the old names (rewriting it would need a force
   push).
+
+**Repositories.** GitHub repos renamed (GitHub redirects the old URLs):
+`Sundar6264-ux/kloudc-retailops` (server + website, was `storeops`) and
+`Sundar6264-ux/kloudc-retailops-app` (was `storeops-app`); local remotes
+updated. The local folders keep their names.
+
+**Checked (2026-10-19, 01:00-02:40 EDT).**
+| Check | Result |
+|---|---|
+| Server tests on PostgreSQL 16 | 2889 passed, 21 skipped, 2 failed |
+| Server tests on SQLite | 2880 passed, 30 skipped, 2 failed |
+| Website node tests / build | 279 of 279 / OK, title "KloudC RetailOps" |
+| App `flutter analyze` / `flutter test` | no issues / 5520 passed, 8 skipped |
+| Name guards (server, app, website) | 0 hits outside the blocked-domain constant |
+
+The 2 server failures are `test_inventory_api_late_csv.py`'s two "tonight"
+tests: they fail between midnight and the 04:00 business-day cutoff and fail
+the same way on the unchanged code (the known "store date" gap); they pass
+in the daytime. Screenshots: `~/storeops/screenshots/final-pass/rename/`
+(login and sign-up, 1280 and 375).
+
+**Owner actions.** Run `~/storeops/preview.sh --reset` once (the test stores
+are now `RETAILOPS_TEST_TOAST` / `RETAILOPS_TEST_CLOVER`). New servers should
+set `RETAILOPS_SECRET_KEYS` (the old `STOREOPS_SECRET_KEYS` still works).
