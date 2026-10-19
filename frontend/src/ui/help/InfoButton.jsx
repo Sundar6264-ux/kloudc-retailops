@@ -199,12 +199,12 @@ export function InfoPopover({ anchor, onClose, labelledBy, children, width = 340
   return createPortal(
     <div
       ref={ref}
-      className={`kc-popover${pos.above ? " kc-popover-above" : ""}`}
+      className={`kc-help-popover${pos.above ? " kc-help-popover-above" : ""}`}
       role="dialog"
       aria-labelledby={labelledBy}
       style={{ top: pos.top, left: pos.left, width: `min(${width}px, calc(100vw - 24px))`, "--kc-arrow-left": `${pos.arrowLeft}px` }}
     >
-      <span className="kc-popover-arrow" aria-hidden="true" />
+      <span className="kc-help-popover-arrow" aria-hidden="true" />
       {children}
     </div>,
     document.body,

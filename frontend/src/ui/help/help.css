@@ -8,7 +8,7 @@
 .kc-info,
 .kc-panel,
 .kc-sheet,
-.kc-popover,
+.kc-help-popover,
 .kc-search-results {
   --kh-surface: var(--surface, var(--card-bg));
   --kh-surface-2: var(--surface-2, var(--subtle-bg));
@@ -75,7 +75,7 @@
 .kc-panel button:focus-visible,
 .kc-sheet a:focus-visible,
 .kc-sheet button:focus-visible,
-.kc-popover a:focus-visible,
+.kc-help-popover a:focus-visible,
 .kc-info-btn:focus-visible,
 .kc-term:focus-visible {
   outline: 2px solid var(--kh-focus, var(--link));
@@ -438,9 +438,11 @@ a.kc-term-chip:hover {
   font-size: 15px;
 }
 
-/* ------------------------------------------------------------------ popover */
+/* ------------------------------------------------------------------ popover
+   Own class name: the menus use .kc-popover (styles/kc.css, position: absolute);
+   sharing it made every dropdown menu fixed below the screen. */
 
-.kc-popover {
+.kc-help-popover {
   position: fixed;
   z-index: var(--z-popover, 60);
   background: var(--kh-surface);
@@ -452,7 +454,7 @@ a.kc-term-chip:hover {
   overflow: auto;
   animation: kc-pop-in var(--kh-dur) var(--kh-ease);
 }
-.kc-popover-arrow {
+.kc-help-popover-arrow {
   position: absolute;
   top: -6px;
   left: calc(var(--kc-arrow-left, 16px) - 6px);
@@ -463,7 +465,7 @@ a.kc-term-chip:hover {
   border-top: 1px solid var(--kh-border);
   transform: rotate(45deg);
 }
-.kc-popover-above .kc-popover-arrow {
+.kc-help-popover-above .kc-help-popover-arrow {
   top: auto;
   bottom: -6px;
   transform: rotate(225deg);
@@ -1781,7 +1783,7 @@ a.kc-term-chip:hover {
 /* ------------------------------------------------------------------ reduced motion */
 
 @media (prefers-reduced-motion: reduce) {
-  .kc-popover,
+  .kc-help-popover,
   .kc-sheet,
   .kc-panel,
   .kc-sheet-scrim,
