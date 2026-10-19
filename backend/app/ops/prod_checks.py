@@ -7,14 +7,18 @@ starting anything (the pilot installer runs it first).
 
 Errors (refuse to start in production):
 - SESSION_COOKIE_SECURE=false (the login cookie would travel over plain http);
-- CORS_ORIGINS with "*" (credentials are allowed on CORS answers);
+- CORS_ORIGINS with "*" or "null" (credentials are allowed on CORS answers);
+- PRIVATE_PACKS_DIR inside a git checkout (private packs live outside git);
 - multi mode: no PostgreSQL platform database; no master key ring
   (RETAILOPS_SECRET_KEYS); a development key ring (an id starting "dev", or
   a key that is also in the local dev ring file); PLATFORM_REQUIRE_TOTP=false
   (masters must use two-step sign-in); SIGNUP_ENABLED=true with no master
   account that could approve a sign-up (sign-ups always wait for a master's
   approval - there is no auto-approve).
-Warnings (logged, never fatal): placeholder domain, no Firebase file, no
+APP_ENV: only development / dev / test are not production; any other value
+(a typo, "staging") is production (and warned about), so a mistyped value
+never switches these checks off.
+Warnings (logged, never fatal): unknown APP_ENV, SECURITY_HEADERS=off, placeholder domain, no Firebase file, no
 client-IP header behind a proxy, no website build, no STORE_CODE (single mode),
 DEDICATED_HOSTING_ENABLED, no LOG_DIR.
 """
@@ -39,24 +43,24 @@ class Finding:
 
 
 class ProductionConfigError(RuntimeError):
-    def __init__(self, findings: List[Finding]):
+    def __init__(self, findings: List[Finding], app_env: str = "production"):
         self.findings = findings
         lines = "\n  ".join(f.line() for f in findings)
         super().__init__(
             "KloudC RetailOps refuses to start in production with this configuration "
-            f"(APP_ENV=production):\n  {lines}\nFix the settings above (docs/PILOT_RUNBOOK.md), or use "
-            "APP_ENV=development on a developer machine."
+            f"(APP_ENV={app_env or 'production'!s} counts as production):\n  {lines}\nFix the settings above "
+            "(docs/PILOT_RUNBOOK.md), or use APP_ENV=development on a developer machine."
         )
 
 
 def is_production(settings=None) -> bool:
-    from app.platform.config import PRODUCTION_ENVS
+    from app.platform.config import env_is_production
 
     if settings is None:
         from app.config import process_settings
 
         settings = process_settings()
-    return str(getattr(settings, "app_env", "production") or "production").strip().lower() in PRODUCTION_ENVS
+    return env_is_production(getattr(settings, "app_env", "production"))
 
 
 def _keyring_findings(settings) -> List[Finding]:
@@ -104,7 +108,7 @@ def check_config(settings=None, *, check_database: bool = True) -> List[Finding]
     """Every finding for these settings (production rules applied whatever
     APP_ENV is; ``enforce`` decides what is fatal)."""
     from app.config import frontend_dist_dir, process_settings
-    from app.platform.config import require_totp
+    from app.platform.config import NON_PRODUCTION_ENVS, PRODUCTION_ENVS, require_totp
 
     s = settings if settings is not None else process_settings()
     out: List[Finding] = []
@@ -115,6 +119,23 @@ def check_config(settings=None, *, check_database: bool = True) -> List[Finding]
     origins = [o.strip() for o in str(getattr(s, "cors_origins", "") or "").split(",") if o.strip()]
     if "*" in origins:
         out.append(Finding("error", "CORS_ORIGINS", '"*" with credentials lets any site use a signed-in session'))
+    if any(o.lower() == "null" for o in origins):
+        out.append(Finding("error", "CORS_ORIGINS",
+                           '"null" with credentials lets sandboxed frames and local files use a signed-in session'))
+    env = str(getattr(s, "app_env", "") or "").strip().lower()
+    if env and env not in PRODUCTION_ENVS + NON_PRODUCTION_ENVS:
+        out.append(Finding("warning", "APP_ENV",
+                           f"{env!r} is not production / development / dev / test: treated as production"))
+    if str(getattr(s, "security_headers", "enforce") or "enforce").strip().lower() == "off":
+        out.append(Finding("warning", "SECURITY_HEADERS", "off: no CSP, frame or HSTS headers are sent"))
+    packs_dir = str(getattr(s, "private_packs_dir", "") or "").strip()
+    if packs_dir:
+        from app.ops.private_pack import git_work_tree
+
+        tree = git_work_tree(packs_dir)
+        if tree is not None:
+            out.append(Finding("error", "PRIVATE_PACKS_DIR",
+                               f"inside the git checkout {tree}: private packs live outside git"))
 
     if multi:
         url = str(getattr(s, "platform_database_url", "") or "").strip()
@@ -175,5 +196,5 @@ def enforce(settings=None) -> List[Finding]:
             continue
         logger.warning("Config check: %s", f.line())
     if errors and production:
-        raise ProductionConfigError(errors)
+        raise ProductionConfigError(errors, str(getattr(s, "app_env", "") or "production").strip())
     return findings

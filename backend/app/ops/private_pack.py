@@ -2,9 +2,10 @@
 
 A private pack holds one store's own rules (menus, PO sections, vendors,
 checklists...). It is never committed: the loader refuses a file that sits
-inside a git work tree (any parent folder with ``.git``), so a pack can't be
-loaded from a checkout by mistake - and so the habit of keeping it in one
-never starts.
+inside a git work tree (any parent folder with ``.git``; symbolic links are
+followed first) or is a hard link (its content may also sit in a checkout),
+so a pack can't be loaded from a checkout by mistake - and so the habit of
+keeping it in one never starts.
 
     python -m app.platform load-pack CODE --file ~/somewhere-private/store.pack.json [--no-rows]
 
@@ -46,6 +47,13 @@ def check_outside_git(path: Union[str, pathlib.Path]) -> pathlib.Path:
         raise PrivatePackError(
             f"{p} is inside the git checkout {tree}. Private packs live outside git "
             "(for example ~/.kloudc-retailops/private/): move the file and try again."
+        )
+    if p.stat().st_nlink > 1:
+        # A hard link shares its content with another path - possibly one in
+        # a checkout - and nothing tells where the other names are.
+        raise PrivatePackError(
+            f"{p} is a hard link ({p.stat().st_nlink} names for one file). Keep one private copy "
+            "outside git (cp it to a new file) and load that."
         )
     return p
 

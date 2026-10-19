@@ -120,11 +120,21 @@ def extra_api_hosts() -> List[str]:
 
 
 PRODUCTION_ENVS = ("production", "prod")
+# The only APP_ENV values that are NOT production. Anything else - blank, a
+# typo ("producton"), "staging" - is production, so a mistyped value can't
+# switch the start-up checks and the TOTP requirement off (fail closed).
+NON_PRODUCTION_ENVS = ("development", "dev", "test")
+
+
+def env_is_production(value) -> bool:
+    """True unless `value` (an APP_ENV) is one of NON_PRODUCTION_ENVS."""
+    return str(value or "production").strip().lower() not in NON_PRODUCTION_ENVS
 
 
 def is_production() -> bool:
-    """APP_ENV is production (the Settings default)."""
-    return str(pget("app_env") or "production").strip().lower() in PRODUCTION_ENVS
+    """APP_ENV is production: the Settings default, and any value that is not
+    development / dev / test."""
+    return env_is_production(pget("app_env"))
 
 
 def require_totp() -> bool:
