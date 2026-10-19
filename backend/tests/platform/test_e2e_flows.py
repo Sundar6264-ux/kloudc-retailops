@@ -305,3 +305,33 @@ def test_full_flow_two_stores(client, pdb, fake_testers, fake_toast, paused_sche
     assert staff.get("/api/auth/me").status_code == 200
     assert store_login(client, "ALPHA", "sam", "sam-staff-pass").status_code == 200
     assert _jobs(paused_scheduler, "daily_sales_sync") == ["daily_sales_sync:ALPHA", "daily_sales_sync:BRAVO"]
+
+
+def test_saving_pos_keys_runs_the_store_catch_up_once(client, pdb, paused_scheduler, fake_testers):
+    """A new store has no POS keys when it is approved, so the catch-up sync
+    the scheduler runs when it first sees a store finds nothing to do. Saving
+    the Toast keys in Settings > Integrations is the moment the store can
+    sync (on a single-store server: the restart after editing .env), so the
+    store's catch-up jobs run again - for that store only."""
+    from tests.platform.conftest import provision
+
+    provision("ALPHA")
+    provision("BRAVO", owner="bob", password=PW_B)
+    startup = lambda: sorted(j.id for j in paused_scheduler.get_jobs() if j.id.startswith("startup_"))  # noqa: E731
+    assert "startup_catchup_sync:ALPHA" in startup() and "startup_catchup_sync:BRAVO" in startup()
+    for jid in startup():  # they ran (no keys yet: nothing synced)
+        paused_scheduler.remove_job(jid)
+
+    token = store_login(client, "ALPHA", "ann", PW_A).json()["token"]
+    ann = client.__class__(client.app)
+    ann.headers.update({"Authorization": f"Bearer {token}"})
+    r = ann.put("/api/settings/integrations/toast",
+                json={"public": {"client_id": "cid-a", "restaurant_guid": "guid-a"}, "secrets": {"client_secret": "sec-a-1234"}})
+    assert r.status_code == 200, r.text
+    assert "startup_catchup_sync:ALPHA" in startup(), startup()
+    assert not [j for j in startup() if j.endswith(":BRAVO")], startup()
+    # Another integration (AI key) is not a reason to sync the POS again.
+    for jid in startup():
+        paused_scheduler.remove_job(jid)
+    assert ann.put("/api/settings/integrations/ai", json={"secrets": {"api_key": "sk-ant-x-9999"}}).status_code == 200
+    assert startup() == []

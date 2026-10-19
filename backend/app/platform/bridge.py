@@ -127,6 +127,19 @@ def store_changed(code: str) -> None:
         pass
 
 
+def pos_keys_saved(code: str) -> None:
+    """The store's POS credentials were saved: run its catch-up sync jobs
+    again (the approval-time run had no keys)."""
+    t = tenancy()
+    fn = getattr(t, "rerun_store_startup_jobs", None) if t is not None else None
+    if fn is None:
+        return
+    try:
+        fn(code)
+    except Exception:  # noqa: BLE001 - a scheduling hiccup must not undo the save
+        logger.exception("tenancy.rerun_store_startup_jobs(%s) failed", code)
+
+
 def store_stopped(code: str) -> None:
     """Suspend / archive: also close its engine and clear its caches."""
     store_changed(code)

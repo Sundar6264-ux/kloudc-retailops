@@ -253,6 +253,8 @@ KINDS: Dict[str, CredentialSpec] = {
     ),
 }
 
+# Credential kinds that are the store's POS: saving one re-runs its catch-up sync.
+POS_KINDS = frozenset({"toast", "clover"})
 MAX_SECRET_LEN = 4096
 
 # Public fields that say WHERE a kind's secrets are sent. When one changes,
@@ -535,9 +537,11 @@ def save_credential(
     else:
         with platform_session() as s:
             view = _do(s)
-    from app.platform.bridge import store_changed
+    from app.platform.bridge import pos_keys_saved, store_changed
 
     store_changed(code)
+    if kind in POS_KINDS:
+        pos_keys_saved(code)
     return view
 
 

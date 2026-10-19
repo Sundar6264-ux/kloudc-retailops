@@ -365,6 +365,21 @@ def reconcile_store_jobs() -> Dict[str, Dict[str, int]]:
         return stats
 
 
+def rerun_store_startup_jobs(code: str) -> None:
+    """Run store `code`'s startup catch-ups again (once, after the usual
+    delay): its POS keys were just saved in Settings > Integrations - the
+    multi-mode moment a single-store server has at the restart after its
+    .env changed. Other stores are untouched."""
+    norm = normalize_store_code(code)
+    with _reconcile_lock:
+        for seen in _started.values():
+            seen.discard(norm)
+    try:
+        reconcile_store_jobs()
+    except Exception:  # noqa: BLE001 - the 5-minute reconcile retries
+        logger.exception("Store %s: startup jobs not rescheduled", norm)
+
+
 def on_store_changed(code: str) -> None:
     """Track C calls this after approve / suspend / resume / archive /
     settings, timezone or POS changes: drops the cached registry row and

@@ -52,6 +52,7 @@ from app.tenancy.jobs import (
     reconcile_store_jobs,
     register_store_job,
     register_store_startup_job,
+    rerun_store_startup_jobs,
 )
 from app.tenancy.locks import TenantLock, advisory_lock, keyed_lock, tenant_lock
 from app.tenancy.mode import is_multi_tenant
@@ -88,7 +89,7 @@ __all__ = [
     "tenant_engine", "tenant_session", "store_database_url", "dispose_engine", "engine_stats",
     "register_engine_hook", "sweep_idle_engines",
     "for_each_store", "register_store_job", "register_store_startup_job", "reconcile_store_jobs",
-    "on_store_changed", "each_store_job",
+    "on_store_changed", "each_store_job", "rerun_store_startup_jobs",
     "keyed_lock", "advisory_lock", "tenant_lock", "TenantLock",
     "TenantCache", "TenantLocal", "tenant_cache", "tenant_state", "tenant_local", "clear_tenant_caches",
     "store_root", "store_path",
