@@ -13,6 +13,13 @@
         <string>__ROOT__/pgdata</string>
     </array>
     <key>UserName</key><string>__USER__</string>
+    <!-- launchd starts jobs with no locale; on macOS PostgreSQL then aborts with
+         "postmaster became multithreaded during startup". A UTF-8 locale fixes it. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>LC_ALL</key><string>en_US.UTF-8</string>
+        <key>LANG</key><string>en_US.UTF-8</string>
+    </dict>
     <key>RunAtLoad</key><true/>
     <key>KeepAlive</key><true/>
     <key>ThrottleInterval</key><integer>10</integer>
