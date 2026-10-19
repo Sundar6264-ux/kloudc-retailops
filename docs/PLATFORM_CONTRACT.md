@@ -2594,3 +2594,76 @@ in the daytime. Screenshots: `~/storeops/screenshots/final-pass/rename/`
 **Owner actions.** Run `~/storeops/preview.sh --reset` once (the test stores
 are now `RETAILOPS_TEST_TOAST` / `RETAILOPS_TEST_CLOVER`). New servers should
 set `RETAILOPS_SECRET_KEYS` (the old `STOREOPS_SECRET_KEYS` still works).
+
+## As built - Final pass: website design + navigation (track W)
+
+Branch `final/web` (worktree `~/storeops/wt-final-web`), built from
+`docs/DESIGN_SYSTEM.md`. Not pushed.
+
+**Tokens and themes.** `frontend/src/styles/tokens.css` is the only file with
+colour values: KloudC brand (`--kc-*`), cool slate neutrals, the navy sidebar,
+one identity colour per area (`--area-<home|ordering|stock|sales|team|setup|
+platform|help>` + `-soft` + `-nav`), status colours (`success|warning|danger|
+info|neutral|violet`, each `-text/-soft/-border/-fill`), type, spacing,
+radius, shadows, z-index, motion. Dark values apply for System (OS dark) and
+for an explicit Dark choice (`:root[data-theme="dark"]`); the user menu's
+Appearance (System/Light/Dark) is stored in `localStorage["kc.theme"]` and
+applied before first paint by `public/theme-init.js` (a file, because the
+pages' CSP is `script-src 'self'`). Older variable names (`--card-bg`,
+`--failed-*`, `--running-*`, `--sidebar-*`...) alias the tokens. Primary
+buttons use `--primary` (store brand; `--accent-dark` in dark), brand text
+`--brand-text`. `brandCssVars` adds `--accent-dark`, `--brand-text-light`,
+`--brand-text-dark(-rgb)` (KloudC blue uses the spec's `#1F6FD1`/`#6CB6F7`).
+Measured values that differ from the spec table: `--text-muted` `#5A6774`,
+`--kc-link`/`--area-help` `#0B6CBB`, `--input-border` `#808D9B` / dark
+`#62748A` (the spec's values missed AA by a hair on some surfaces).
+
+**Shell.** `App.jsx` imports `index.css` then `styles/kc.css` (design layer)
+then `styles/brand.css` (logo, logged-out pages, master console, Integrations)
+so the new layer wins. Sidebar (`components/Sidebar.jsx`): Home, Daily
+Checklists, Ordering, Stock, Sales, Team, Setup (sub-headings People,
+Connections, Ordering setup, Team setup); open groups remembered in
+`kc.nav.open` (first visit: all but Setup), rail in `kc.nav.collapsed`. Top
+bar (`TopBar.jsx`): store name + Store ID copy, search (`CommandPalette.jsx`,
+Cmd/Ctrl-K or `/`), cart, page help (`?`, in the user menu on phones), user
+menu (`data-testid="user-menu"`, sign out `data-testid="sign-out"`). The
+floating cart button and the sidebar's Change password / Log out are gone.
+
+**Navigation data** (`featureRoutes.js`): every route has `pageId`, `area`,
+`icon`; `NAV_GROUPS` as above; `INSIGHTS_HUB` (one "Insights" link) with
+`insightsTiles()` / `insightsLandingPath()` (last tile in `kc.tab.insights`);
+`searchablePages()`, `routeForPath()`, `userMenuLinks()`, `PAGE_META`
+(fallback titles/areas by page id, same ids as `content/help/pages.json`).
+
+**Help components (track H).** `ui/helpBridge.jsx` reads
+`ui/help/index.js` through `import.meta.glob`, so this branch builds without
+it and uses it after the merge: `InfoButton`, `HelpPanel` (rendered in the
+shell; else the fallback `HelpDrawer.jsx`), `HelpCenter` (for `/help`,
+`/glossary` and the master Help tab; else the old `HelpPage`), `useHelp`
+(titles, `openPanel`, `search`, `pageIdForPath`). H's `HelpProvider` is
+expected in `main.jsx` (H's file). Search opens H results at `/help?a=<id>`,
+`/help?tab=faq&s=<id>`, `/help?tab=troubleshooting&s=<id>`, `/glossary?k=<key>`.
+
+**Pages.** Every store page uses `ui/PageHeader.jsx` (area chip, title from
+the registry, info button); Home has the greeting band (store brand tint),
+Upload invoice / New order, KPI tiles with area top edges and icon + word
+status. Insights pages carry the hub's tile tabs. List toolbars inside cards
+are frozen under the top bar on >=768 px. Logged-out pages use
+`components/AuthLayout.jsx`; the master console has the KloudC band, tile tabs
+Requests/Stores/Hosting/Audit/Help (`PLATFORM_TABS` gains `icon`, `pageId`,
+`sub`), store rows with initials and icon + word status chips.
+
+**Checked (2026-10-19).**
+| Check | Result |
+|---|---|
+| Website node tests | 292 of 292 |
+| Website build | OK |
+| `e2e/store` (Toast, Clover, DEMO stores; 1280 + 375) | 748 checks, 0 failed |
+| `e2e/platform` (mock) | 129 checks, 0 failed |
+| `e2e/platform/run_flows.sh` (real server, PostgreSQL) | 114 checks, 0 failed |
+| `e2e/screens` (1440/1280/375 x light/dark) | 282 screenshots, no sideways scroll, no crash |
+
+Suites A and B (`e2e/regression`) need a copy of a real store's database and
+were not run; Suite B's Insights checks now test the hub. `oct15-final.mjs`
+is a dated one-off and still expects the Oct 15 menu.
+Screenshots: `~/storeops/screenshots/final/web/<light|dark>/<width>/`.
