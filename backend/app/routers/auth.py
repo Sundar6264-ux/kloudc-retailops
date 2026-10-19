@@ -285,14 +285,19 @@ def create_user(
     _: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
+    # Saved as signing in reads it (the login strips what is typed): a
+    # username kept with a stray space could never sign in.
+    username = body.username.strip()
+    if not username:
+        raise HTTPException(status_code=400, detail="Enter a username")
     existing = db.execute(
-        select(User).where(func.lower(User.username) == body.username.strip().lower())
+        select(User).where(func.lower(User.username) == username.lower())
     ).scalar_one_or_none()
     if existing is not None:
         raise HTTPException(status_code=409, detail="That username is already taken")
 
     user = User(
-        username=body.username,
+        username=username,
         password_hash=hash_password(body.password),
         is_admin=body.is_admin,
         allowed_features=_clean_features(body.allowed_features),

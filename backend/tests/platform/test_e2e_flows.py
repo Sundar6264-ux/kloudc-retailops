@@ -335,3 +335,19 @@ def test_saving_pos_keys_runs_the_store_catch_up_once(client, pdb, paused_schedu
         paused_scheduler.remove_job(jid)
     assert ann.put("/api/settings/integrations/ai", json={"secrets": {"api_key": "sk-ant-x-9999"}}).status_code == 200
     assert startup() == []
+
+
+def test_staff_added_with_stray_spaces_can_sign_in(client):
+    """Phones add a space after a word; the login strips what is typed, so a
+    username saved with the space could never sign in."""
+    from tests.platform.conftest import provision
+
+    provision("ALPHA")
+    token = store_login(client, "ALPHA", "ann", PW_A).json()["token"]
+    ann = client.__class__(client.app)
+    ann.headers.update({"Authorization": f"Bearer {token}"})
+    r = ann.post("/api/auth/users", json={"username": " Sam ", "password": "sam-staff-pass"})
+    assert r.status_code == 200 and r.json()["username"] == "Sam", r.text
+    assert store_login(client, "ALPHA", "Sam ", "sam-staff-pass").status_code == 200
+    assert ann.post("/api/auth/users", json={"username": "sam", "password": "sam-staff-pass"}).status_code == 409
+    assert ann.post("/api/auth/users", json={"username": "   ", "password": "sam-staff-pass"}).status_code in (400, 422)
