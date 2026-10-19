@@ -1,6 +1,6 @@
 # Dedicated hosting runbook: move one store to its own server
 
-Platform contract section 12. A store normally lives on the shared StoreOps
+Platform contract section 12. A store normally lives on the shared KloudC RetailOps
 service (its own PostgreSQL database on the shared cluster). With **master
 approval**, one store can move to its own server. Nothing here happens
 automatically, and all of it is switched off until the owner turns it on.
@@ -43,9 +43,9 @@ Everything is audited (`hosting.requested`, `hosting.approved`,
    TENANCY_MODE=multi
    DEDICATED_STORE_CODES=XYZ_GROCERY
    DEDICATED_HOSTING_ENABLED=true
-   PLATFORM_DATABASE_URL=postgresql+psycopg://storeops_ro@<platform-host>/so_platform   # read access (restricted role)
-   STORE_DB_HOSTS={"xyz": "postgresql+psycopg://storeops_app:<pw>@127.0.0.1:5432/{db_name}"}
-   STOREOPS_SECRET_KEYS=<the SAME key ring as the shared service>
+   PLATFORM_DATABASE_URL=postgresql+psycopg://retailops_ro@<platform-host>/so_platform   # read access (restricted role)
+   STORE_DB_HOSTS={"xyz": "postgresql+psycopg://retailops_app:<pw>@127.0.0.1:5432/{db_name}"}
+   RETAILOPS_SECRET_KEYS=<the SAME key ring as the shared service>
    PLATFORM_PUBLIC_URL=https://app.<domain>
    UPLOADS_ROOT=/data/uploads
    SCHEDULER_ENABLED=true
@@ -66,7 +66,7 @@ Everything is audited (`hosting.requested`, `hosting.approved`,
 # On the shared cluster (read-only window: suspend the store first)
 python -m app.platform suspend XYZ_GROCERY --reason "moving to its own server"
 pg_dump -Fc -d so_xyz_grocery -f /tmp/so_xyz_grocery.dump
-rsync -a /srv/storeops/uploads/XYZ_GROCERY/ newhost:/data/uploads/XYZ_GROCERY/
+rsync -a /srv/retailops/uploads/XYZ_GROCERY/ newhost:/data/uploads/XYZ_GROCERY/
 
 # On the dedicated server
 createdb -T template0 -E UTF8 --lc-collate=C --lc-ctype=C so_xyz_grocery
@@ -112,7 +112,7 @@ python -m app.platform resume XYZ_GROCERY
 python -m app.platform suspend XYZ_GROCERY --reason "rollback"
 pg_dump -Fc -d so_xyz_grocery -f /tmp/back.dump          # on the dedicated server
 pg_restore --clean -d so_xyz_grocery /tmp/back.dump       # on the shared cluster
-rsync -a newhost:/data/uploads/XYZ_GROCERY/ /srv/storeops/uploads/XYZ_GROCERY/
+rsync -a newhost:/data/uploads/XYZ_GROCERY/ /srv/retailops/uploads/XYZ_GROCERY/
 curl -X POST .../api/platform/hosting-requests/<id>/rollback -d '{"note": "why"}'
 python -m app.platform resume XYZ_GROCERY
 ```

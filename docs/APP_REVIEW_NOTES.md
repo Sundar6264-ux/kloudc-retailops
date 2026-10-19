@@ -1,4 +1,4 @@
-# StoreOps - App Review notes (DRAFT)
+# KloudC RetailOps - App Review notes (DRAFT)
 
 Draft for App Store Connect -> App Review Information (and Google Play's
 "App access" instructions). Batch MT13; plan sections 3.1a and 11.3.
@@ -27,7 +27,7 @@ STORE CODE: DEMO   (enter it on the first screen, then sign in)
 User name: appreview
 Password: (in the Sign-in fields above)
 
-StoreOps is a back-office app for the staff of independent retail stores
+KloudC RetailOps is a back-office app for the staff of independent retail stores
 (grocery and convenience): stock and reorder lists, supplier orders,
 invoice submission, daily opening/closing checklists, and team tasks and
 chat. There is no public sign-up: each store's manager creates its staff
@@ -86,7 +86,7 @@ sign-in), notifications (task and order alerts). Location is not used.
 - If a reviewer asks for write access, the answer is the DEMO_MODE rule
   (every login is read-only); do not give them a real store's login.
 - After approval: the old App Review login in the previous app's store is
-  removed by that store's owner (plan 3.1a); nothing in StoreOps depends on it.
+  removed by that store's owner (plan 3.1a); nothing in KloudC RetailOps depends on it.
 
 ## Google Play "App access"
 

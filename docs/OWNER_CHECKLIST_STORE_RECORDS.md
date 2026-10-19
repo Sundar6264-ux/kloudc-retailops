@@ -1,4 +1,4 @@
-# Owner checklist: Apple, Google and Firebase records for StoreOps
+# Owner checklist: Apple, Google and Firebase records for KloudC RetailOps
 
 Batch MT13 (plan 11.3, contract section 9.1). **None of these records has
 been created** - each needs the owner's own accounts, payment or legal
@@ -6,15 +6,15 @@ identity. Every value the code needs is already a setting or build define
 with a placeholder; this list says where each answer goes.
 
 Working decisions (change any of them before step A1; afterwards they are
-hard to change): product name **StoreOps**, company **KloudC LLC**, bundle /
-application id **`com.kloudc.storeops`**. The existing single-store app record
+hard to change): product name **KloudC RetailOps**, company **KloudC LLC**, bundle /
+application id **`com.kloudc.retailops`**. The existing single-store app record
 is not touched (plan D10).
 
 ## A. Apple (developer.apple.com and App Store Connect)
 
 1. **App ID** - Certificates, Identifiers & Profiles -> Identifiers -> "+" ->
-   App IDs -> App. Description `StoreOps`, Bundle ID (explicit)
-   `com.kloudc.storeops`. Capabilities: **Push Notifications** and
+   App IDs -> App. Description `KloudC RetailOps`, Bundle ID (explicit)
+   `com.kloudc.retailops`. Capabilities: **Push Notifications** and
    **Associated Domains**. (Sign in with Apple is not used.)
 2. **Team ID** - Membership details -> Team ID (10 characters). Put it in
    every store server's `.env` as `APPLE_TEAM_ID=` (the directory serves it
@@ -22,12 +22,12 @@ is not touched (plan D10).
    project signing (MT7a app identity).
 3. **Push key** - Keys -> "+" -> Apple Push Notifications service (APNs).
    Download the `.p8` once, keep it outside git (`.gitignore` refuses
-   `*.p8`), and upload it to the StoreOps Firebase project (C3), not to any
+   `*.p8`), and upload it to the KloudC RetailOps Firebase project (C3), not to any
    server.
 4. **App Store Connect record** - Apps -> "+" -> New App: platform iOS,
-   name `StoreOps` (if taken: "StoreOps for Retail Teams" or similar - the
-   home-screen name can stay StoreOps), primary language English (U.S.),
-   bundle ID `com.kloudc.storeops`, SKU e.g. `storeops-ios-1`, user access
+   name `KloudC RetailOps` (if taken: "KloudC RetailOps for Retail Teams" or similar - the
+   home-screen name can stay KloudC RetailOps), primary language English (U.S.),
+   bundle ID `com.kloudc.retailops`, SKU e.g. `retailops-ios-1`, user access
    Full.
 5. **App Store URL** - after the record exists, copy the app's URL
    (`https://apps.apple.com/app/id<number>`) into each store server's
@@ -47,8 +47,8 @@ is not touched (plan D10).
 
 ## B. Google Play (play.google.com/console)
 
-1. **Create app** - name `StoreOps`, default language English (US), App,
-   Free. Package name comes from the first upload: `com.kloudc.storeops`.
+1. **Create app** - name `KloudC RetailOps`, default language English (US), App,
+   Free. Package name comes from the first upload: `com.kloudc.retailops`.
 2. **Play App Signing** - accept Google-managed signing. Then App
    integrity -> App signing -> copy the **SHA-256 certificate fingerprint**
    of the app signing key (and of the upload key) into every store server's
@@ -61,25 +61,25 @@ is not touched (plan D10).
    `docs/APP_REVIEW_NOTES.md`.
 5. **Data safety** - same answers as Apple A6.
 6. **Play URL** - nothing to do: `PLAY_STORE_URL` defaults to
-   `https://play.google.com/store/apps/details?id=com.kloudc.storeops`.
+   `https://play.google.com/store/apps/details?id=com.kloudc.retailops`.
 
 ## C. Firebase (console.firebase.google.com) - push notifications
 
-1. **New project** `StoreOps` (Google Analytics: off). Do not reuse the
+1. **New project** `KloudC RetailOps` (Google Analytics: off). Do not reuse the
    previous app's Firebase project.
-2. **Add apps** - iOS with bundle ID `com.kloudc.storeops`; Android with
-   package `com.kloudc.storeops` and the SHA-256 fingerprints from B2.
+2. **Add apps** - iOS with bundle ID `com.kloudc.retailops`; Android with
+   package `com.kloudc.retailops` and the SHA-256 fingerprints from B2.
 3. **APNs** - Project settings -> Cloud Messaging -> Apple app
    configuration -> upload the `.p8` key from A3 with its Key ID and the
    Team ID.
-4. **App config** - in `storeops-app`, run `flutterfire configure
-   --project=<storeops project id>`; it rewrites
+4. **App config** - in `kloudc-retailops-app`, run `flutterfire configure
+   --project=<retailops project id>`; it rewrites
    `lib/core/notifications/firebase_options.dart` (the placeholder from MT7a
    app identity). The generated `GoogleService-Info.plist` /
    `google-services.json` stay out of git (`.gitignore`); CI gets them from
    repository secrets.
 5. **One service account per store server** - IAM -> Service accounts ->
-   create `storeops-push-<store>` with only the role **Firebase Cloud
+   create `retailops-push-<store>` with only the role **Firebase Cloud
    Messaging API Admin** (plan 7). Create a JSON key, copy it to that
    store's server only, and set `FIREBASE_CREDENTIALS_FILE=` to its path.
    The **DEMO store gets no key** (its pushes never leave the server).

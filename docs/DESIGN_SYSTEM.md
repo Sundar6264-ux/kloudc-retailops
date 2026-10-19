@@ -1,5 +1,14 @@
 # KloudC RetailOps - Design system, navigation and help (spec)
 
+> **Stage 2 done (2026-10-19):** the rename, KloudC brand art and the origin-name
+> scrub are in (PLATFORM_CONTRACT "As built - Final pass: rename + brand + scrub").
+> GitHub repos: `Sundar6264-ux/kloudc-retailops` (server + web) and
+> `Sundar6264-ux/kloudc-retailops-app`; the **local folders keep their names**
+> (`~/storeops/storeops`, `~/storeops/storeops-app`), so `../storeops/...` paths
+> below stay right. Dart package `kloudc_retailops`; app id `com.kloudc.retailops`;
+> env names `RETAILOPS_*` (old `STOREOPS_*` still read). The baseline below
+> describes the product before stage 2.
+
 Status: **spec for the final pass** (Oct 19, 2026). No feature code here. Four builders work from it in
 parallel: **W** website, **H** help content + help components, **M** mobile app, **S** server + ops
 (section 5). Where this file and older contracts disagree about look, navigation or help, this file

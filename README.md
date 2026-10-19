@@ -1,4 +1,4 @@
-# StoreOps
+# KloudC RetailOps
 
 Store operations for independent grocery and food stores: sales and
 inventory from the POS, reorder forecasting, purchase orders and vendor
@@ -6,7 +6,12 @@ calendars, invoices, issue tracking, checklists, team tasks and chat, and
 insights. A product of KloudC LLC.
 
 This repository holds the **server and the website**. The mobile app is the
-separate `storeops-app` repository.
+separate `kloudc-retailops-app` repository. (The product was called StoreOps
+while it was built; old `STOREOPS_*` environment names still work, see
+`backend/app/legacy_env.py`.)
+
+"Make Your POS Inventory Work Like Your Real Store." - https://kloudc.com/retailops/
+Support: support@kloudc.com - https://kloudc.com/kloudc-support/
 
 - **One store = one process** (one container): the API, the website and the
   scheduled jobs, with the store's own SQLite database, uploads and settings.
@@ -15,7 +20,7 @@ separate `storeops-app` repository.
 - Contracts: `docs/MULTISTORE_M1_CONTRACT.md` (POS adapters, neutral models,
   capabilities) and `docs/M2_CONTRACT.md` (store settings, branding, store
   pack, directory, app tenant config, gating).
-- Working notes for developers and AI agents: `.claude/skills/storeops/SKILL.md`.
+- Working notes for developers and AI agents: `.claude/skills/retailops/SKILL.md`.
 
 ## Stack
 
@@ -43,11 +48,11 @@ separate `storeops-app` repository.
   `-v "$PWD/<code>.json:/packs/<code>.json:ro"` to the `run` line and pass
   `--pack /packs/<code>.json`.
 - The store's data lives in the `store-data` volume (`/data` in the
-  container): `storeops.db`, uploads and flyers.
+  container): `retailops.db`, uploads and flyers.
 - Off-site backup: `docker compose --profile backup up -d litestream` once
   the R2 values are in `.env` (see `backend/scripts/backup/README.md`).
 - Put a reverse proxy (Caddy) or a Cloudflare Tunnel in front, one host name
-  per store on the StoreOps domain (`PLATFORM_DOMAIN`).
+  per store on the KloudC RetailOps domain (`PLATFORM_DOMAIN`).
 
 Running without Docker on a Mac: `backend/scripts/launchd/README.md`.
 
@@ -84,5 +89,7 @@ boots it against an empty database.
   change and diffs them (the regression gate for changes that must not alter
   a store's numbers).
 - `backend/scripts/dump_db_to_csv.sh` - every table to CSV.
-- `backend/scripts/branding/make_placeholder_art.py` - regenerates the
-  placeholder logo and icons.
+- `backend/scripts/branding/make_brand_art.py` - builds every logo, favicon
+  and app icon from the KloudC brand sources in
+  `backend/app/assets/branding/source/` (`--app-repo` also writes the app's
+  launcher icons).

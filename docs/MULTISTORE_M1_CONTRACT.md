@@ -1,8 +1,15 @@
 # Multi-store M1 contract: connector layer with Toast parity
 
+> **Name note (2026-10-19):** this record was written while the product was
+> called **StoreOps**; it is now **KloudC RetailOps** (app id
+> `com.kloudc.retailops`, Dart package `kloudc_retailops`, `RETAILOPS_*`
+> environment names - the old `STOREOPS_*` names still work). The names
+> below are the ones used at the time. The store the product was first built
+> for is called "the pilot store" here.
+
 M1 of the multi-store plan (`MULTI_STORE_PLAN.md`, section 11.2) puts Toast
 behind a POS connector so a second store on another POS can run the same
-code. Its golden rule: **zero behaviour change for Spice Town**. Every API
+code. Its golden rule: **zero behaviour change for the pilot store**. Every API
 answer, page, report number, scheduled job, push and WhatsApp/email stays the
 same; old module names keep working; API changes are additive only (app
 builds 5-9 keep working); migrations are additive, numbered from 0060.
@@ -42,7 +49,7 @@ there were none). Background threads started by app code (Open Checks
 refresh, Insights fill, Fix Issues forecast refresh) are recorded but not
 run. "Now" is frozen at 12:00 store time on the day after the newest synced
 business date (2026-10-15 12:00 EDT for the Oct 15 copy), `--now` to
-override. It calls as the lowest-id non-demo admin (`Spicetown_admin`).
+override. It calls as the lowest-id non-demo admin (`Mainstore_admin`).
 
 **What is recorded.**
 - 110 read endpoints with status and full answer: Items Sold for each of
@@ -98,7 +105,7 @@ pre-existing and not an M1 change (prod has run 3.12 since Sep 27). The diff
 tool therefore refuses to compare recordings from different Python minors.
 
 **Baseline** (not in git - business data):
-`/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m1/baseline/` (3.12)
+`~/.claude/jobs/e26a1611/tmp/multitenant/m1/baseline/` (3.12)
 and `baseline-py39/` (3.9), recorded from commit 08b43c0 code (MT1 adds no
 app code) on `prodcopy.db` in the same folder (the read-only copy made Oct
 15 13:48). Every later M1 batch checks against these:
@@ -115,10 +122,10 @@ first (for MT4's migrations). Re-recording steps are in the README.
 |---|---|
 | `backup_db.py` | Nightly backup: read-only online backup, `integrity_check`, gzip + read-back, 30-day retention (never the newest), log line + `last_backup.json` |
 | `restore_drill.py` | Restores the newest backup (or any `.db`/`.db.gz`, e.g. a Litestream restore) into a temp folder: `integrity_check`, `foreign_key_check`, row counts (next to the live DB's, read-only), migration head, newest dates; prints a report |
-| `com.spicetown.backup.plist` | LaunchAgent template, 03:30 daily, Nice 15, low-priority IO. **Not installed** |
-| `litestream.yml.template` | Litestream -> Cloudflare R2 config, folder `stores/spicetown/db`, 30-day retention, placeholders only - no credentials |
-| `run_litestream.sh` | Wrapper: stays off (exit 0, says why) until config + `~/.config/spicetown/litestream.env` (chmod 600) exist with real values; refuses a world-readable key file; `--check` mode |
-| `com.spicetown.litestream.plist` | LaunchDaemon template (UserName sundar, KeepAlive on failure only). **Not installed** |
+| `com.pilot.backup.plist` | LaunchAgent template, 03:30 daily, Nice 15, low-priority IO. **Not installed** |
+| `litestream.yml.template` | Litestream -> Cloudflare R2 config, folder `stores/pilot/db`, 30-day retention, placeholders only - no credentials |
+| `run_litestream.sh` | Wrapper: stays off (exit 0, says why) until config + `~/.config/pilot/litestream.env` (chmod 600) exist with real values; refuses a world-readable key file; `--check` mode |
+| `com.pilot.litestream.plist` | LaunchDaemon template (UserName sutton, KeepAlive on failure only). **Not installed** |
 | `README.md` | Install steps for the nightly backup, restore steps, and the owner's R2 steps (bucket, token, where the keys go, test restore) |
 
 Safety rules built in: a failed or corrupt backup deletes nothing; the
@@ -127,12 +134,12 @@ needs twice the database size free; files of another store's prefix are
 never touched by retention.
 
 **Run against production (read-only), Oct 15 14:06:**
-`2026-10-15T14:06:58 OK spicetown-20261015-140658.db.gz 119786771 bytes integrity=ok tables=59 pruned=0 14.5s`
+`2026-10-15T14:06:58 OK pilot-20261015-140658.db.gz 119786771 bytes integrity=ok tables=59 pruned=0 14.5s`
 
 **Restore drill on that backup:**
 
     RESTORE DRILL PASSED
-      backup:        .../backup-drill/nightly/spicetown-20261015-140658.db.gz (119,786,771 bytes)
+      backup:        .../backup-drill/nightly/pilot-20261015-140658.db.gz (119,786,771 bytes)
       restored:      434,335,744 bytes in 0.7 s (temp copy deleted)
       integrity:     ok (4.5 s)
       tables:        59
@@ -145,7 +152,7 @@ never touched by retention.
         orders 125,330 / 125,330; inventory_snapshots 654,916 / 654,916; job_runs 6,105 / 6,105
       took 6.0 s
 
-(Full output: `/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m1/backup-drill/restore_drill_output.txt`.)
+(Full output: `~/.claude/jobs/e26a1611/tmp/multitenant/m1/backup-drill/restore_drill_output.txt`.)
 
 ### 3. Tests
 
@@ -206,8 +213,8 @@ would *miss* in later batches.
 | The database was fingerprinted only before the calls | A read endpoint that starts writing (a cache row, a lazy back-fill) would not show | `fingerprint_after.json` after all calls; on the Oct 15 copy the only change is the harness's own login row (`user_sessions`, random `token` column left out) |
 
 **Backup README fix:** the manual restore stopped the backend while the production watchdog
-(`com.spicetown.watchdog`, every 5 minutes) re-bootstraps a stopped backend - it could start the
-server on a half-written database. The steps now unpack to `spicetown.db.restoring` first, stop the
+(`com.pilot.watchdog`, every 5 minutes) re-bootstraps a stopped backend - it could start the
+server on a half-written database. The steps now unpack to `pilot.db.restoring` first, stop the
 watchdog before the backend, keep the old file's `-wal`/`-shm` (they can hold the newest writes
 after a crash) instead of deleting them, swap with one `mv`, and start the watchdog again last.
 Test: `test_restore_steps_stop_the_watchdog_and_keep_the_old_wal`.
@@ -409,7 +416,7 @@ No problem was confirmed, so no code changed in this pass. What was checked:
 
 Branch `multistore-m1`, commits `741a052`, `8a7bd9b`, `c23159e`, `b634550`. The sync
 jobs now read POS-neutral models from the store's connector and write our tables; the
-Toast JSON stops at `app/pos/adapters/toast/`. Spice Town's rows, job_runs rows, answers,
+Toast JSON stops at `app/pos/adapters/toast/`. The pilot store's rows, job_runs rows, answers,
 pushes and scheduled jobs are unchanged (proved below). No migration, no route, no JSON
 key, no setting, no scheduled job changed. Nothing was installed, deployed or restarted.
 
@@ -981,7 +988,7 @@ section 4.9, row MT5. Nothing was pushed, deployed, installed or restarted.
 
 **In one line:** the vendor list of every item now also lives in a new
 `item_vendors` table, filled from the Toast CSV, and the 8 hand-written ";"
-parsers now go through one helper. Every Spice Town page still reads the
+parsers now go through one helper. Every the pilot store page still reads the
 item's own CSV field, so nothing a user sees changed (parity: 0 differences).
 
 ### 1. New table `item_vendors` (migration `0061_item_vendors.py`)
@@ -989,7 +996,7 @@ item's own CSV field, so nothing a user sees changed (parity: 0 differences).
 | Column | Meaning |
 |---|---|
 | `id` | primary key |
-| `item_id` | the item (Toast GUID for Spice Town = `inventory_snapshots.item_id`), indexed |
+| `item_id` | the item (Toast GUID for the pilot store = `inventory_snapshots.item_id`), indexed |
 | `vendor_name` | as the source spells it (trimmed), indexed |
 | `vendor_item_code` | the vendor's own code for the item (the CSV's `supplier item id` slot for that vendor), NULL when unknown |
 | `rank` | 1 = listed first; follows the order the source lists the vendors |
@@ -1069,7 +1076,7 @@ newest CSV row, which is exactly what the table holds.
 ### 5. What did not change
 
 No endpoint, JSON key, page, app screen, scheduled job, push, WhatsApp or
-email changed. Nothing reads `item_vendors` for a Spice Town page in M1. No
+email changed. Nothing reads `item_vendors` for a pilot-store page in M1. No
 new setting; the capability list was not touched (`ITEM_VENDORS` stays off
 for Toast - Toast's API has no vendor field). No editor UI (per the plan,
 that is for the Clover store).
@@ -1146,7 +1153,7 @@ re-syncs the table only. The path is required (never taken from `.env`).
 - `vendor_item_code` is not yet used by PO PDFs / Send PO (they keep
   `_supplier_item_id_for` on the CSV field).
 - The table is per `item_id`; MT4's `pos_item_map` maps ids to themselves for
-  Spice Town, so no change is needed when MT4 merges.
+  the pilot store, so no change is needed when MT4 merges.
 - Integration: MT5 filled `0061` only; `0060` stays MT4's.
 
 ### 10. MT5 verification (adversarial check, Oct 15)
@@ -1189,7 +1196,7 @@ No behaviour change found; nothing needed fixing.
 ## As built - MT6 (neutral contracts + capabilities)
 
 Branch `m1-mt6` (from `multistore-m1` at `b9501ad`, built in parallel with MT2-MT5). No
-migration, no new table. Nothing pushed, deployed or restarted. For Spice Town every gate passes
+migration, no new table. Nothing pushed, deployed or restarted. For the pilot store every gate passes
 and every old name keeps working: the only visible change is new JSON keys.
 
 ### 1. New module - `backend/app/pos/gating.py`
@@ -1224,7 +1231,7 @@ documents both new names (commented out).
 | Endpoint | Added |
 |---|---|
 | `GET /api/app/config` (no login) | `pos_name` ("Toast"), `capabilities` (13 strings) after the old keys |
-| `GET /api/auth/me`, `POST /api/auth/login`, `POST /api/auth/mobile-login` | `pos_name`, `capabilities` at the end; `allowed_features` is also intersected with the store's capabilities (identical for Spice Town). `/api/auth/users` unchanged. |
+| `GET /api/auth/me`, `POST /api/auth/login`, `POST /api/auth/mobile-login` | `pos_name`, `capabilities` at the end; `allowed_features` is also intersected with the store's capabilities (identical for the pilot store). `/api/auth/users` unchanged. |
 | Every invoice answer (`submission_out`: list, get, submit, resend, override, mark/unmark, delete flow, trash, duplicate check) | `ap_applicable`, `ap_email_sent`, `ap_email_error`, `ap_email_status_overridden_by`, `ap_closed_at`, `ap_closed_by_name`, `can_mark_ap_closed` - each equal (value and JSON type) to its `toast_*` twin, appended after the old `submission_out` keys (in `GET /api/invoices` items the list's own `close_suggestion` key still comes last, after them; the old keys keep their relative order) |
 | `POST /api/invoices/{id}/mark-ap-closed`, `POST /api/invoices/{id}/unmark-ap-closed` | Aliases on the **same handler** as `mark-toast-closed` / `unmark-toast-closed` (same feature gate, same errors, same Team task close). Demo guard: both in `ALLOWLIST` with the same `own_invoice` check as the old routes. |
 | `POST /api/invoices/{id}/resend` `channels`, `POST .../override-status` `channel` | `"ap_email"` accepted as the neutral name of `"toast_email"`, mapped before validation (so a 422 for anything else reads exactly as before). |
@@ -1232,7 +1239,7 @@ documents both new names (commented out).
 Not renamed: every `toast_*` key, the `toast_email` channel, `/mark-toast-closed`,
 `/unmark-toast-closed`.
 
-### 4. Routes gated by capability (409 when missing; all on for Spice Town)
+### 4. Routes gated by capability (409 when missing; all on for the pilot store)
 
 | Route(s) | Capability |
 |---|---|
@@ -1283,15 +1290,15 @@ for Toast). The existing settings switches (`SALES_REPULL_ENABLED`, `INSIGHTS_NI
 
 ### 7. Tests
 
-`backend/tests/test_pos_gating.py`, 48 tests: Spice Town's capability set and labels; unknown
+`backend/tests/test_pos_gating.py`, 48 tests: The pilot store's capability set and labels; unknown
 provider; `/app/config` and `/me` additions and key order; `/me` dropping features without the
 capability; each gated route answers 409 with the message without its capability and is never
-gated for Spice Town; the gate runs after 401/403; both settings fallbacks, precedence and "blank =
+gated for the pilot store; the gate runs after 401/403; both settings fallbacks, precedence and "blank =
 off" (also through `toast_email.send_toast_invoice_email` with a fake SMTP); invoice answers keep
 all 28 old keys in order with each `ap_*` key equal in value and type; `/mark-ap-closed` and
 `/unmark-ap-closed` behave exactly like the old routes (success, 400, 409, 404, 403 without the
 feature); the demo guard refuses the aliases on a real invoice and allows them on its own;
-`ap_email` channel alias; the Spice Town job list equals the baseline list; every job is
+`ap_email` channel alias; the pilot store job list equals the baseline list; every job is
 classified; each capability removes exactly its jobs; the morning summary skips its refresh
 without `OPEN_ORDERS`; the schedulers use `store_timezone`.
 
@@ -1517,11 +1524,11 @@ An independent check of the merged branch (HEAD `0ccaef4`). **No problems were c
 ## Final check - M1 (Oct 15, evening) and the separate-product decision
 
 **Owner decision made while M1 ran:** the multi-store product is a **separate product**, not
-merged into Spice Town for now. `multistore-m1` is therefore **not merged** into `ops-fixes` /
+merged into the pilot store for now. `multistore-m1` is therefore **not merged** into `ops-fixes` /
 `main`, **not pushed** and **not deployed**; it becomes the start of a new repository (name and
 GitHub repo pending). Hosting: Docker first, no Kubernetes until about 20-50 stores. The owner
 handoff (repo split steps, de-branding list with file:line, backups, parity how-to, hosting) is
-`docs/MULTISTORE_M1_HANDOFF.md` (canonical copy `/Users/sundar/spicetown-dev/MULTISTORE_M1_HANDOFF.md`).
+`docs/MULTISTORE_M1_HANDOFF.md` (canonical copy the pilot store's own folder (private handoff)).
 No code changed in this step.
 
 **Fresh read-only production copy** taken 18:09 (434 MB, migration 0059, 125,324 order lines);
@@ -1549,7 +1556,7 @@ harness scripts). New side: `multistore-m1` at `d4d86ad` with `--migrate`.
 - Website: `node --test` on all 21 `*.test.mjs` files: 208 passed, 0 failed. `vite build`
   succeeded (`frontend/node_modules` symlinked to the `website` checkout's; `dist/` is
   git-ignored).
-- Logs: `/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m1/final/`.
+- Logs: `~/.claude/jobs/e26a1611/tmp/multitenant/m1/final/`.
 
 **Deferred** (unchanged): see "As built - M1 integration", section 4, and the handoff's
 section 7.

@@ -13,7 +13,7 @@ night, and never leaves the server.
 | Server + nightly reset in one process | `backend/scripts/demo/run_demo.py` |
 | Store pack | `backend/packs/demo.json` (checklists, PO sections, leads, roles) |
 | POS connector | `backend/app/pos/adapters/csv_only/` (`POS_PROVIDER=csv`: no POS calls) |
-| Mac mini LaunchDaemon template | `deploy/demo/com.kloudc.storeops.demo.plist` |
+| Mac mini LaunchDaemon template | `deploy/demo/com.kloudc.retailops.demo.plist` |
 | Docker service | `deploy/demo/docker-compose.demo.yml` |
 | Settings template | `deploy/demo/demo.env.example` |
 | Review notes | `docs/APP_REVIEW_NOTES.md` |
@@ -38,7 +38,7 @@ data (only the password hash differs).
   store or turn `DEMO_MODE` off.
 - `DEMO_MODE=true`: every login is a demo login (`app/demo.py`), so the
   read-only guard applies to all of them, admins included.
-- The data folder must be new/empty or carry `.storeops-demo-data`; a `live/`
+- The data folder must be new/empty or carry `.retailops-demo-data`; a `live/`
   folder is only replaced when it is a generated DEMO data set (marker file
   **and** marker row in its database). A real store's folder is refused
   untouched.
@@ -51,21 +51,21 @@ data (only the password hash differs).
 The plan (D11) prefers the DEMO store on its own machine or container; on a
 shared machine it runs as a Background-priority process on its own port.
 
-1. A separate StoreOps checkout for the DEMO store, e.g.
-   `~/storeops-demo` (`git clone https://github.com/Sundar6264-ux/storeops.git storeops-demo`),
-   with its own venv: `cd storeops-demo/backend && python3 -m venv .venv &&
+1. A separate KloudC RetailOps checkout for the DEMO store, e.g.
+   `~/retailops-demo` (`git clone https://github.com/Sundar6264-ux/kloudc-retailops.git retailops-demo`),
+   with its own venv: `cd retailops-demo/backend && python3 -m venv .venv &&
    .venv/bin/pip install -r requirements.txt`.
 2. `cp ../deploy/demo/demo.env.example .env` and fill `PLATFORM_DOMAIN`,
    `PUBLIC_HOST` (the DEMO host, e.g. `https://demo.<domain>`) and, if you
    want to choose it, `DEMO_REVIEW_PASSWORD` (10+ characters). Leave it blank
    to have one generated into `<data-dir>/review_password` (mode 600).
 3. Try it in a terminal first:
-   `.venv/bin/python scripts/demo/run_demo.py --data-dir ~/storeops-demo-data --port 8030`
+   `.venv/bin/python scripts/demo/run_demo.py --data-dir ~/retailops-demo-data --port 8030`
    then `curl -s http://127.0.0.1:8030/api/app/legal` shows `"demo": true`.
    Ctrl-C stops it.
-4. Fill the placeholders in `deploy/demo/com.kloudc.storeops.demo.plist`
+4. Fill the placeholders in `deploy/demo/com.kloudc.retailops.demo.plist`
    and install it (commands in the file). Logs:
-   `~/storeops-demo-data/logs/demo.log`.
+   `~/retailops-demo-data/logs/demo.log`.
 5. Point the DEMO host (Cloudflare tunnel / proxy) at `127.0.0.1:8030`, and
    add `DEMO` to the store directory (MT10) with that host as `api_base_url`.
 

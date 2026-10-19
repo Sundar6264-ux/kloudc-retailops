@@ -1,11 +1,11 @@
 ---
-name: storeops
-description: Operating notes for the StoreOps server + website repository (FastAPI + SQLite + React/Vite; one process per store; POS adapters). Load before changing anything under backend/ or frontend/ so known traps are not repeated.
+name: retailops
+description: Operating notes for the KloudC RetailOps server + website repository (FastAPI + SQLite + React/Vite; one process per store; POS adapters). Load before changing anything under backend/ or frontend/ so known traps are not repeated.
 ---
 
-# StoreOps - project skill
+# KloudC RetailOps - project skill
 
-StoreOps is a multi-store operations product (KloudC LLC): one container per
+KloudC RetailOps is a multi-store operations product (KloudC LLC): one container per
 store runs the API, the website and the scheduled jobs against that store's
 own SQLite database and uploads. The POS is behind an adapter
 (`backend/app/pos/`); Toast is the first one.
@@ -20,7 +20,7 @@ Read first:
 
 1. **No store's own data or secrets in git.** No real names, addresses,
    phone numbers, staff, catalogs, prices or credentials. Settings default to
-   StoreOps values or blank; a store's values live in its `.env` and its
+   KloudC RetailOps values or blank; a store's values live in its `.env` and its
    store pack, outside git. `.env.example` files hold blank values only.
 2. **Never under another product's domain.** Hosts come from settings
    (`PLATFORM_DOMAIN`, `PUBLIC_BASE_URL`, ...). The name-grep test (M2

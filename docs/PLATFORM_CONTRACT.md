@@ -1,4 +1,11 @@
-# StoreOps platform contract (shared service, database per store)
+# KloudC RetailOps platform contract (shared service, database per store)
+
+> **Name note (2026-10-19):** this record was written while the product was
+> called **StoreOps**; it is now **KloudC RetailOps** (app id
+> `com.kloudc.retailops`, Dart package `kloudc_retailops`, `RETAILOPS_*`
+> environment names - the old `STOREOPS_*` names still work). The names
+> below are the ones used at the time. The store the product was first built
+> for is called "the pilot store" here.
 
 Milestone after M2: **one shared StoreOps service**, each store's data in its
 **own PostgreSQL database**, a **control plane** run by the master admin, store
@@ -59,10 +66,10 @@ Sources: `MULTI_STORE_PLAN.md` 3.2, 6, 8.2, 9.2, 11.6 (M5, MT24-MT32);
    `so_b_*`, `so_c_*`, `so_d_*`, integration `so_int_*`) and drops them when
    done. Never touch another prefix.
 8. **Heavy runs** (full suites, Playwright, flutter full runs, big
-   migrations) only via `/Users/sundar/.claude/jobs/e26a1611/tmp/m1heavy.sh <cmd...>`,
+   migrations) only via `~/.claude/jobs/e26a1611/tmp/m1heavy.sh <cmd...>`,
    one at a time; `flutter test --concurrency=2`.
-9. **Spice Town is off limits** (`/Users/sundar/spicetown-dev/*`,
-   `/Users/sundar/spicetown-mobile`, `/Users/sundar/spicetown-backend`).
+9. **The pilot store is off limits** (its own folders, server and
+   repositories, listed in the private handoff).
    Read-only production copies only for a parity check, deleted after.
 10. **File ownership** is in section 19. Touching another track's file is
     allowed only for a one-line import/registration/include, noted in As
@@ -219,7 +226,7 @@ Database name `so_platform` (setting `PLATFORM_DATABASE_URL`). All timestamps
 | `status` | `varchar(16)` NOT NULL | `pending` (approved, row created, not provisioned yet) / `provisioning` / `active` / `suspended` / `failed` (provisioning failed; resumable) / `archived` (off-boarded, login refused, DB kept until purge) |
 | `status_reason` | `text` NULL | why suspended/failed |
 | `hosting` | `varchar(16)` NOT NULL default `shared` | `shared` / `dedicated` (12) |
-| `api_base_url` | `text` NULL | NULL = the platform origin; set only for `dedicated` (https, no path, host under `PLATFORM_DOMAIN` or `DIRECTORY_EXTRA_API_HOSTS`; never `spicetown.shop`) |
+| `api_base_url` | `text` NULL | NULL = the platform origin; set only for `dedicated` (https, no path, host under `PLATFORM_DOMAIN` or `DIRECTORY_EXTRA_API_HOSTS`; never `<blocked-domain>`) |
 | `db_name` | `varchar(63)` UNIQUE NOT NULL | `STORE_DB_PREFIX + code.lower()`, e.g. `so_xyz_grocery` |
 | `db_host_ref` | `varchar(64)` NULL | NULL = the shared cluster (`STORE_DATABASE_URL_TEMPLATE`); else a key into `STORE_DB_HOSTS` env (dedicated; no credentials in this table) |
 | `timezone` | `varchar(64)` NOT NULL | IANA |
@@ -1226,7 +1233,7 @@ def group_order(*keys) -> list                            # (A, as built) ORDER 
 | `statement_timeout_ms` | `STATEMENT_TIMEOUT_MS` | `60000` | B |
 | `settings_refresh_seconds` | `SETTINGS_REFRESH_SECONDS` | `10` | B |
 | `scheduler_max_workers` | `SCHEDULER_MAX_WORKERS` | `4` | B |
-| `platform_public_url` | `PLATFORM_PUBLIC_URL` | `""` -> `https://app.<platform_domain>` (refused under `spicetown.shop`) | B, C, D |
+| `platform_public_url` | `PLATFORM_PUBLIC_URL` | `""` -> `https://app.<platform_domain>` (refused under `<blocked-domain>`) | B, C, D |
 | `platform_login_code` | `PLATFORM_LOGIN_CODE` | `"PLATFORM"` | B, C, D |
 | `storeops_secret_keys` | `STOREOPS_SECRET_KEYS` | `""` (secret) | C |
 | `storeops_secret_key` | `STOREOPS_SECRET_KEY` | `""` (secret; legacy single key) | C |
@@ -1417,7 +1424,7 @@ Playwright, app).
 
 ### Test commands
 
-- Backend (from `/Users/sundar/storeops/storeops/backend`), via m1heavy for
+- Backend (from `~/storeops/storeops/backend`), via m1heavy for
   full runs: `STOREOPS_TEST_PG_URL=postgresql+psycopg://storeops@127.0.0.1:5433/postgres
   STOREOPS_TEST_DB_PREFIX=so_<track> .venv/bin/python -m pytest -q`;
   SQLite: `STOREOPS_TEST_DB=sqlite .venv/bin/python -m pytest -q`.
@@ -1566,7 +1573,7 @@ Branch `plat/postgres-port` (worktree `wt-pg`), on top of `ab5cf34`. Not pushed
   (`sqlite_pg.py`: a value that does not fit stops the copy naming table,
   column and row); identity sequences set to max(id); row counts + per-column
   checksums compared (ordered by PK, bytewise). `verify_copy.py` alone.
-  Demo store (14 days): 6,707 rows, 0 differences, 0.3 s; Spice Town prod
+  Demo store (14 days): 6,707 rows, 0 differences, 0.3 s; the pilot store prod
   copy: 0 differences, ~60 s.
 - `scripts/backup/pg_backup.py backup|drill` (stdlib only; pg client >= the
   server's major version; passwords via ~/.pgpass/PGPASSWORD, refused in the
@@ -1575,7 +1582,7 @@ Branch `plat/postgres-port` (worktree `wt-pg`), on top of `ab5cf34`. Not pushed
 - `scripts/demo/generate_demo_data.py --pg-url URL`: the DEMO store into an
   empty PostgreSQL database (copy tool, 0 differences or the run fails).
 
-### Parity (Spice Town pack, read-only prod copy)
+### Parity (the pilot store pack, read-only prod copy)
 
 Fresh `.backup` of the production database (read-only handle, 0059), both
 recordings from this branch with `--migrate` (to 0062): SQLite
@@ -2428,7 +2435,7 @@ No product code changed: the run found no new defects.
 | Backend full suite, SQLite | **2884 passed, 30 skipped** |
 | `scripts/pg/migration_roundtrip.py` (platform up/down/up, store baseline, refused downgrade, post-baseline up/down/up, provisioning + `migrate-all`) | **16/16** |
 | Store chain on PostgreSQL (fresh DB, `upgrade head` twice) / `make_baseline.py --check` / SQLite chain up -> base -> up | `0062 (head)` / ok / ok |
-| Parity, Spice Town pack: SQLite vs PostgreSQL recordings of the Oct 15 production copy (`--migrate`, read-only source) | 110 endpoints, all 200 on both; 0 network attempts. **14 differences, all the classes of "As built - A"**: 4 forecast floats in the last digit (2 items; PostgreSQL's exact decimal sum), 4 + 4 fingerprint columns stamped "now" by migrations 0060/0061 during `--migrate`, 2 `fingerprint_after` columns holding second-precision text on SQLite. Recordings deleted after. |
+| Parity, the pilot store pack: SQLite vs PostgreSQL recordings of the Oct 15 production copy (`--migrate`, read-only source) | 110 endpoints, all 200 on both; 0 network attempts. **14 differences, all the classes of "As built - A"**: 4 forecast floats in the last digit (2 items; PostgreSQL's exact decimal sum), 4 + 4 fingerprint columns stamped "now" by migrations 0060/0061 during `--migrate`, 2 `fingerprint_after` columns holding second-precision text on SQLite. Recordings deleted after. |
 | Website `node --test` / `vite build` / built bundle contains the origin store's name | 277 pass, 0 fail / clean / no |
 | Website flows, real multi-mode server (`run_flows.sh`, 1280 + 375): sign-up -> approve -> login, Integrations + Test connection, sync with own keys, staff (no Integrations/Users/Notifications, `/#/notifications` redirects), suspend/resume, two tabs on two stores | **114 checks, 0 failures**; 148 fake-Toast calls, each with its own store's keys |
 | Website platform checks, real server (`run_real.sh`, 1280 + 375): login page, sign-up, master console (requests, stores, hosting, audit, two-step), integrations, owner set-up link | **144 checks, 0 failures** |
@@ -2458,8 +2465,8 @@ aria-label): 10 + 24 of the checks above.
   lookup (`PLATFORM_API_URL`), switch-store helper, optional third store DEMO
   (`E2E_PASSWORD_DEMO`).
 
-Screenshots: `/Users/sundar/storeops/screenshots/platform/web/` (34) and
-`/Users/sundar/storeops/screenshots/platform/app/` (24).
+Screenshots: `~/storeops/screenshots/platform/web/` (34) and
+`~/storeops/screenshots/platform/app/` (24).
 
 ### Noted, not changed
 
@@ -2487,4 +2494,79 @@ content source `content/help/*.json` read by the server (`/api/help`), the
 website (build-time import) and the app (bundled copy + server refresh);
 and the W/H/M/S ownership split with component APIs. Decisions made for
 the owner are listed in its section 6. Baseline screenshots (before):
-`/Users/sundar/storeops/screenshots/final-pass/baseline/` (19, outside git).
+`~/storeops/screenshots/final-pass/baseline/` (19, outside git).
+
+## As built - Final pass: rename + brand + scrub (stage 2)
+
+**Product name.** StoreOps is now **KloudC RetailOps** by KloudC LLC everywhere a
+person sees it and in the identifiers:
+- Defaults: `PRODUCT_NAME=KloudC RetailOps`, company KloudC LLC, privacy
+  `https://kloudc.com/kloudc-privacy-policy/`, support
+  `https://kloudc.com/kloudc-support/`, `TERMS_URL` blank (no Terms link).
+- Default store brand: KloudC blue `#004BAD` + sky `#2EA3F2` (was teal /
+  slate); the DEMO store uses them too. Stores with their own colours keep them.
+- Website: title, `manifest.webmanifest` (name, short name RetailOps, theme
+  colour), favicons and touch icon; the login page (before a store is
+  chosen, and for `PLATFORM`), sign-up, request status, owner set-up and the
+  master console show the KloudC RetailOps lockup (`ProductLockup`).
+- PO email body and PO PDF end with "Sent with / Created with KloudC
+  RetailOps by KloudC LLC" (`settings_view.product_credit()`).
+- App: Dart package `kloudc_retailops`, app id `com.kloudc.retailops` (iOS
+  bundle id, Android namespace/applicationId, Kotlin package), name under the
+  icon **RetailOps** (`APP_DISPLAY_NAME`; the full name is cut off under an
+  icon), full name in About, titles, PDFs and permission texts
+  (`appProductName`). Launcher icons (iOS AppIcon set without alpha, Android
+  mipmaps), in-app icon and wordmark are KloudC art.
+- Brand art: sources in `backend/app/assets/branding/source/` (from
+  `~/storeops/brand/kloudc-retailops/`); `scripts/branding/make_brand_art.py
+  [--app-repo ../../storeops-app]` builds every derived image.
+  `make_placeholder_art.py` is gone.
+- Environment names `STOREOPS_*` -> `RETAILOPS_*`. The old names still work:
+  `app/legacy_env.py` copies each `STOREOPS_X` to `RETAILOPS_X` when the new
+  one is unset (runs on `import app`), `tests/__init__.py` does the same for
+  the test settings, the secret-key settings also accept the old names in a
+  `.env` file (AliasChoices), the dev key ring falls back to
+  `.secrets/storeops_keyring`, and the shell scripts read both.
+- Kept on purpose: the encryption associated data and lock keys
+  (`storeops:<CODE>:<kind>:v1` - changing them would make saved secrets
+  unreadable), the local PostgreSQL dev role `storeops`, the reserved store
+  code `STOREOPS` (`RETAILOPS` is reserved too), and the **local folders**
+  `~/storeops/storeops` and `~/storeops/storeops-app`.
+- Test stores are `RETAILOPS_TEST_TOAST` / `RETAILOPS_TEST_CLOVER`; the
+  placeholder domain is `retailops.invalid`; launchd labels
+  `com.kloudc.retailops.*`; Docker image `kloudc-retailops`, user and volume
+  `retailops`; default SQLite file `retailops.db`.
+- Historical records (M1, M2 and this contract) keep the names used at the
+  time, with a name note at the top.
+
+**Origin-store scrub.** No tracked file in either repository names the store
+the product was first built for (its name, kitchen, town, address, zip,
+phone, private host, staff first names):
+- Neutral sample data instead: "Main Store", "Market Kitchen", Windsor CT
+  06095, (860) 555-0142, staff Avery / Hayden / Sasha / Sutton / Dana / JL,
+  supplier "Sample Biscuit Supplier".
+- Built-in checklist ids `store_closing`, `kitchen_closing`, `kitchen_fsa`
+  (constants `STORE_CLOSING`, `KITCHEN_CLOSING`, `KITCHEN_FSA_CLOSING[_V1]`);
+  WhatsApp settings `whapi_store_checklist_group_id` /
+  `whapi_kitchen_checklist_group_id`. Old migrations keep their ids; their
+  seed rows (0034 supplier rule, 0039 checklists, 0044 WhatsApp roles) are
+  neutral, and the PostgreSQL baseline 0062 seed was regenerated. A store
+  adopted from older data keeps its own checklist ids in its rows; no code
+  depends on them.
+- Guards: `backend/tests/test_no_origin_names.py` (every tracked file of the
+  server repo), the app's `test/identity/no_origin_names_test.dart` (every
+  tracked file of the app repo), and the website's
+  `src/store/noStoreNames.test.mjs` + Playwright page checks. The words are
+  matched by salted SHA-256 hashes (`tests/origin_names.py`,
+  `src/test/originNames.mjs`, `test/identity/origin_names.dart`), so no guard
+  file carries a name. The only allowed hit is the blocked-domain constant
+  (`REFUSED_DOMAIN` / `ApiHostPolicy.refusedDomain`); tests build every
+  blocked host from that constant.
+- Private material stays outside git: `~/.kloudc-retailops/private`
+  (`RETAILOPS_PRIVATE_DIR`): the legacy pack as `origin.pack.json` /
+  `origin.env` (renamed tooling: `extract_legacy_pack.py` writes those names),
+  recorded data and the private word list, given the neutral sample names so
+  the legacy-pack tests compare like with like. The M1 handoff moved there
+  too. The untouched originals stay in the M2 private folder.
+- Git history still holds the old names (rewriting it would need a force
+  push).

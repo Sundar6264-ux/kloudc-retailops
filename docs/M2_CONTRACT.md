@@ -1,5 +1,12 @@
 # StoreOps M2 contract
 
+> **Name note (2026-10-19):** this record was written while the product was
+> called **StoreOps**; it is now **KloudC RetailOps** (app id
+> `com.kloudc.retailops`, Dart package `kloudc_retailops`, `RETAILOPS_*`
+> environment names - the old `STOREOPS_*` names still work). The names
+> below are the ones used at the time. The store the product was first built
+> for is called "the pilot store" here.
+
 M2 of the multi-store plan (plan section 11.3, MT7a-MT13), built in the
 StoreOps repositories. Sections 0-9 are the **shared interfaces** that the
 parallel M2 builders code against. Each batch appends an "As built - <batch>"
@@ -33,12 +40,12 @@ a build-time define, never a literal spread through the code):
    `/mark-ap-closed`, every `toast_*` / `ap_*` key keep their shape. New keys
    and new routes only.
 2. **Neutral defaults.** A setting's default is a product (StoreOps) value or
-   blank, never a Spice Town value. Spice Town's own values exist only in the
+   blank, never a pilot-store value. The pilot store's own values exist only in the
    private files of section 1.6, outside git.
-3. **Never under `spicetown.shop`.** `PLATFORM_DOMAIN`, `PUBLIC_HOST`,
+3. **Never under `<blocked-domain>`.** `PLATFORM_DOMAIN`, `PUBLIC_HOST`,
    `PUBLIC_BASE_URL`, `LABELS_URL`, `SESSION_COOKIE_DOMAIN` and every
    directory `api_base_url` are refused at startup / load time when the host
-   is `spicetown.shop` or ends with `.spicetown.shop` (section 1.2).
+   is `<blocked-domain>` or ends with `.<blocked-domain>` (section 1.2).
 4. **Python 3.9 compatible** (`Optional[...]`, no `X | Y`, no `match`). Both
    3.9 and 3.12 suites must pass.
 5. **No outside calls in tests.** Fake-store fixtures point every outside
@@ -105,33 +112,33 @@ the field name in upper case unless the table says otherwise.
 | Field | Env var | Type | Default | Notes |
 |---|---|---|---|---|
 | `ap_inbox_email` | `AP_INBOX_EMAIL` | Optional[str] | `None` -> `TOAST_INVOICE_EMAIL` | M1 field. Blank = AP email channel off. |
-| `toast_invoice_email` | `TOAST_INVOICE_EMAIL` | str | **`""`** (was Spice Town's inbox) | Old name, still read. |
+| `toast_invoice_email` | `TOAST_INVOICE_EMAIL` | str | **`""`** (was the pilot store's inbox) | Old name, still read. |
 | `labels_url` | `LABELS_URL` | str | `""` | Labels site origin. Blank = no labels for this store (Scan tab, Print Label History, website "Label Scanner" link hidden; the app never sends a token anywhere for labels). Replaces `LABELS_APP_URL` (`frontend/src/featureRoutes.js`) and the app's `LABELS_BASE_URL` define. |
 | `ai_enabled` | `AI_ENABLED` | bool | `False` | Per-store AI switch (Apple 5.1.2(i)). Off -> `ask_bot` dropped from `allowed_features`, weekly digest skips the AI paragraph. The key `ANTHROPIC_API_KEY` is still needed for real calls. |
 | `ai_consent_notice` | `AI_CONSENT_NOTICE` | str | `""` -> `app/legal.py` `DEFAULT_AI_CONSENT_NOTICE` | Text of the AI notice the app shows before the first Ask bot question; served by `GET /api/app/legal` (MT13). |
-| `whatsapp_group_chat_ids` | `WHATSAPP_GROUP_CHAT_IDS` | str (JSON object) | `""` | Role key -> Whapi chat id, e.g. `{"store":"120363000000000000@g.us"}`. Wins over the old `WHAPI_SPICE_TOWN_CHECKLIST_GROUP_ID` (role `store`) and `WHAPI_STREET_KITCHEN_CHECKLIST_GROUP_ID` (role `kitchen`), which are still read. Rows in `whatsapp_groups` win over both (today's rule). |
+| `whatsapp_group_chat_ids` | `WHATSAPP_GROUP_CHAT_IDS` | str (JSON object) | `""` | Role key -> Whapi chat id, e.g. `{"store":"120363000000000000@g.us"}`. Wins over the old `WHAPI_STORE_CHECKLIST_GROUP_ID` (role `store`) and `WHAPI_KITCHEN_CHECKLIST_GROUP_ID` (role `kitchen`), which are still read. Rows in `whatsapp_groups` win over both (today's rule). |
 | `smtp_host` | `SMTP_HOST` | str | `"smtp.gmail.com"` | Replaces the literal at `toast_email.py:81`, `po_send.py:65-66`. |
 | `smtp_port` | `SMTP_PORT` | int | `465` | |
 | `smtp_ssl` | `SMTP_SSL` | bool | `True` | `True` = implicit TLS (465); `False` = STARTTLS (587). |
 | `smtp_username` | `SMTP_USERNAME` | str | `""` -> `GMAIL_ADDRESS` | Old name still read. |
 | `smtp_password` | `SMTP_PASSWORD` | str | `""` -> `GMAIL_APP_PASSWORD` | Secret. Old name still read. |
 | `email_from_name` | `EMAIL_FROM_NAME` | str | `""` -> effective `store_name` | Display name on outgoing mail. |
-| `email_fallback_domain` | `EMAIL_FALLBACK_DOMAIN` | str | `""` -> `platform_domain` | Replaces the `spicetown.shop` fallback sender domain (`po_send.py:413`). |
+| `email_fallback_domain` | `EMAIL_FALLBACK_DOMAIN` | str | `""` -> `platform_domain` | Replaces the `<blocked-domain>` fallback sender domain (`po_send.py:413`). |
 
 **Files, links, app release**
 
 | Field | Env var | Type | Default | Notes |
 |---|---|---|---|---|
-| `database_url` | `DATABASE_URL` | str | **`"sqlite:///./storeops.db"`** | Was `./spicetown.db`. |
+| `database_url` | `DATABASE_URL` | str | **`"sqlite:///./storeops.db"`** | Was `./pilot.db`. |
 | `uploads_root` | `UPLOADS_ROOT` | str | `"uploads"` | Parent of every upload folder; holds the identity marker (1.5). |
-| `flyers_dir` | `FLYERS_DIR` | str | **`"uploads/flyers"`** | Was `~/Spice Town Flyers`. |
-| `public_base_url` | `PUBLIC_BASE_URL` | str | **`""`** -> effective `public_host` | Was the Spice Town tailnet address. |
+| `flyers_dir` | `FLYERS_DIR` | str | **`"uploads/flyers"`** | Was `~/the pilot store Flyers`. |
+| `public_base_url` | `PUBLIC_BASE_URL` | str | **`""`** -> effective `public_host` | Was the pilot store tailnet address. |
 | `store_pack_file` | `STORE_PACK_FILE` | str | `""` | Read-only pack override (3.3). Parity runs and dev only. |
 | `store_identity_adopt` | `STORE_IDENTITY_ADOPT` | bool | `False` | One-off: stamp an existing unstamped database / upload folder (1.5). |
 | `app_bundle_id` | `APP_BUNDLE_ID` | str | `"com.kloudc.storeops"` | AASA / assetlinks, Play URL. |
 | `apple_team_id` | `APPLE_TEAM_ID` | str | `""` | Owner. Blank -> AASA served with an empty `appIDs` list. |
 | `android_cert_sha256` | `ANDROID_CERT_SHA256` | str | `""` | Owner. Comma-separated SHA-256 fingerprints for `assetlinks.json`. |
-| `app_store_url` | `APP_STORE_URL` | str | **`""`** | Was a Spice Town search URL. Blank -> `null` in JSON. |
+| `app_store_url` | `APP_STORE_URL` | str | **`""`** | Was a pilot-store search URL. Blank -> `null` in JSON. |
 | `play_store_url` | `PLAY_STORE_URL` | str | **`""`** -> `https://play.google.com/store/apps/details?id=<app_bundle_id>` | |
 | `privacy_url` | `PRIVACY_URL` | str | `"https://kloudc.com/kloudc-privacy-policy/"` | Same URL the app already uses (`legal_links.dart`). |
 | `terms_url` | `TERMS_URL` | str | `""` | Blank -> `null`. |
@@ -148,8 +155,8 @@ the field name in upper case unless the table says otherwise.
 | `directory_extra_api_hosts` | `DIRECTORY_EXTRA_API_HOSTS` | str | `""` (comma list of extra allowed `api_base_url` hosts) |
 
 Unchanged M1/legacy fields keep their names and defaults, except the ones
-marked in bold above. The existing `whapi_spice_town_checklist_group_id` and
-`whapi_street_kitchen_checklist_group_id` fields stay (old names still read)
+marked in bold above. The existing `whapi_store_checklist_group_id` and
+`whapi_kitchen_checklist_group_id` fields stay (old names still read)
 and are on the name allowlist (section 9.2).
 
 ### 1.2 Validation and derived values (`app/store/settings_view.py`, MT7)
@@ -161,8 +168,8 @@ and are on the name allowlist (section 9.2).
 - `first_sales_date`: blank or `date.fromisoformat`.
 - `business_day_cutoff_hour`: 0-23.
 - `platform_domain`, `public_host`, `public_base_url`, `labels_url`,
-  `session_cookie_domain`: refused when the host is `spicetown.shop` or ends
-  with `.spicetown.shop` (rule 0.3). Test: `tests/test_store_settings.py`.
+  `session_cookie_domain`: refused when the host is `<blocked-domain>` or ends
+  with `.<blocked-domain>` (rule 0.3). Test: `tests/test_store_settings.py`.
 
 Derived values are computed in one place so every caller agrees:
 
@@ -256,17 +263,17 @@ from the DB stamp -> refuse. Refusal = `StoreIdentityError`, process exits
 non-zero, nothing written. Tests: `tests/test_store_identity.py` covers every
 row of the table plus the marker cases.
 
-### 1.6 How Spice Town's values move out (private pack + env, never in git)
+### 1.6 How the pilot store's values move out (private pack + env, never in git)
 
-Spice Town is not a StoreOps store (D10). Its values are kept only so the
-parity harness can prove the de-hardcoded code still gives Spice Town's
+The pilot store is not a StoreOps store (D10). Its values are kept only so the
+parity harness can prove the de-hardcoded code still gives the pilot store's
 answers. They live **outside git** in `$STOREOPS_PRIVATE_DIR`
-(default `/Users/sundar/.claude/jobs/e26a1611/tmp/multitenant/m2/private/`;
+(default `~/.claude/jobs/e26a1611/tmp/multitenant/m2/private/`;
 `backend/packs/private/` is gitignored as a second safe place):
 
-- `spicetown.pack.json` - a store pack (section 3) holding every rule constant
+- `origin.pack.json` - a store pack (section 3) holding every rule constant
   in the table below;
-- `spicetown.env` - the non-secret Spice Town settings below (no tokens, no
+- `origin.env` - the non-secret the pilot store settings below (no tokens, no
   passwords, nothing read from production `.env`);
 - `forbidden_tokens.txt` - optional extra words for the fresh-store test
   (staff names), one per line.
@@ -274,27 +281,27 @@ answers. They live **outside git** in `$STOREOPS_PRIVATE_DIR`
 Both are produced by **`backend/scripts/packs/extract_legacy_pack.py`**
 (committed, no data inside): `--legacy-backend <dir>` imports the constants
 from an unpacked copy of the import commit
-(`git archive 56e095c backend | tar -x -C <tmp>`), so no Spice Town
+(`git archive 56e095c backend | tar -x -C <tmp>`), so no pilot-store
 repository is read; `--out-dir $STOREOPS_PRIVATE_DIR`. MT8 runs it once
 **before** removing the constants and checks the pack against the old
 functions (3.6).
 
-| Legacy constant / literal (as of `56e095c`) | Becomes | Spice Town value goes to |
+| Legacy constant / literal (as of `56e095c`) | Becomes | The pilot store value goes to |
 |---|---|---|
-| store name in `po_export.py:103,220`, `po_send.py:56`, `checklist_public.py:251`, `invoice_submission.py:74` (`TRANSFER_DEFAULT_VENDOR`) | `STORE_NAME` (effective name) | `spicetown.env` |
-| address / phone `po_export.py:32-33`, `po_send.py:57-58` | `STORE_ADDRESS`, `STORE_PHONE` | `spicetown.env` |
-| `ask_bot.py:53-54`, `weekly_digest.py:97-98` description | `STORE_DESCRIPTION` | `spicetown.env` |
+| store name in `po_export.py:103,220`, `po_send.py:56`, `checklist_public.py:251`, `invoice_submission.py:74` (`TRANSFER_DEFAULT_VENDOR`) | `STORE_NAME` (effective name) | `origin.env` |
+| address / phone `po_export.py:32-33`, `po_send.py:57-58` | `STORE_ADDRESS`, `STORE_PHONE` | `origin.env` |
+| `ask_bot.py:53-54`, `weekly_digest.py:97-98` description | `STORE_DESCRIPTION` | `origin.env` |
 | `reports.py:108` old-app message, `toast_pdf.py:411` producer | `PRODUCT_NAME` (product, not store) | - |
-| `FIRST_REAL_SALES_DATE` | `FIRST_SALES_DATE` | `spicetown.env` |
-| `CLOSEOUT_HOUR` | `BUSINESS_DAY_CUTOFF_HOUR` | `spicetown.env` |
-| `America/New_York` in `recurrence.py:39`, `tasks_models.py:54` | effective `store_timezone` | `spicetown.env` (`STORE_TIMEZONE`) |
-| `toast_invoice_email` default | `AP_INBOX_EMAIL` | `spicetown.env` |
-| `public_base_url` default | `PUBLIC_BASE_URL` | `spicetown.env` |
-| `LABELS_APP_URL` (website), `LABELS_BASE_URL` (app) | `LABELS_URL` | `spicetown.env` |
-| `flyers_dir` default | `FLYERS_DIR` | `spicetown.env` |
-| `po_send.py:413` fallback domain | `EMAIL_FALLBACK_DOMAIN` | `spicetown.env` |
-| Ask bot on | `AI_ENABLED=true` | `spicetown.env` |
-| `EXCLUDED_CATEGORY_GROUPS` (`fix_issues.py:59`) | pack `menu.excluded_category_groups` | `spicetown.pack.json` |
+| `FIRST_REAL_SALES_DATE` | `FIRST_SALES_DATE` | `origin.env` |
+| `CLOSEOUT_HOUR` | `BUSINESS_DAY_CUTOFF_HOUR` | `origin.env` |
+| `America/New_York` in `recurrence.py:39`, `tasks_models.py:54` | effective `store_timezone` | `origin.env` (`STORE_TIMEZONE`) |
+| `toast_invoice_email` default | `AP_INBOX_EMAIL` | `origin.env` |
+| `public_base_url` default | `PUBLIC_BASE_URL` | `origin.env` |
+| `LABELS_APP_URL` (website), `LABELS_BASE_URL` (app) | `LABELS_URL` | `origin.env` |
+| `flyers_dir` default | `FLYERS_DIR` | `origin.env` |
+| `po_send.py:413` fallback domain | `EMAIL_FALLBACK_DOMAIN` | `origin.env` |
+| Ask bot on | `AI_ENABLED=true` | `origin.env` |
+| `EXCLUDED_CATEGORY_GROUPS` (`fix_issues.py:59`) | pack `menu.excluded_category_groups` | `origin.pack.json` |
 | `KITCHEN_GROUPS` (`delivery_suggestions.py:115`) | pack `menu.kitchen_groups` | pack |
 | `GROCERY_MENUS` (`insights.py:68`) | pack `menu.grocery_menus` | pack |
 | `po_sections.py:25-150` + `section_for` | pack `po_sections.rules` | pack |
@@ -302,12 +309,12 @@ functions (3.6).
 | `channel_of` (`insights.py:454`) | pack `channels` | pack |
 | `DOC_LEADS`, `DOC_FALLBACK`, `SECTION_PROPOSALS`, `SECTION_NOTES` (`issue_leads.py:91-200`) | pack `issue_leads` | pack |
 | flyer `CATEGORIES` (`flyers.py:77`) | pack `flyer_categories` | pack |
-| built-in checklists (`checklist_builtin.py`, migration 0039) | pack `checklists` | stays in Spice Town's DB (migration rows); pack lists none |
+| built-in checklists (`checklist_builtin.py`, migration 0039) | pack `checklists` | stays in the pilot store's DB (migration rows); pack lists none |
 | WhatsApp roles (migration 0044, `whatsapp_groups.py:47`) | pack `whatsapp_roles` | stays in DB; pack lists the same two keys |
 | category rules (migrations 0034, 0037) | pack `category_rules` | stays in DB; pack lists none |
 
-Parity runs (MT7/MT8 exit criterion) export `spicetown.env` into the
-environment and set `STORE_PACK_FILE=$STOREOPS_PRIVATE_DIR/spicetown.pack.json`,
+Parity runs (MT7/MT8 exit criterion) export `origin.env` into the
+environment and set `STORE_PACK_FILE=$STOREOPS_PRIVATE_DIR/origin.pack.json`,
 `STORE_CODE` blank (identity check skipped, nothing written to the copy), then
 record with `scripts/parity/parity_record.py` and diff against the
 `multistore-m1` (`56e095c`) recording on the same copy. Pass = 0 differences;
@@ -396,7 +403,7 @@ with its own logo sets `LOGO_URL` to an absolute URL.
 
 Tests (`tests/test_branding.py`): shape and types for all three fake stores;
 no auth needed; `null` rules; ETag/304; no secret values present (assert the
-fake token/password strings never appear in the body); Spice Town names never
+fake token/password strings never appear in the body); the pilot store names never
 appear with the fake settings.
 
 ---
@@ -411,7 +418,7 @@ constants. Packs in git are product or fake ones only:
 | `backend/packs/test_toast.json` | `storeops_test_toast` | Fake store STOREOPS_TEST_TOAST (section 7) |
 | `backend/packs/test_clover.json` | `storeops_test_clover` | Fake store STOREOPS_TEST_CLOVER |
 | `backend/packs/demo.json` | `demo` | DEMO store (MT13 writes it; until then a copy of `generic.json` with `pack_id` `demo`) |
-| `$STOREOPS_PRIVATE_DIR/spicetown.pack.json` | `spicetown_legacy` | Parity only, **never committed** (1.6) |
+| `$STOREOPS_PRIVATE_DIR/origin.pack.json` | `origin_legacy` | Parity only, **never committed** (1.6) |
 
 ### 3.1 Schema (version 1)
 
@@ -665,7 +672,7 @@ All commands use `DATABASE_URL` / `UPLOADS_ROOT` from settings. Docker:
   defaults; every rule outcome type; channel rules; the PO sections page lists
   `section_names`.
 - **Legacy equivalence** (`tests/test_store_pack_legacy.py`, skips when
-  `$STOREOPS_PRIVATE_DIR/spicetown.pack.json` is absent): the private pack
+  `$STOREOPS_PRIVATE_DIR/origin.pack.json` is absent): the private pack
   reproduces the old `section_for`, `channel_of`, menu sets, house vendors and
   lead proposals exactly - over every `(group, category, subcategory, name)`
   tuple in a scratch copy of the catalog when one is given
@@ -674,7 +681,7 @@ All commands use `DATABASE_URL` / `UPLOADS_ROOT` from settings. Docker:
   file, `alembic upgrade head`, `store-init` for `STOREOPS_TEST_TOAST` with
   `packs/test_toast.json`; then every text column of every table (except
   `alembic_version`) is searched, case-insensitive and on word boundaries, for
-  the committed list `spice town`, `spicetown`, `street kitchen`, `vernon`,
+  the committed list the origin store's names,
   `shaz international` plus `forbidden_tokens.txt` when present. Zero hits.
   Also: stamp present, marker present, a second `init` is a no-op, `init` with
   another code is refused.
@@ -721,7 +728,7 @@ Load-time checks (service start and `build_static`; a bad file is refused as
 a whole): `code` matches the store-code pattern and is unique; `status` is
 `active` or `maintenance`; `api_base_url` is `https://`, has no path, and its
 host ends with `.<PLATFORM_DOMAIN>` or is listed in
-`DIRECTORY_EXTRA_API_HOSTS`; never `spicetown.shop` (rule 0.3); colours match
+`DIRECTORY_EXTRA_API_HOSTS`; never `<blocked-domain>` (rule 0.3); colours match
 the hex pattern; `timezone` loads. A store that is retired is removed from the
 file (it then answers 404 like an unknown code).
 
@@ -852,7 +859,7 @@ while blank).
 
 Tests (`tests/test_directory.py`): known/unknown/invalid codes, normalisation,
 maintenance, 304, rate limit (both windows, `Retry-After`), stores-file
-validation (bad host, `spicetown.shop`, duplicate code), 503 on a broken file,
+validation (bad host, `<blocked-domain>`, duplicate code), 503 on a broken file,
 static build output identical to the service bodies, AASA/assetlinks with and
 without the owner ids.
 
@@ -1037,7 +1044,7 @@ gains `store` (String?, upper-cased). On tap:
   (fallback to the generated `onPrimary`).
 - Store name, POS name ("Also in Toast" -> "Also in <posName>"), login footer,
   About and legal links come from `TenantConfig`. Checklist tiles come from
-  `GET /api/checklists/schemas`, not hard-coded Spice Town types.
+  `GET /api/checklists/schemas`, not hard-coded pilot-store types.
 
 ---
 
@@ -1151,24 +1158,24 @@ field names with the committed JSON).
 
 | Batch | Owns (creates / edits) |
 |---|---|
-| **MT7a identity** (server) | `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.github/workflows/*`, `backend/app/assets/branding/*`, `frontend/public/` icons, `frontend/capacitor.config.json`, removal of Spice Town-only files (handoff 3 step 3 last list) |
-| **MT7a identity** (app) | iOS/Android project ids and names (`com.kloudc.storeops`, "StoreOps"), app icons, `firebase_options.dart` placeholder (push off until configured), `pubspec.yaml` metadata (the Dart package name stays `spicetown_app` until a single rename commit after all app batches merge) |
+| **MT7a identity** (server) | `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.github/workflows/*`, `backend/app/assets/branding/*`, `frontend/public/` icons, `frontend/capacitor.config.json`, removal of the pilot store-only files (handoff 3 step 3 last list) |
+| **MT7a identity** (app) | iOS/Android project ids and names (`com.kloudc.storeops`, "StoreOps"), app icons, `firebase_options.dart` placeholder (push off until configured), `pubspec.yaml` metadata (the Dart package name stays `pilot_app` until a single rename commit after all app batches merge) |
 | **MT7** settings + branding | `backend/app/config.py`, `backend/.env.example`, `app/store/settings_view.py`, `app/store/branding.py`, `app/routers/branding.py`, `app/pos/capabilities.py` (`CLOVER_`/`CSV_CAPABILITIES`), `app/pos/gating.py` (fallback entries, `FEATURE_STORE_FEATURES`), `app/routers/auth.py` (`/me` keys), `app/services/push.py` (`store`), the string sites in 1.6's settings rows (`po_export`, `po_send`, `checklist_public`, `reports`, `invoice_submission`, `toast_pdf`, `ask_bot`, `weekly_digest`, `toast_email`, `team/recurrence.py`, `team/tasks_models.py`, `pos/sync/accuracy.py`, `pos/sync/open_orders.py`, `services/insights_data.py`), fake-store `.env` + `.branding.json` fixtures |
 | **MT8** pack + identity | `alembic/versions/0062_store_identity.py`, `app/store/identity.py`, `app/store/pack.py`, `app/store/__main__.py`, `backend/packs/*` (except `demo.json` content), `scripts/packs/extract_legacy_pack.py`, rule sites in 1.6's pack rows (`fix_issues`, `delivery_suggestions`, `insights` constants + `channel_of`, `schedule_suggestions`, `po_sections`, `issue_leads`, `flyers`, `whatsapp_groups`, `checklist_schemas`), the identity call in `app/main.py` |
 | **MT9** website | `frontend/src/**`, `frontend/index.html`, `frontend/e2e/**`, `backend/app/glossary.py` |
 | **MT10** directory | `backend/app/directory/**`, `directory/**`, `app/routers/well_known.py` (+ its include line in `app/main.py`) |
 | **MT11** app login/switch | `lib/core/tenant/**` (except `capability_gate.dart`), `lib/core/config/env_config.dart`, `lib/core/api/**`, `lib/core/storage/**`, `lib/core/notifications/push_token_storage.dart`, store-code screen, More > Switch store |
-| **MT12** app tz/brand/push | `lib/core/utils/store_time.dart` + its call sites, `lib/core/theme/**`, `lib/core/tenant/capability_gate.dart`, tile gating in `store_sections.dart` / `feature_index.dart` / tabs, `push_target.dart`, `notification_router.dart`, Spice Town strings in `lib/` |
+| **MT12** app tz/brand/push | `lib/core/utils/store_time.dart` + its call sites, `lib/core/theme/**`, `lib/core/tenant/capability_gate.dart`, tile gating in `store_sections.dart` / `feature_index.dart` / tabs, `push_target.dart`, `notification_router.dart`, the pilot store strings in `lib/` |
 | **MT13** demo + release | `backend/app/pos/adapters/csv_only/**`, `backend/packs/demo.json`, `backend/scripts/demo/**` (made-up data generator, nightly reset), DEMO compose service, release notes; may add its reset job name to `POS_NEUTRAL_JOB_FUNCS` (one line) |
 
-Heavy commands go through `/Users/sundar/.claude/jobs/e26a1611/tmp/m1heavy.sh`:
-- backend (from `/Users/sundar/storeops/storeops/backend`):
+Heavy commands go through `~/.claude/jobs/e26a1611/tmp/m1heavy.sh`:
+- backend (from `~/storeops/storeops/backend`):
   `.../website/backend/.venv/bin/python -m pytest -q` (3.9) and
   `.../website/backend/.venv312/bin/python -m pytest -q` (3.12);
 - website: `node --test` suites and `npx vite build` from `frontend/`
   (`node_modules` is the symlink);
 - app: `flutter analyze` and `flutter test --concurrency=2` from
-  `/Users/sundar/storeops/storeops-app`.
+  `~/storeops/storeops-app`.
 Docker images are built and tested only by GitHub Actions.
 
 ---
@@ -1189,19 +1196,19 @@ Docker images are built and tested only by GitHub Actions.
 
 ### 9.2 Name grep tests
 
-- Server: `backend/tests/test_no_spicetown_names.py` searches `backend/app`
+- Server: `backend/tests/test_no_origin_names.py` searches `backend/app`
   (not `alembic/versions`, not `app/services/checklist_builtin.py`),
   `frontend/src`, `frontend/index.html`, `frontend/capacitor.config.json` for
-  `spice ?town|street kitchen|vernon|spicetown\.shop|shaz international`
+  the hashed origin-name list (tests/origin_names.py)
   (case-insensitive; the last added by the verify pass - the fresh-store
   test's list). Where `$STOREOPS_PRIVATE_DIR/forbidden_tokens.txt` exists, its
   words (staff names) must not appear at all in `backend/app` or
   `frontend/src` (skips in CI).
-  Every hit must be on the allowlist `backend/tests/data/spicetown_name_allowlist.txt`
+  Every hit must be on the allowlist `backend/tests/data/origin_name_allowlist.txt`
   (`<path>:<exact substring>` per line, e.g. the legacy setting names in
   `config.py`). MT7, MT8 and MT9 each shrink the list for their files; at the
   M2 exit it holds only legacy setting names and comments explaining them.
-- App: `test/identity/no_spicetown_names_test.dart` does the same over `lib/`
+- App: `test/identity/no_origin_names_test.dart` does the same over `lib/`
   (allowlist `test/identity/allowlist.txt`), owned by MT12; MT7a-app clears
   the identity files.
 
@@ -1213,9 +1220,9 @@ Docker images are built and tested only by GitHub Actions.
 - `storeops` (server + web): https://github.com/Sundar6264-ux/storeops
 - `storeops-app` (Flutter app): https://github.com/Sundar6264-ux/storeops-app
 
-Local paths: `/Users/sundar/storeops/storeops`, `/Users/sundar/storeops/storeops-app`.
+Local paths: `~/storeops/storeops`, `~/storeops/storeops-app`.
 Each has exactly one remote, `origin`, pointing at the StoreOps GitHub
-repository. No remote points at Spice Town's GitHub or local folders.
+repository. No remote points at the pilot store's GitHub or local folders.
 
 **Secret and data scan of the full history (both repos, before any push).**
 Every blob reachable from every ref was checked for private keys, AWS keys,
@@ -1242,7 +1249,7 @@ history: no findings beyond the known non-secrets above.
 
 App (source: `ops-fixes` @ `f99c2e0`, 232 commits):
 - only finding: `lib/core/notifications/firebase_options.dart` (2 versions)
-  holds the Spice Town Firebase project's client config, including a Google
+  holds the pilot store Firebase project's client config, including a Google
   API key. Firebase client keys are identifiers shipped inside every app build,
   not secrets; the StoreOps app gets its own Firebase project (MT7a app
   identity), which replaces this file.
@@ -1275,7 +1282,7 @@ Server + web (`storeops`, commits `4c7f6ca`..`6d2cc7f` plus this section):
   Code comments that cite the removed contracts now point at files that only
   exist in the origin repository's history; harmless, left for the owning
   batches to reword.
-- `.claude/skills/spicetown/` replaced by `.claude/skills/storeops/SKILL.md`
+- `.claude/skills/pilot/` replaced by `.claude/skills/storeops/SKILL.md`
   (ground rules, architecture, 12 generic gotchas, feature pattern, commands).
 - Mac-mini deploy scripts removed (backend/cloudflared/updater/watchdog
   plists, `setup_persistent.sh`, `update_cloudflared.sh`, `watchdog.sh`).
@@ -1304,7 +1311,7 @@ Server + web (`storeops`, commits `4c7f6ca`..`6d2cc7f` plus this section):
   `frontend/public/{logo.svg, logo-header.png, favicon-32.png, favicon-512.png,
   apple-touch-icon.png}`, and with `--app-repo` the app's `app_icon.png` and
   `wordmark.png`. The unused store logo JPEG is removed;
-  **`backend/app/assets/spice-town-icon.jpg` stays** because
+  **`backend/app/assets/pilot-icon.jpg` stays** because
   `services/po_export.py` (MT7) loads it for the PO PDF letterhead - MT7
   switches it to the branding logo setting and deletes the file.
 - Capacitor wrapper: `appId` `com.kloudc.storeops`, `appName` "StoreOps"
@@ -1357,7 +1364,7 @@ Server + web (`storeops`, commits `4c7f6ca`..`6d2cc7f` plus this section):
   (no store data may enter GitHub). The parity run below covers the same
   code on a production copy locally.
 
-**Name grep test** (`backend/tests/test_no_spicetown_names.py`, section 9.2):
+**Name grep test** (`backend/tests/test_no_origin_names.py`, section 9.2):
 - identity scope, zero hits allowed: `README.md`, `Dockerfile`,
   `.dockerignore`, `docker-compose.yml`, `.env.example`,
   `frontend/{index.html, capacitor.config.json, package.json, .env.mobile}`,
@@ -1365,7 +1372,7 @@ Server + web (`storeops`, commits `4c7f6ca`..`6d2cc7f` plus this section):
   `docker`, `frontend/public`, `frontend/android`, `frontend/ios`,
   `backend/app/assets/branding`, `backend/scripts/{launchd,backup,branding}`;
 - code scope (`backend/app`, `frontend/src`): every hit must match
-  `backend/tests/data/spicetown_name_allowlist.txt` (`<path>:<substring>`);
+  `backend/tests/data/origin_name_allowlist.txt` (`<path>:<substring>`);
   **136 entries** today across MT7, MT8 and MT9 files; an entry that matches
   nothing fails the test, so each batch deletes its lines as it moves values
   out;
@@ -1404,12 +1411,12 @@ App (`storeops-app`, commits `812beb2`..`06c6a98`, history kept):
   same define names; they are part of this contract now.
 - No `GoogleService-Info.plist` / `google-services.json` existed; `.gitignore`
   now blocks them, signing keys, `key.properties` and env files.
-- Removed `MOBILE_APP_CONTEXT.md`, `SPICETOWN_FLUTTER_CLAUDE_HANDOFF.md`; new
+- Removed `MOBILE_APP_CONTEXT.md`, `PILOT_FLUTTER_CLAUDE_HANDOFF.md`; new
   `README.md`; `docs/backend-api-map.md` describes hosts generically;
   `docs/OWNER_SETUP.md` (Apple App ID + APNs key + App Store record, Play app
   + upload key, StoreOps Firebase project, build defines, per-store FCM
   service account).
-- `pubspec.yaml`: description only; package name stays `spicetown_app`.
+- `pubspec.yaml`: description only; package name stays `pilot_app`.
 - Tests: `test/identity/app_identity_test.dart` (bundle ids, display names,
   no Firebase config files, no legacy names in pubspec/README/docs/CI/iOS and
   Android project files); notification tests for the placeholder;
@@ -1422,11 +1429,11 @@ App (`storeops-app`, commits `812beb2`..`06c6a98`, history kept):
   run `39149278647` green: analyze no issues, **5345 passed, 6 skipped**.
 
 **Deferred / for other batches:**
-- MT7: `po_export.py` letterhead off `spice-town-icon.jpg`; `config.py`
+- MT7: `po_export.py` letterhead off `pilot-icon.jpg`; `config.py`
   defaults (`DATABASE_URL`, `FLYERS_DIR`, `PUBLIC_BASE_URL`, ...); the
   allowlist lines of its files.
 - MT8 / MT9 / MT12: their allowlist lines; the app's in-`lib/` strings
-  ("Spice Town" in home/login text, `integration_test/` expectations).
+  ("the pilot store" in home/login text, `integration_test/` expectations).
 - `e2e/regression/*` still uses the origin store's local paths (it runs
   against production copies on the origin machine); left as is.
 - The Capacitor wrapper keeps Capacitor's default splash/icon art.
@@ -1435,7 +1442,7 @@ App (`storeops-app`, commits `812beb2`..`06c6a98`, history kept):
 
 ## As built - MT9 (website per store)
 
-Branch `m2/mt9-website` (worktree `/Users/sundar/storeops/worktrees/mt9`),
+Branch `m2/mt9-website` (worktree `~/storeops/worktrees/mt9`),
 rebased on `main` after MT7a. Files: `frontend/src/**`, `frontend/index.html`,
 `frontend/e2e/**`, `backend/app/glossary.py` (+ its test and the name
 allowlist lines for these files).
@@ -1553,7 +1560,7 @@ used); after MT7 the real ones are used.
 **Results (Oct 18)**
 - `node --test` (all 226 website tests): 226 passed. `vite build` ok.
 - Backend: glossary-related files (`test_ops_glossary`, `test_glossary_store_words`,
-  `test_no_spicetown_names`, `test_flyers`, `test_insights`, `test_ops_fix_issues`,
+  `test_no_origin_names`, `test_flyers`, `test_insights`, `test_ops_fix_issues`,
   `test_review_route_gates`, `test_suggestions_b3`, `test_ops_snooze_cartremove`,
   `test_critical_dismissals`, `test_store_vs_container`,
   `test_open_checks_tab_names`, `test_regress_min_order_and_add_all`): all pass on 3.9; the
@@ -1739,7 +1746,7 @@ store known = nothing hidden), `StoreParts` partial getters (`whatsapp`,
 Push routes to open orders, inventory from POS, loss watch and insights are
 wrapped in `StoreFeatureGate` (`pushScreenContent()` unwraps for tests).
 "Also in <pos>" and "Inventory from <pos>" (`FeatureEntry.displayTitle`).
-The three hard-coded checklist search entries (`checklist_spice_town`, ...)
+The three hard-coded checklist search entries (`checklist_pilot`, ...)
 are removed: a store's checklists are reached through Daily Checklists,
 which lists the server's schemas.
 
@@ -1748,8 +1755,8 @@ push -> dialog "This alert is for <saved name or code>. Switch store?"; Yes
 -> `switchStore(toCode:)` (lands on that store's sign-in, route not carried);
 No -> dismissed. The Team poller ignores another store's foreground push.
 
-**Names (9.2).** `test/identity/no_spicetown_names_test.dart` over `lib/`
-(pattern of 9.2; the package name `spicetown_app` and `_`-separated legacy
+**Names (9.2).** `test/identity/no_origin_names_test.dart` over `lib/`
+(pattern of 9.2; the package name `pilot_app` and `_`-separated legacy
 checklist type ids are not hits); `test/identity/allowlist.txt` is empty.
 Changes: OS-permission hints use `appDisplayName`; Home title = store short
 name; PO share caption / scanned-PDF creator; invoice parser's own-store
@@ -1784,7 +1791,7 @@ server's `/api/glossary` replaces the bundled copy; MT9 substitutes
 
 ## As built - MT7 (store settings, branding) and MT8 (store pack, identity)
 
-Branch `m2-mt7-mt8` (worktree `/Users/sundar/storeops/wt-mt7-mt8`), rebased on `main` after MT7a part 2 and MT9, merged fast-forward.
+Branch `m2-mt7-mt8` (worktree `~/storeops/wt-mt7-mt8`), rebased on `main` after MT7a part 2 and MT9, merged fast-forward.
 
 ### MT7 - store settings, de-hardcode, branding
 
@@ -1818,14 +1825,14 @@ blank); `tests/test_store_settings.py` fails if one is missing.
 | Transfer default vendor (`invoice_submission`), automatic-task actor `SYSTEM_NAME` (`team/tasks_service`, `auto_tasks`, `issue_leads`), removed-account task event (`team/bootstrap`) | effective store name |
 | Team rules text (`team/rules`) | store name; "call <STORE_PHONE>" only when set |
 | Ask bot + weekly digest prompts | `STORE_NAME` + `STORE_DESCRIPTION` (blank = "a retail store") |
-| Sales export file name `spicetown-sales-...` (`routers/sales`) | `<store_slug>-sales-...` |
+| Sales export file name `pilot-sales-...` (`routers/sales`) | `<store_slug>-sales-...` |
 | `FIRST_REAL_SALES_DATE` (`pos/sync/accuracy`, `pos/sync/open_orders`, `insights_data`, `insights`) | `FIRST_SALES_DATE` via `sales_floor()`; blank = no floor. Open-checks full scan without a floor starts at the oldest stored business date (max 365 days back) |
 | `CLOSEOUT_HOUR` (`accuracy`, `insights_data`, `insights`), delivery-suggestion snapshot fallback time | `BUSINESS_DAY_CUTOFF_HOUR` |
 | Recurring-task default zone (`team/recurrence`, `team/tasks_models` column default) | effective store time zone |
 | WhatsApp role chat ids (`whatsapp_groups._env_chat_id`) | `whatsapp_role_chat_ids()` (`WHATSAPP_GROUP_CHAT_IDS` over the two legacy settings) |
 | `public_base_url` reads (`main` invoice login redirect, `invoice_submission`, `checklist_public`, `issue_leads`, `inventory_api_readiness`) | `effective_public_base_url()` |
 | `/api/app/config` `store_url` | blank `APP_STORE_URL` -> `null`; blank `PLAY_STORE_URL` -> Play listing of `APP_BUNDLE_ID` (shape unchanged) |
-| Push app name `spicetown-notifications` | `storeops-notifications` (internal Firebase app name) |
+| Push app name `pilot-notifications` | `storeops-notifications` (internal Firebase app name) |
 
 The old module-level names stay readable for existing imports and tests
 through module `__getattr__` (PEP 562), always reading the current settings or
@@ -1917,18 +1924,18 @@ the newest one. Pack checklists are written with note "From the store pack
 volume) and `.github/workflows/ci.yml` (the compose boot step runs
 `alembic upgrade head && python -m app.store init --code CI --pack
 packs/generic.json` first - without a stamp the server now refuses to start).
-`backend/app/assets/spice-town-icon.jpg` removed (nothing uses it; the parity
+`backend/app/assets/pilot-icon.jpg` removed (nothing uses it; the parity
 env points `DOCUMENT_LOGO_FILE` at a private copy).
 
 **Name allowlist:** one entry left, `config.py`'s `REFUSED_DOMAIN =
-"spicetown.shop"` (the refusal of rule 0.3); every other backend line was moved
+"<blocked-domain>"` (the refusal of rule 0.3); every other backend line was moved
 to settings / the pack or reworded (MT9 cleared the website and glossary).
 
 ### Legacy values (1.6)
 
 `backend/scripts/packs/extract_legacy_pack.py --from-commit 56e095c --out-dir
 $STOREOPS_PRIVATE_DIR [--catalog-db <scratch copy>]` writes, outside git:
-`spicetown.pack.json`, `spicetown.env` (also `APP_STORE_URL`, `PLAY_STORE_URL`,
+`origin.pack.json`, `origin.env` (also `APP_STORE_URL`, `PLAY_STORE_URL`,
 `DOCUMENT_LOGO_FILE`; no `LABELS_URL` - refused domain), `legacy_cases.json`
 (the legacy functions' answers: 15,972 `section_for` cases incl. every
 catalog item of the Oct 18 copy, the 48 built-in sections, 23 dining options,
@@ -1986,7 +1993,7 @@ import commit's migrations so both sides start from the same rows (the
 0060/0061 backfills stamp `created_at` with the time they run; recording both
 sides with `--migrate` from 0059 showed only those timestamp columns).
 Baseline = import commit `56e095c` (= `multistore-m1`) with its own defaults;
-new = this branch with `spicetown.env` exported, `STORE_PACK_FILE` = the
+new = this branch with `origin.env` exported, `STORE_PACK_FILE` = the
 private pack, `STORE_CODE` blank, `--migrate` (0061 -> 0062).
 
 | Python | Files | DIFFERENCES | Additions (allowed) |
@@ -2028,7 +2035,7 @@ only, plus the MT9 e2e harness; no server code changed.
 
 Confirmed and fixed:
 - **Overview closing tiles were hard-wired to the origin store.** They asked
-  for `spice_town_closing`, `street_kitchen_closing` and `street_kitchen_fsa`,
+  for `store_closing`, `kitchen_closing` and `kitchen_fsa`,
   so every new store read "None yet" forever (and requested types it doesn't
   have). The name scan missed it (underscore form). Now
   `components/closingChecklists.js`: the active checklists with
@@ -2057,13 +2064,13 @@ Confirmed and fixed:
   stamped store.
 
 Tests added: `closingChecklists.test.mjs`; `noStoreNames.test.mjs` catches
-`spice_town`/`street_kitchen` forms and fails on any hour-showing
+`store`/`kitchen` forms and fails on any hour-showing
 `toLocaleString`/`toLocaleTimeString` without the store zone (both scans
 fail on the pre-fix tree); Playwright checks the closing tiles and that
 Today's sales appears exactly when the store has `live_today_sales`.
 
 Numbers: website `node --test` 231/231; `vite build` OK; backend
-`test_no_spicetown_names.py` + `test_glossary_store_words.py` pass (3.9);
+`test_no_origin_names.py` + `test_glossary_store_words.py` pass (3.9);
 Playwright (two fresh fake stores via store-init, 4 roles, 1280/375):
 674 checks, 0 failures; server-text hits 46 (MT9 run: 81), all server
 strings saying "Toast" on the Clover store.
@@ -2086,7 +2093,7 @@ Found, not fixed (server, MT7/MT8 files):
 ## As built - Verify (identity, adversarial)
 
 Branch `verify/identity` in both repositories (worktrees
-`/Users/sundar/storeops/worktrees/verify-identity{,-app}`). Each item was
+`~/storeops/worktrees/verify-identity{,-app}`). Each item was
 first confirmed with a test that fails, then fixed.
 
 **Confirmed and fixed (server + web):**
@@ -2128,7 +2135,7 @@ first confirmed with a test that fails, then fixed.
   3.4, the service name in the example was wrong (`api` instead of `store`).
 
 **Confirmed and fixed (app):**
-- **Rule 0.3 in `ApiHostPolicy`.** `spicetown.shop` was refused only because
+- **Rule 0.3 in `ApiHostPolicy`.** `<blocked-domain>` was refused only because
   it is not under the default `PLATFORM_DOMAIN`. A build with
   `PLATFORM_DOMAIN` or `EXTRA_ALLOWED_API_HOSTS` naming it would have sent
   session tokens there. It is now refused outright (any case, trailing dots
@@ -2137,11 +2144,11 @@ first confirmed with a test that fails, then fixed.
   (`docs/OWNER_SETUP.md`).
 
 **Dismissed:**
-- Spice Town's Firebase client config in the app's history: already
+- The pilot store's Firebase client config in the app's history: already
   documented in MT7a part 1 (client identifiers, not secrets).
 - The Capacitor wrapper and the Flutter app share `com.kloudc.storeops`.
   They did the same under the origin ids, and only one of them ships.
-- Legacy `_`-separated checklist type ids and `WHAPI_SPICE_TOWN_*` setting
+- Legacy `_`-separated checklist type ids and `WHAPI_STORE_*` setting
   names are allowed by contract 9.2.
 - No secrets matched in any branch of either repo (Anthropic, AWS, private
   key, GitHub, Slack and Google key patterns).
@@ -2199,7 +2206,7 @@ verifier's app commits) and fast-forwarded into `main`. Each fix has a test that
   `DEV_API_BASE_URL`), so `APP_ENV=prod` was quietly development. Now only
   `development` is. Test `test/core/config/env_config_test.dart` (2).
 - `f8b1ad1` **Origin-store name in `integration_test` (9.2).** `app_test.dart`
-  expected "Spice Town" on Home (now the tenant's short name) and its fakes
+  expected "the pilot store" on Home (now the tenant's short name) and its fakes
   used origin-store checklist titles.
 - `8534e98` **DEMO wording.** The demo-login note said "nothing is sent to
   WhatsApp, Toast or the printer" and Upload Inventory asked for "the Toast
@@ -2233,7 +2240,7 @@ verifier's app commits) and fast-forwarded into `main`. Each fix has a test that
   ("Connected" pill, "Print Labels" title) - Regression stage.
 - Test fixtures still carry origin-store data: real vendor names, staff
   usernames, OCR text of real invoices (`long_receipt_fixtures.dart`,
-  `invoice_scan_parser_test.dart`), `ops.spicetown.shop` links. They were
+  `invoice_scan_parser_test.dart`), `ops.<blocked-domain>` links. They were
   in the kept history too; removing them is an owner decision.
 - Git history (kept by decision) contains the origin store's Firebase iOS
   client config (`firebase_options.dart` before `c6bec1a`). Not a server
@@ -2265,9 +2272,9 @@ first, in `backend/tests/test_m2_backend_verify.py` unless noted.
 | 2 | `store-init` skipped the "store data" check whenever the database was already stamped, so running `init` again (no `--adopt`) on an adopted store deleted its migration-seeded rows - its WhatsApp roles with their chat ids, its checklists | the check runs whenever `--adopt` is absent (contract 3.5 step 2 as written). A fresh store's second init (no data) is still a no-op |
 | 3 | `Dockerfile` did not set `UPLOADS_ROOT`: a plain `docker run` (the command in its own header) put the identity marker in `/app/backend/uploads` - outside the volume and not writable by the `storeops` user, so `init` and the first start failed | found in parallel by the identity verify (`17e1f9c` sets `ENV UPLOADS_ROOT=/data/uploads`); this pass adds a test that every container path compose sets is the same in the Dockerfile |
 | 4 | `.dockerignore` did not exclude the private pack files, so a local `docker build` with `backend/packs/private/` present would bake a real store's pack into the image | `backend/packs/private`, `**/*.pack.json`, `**/legacy_cases.json`, `**/forbidden_tokens.txt` added |
-| 5 | Rule 0.3 bypasses: `//spicetown.shop`, `x@spicetown.shop`, `https://spicetown.shop\@example.com` (browsers read the host as the legacy domain), `%2e` | `refused_host` normalises backslashes, scheme-relative URLs, user-info and percent-escapes |
-| 6 | A store without WhatsApp and/or an AP inbox (both optional store features, 1.3) marked **every** invoice "failed" and pushed "Invoice failed to send" to every admin for each one; with WhatsApp off a bill could never be marked closed | section 1.3 note above (`WHATSAPP_OFF` / `AP_EMAIL_OFF`). Rows written before this, and every Spice Town-shaped row, read exactly as before |
-| 7 | Origin-store names left in code the name test did not cover: the supplier of migration 0034 in three backend comments, and staff/owner first names and origin vendors (private `forbidden_tokens.txt`) in backend comments (the website ones were fixed in parallel by the website verify, `97567d1`) | reworded / made-up names; `test_no_spicetown_names.py` now also matches `shaz international` (one allowlisted line: `store/__main__.py`'s `LEGACY_CATEGORY_SUPPLIER`, which removes that row) and checks the private staff names over `backend/app` and `frontend/src` when the file is present |
+| 5 | Rule 0.3 bypasses: `//<blocked-domain>`, `x@<blocked-domain>`, `https://<blocked-domain>\@example.com` (browsers read the host as the legacy domain), `%2e` | `refused_host` normalises backslashes, scheme-relative URLs, user-info and percent-escapes |
+| 6 | A store without WhatsApp and/or an AP inbox (both optional store features, 1.3) marked **every** invoice "failed" and pushed "Invoice failed to send" to every admin for each one; with WhatsApp off a bill could never be marked closed | section 1.3 note above (`WHATSAPP_OFF` / `AP_EMAIL_OFF`). Rows written before this, and every pilot-store-shaped row, read exactly as before |
+| 7 | Origin-store names left in code the name test did not cover: the supplier of migration 0034 in three backend comments, and staff/owner first names and origin vendors (private `forbidden_tokens.txt`) in backend comments (the website ones were fixed in parallel by the website verify, `97567d1`) | reworded / made-up names; `test_no_origin_names.py` now also matches `shaz international` (one allowlisted line: `store/__main__.py`'s `LEGACY_CATEGORY_SUPPLIER`, which removes that row) and checks the private staff names over `backend/app` and `frontend/src` when the file is present |
 
 Tests after the rebase (local; CI on the push): backend Python 3.9 and 3.12
 **2589 passed, 20 skipped, 0 failed** each (19 new verify tests; the private
@@ -2278,7 +2285,7 @@ Dismissed after checking:
 - Secrets: no key, token or private-key pattern in any of the 46 commits; both `.env.example` files have blank secrets.
 - Python 3.9: `compileall` with 3.9 over `app`, `scripts`, `alembic` is clean; no `X | Y` annotations.
 - Branding fixtures: the website's e2e fixtures and `frontend/src/test/fixtures` equal `backend/tests/fixtures/stores/*.branding.json` field for field.
-- Every GET route (parity list plus all parameterless `/api` routes) for the three fake stores with the pack checklists: no legacy store name or staff name in any response; the only 5xx left are M1's (a Toast store whose POS is unreachable: `/api/orders/open`, `/api/orders/employees` raise `ConnectError`; `/api/inventory-api/compare` answers 503 with no CSV) - unchanged from Spice Town, not M2.
+- Every GET route (parity list plus all parameterless `/api` routes) for the three fake stores with the pack checklists: no legacy store name or staff name in any response; the only 5xx left are M1's (a Toast store whose POS is unreachable: `/api/orders/open`, `/api/orders/employees` raise `ConnectError`; `/api/inventory-api/compare` answers 503 with no CSV) - unchanged from the pilot store, not M2.
 - Time zones: every scheduler, recurrence default, task column default, closeout and floor reads the store settings; no `America/New_York` left outside defaults and docstrings.
 - Parity: the fixes are no-ops for a Toast store with both channels configured (connector present; the off-sentinels are only written when a store feature is off), so the MT7/MT8 parity result (0 differences) stands; `test_store_pack_legacy.py` passes locally with the private pack.
 
@@ -2290,7 +2297,7 @@ Deferred (other tracks / owner):
 
 ## As built - MT10 (store directory)
 
-Branch `m2/mt10-directory` (worktree `/Users/sundar/storeops/worktrees/mt10`).
+Branch `m2/mt10-directory` (worktree `~/storeops/worktrees/mt10`).
 
 **Decision: Worker in production, Python as reference.** The directory runs
 as a Cloudflare Worker (`directory/worker/`, no dependencies). Its bodies are
@@ -2331,7 +2338,7 @@ skipped without it; GitHub's Ubuntu runners have Node.
 **Other batches' files touched (one line each):**
 - `tests/test_review_route_gates.py`: the 2 `/.well-known/*` routes are added
   to `PUBLIC`.
-- `tests/data/spicetown_name_allowlist.txt`: 1 entry. The rule 0.3 guard
+- `tests/data/origin_name_allowlist.txt`: 1 entry. The rule 0.3 guard
   `FORBIDDEN_DOMAIN` is the only literal of the legacy domain in MT10 code.
 
 **Interface changes made in section 4 (in this commit)**
@@ -2393,7 +2400,7 @@ Branch `m2/mt10-directory` now has `main` merged in (MT7a, MT7/MT8, MT9 and
 the MT11/MT12 docs). Conflicts in `app/main.py`, the public route list, the
 name allowlist and this file were resolved by keeping both sides. Fixes, each
 with a test that failed first:
-- **Name test after the merge:** the directory had its own `spicetown.shop`
+- **Name test after the merge:** the directory had its own `<blocked-domain>`
   literal; it now imports `app.config.REFUSED_DOMAIN` (the one literal).
   Two tests set environment variables after `Settings` was cached; they now
   patch `Settings` (MT7 added the `DIRECTORY_*` / owner-id fields).
@@ -2430,8 +2437,8 @@ was re-run on both afterwards).
 
 ## As built - MT13 prep (DEMO store, CSV-only connector, legal and AI notice)
 
-Branches: server `m2/mt13-demo` (worktree `/Users/sundar/storeops/worktrees/mt13`),
-app `m2/mt13-legal` (worktree `/Users/sundar/storeops/worktrees/mt13-app`).
+Branches: server `m2/mt13-demo` (worktree `~/storeops/worktrees/mt13`),
+app `m2/mt13-legal` (worktree `~/storeops/worktrees/mt13-app`).
 Nothing is submitted or created with Apple, Google or Firebase.
 
 **CSV-only connector** (`backend/app/pos/adapters/csv_only/`, plan 3.1a / 4.5):
@@ -2611,8 +2618,8 @@ Both MT13 branches now carry a merge of `main` (server `2c43df8`, app
 
 ## As built - M2 final regression and handoff
 
-Run on 2026-10-18 on the merged code. All work in `/Users/sundar/storeops`;
-Spice Town's folders were only read (one read-only production copy for
+Run on 2026-10-18 on the merged code. All work in `~/storeops`;
+The pilot store's folders were only read (one read-only production copy for
 parity and the migration check, deleted afterwards with its recordings).
 
 **Merges (server `main`):** `6975c85` merges `m2/mt10-directory` (MT10 +
@@ -2634,7 +2641,7 @@ the MT13 verifier's merge of `main`).
   (2 tests) fails on the old code.
 
 **Other commits:**
-- App `70b8758`: the Dart package is renamed `spicetown_app` ->
+- App `70b8758`: the Dart package is renamed `pilot_app` ->
   `storeops_app` (the single rename commit of section 8); the identity tests
   no longer exempt the old name. `7c3f20b`: staff names out of five `lib/`
   doc comments; the origin store's phone number and customer group out of
@@ -2653,7 +2660,7 @@ the MT13 verifier's merge of `main`).
 |---|---|
 | Backend full suite, Python 3.9 / 3.12 (merged `main`) | 2687 passed, 20 skipped each |
 | Alembic | single head `0062`; fresh DB up -> down to base -> up; production copy 0059 -> 0062 -> 0059 -> 0062, integrity ok |
-| Parity (Spice Town pack vs `56e095c`, fresh production copy) | 114 files; 110 endpoints all 200; no number, row, alert or job differences. 10 differences, all in `glossary.json` help text (MT9's store-neutral wording); additions: `/me` `store_code` + `store_features`, table `store_identity` |
+| Parity (the pilot store pack vs `56e095c`, fresh production copy) | 114 files; 110 endpoints all 200; no number, row, alert or job differences. 10 differences, all in `glossary.json` help text (MT9's store-neutral wording); additions: `/me` `store_code` + `store_features`, table `store_identity` |
 | Website `node --test` / `vite build` | 231/231 / OK |
 | Directory Worker `node --test` | 7/7 |
 | Playwright `frontend/e2e/store/run.sh` (Toast, Clover, DEMO; 1280 + 375) | 766 checks, 0 failures |
