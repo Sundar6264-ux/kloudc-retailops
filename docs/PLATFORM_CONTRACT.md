@@ -2968,3 +2968,50 @@ but the app has no Teams screen (website only); `inventory_reports.terms`
 lists `store_vs_container` twice (the app shows each term once).
 `articles/index.json` lists itself (the app skips it). Several guides say
 "Click" (website wording) where the app is "Tap".
+
+## As built - Final pass: integration (H + W + S + M)
+
+**Merges (server repo `main`, `--no-ff`, in order).** `final/help` (d4c688f),
+`final/web` (fde11bd), `final/server` (d29c457), then `final/app-docs`
+(1d428f3). The only conflicts were the appended "As built" sections of this
+file; all four sections are kept in that order. App repo: `final/app` merged
+into `main` (38d4c2f). The track worktrees are removed; the branches stay.
+
+**Help wired into the shell.** `ui/helpBridge.jsx` now finds H's
+`ui/help/index.js`, so PageHeader, ListHeader, the Insights hub and the
+master console render H's `InfoButton`; App.jsx mounts H's `HelpPanel`
+(the top-bar ? and every page-level ⓘ open it) and `/help` + `/glossary`
+render H's Help Center. `HelpProvider` wraps the app in `main.jsx` (H). New:
+ⓘ beside the title on sign-in (both the KloudC and the store-branded
+headers), sign-up, request status, owner set-up and the Glossary-only page;
+public registry pages show no signed-in links. `help.test.mjs` now also
+checks the other direction: every registry page with a website route is
+wired to an ⓘ (literal `pageId=`, or a route/tab table `pageId:`). The
+master console's Help tab maps to registry page `help`.
+
+**Content fixes from the app pass.** `teams` is website-only (`app: null`);
+every page lists a glossary term once; shared guide/FAQ/troubleshooting
+text says "Select" (not "Click"), so it reads right on both clients
+(master-only guides keep "Click"; "Click or tap" is kept). The app copy was
+refreshed with `tool/sync_help_content.sh` (hash f4d0b1ed...);
+`scripts/help/check_help_sync.sh` reports it current.
+`tests/test_ops_glossary.py` finds the app at `../storeops-app` (then
+`../mobile`), so its three app tests run locally and skip on CI.
+
+**Harness fixes.** The production start-up checks (track S) refuse
+http-only cookies under the default `APP_ENV=production`; the store e2e
+servers, the DEMO e2e server and regression suites A/B now set
+`APP_ENV=test` (the platform harnesses already did). The store e2e Home
+check waits up to 15 s for the closing checklists to load.
+`preview_server.py` takes `PREVIEW_DB_PREFIX=so_...` so a second preview
+(screenshots) can run beside the usual one. Sign-in on phones: the
+full-width auth-card button rule no longer stretches the ⓘ.
+
+**Checks at integration.** Backend SQLite 2952 passed / 27 skipped / 0
+failed; PostgreSQL 2961 / 18 / 0. Website node 308/308, build OK.
+`e2e/store` 748 checks 0 failed; `e2e/platform` (mock) 129/0;
+`run_flows.sh` (real server, PostgreSQL) 114/0. Screenshot suite on the
+integrated build: 282 shots, no sideways scroll at 375, no crashes
+(`~/storeops/screenshots/final/integrated/`). App: `flutter analyze` clean,
+`flutter test --concurrency=2` 5651 passed / 8 skipped / 0 failed.
+Regression suites A and B were not run (they need a store database copy).
