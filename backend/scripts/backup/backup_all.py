@@ -136,7 +136,8 @@ def newest_dump(folder: pathlib.Path, prefix: str) -> Optional[pathlib.Path]:
 def drill_all(platform_url: str, dest: str, *, pg_bin: Optional[str] = None, store: Optional[str] = None,
               store_url_template: Optional[str] = None) -> Dict:
     """Restore the newest dump of each database into a scratch database,
-    compare table row counts with the live one, drop the scratch database."""
+    compare table row counts with the counts recorded with the dump (the
+    live database for older dumps), drop the scratch database."""
     started = time.monotonic()
     root = pathlib.Path(dest).expanduser().resolve()
     targets: List[Tuple[str, str, pathlib.Path]] = []
