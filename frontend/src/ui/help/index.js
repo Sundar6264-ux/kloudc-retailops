@@ -15,6 +15,7 @@ export { HelpIcon } from "./helpIcons.jsx";
 export {
   AREAS,
   HELP_TABS,
+  LEGACY_SECTIONS,
   glossaryPath,
   helpPath,
   pageIdForPath,

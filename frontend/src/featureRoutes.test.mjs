@@ -225,7 +225,8 @@ test("retired Transfer Review UI is gone; Quick actions gone; worked example not
   const main = recon.slice(recon.indexOf("export default function Reconciliation"));
   assert.ok(!/<ReconciliationWorkedExample|<ReconciliationDemo/.test(main));
   assert.match(recon, /if \(!opened\) return;/);
-  assert.ok(read("pages/HelpPage.jsx").includes("<ReconciliationWorkedExample"));
+  // The live worked example is in the Reconciliation guide (ui/help, content/help).
+  assert.ok(read("ui/help/HelpCenter.jsx").includes("<ReconciliationWorkedExample"));
 });
 
 test("sales export lives on Items Sold", () => {
@@ -233,15 +234,13 @@ test("sales export lives on Items Sold", () => {
   assert.ok(read("pages/InventoryReportsPage.jsx").includes('!hasFeature("items_sold") && <SalesDownload'));
 });
 
-test("Help's section headings match its jump list, and no text names a menu group that's gone", () => {
-  const help = read("pages/HelpPage.jsx");
-  const list = help.slice(help.indexOf("const SECTIONS"), help.indexOf("];"));
-  for (const [, id, title] of list.matchAll(/\{ id: "([^"]+)", title: "([^"]+)" \}/g)) {
-    const at = help.indexOf(`id="${id}"`);
-    assert.ok(at > 0, `section ${id} exists`);
-    const summary = help.slice(at).match(/<summary>([^<]+)<\/summary>/)[1];
-    assert.equal(summary.replace(/&amp;/g, "&").replace(/ only\)$/, ")"), title, `section ${id}`);
-  }
+test("Help names no menu group that's gone", () => {
+  // Help text lives in content/help (one source for the website, the app and
+  // the server); its links and ids are checked by ui/help/help.test.mjs.
+  const dir = join(here, "../../content/help");
+  const files = ["pages.json", "faq.json", "troubleshooting.json", "getting-started.json"].map((f) => join(dir, f));
+  const help = files.map((f) => readFileSync(f, "utf8")).join("\n");
   assert.ok(!/Manage Users/.test(help), "the app's Manage Users is now Users");
+  assert.ok(!/Sales & Insights/.test(help), "the menu group is Sales now");
   assert.ok(!/Marketing →/.test(read("components/checklists/WhatsAppGroupsPanel.jsx")), "Flyers are under Team now");
 });

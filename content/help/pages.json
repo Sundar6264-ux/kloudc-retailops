@@ -2288,7 +2288,7 @@
    "location": "More › Help & info"
   },
   "gating": {
-   "feature": null,
+   "feature": "help",
    "admin": false,
    "salesOnly": false
   },

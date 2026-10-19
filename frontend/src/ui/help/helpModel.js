@@ -127,12 +127,42 @@ export function plainText(text) {
 export function helpPath({ tab, article, anchor, q } = {}) {
   const params = new URLSearchParams();
   if (article) params.set("a", article);
-  else if (tab && tab !== "start") params.set("tab", tab);
+  else if (tab) params.set("tab", tab);
   if (anchor) params.set("s", anchor);
   if (q) params.set("q", q);
   const qs = params.toString();
   return qs ? `/help?${qs}` : "/help";
 }
+
+// The old Help page's section ids (<Link to="/help" state={{ section }}>)
+// -> the guide that replaced each one, and a heading in it.
+export const LEGACY_SECTIONS = {
+  overview: { article: "home-today" },
+  menu: { article: "basics-navigation" },
+  invoices: { article: "invoices" },
+  "open-orders": { article: "open-checks" },
+  "items-sold": { article: "items-sold" },
+  insights: { article: "insights" },
+  reorder: { article: "reorder" },
+  "supplier-projection": { article: "new-order" },
+  "placed-orders": { article: "placed-orders" },
+  "vendor-calendar": { article: "vendor-calendar" },
+  "fix-issues": { article: "fix-issues" },
+  "inventory-reports": { article: "inventory-reports" },
+  reconciliation: { article: "reconciliation", anchor: "worked-example" },
+  downloads: { article: "basics-downloads" },
+  categories: { article: "setup-po-sections" },
+  "daily-checklists": { article: "daily-checklists" },
+  team: { article: "team-tasks" },
+  flyers: { article: "flyers" },
+  ask: { article: "ask-bot" },
+  notifications: { article: "account-alerts" },
+  users: { article: "setup-users" },
+  integrations: { article: "setup-integrations" },
+  "inventory-api": { article: "setup-inventory-from-pos" },
+  "live-data": { article: "basics-data-freshness" },
+  limitations: { article: "basics-limits" },
+};
 
 export function glossaryPath(key) {
   return key ? `/glossary?k=${encodeURIComponent(key)}` : "/glossary";
@@ -171,10 +201,15 @@ export function buildHelp(raw) {
   const pages = new Map((raw.pages || []).map((p) => [p.id, p]));
   const articles = new Map((raw.articles || []).map((a) => [a.id, a]));
   const concepts = new Map((raw.glossary || []).map((t) => [t.key, t]));
+  // Route -> page id. A signed-in page wins over a logged-out one at the
+  // same address ("/" is Home once signed in, Sign in before).
   const routes = new Map();
+  const isPublic = new Map((raw.pages || []).map((p) => [p.id, !!p.public]));
   for (const p of raw.pages || []) {
     const route = p.web?.route;
-    if (route && !routes.has(route)) routes.set(route, p.id);
+    if (!route) continue;
+    const have = routes.get(route);
+    if (!have || (isPublic.get(have) && !p.public)) routes.set(route, p.id);
   }
   return {
     manifest: raw.manifest || {},
@@ -244,6 +279,38 @@ export function whoCanSee(page) {
   if (parts.length === 0) return "Everyone at the store.";
   const text = parts.join(", ");
   return `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
+}
+
+// ------------------------------------------------------------------ who may open a page
+
+// Can this signed-in user open this page on the website? The same rules as
+// featureRoutes.js routeVisible, from the registry's gating. `auth` is the
+// AuthContext value ({ user, hasFeature, canSeeSales }) or null.
+export function canOpenPageFor(auth) {
+  const user = auth?.user || null;
+  const platform = !!user && user.scope === "platform";
+  return (page) => {
+    if (!page?.web?.route) return false;
+    if (page.id === "no_access" || page.id === "not_available") return false;
+    const masterOnly = (page.audience || []).length === 1 && page.audience[0] === "master";
+    if (platform) return masterOnly || page.id === "help" || page.id === "glossary";
+    if (masterOnly) return false;
+    if (page.public) return !user;
+    if (!user) return false;
+    const g = page.gating || {};
+    if (g.admin && !user.is_admin) return false;
+    if (g.feature && auth?.hasFeature && !auth.hasFeature(g.feature)) return false;
+    if (g.salesOnly && auth && auth.canSeeSales === false) return false;
+    return true;
+  };
+}
+
+// The signed-in user's audience ("owner" for owners and admins).
+export function audienceFor(auth) {
+  const user = auth?.user;
+  if (!user) return null;
+  if (user.scope === "platform") return "master";
+  return user.is_admin ? "owner" : "staff";
 }
 
 // ------------------------------------------------------------------ articles

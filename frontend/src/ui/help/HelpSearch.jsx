@@ -2,10 +2,9 @@
 // troubleshooting fixes and glossary terms (useHelp().search). Used by the
 // Help Center, the Help panel and (through searchHelpFor) the top bar's ⌘K.
 import { useAuth } from "../../AuthContext.jsx";
-import { isPlatformUser } from "../../login/loginModel.js";
 import { useHelp } from "./HelpProvider.jsx";
 import { HelpIcon } from "./helpIcons.jsx";
-import { glossaryPath, hashHref, helpPath } from "./helpModel.js";
+import { audienceFor, canOpenPageFor, glossaryPath, hashHref, helpPath } from "./helpModel.js";
 
 const KINDS = [
   { kind: "page", label: "Pages", icon: "arrowRight" },
@@ -23,34 +22,7 @@ function useAuthOrNull() {
   }
 }
 
-// Can this signed-in user open this page on the website? (The same rules as
-// featureRoutes.js routeVisible, from the registry's gating.)
-export function canOpenPageFor(auth) {
-  const user = auth?.user || null;
-  const platform = user ? isPlatformUser(user) : false;
-  return (page) => {
-    if (!page?.web?.route) return false;
-    if (["no_access", "not_available"].includes(page.id)) return false;
-    const masterOnly = (page.audience || []).length === 1 && page.audience[0] === "master";
-    if (platform) return masterOnly;
-    if (masterOnly) return false;
-    if (page.public) return !user;
-    if (!user) return false;
-    const g = page.gating || {};
-    if (g.admin && !user.is_admin) return false;
-    if (g.feature && auth?.hasFeature && !auth.hasFeature(g.feature)) return false;
-    if (g.salesOnly && auth && !auth.canSeeSales) return false;
-    return true;
-  };
-}
-
-// The signed-in user's audience for ranking ("owner" for owners and admins).
-export function audienceFor(auth) {
-  const user = auth?.user;
-  if (!user) return null;
-  if (isPlatformUser(user)) return "master";
-  return user.is_admin ? "owner" : "staff";
-}
+export { canOpenPageFor, audienceFor };
 
 export function resultHref(r, help) {
   switch (r.kind) {

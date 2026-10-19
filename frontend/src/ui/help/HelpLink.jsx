@@ -2,7 +2,7 @@
 // glossary term:
 //   <HelpLink article="reorder" anchor="lookback">Learn more</HelpLink>
 //   <HelpLink tab="faq">Questions</HelpLink>
-//   <HelpLink term="concept_lead_time">Lead time</HelpLink>
+//   <HelpLink term="lead_time">Lead time</HelpLink>
 import { glossaryPath, hashHref, helpPath } from "./helpModel.js";
 import { HelpIcon } from "./helpIcons.jsx";
 
