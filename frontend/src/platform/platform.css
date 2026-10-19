@@ -37,6 +37,30 @@
   text-overflow: ellipsis;
 }
 
+/* The product's own pages: the KloudC RetailOps lockup above the title. */
+.login-head-product {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.login-head-product .login-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+}
+
+.product-lockup {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.signup-lockup {
+  margin-bottom: 0.75rem;
+}
+
 .login-field {
   display: flex;
   flex-direction: column;

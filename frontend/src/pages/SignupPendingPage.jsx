@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { getSignupStatus } from "../api";
 import { PENDING_POLL_MS, SIGNUP_STORAGE_KEY, pendingView, shouldPoll } from "../signup/signupModel.js";
 import "../platform/platform.css";
+import ProductLockup from "../components/ProductLockup.jsx";
 
 // Logged out there is no store yet: the viewer's own clock.
 function viewerZone() {
@@ -64,6 +65,7 @@ export default function SignupPendingPage() {
     <div className="signup-page">
       <div className="card signup-card" data-testid="signup-pending" data-state={view.state}>
         <div className="page-header" style={{ paddingRight: 0, marginBottom: "0.6rem" }}>
+          <ProductLockup height={40} className="signup-lockup" />
           <h1>Your store request</h1>
         </div>
         <p className="pending-state">{view.title}</p>

@@ -6,6 +6,7 @@ import PasswordInput from "../components/PasswordInput.jsx";
 import StoreLogo from "../components/StoreLogo.jsx";
 import { useBranding } from "../store/StoreContext.jsx";
 import { safeUrl } from "../store/branding.js";
+import ProductLockup from "../components/ProductLockup.jsx";
 import {
   cleanTotp,
   initialStoreId,
@@ -129,16 +130,27 @@ export default function LoginPage() {
       ? brand
       : { name: brand.productName, shortName: brand.productName, logoUrl: brand.code ? null : brand.logoUrl };
   const title = platform ? `${brand.productName} platform` : header.name || brand.productName;
+  // No store chosen yet (or the master's PLATFORM): the product's own lockup.
+  const productHeader = platform || (!found && !ownStore);
 
   return (
     <div className="login-page">
       <form onSubmit={handleSubmit} className="card login-card" noValidate>
-        <div className="login-head">
-          <StoreLogo store={header} size={36} className="login-logo" />
-          <strong className="login-title" data-testid="login-store-name">
-            {title}
-          </strong>
-        </div>
+        {productHeader ? (
+          <div className="login-head login-head-product">
+            <ProductLockup height={48} />
+            <strong className="login-title" data-testid="login-store-name">
+              {platform ? "Platform console" : "Sign in to your store"}
+            </strong>
+          </div>
+        ) : (
+          <div className="login-head">
+            <StoreLogo store={header} size={36} className="login-logo" />
+            <strong className="login-title" data-testid="login-store-name">
+              {title}
+            </strong>
+          </div>
+        )}
 
         <label className="login-field">
           Store ID

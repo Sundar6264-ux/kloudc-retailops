@@ -50,6 +50,7 @@ import {
 import { cleanTotp } from "../login/loginModel.js";
 import { timezoneOptions } from "../signup/signupModel.js";
 import "../platform/platform.css";
+import ProductLockup from "../components/ProductLockup.jsx";
 
 function storage() {
   try {
@@ -108,7 +109,8 @@ export default function PlatformConsolePage() {
     <div className="main" style={{ maxWidth: 1100, margin: "0 auto" }}>
       <div className="pf-head">
         <div className="pf-head-row">
-          <h1>Platform</h1>
+          <ProductLockup height={34} />
+          <h1>Platform console</h1>
           <span className="muted" style={{ fontSize: "0.8rem" }}>
             {user?.display_name || user?.username}
           </span>

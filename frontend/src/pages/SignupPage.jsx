@@ -18,6 +18,7 @@ import {
   validateSignup,
 } from "../signup/signupModel.js";
 import "../platform/platform.css";
+import ProductLockup from "../components/ProductLockup.jsx";
 
 function browserTimezones() {
   try {
@@ -144,6 +145,7 @@ export default function SignupPage() {
     <div className="signup-page">
       <form className="card signup-card" onSubmit={handleSubmit} noValidate>
         <div className="page-header" style={{ paddingRight: 0, marginBottom: "1rem" }}>
+          <ProductLockup height={40} className="signup-lockup" />
           <h1>Create your store</h1>
           <p className="muted">
             Tell us about your store. We review every request; once it's approved your store is set up and you sign in

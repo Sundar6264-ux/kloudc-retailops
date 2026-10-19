@@ -1,0 +1,16 @@
+<!-- App icon: plane on white, full-bleed square (iOS masks the corners). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+  <g transform="translate(10 70) scale(0.96)">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <g stroke="#9AA1A9" stroke-width="22" fill="none">
+        <path d="M150 640 L170 628 M215 602 L245 584 M290 556 L430 470"/>
+        <path d="M110 760 L130 748 M180 720 L215 699 M265 669 L470 548"/>
+        <path d="M300 740 L320 728 M370 700 L405 679 M455 649 L560 586"/>
+      </g>
+      <path d="M290 372 L936 238 L462 478 Z" fill="#2EA3F2" stroke="#8C949C" stroke-width="10"/>
+      <path d="M462 478 L936 238 L510 660 Z" fill="#004BAD" stroke="#8C949C" stroke-width="10"/>
+      <path d="M560 540 L936 238 L752 622 Z" fill="#2EA3F2" stroke="#8C949C" stroke-width="10"/>
+    </g>
+  </g>
+</svg>
