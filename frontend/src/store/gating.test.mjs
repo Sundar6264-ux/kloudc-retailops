@@ -5,7 +5,7 @@
 //   node --test src/store/gating.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FEATURE_ROUTES, ROUTES_BY_KEY, buildSidebar, firstAccessiblePath, footerLinks, routeVisible } from "../featureRoutes.js";
+import { FEATURE_ROUTES, ROUTES_BY_KEY, buildSidebar, firstAccessiblePath, footerLinks, insightsTiles, routeVisible } from "../featureRoutes.js";
 import { BRANDING } from "../test/fixtures/branding.js";
 import { normalizeBranding, storeView } from "./branding.js";
 import {
@@ -109,16 +109,18 @@ test("DEMO (CSV) store: no open checks, Insights or POS inventory page; upload s
 });
 
 test("sidebar labels follow the POS name", () => {
-  const flat = (entries) =>
-    JSON.stringify(entries.map((e) => (e.type === "link" ? e.label : [e.label, e.subgroups.map((s) => s.label)])));
+  const flat = (entries) => JSON.stringify(entries.map((e) => (e.type === "link" ? e.label : [e.label, e.items.map((r) => r.label)])));
   const toast = buildSidebar(adminCtx(TOAST));
   const setup = toast.find((e) => e.key === "setup");
   assert.ok(setup.items.some((r) => r.key === "setup_inventory_api"));
-  assert.match(flat(toast), /Also in Toast/);
+  // Toast: the Insights hub link, its tiles include the "Also in Toast" pages.
+  assert.match(flat(toast), /Insights/);
+  assert.equal(insightsTiles(adminCtx(TOAST)).alsoIn.length, 4);
   const clover = buildSidebar(adminCtx(CLOVER));
   assert.doesNotMatch(flat(clover), /Toast|Insights|Also in/);
-  // Clover: "Sales & Insights" has no Insights pages, so it reads "Sales".
-  assert.equal(clover.find((e) => e.key === "sales_insights").label, "Sales");
+  assert.equal(insightsTiles(adminCtx(CLOVER)).alsoIn.length, 0);
+  // Clover: the Sales group has no Insights link.
+  assert.equal(clover.find((e) => e.key === "sales").label, "Sales");
   assert.equal(posText("Inventory from {pos}", "Clover"), "Inventory from Clover");
   assert.equal(posText("Also in {pos}", null), "Also in the POS");
 });

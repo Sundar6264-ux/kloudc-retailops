@@ -4,7 +4,10 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../AuthContext.jsx";
-import { ALSO_IN_POS } from "../../featureRoutes.js";
+import { ALSO_IN_POS, routeForPath } from "../../featureRoutes.js";
+import { useLocation } from "react-router-dom";
+import PageHeader from "../../ui/PageHeader.jsx";
+import InsightsHub from "./InsightsHub.jsx";
 import { usePosName } from "../../store/StoreContext.jsx";
 import { posText } from "../../store/gating.js";
 import { formatRestaurantTime } from "../../format.js";
@@ -41,18 +44,20 @@ export function useInsight(load, deps) {
 export function InsightsPage({ title, brief, info, controls, children, alsoInToast = false, className = "" }) {
   const { hasFeature } = useAuth();
   const pos = usePosName();
+  const pageId = routeForPath(useLocation().pathname)?.pageId || "insights";
   return (
     <div className={`ins-page ${className}`}>
-      <div className="page-header">
-        <h1>{title}</h1>
-        <p className="muted">{brief}</p>
+      {/* One Insights hub (DESIGN_SYSTEM 3.1): this page's title, then the
+          hub's tile tabs to every other Insights page. */}
+      <PageHeader pageId={pageId} title={title} subtitle={brief} areaLabel="Sales › Insights">
         {alsoInToast && (
           <p className="ins-also-toast">
             <span className="ins-also-toast-tag">{posText(ALSO_IN_POS.label, pos)}</span>
             <span>{posText(ALSO_IN_POS.note, pos)}</span>
           </p>
         )}
-      </div>
+      </PageHeader>
+      <InsightsHub />
       {info && (
         <div className="ins-info">
           <InfoBlock brief={info.brief}>

@@ -1,243 +1,226 @@
-import { useEffect, useMemo, useState } from "react";
+// The store sidebar (docs/DESIGN_SYSTEM.md 2.1): deep KloudC navy, the
+// store's logo and short name on top (a 3 px stripe in the store's
+// secondary colour under it), Home and Daily Checklists, then one group per
+// area - Ordering, Stock, Sales, Team, Setup - each with its area-coloured
+// icon. Groups remember whether they are open (kc.nav.open); the group
+// holding the current page always opens. Desktop: fixed, collapsible to an
+// icon rail (remembered; a group's links fly out beside the rail). Below
+// 1024 px: a drawer under the top bar, opened by its ☰ (TopBar.jsx).
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
-import { ROUTES_BY_KEY, buildSidebar, footerLinks, groupsToOpen, routeLabel } from "../featureRoutes.js";
+import { AREAS, buildSidebar, footerLinks, groupsToOpen, routeLabel } from "../featureRoutes.js";
+import Icon from "../ui/icons.jsx";
+import { readRemembered, writeRemembered } from "../ui/useRemembered.js";
 import useTeamBadges from "./team/useTeamBadges.js";
 import StoreLogo from "./StoreLogo.jsx";
 
-const COLLAPSE_STORAGE_KEY = "retailops_sidebar_collapsed";
+const COLLAPSE_STORAGE_KEY = "kc.nav.collapsed";
+const OPEN_STORAGE_KEY = "kc.nav.open";
 
 // Team hub counts shown next to a sidebar link (route key -> badge key).
-const ROUTE_BADGES = { team_chat: "unread", team_announcements: "announcements_unacked" };
+export const ROUTE_BADGES = { team_chat: "unread", team_announcements: "announcements_unacked" };
 
-function CountBadge({ count }) {
+function CountBadge({ count, label }) {
   if (!count) return null;
-  return <span className="sidebar-badge">{count > 99 ? "99+" : count}</span>;
-}
-
-function ChevronIcon({ open }) {
   return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform 0.12s", flexShrink: 0 }}
-    >
-      <path d="M4 2 L8 6 L4 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <span className="sidebar-badge" aria-label={label ? `${count} ${label}` : undefined}>
+      {count > 99 ? "99+" : count}
+    </span>
   );
 }
 
-export default function Sidebar() {
-  const { user, logout, hasFeature, canSeeSales, store } = useAuth();
+function readOpenGroups() {
+  try {
+    const v = JSON.parse(readRemembered(OPEN_STORAGE_KEY, "null"));
+    return Array.isArray(v) ? new Set(v) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function useSidebarEntries() {
+  const { user, hasFeature, canSeeSales, store } = useAuth();
+  // hasFeature is a new function each render but only reads `user` and `store`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => buildSidebar({ user, hasFeature, canSeeSales, store }), [user, canSeeSales, store]);
+}
+
+export default function Sidebar({ open = false, onClose = () => {}, collapsed = false, onToggleCollapsed = () => {} }) {
+  const { user, hasFeature, store } = useAuth();
   const badges = useTeamBadges(!!user);
   const location = useLocation();
-  const [open, setOpen] = useState(false);
-  // Desktop-only collapse, independent of the mobile drawer above - remembered
-  // across visits since it's a standing layout preference, not per-session.
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-  const [expandedGroups, setExpandedGroups] = useState(() => new Set());
-  // What this user gets, in order (featureRoutes.js buildSidebar): empty
-  // groups left out, a group with one link shown as that link.
-  const entries = useMemo(
-    () => buildSidebar({ user, hasFeature, canSeeSales, store }),
-    // hasFeature is a new function each render but only reads `user` and `store`.
-    [user, canSeeSales, store],
+  const entries = useSidebarEntries();
+  // First visit: the everyday groups open, Setup folded (admins use it
+  // less often); after that, as the user left them.
+  const [expandedGroups, setExpandedGroups] = useState(
+    () => readOpenGroups() || new Set(entries.filter((e) => e.type === "group" && e.key !== "setup").map((e) => e.key)),
   );
 
-  // Auto-open whichever group contains the current page, so navigating
-  // straight to a sub-item (a bookmark, a link from another page) never
-  // leaves it hidden inside a collapsed group with no visual cue. A page in
-  // a nested group (Insights > Also in Toast) opens both levels.
   useEffect(() => {
-    const open = groupsToOpen(entries, location.pathname);
-    if (open.length) {
-      setExpandedGroups((prev) => (open.every((k) => prev.has(k)) ? prev : new Set([...prev, ...open])));
+    const here = groupsToOpen(entries, location.pathname);
+    if (here.length) {
+      setExpandedGroups((prev) => (here.every((k) => prev.has(k)) ? prev : new Set([...prev, ...here])));
     }
   }, [location.pathname, entries]);
 
-  function closeMobileNav() {
-    setOpen(false);
-  }
-
-  function toggleCollapsed() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
-      } catch {
-        // private mode / storage off: the layout just isn't remembered
-      }
-      return next;
-    });
-  }
+  // Keep the current page's link in view in a long menu.
+  const navRef = useRef(null);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const active = navRef.current?.querySelector(".sidebar-link.active");
+      if (active && typeof active.scrollIntoView === "function") active.scrollIntoView({ block: "nearest" });
+    }, 0);
+    return () => clearTimeout(t);
+  }, [location.pathname, expandedGroups]);
 
   function toggleGroup(key) {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
+      writeRemembered(OPEN_STORAGE_KEY, JSON.stringify([...next]));
       return next;
     });
   }
 
-  // On a phone the counts are inside the closed menu, so the ☰ button
-  // shows a dot when anything the user can open has unread items.
-  const menuCount = Object.entries(ROUTE_BADGES).reduce((n, [key, badgeKey]) => {
-    const route = ROUTES_BY_KEY[key];
-    return route && (route.everyone || hasFeature(route.feature)) ? n + (badges[badgeKey] || 0) : n;
-  }, 0);
-
-  function navLinkClass({ isActive }) {
-    return isActive ? "active" : undefined;
-  }
-
   const badgeFor = (route) => badges[ROUTE_BADGES[route.key || route.feature]] || 0;
-  const renderLink = (route) => (
-    <NavLink key={route.path} to={route.path} end={route.end} onClick={closeMobileNav} className={navLinkClass}>
-      {routeLabel(route, store.posName)}
-      <CountBadge count={badgeFor(route)} />
+  const pos = store.posName;
+
+  const renderLink = (route, { top = false } = {}) => (
+    <NavLink
+      key={route.path}
+      to={route.path}
+      end={route.end}
+      onClick={onClose}
+      className={({ isActive }) =>
+        `sidebar-link${top ? " sidebar-link-top" : ""}${isActive || (route.hubOf && location.pathname.startsWith("/insights/")) ? " active" : ""}`
+      }
+      data-area={route.area || undefined}
+      title={collapsed ? routeLabel(route, pos) : undefined}
+    >
+      <span className="sidebar-link-icon" aria-hidden="true">
+        <Icon name={route.icon || AREAS[route.area]?.icon || "circle"} size={top ? 18 : 16} />
+      </span>
+      <span className="sidebar-link-label">{routeLabel(route, pos)}</span>
+      <CountBadge count={badgeFor(route)} label="new" />
     </NavLink>
   );
 
   return (
     <>
-      <button
-        className="sidebar-toggle"
-        aria-label={open ? "Close menu" : menuCount ? `Open menu (${menuCount} unread)` : "Open menu"}
-        onClick={() => setOpen((v) => !v)}
+      {open && <div className="sidebar-backdrop" onClick={onClose} aria-hidden="true" />}
+      <nav
+        className={`sidebar${open ? " sidebar-open" : ""}${collapsed ? " sidebar-collapsed" : ""}`}
+        aria-label="Main menu"
+        id="kc-sidebar"
       >
-        {open ? "✕" : "☰"}
-        {!open && menuCount > 0 && <span className="sidebar-toggle-dot" aria-hidden="true" />}
-      </button>
-      {open && <div className="sidebar-backdrop" onClick={closeMobileNav} />}
-      {collapsed && (
-        <button className="sidebar-expand-btn" aria-label="Expand menu" onClick={toggleCollapsed}>
-          »
-        </button>
-      )}
-      <nav className={`sidebar${open ? " sidebar-open" : ""}${collapsed ? " sidebar-collapsed" : ""}`}>
         <div className="sidebar-brand">
-          {/* Logo + name go to the dashboard (Overview; App sends anyone
-              without it to their first page). */}
-          <NavLink
-            to="/"
-            end
-            className="sidebar-brand-link"
-            onClick={closeMobileNav}
-            aria-label={`${store.name} - go to the dashboard`}
-          >
+          {/* Logo + name go to Home (App sends anyone without it to their first page). */}
+          <NavLink to="/" end className="sidebar-brand-link" onClick={onClose} aria-label={`${store.name} - go to Home`}>
             <StoreLogo store={store} />
-            <span data-testid="store-name">{store.shortName}</span>
+            <span className="sidebar-brand-name" data-testid="store-name">
+              {store.shortName}
+            </span>
           </NavLink>
-          <button className="sidebar-collapse-btn" aria-label="Collapse menu" onClick={toggleCollapsed}>
-            «
-          </button>
         </div>
-        <div className="sidebar-nav">
-          {entries.map((entry) => {
-            if (entry.type === "link") return renderLink(entry.route);
 
-            const { items, subgroups } = entry;
+        <div className="sidebar-nav" ref={navRef}>
+          {entries.map((entry) => {
+            if (entry.type === "link") return renderLink(entry.route, { top: true });
             const isOpen = expandedGroups.has(entry.key);
-            const groupCount = [...items, ...subgroups.flatMap((sub) => sub.items)].reduce((n, r) => n + badgeFor(r), 0);
+            const groupCount = entry.items.reduce((n, r) => n + badgeFor(r), 0);
+            const area = AREAS[entry.area] || {};
+            const listId = `sidebar-group-${entry.key}`;
             return (
-              <div className="sidebar-group" key={entry.key}>
+              <div className={`sidebar-group${isOpen ? " is-open" : ""}`} key={entry.key} data-area={entry.area}>
                 <button
                   type="button"
                   className="sidebar-group-toggle"
                   onClick={() => toggleGroup(entry.key)}
                   aria-expanded={isOpen}
+                  aria-controls={listId}
+                  title={collapsed ? entry.label : undefined}
                 >
-                  <ChevronIcon open={isOpen} />
-                  {entry.label}
-                  {!isOpen && <CountBadge count={groupCount} />}
+                  <span className="sidebar-group-icon" aria-hidden="true">
+                    <Icon name={area.icon || "circle"} size={16} />
+                  </span>
+                  <span className="sidebar-group-label">{entry.label}</span>
+                  {!isOpen && <CountBadge count={groupCount} label="new" />}
+                  <Icon name="chevron-right" size={14} className="sidebar-chevron" />
                 </button>
-                {isOpen && (
-                  <div className="sidebar-subnav">
-                    {items.map(renderLink)}
-                    {/* A quieter, collapsed group inside this one (Sales &
-                        Insights > Also in <pos>: pages that repeat the
-                        POS's own reports). */}
-                    {subgroups.map((sub) => {
-                      const subOpen = expandedGroups.has(sub.key);
-                      const noteId = `sidebar-note-${sub.key}`;
-                      return (
-                        <div className="sidebar-subgroup" key={sub.key}>
-                          <button
-                            type="button"
-                            className="sidebar-group-toggle sidebar-subgroup-toggle"
-                            onClick={() => toggleGroup(sub.key)}
-                            aria-expanded={subOpen}
-                            aria-describedby={sub.note ? noteId : undefined}
-                            title={sub.note}
-                          >
-                            <ChevronIcon open={subOpen} />
-                            {sub.label}
-                          </button>
-                          {sub.note && (
-                            <p id={noteId} className="sidebar-subgroup-note" hidden={!subOpen}>
-                              {sub.note}
-                            </p>
-                          )}
-                          {subOpen && <div className="sidebar-subnav sidebar-subgroup-nav">{sub.items.map(renderLink)}</div>}
-                        </div>
-                      );
-                    })}
+                {(isOpen || collapsed) && (
+                  <div className="sidebar-subnav" id={listId}>
+                    {collapsed && <p className="sidebar-flyout-title">{entry.label}</p>}
+                    {entry.sections.map((sec, i) => (
+                      <div className="sidebar-section" key={sec.label || i}>
+                        {sec.label && <p className="sidebar-section-label">{sec.label}</p>}
+                        {sec.items.map((r) => renderLink(r))}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
 
-          {/* For everyone, below the groups: the label printer (an external
-              tool with its own login, not part of the feature grants), Help
-              (or just its Glossary tab), Change password. */}
-          {footerLinks({ hasFeature, store }).map((l, i) =>
+        <div className="sidebar-footer">
+          {footerLinks({ hasFeature, store }).map((l) =>
             l.external ? (
               <a
                 key={l.key}
-                className={i === 0 ? "sidebar-external-link" : undefined}
+                className="sidebar-link sidebar-external-link"
                 href={l.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={closeMobileNav}
+                onClick={onClose}
+                title={collapsed ? l.label : undefined}
               >
-                {l.label}
+                <span className="sidebar-link-icon" aria-hidden="true">
+                  <Icon name={l.icon} size={16} />
+                </span>
+                <span className="sidebar-link-label">{l.label}</span>
+                <Icon name="external-link" size={13} className="sidebar-ext" />
               </a>
             ) : (
               <NavLink
                 key={l.key}
                 to={l.path}
-                onClick={closeMobileNav}
+                onClick={onClose}
+                title={collapsed ? l.label : undefined}
+                data-area="help"
                 className={({ isActive }) =>
-                  isActive || (l.activePaths || []).includes(location.pathname) ? "active" : undefined
+                  `sidebar-link${isActive || (l.activePaths || []).includes(location.pathname) ? " active" : ""}`
                 }
               >
-                {l.label}
+                <span className="sidebar-link-icon" aria-hidden="true">
+                  <Icon name={l.icon} size={16} />
+                </span>
+                <span className="sidebar-link-label">{l.label}</span>
               </NavLink>
             ),
           )}
-        </div>
-        <div className="sidebar-footer">
-          {user && (
-            <div style={{ marginBottom: "0.5rem" }}>
-              Signed in as <strong style={{ color: "var(--sidebar-text-active)" }}>{user.username}</strong>
-              {user.is_admin && " (admin)"}
-            </div>
-          )}
-          <button className="sidebar-logout" onClick={logout}>
-            Log out
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? "Expand menu" : "Collapse menu"}
+            aria-pressed={collapsed}
+          >
+            <Icon name={collapsed ? "chevrons-right" : "chevrons-left"} size={16} />
+            <span className="sidebar-link-label">Collapse</span>
           </button>
         </div>
       </nav>
     </>
   );
+}
+
+export function readCollapsed() {
+  return readRemembered(COLLAPSE_STORAGE_KEY, "0") === "1";
+}
+
+export function writeCollapsed(v) {
+  writeRemembered(COLLAPSE_STORAGE_KEY, v ? "1" : "0");
 }

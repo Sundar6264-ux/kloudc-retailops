@@ -1,20 +1,30 @@
-// Website menu (Oct 15 nav clean-up): groups, one-link groups as links, Setup
-// declared in NAV_GROUPS, the footer, and every old address still routed.
+// Website menu (final pass, docs/DESIGN_SYSTEM.md 3.1): area groups, one-link
+// groups as links, Setup sub-headings, the Insights hub, the footer and user
+// menu, search, two-click reach, and every old address still routed.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  AREAS,
   FEATURE_ROUTES,
+  INSIGHTS_HUB,
   NAV_GROUPS,
+  PAGE_META,
   ROUTES_BY_KEY,
   buildSidebar,
   firstAccessiblePath,
   footerLinks,
+  groupFeatures,
   groupsToOpen,
+  insightsLandingPath,
+  insightsTiles,
+  routeForPath,
   routeLabel,
   routeVisible,
+  searchablePages,
+  userMenuLinks,
 } from "./featureRoutes.js";
 import { BRANDING } from "./test/fixtures/branding.js";
 import { normalizeBranding, storeView } from "./store/branding.js";
@@ -56,62 +66,51 @@ const DEMO = { ...STAFF, username: "app_store_review", demo: true, hide_sales: f
 const FLYERS_ONLY = { username: "spc_muse", is_admin: false, allowed_features: ["marketing_flyers"] };
 
 const shape = (entries) =>
-  entries.map((e) =>
-    e.type === "link"
-      ? e.label
-      : { [e.label]: [...e.items.map((r) => routeLabel(r, "Toast")), ...e.subgroups.map((s) => ({ [s.label]: s.items.map((r) => routeLabel(r, "Toast")) }))] },
-  );
+  entries.map((e) => (e.type === "link" ? e.label : { [e.label]: e.items.map((r) => routeLabel(r, "Toast")) }));
 
-test("admin menu: 3 top links, Team, Ordering, Stock, Sales & Insights, Setup", () => {
+test("admin menu (final pass): Home, Daily Checklists, Ordering, Stock, Sales, Team, Setup", () => {
   assert.deepEqual(shape(buildSidebar(ctxFor(ADMIN))), [
-    "Overview",
-    "Invoices",
+    "Home",
     "Daily Checklists",
+    { Ordering: ["Reorder Candidates", "New order", "Vendor Calendar", "Purchase Order Cart", "Placed Orders"] },
+    { Stock: ["Fix Issues", "Delivery Review", "Invoices", "Inventory Reports", "Reconciliation"] },
+    { Sales: ["Items Sold", "Open Checks", "Insights"] },
     { Team: ["Tasks", "Chat", "News", "Flyers"] },
-    { Ordering: ["Reorder Candidates", "New order", "Vendor Calendar", "Placed Orders", "Delivery Review"] },
-    { Stock: ["Fix Issues", "Inventory Reports", "Reconciliation"] },
-    {
-      "Sales & Insights": [
-        "Items Sold",
-        "Open Checks",
-        "Daily compare",
-        "Loss watch",
-        "Odd checks",
-        "Prep forecast",
-        "Menu trends",
-        "Add-ons",
-        "Returning customers",
-        { "Also in Toast": ["Sales channels", "Check size & guests", "Busy hours", "Best & worst sellers"] },
-      ],
-    },
     {
       Setup: [
         "Users",
         "Teams",
-        "Recurring tasks",
-        "Reported messages",
-        "Checklist builder",
+        "Integrations",
+        "Inventory from Toast",
         "PO sections",
         "Vendor contacts",
         "Category & vendor leads",
-        "Inventory from Toast",
-        "Integrations",
+        "Checklist builder",
+        "Recurring tasks",
+        "Reported messages",
       ],
     },
   ]);
+  // Setup's small sub-headings (no extra click).
+  const setup = buildSidebar(ctxFor(ADMIN)).find((e) => e.key === "setup");
+  assert.deepEqual(
+    setup.sections.map((s) => s.label),
+    ["People", "Connections", "Ordering setup", "Team setup"],
+  );
+  // Every group carries its area (identity colour).
+  for (const e of buildSidebar(ctxFor(ADMIN)).filter((x) => x.type === "group")) assert.ok(AREAS[e.area], e.key);
 });
 
-test("staff: a group with one page is a plain link; no Insights means 'Sales'", () => {
+test("staff: a group with one page is a plain link; Invoices and Delivery Review under Stock", () => {
   const entries = buildSidebar(ctxFor(STAFF));
   assert.deepEqual(shape(entries), [
-    "Overview",
-    "Invoices",
+    "Home",
     "Daily Checklists",
-    { Team: ["Tasks", "Chat", "News"] },
-    { Ordering: ["Reorder Candidates", "New order", "Vendor Calendar", "Placed Orders", "Delivery Review"] },
-    { Stock: ["Fix Issues", "Inventory Reports", "Reconciliation"] },
-    // hide_sales: Items Sold is off, so "Sales" holds only Open Checks -> a link.
+    { Ordering: ["Reorder Candidates", "New order", "Vendor Calendar", "Purchase Order Cart", "Placed Orders"] },
+    { Stock: ["Fix Issues", "Delivery Review", "Invoices", "Inventory Reports", "Reconciliation"] },
+    // hide_sales: Items Sold is off and no Insights, so "Sales" holds only Open Checks -> a link.
     "Open Checks",
+    { Team: ["Tasks", "Chat", "News"] },
     // Setup holds only Vendor contacts for staff -> a link.
     "Vendor contacts",
   ]);
@@ -120,7 +119,7 @@ test("staff: a group with one page is a plain link; no Insights means 'Sales'", 
 
 test("staff who can see sales: Items Sold + Open Checks under 'Sales'", () => {
   const entries = buildSidebar(ctxFor({ ...STAFF, hide_sales: false }));
-  const sales = entries.find((e) => e.key === "sales_insights");
+  const sales = entries.find((e) => e.key === "sales");
   assert.equal(sales.label, "Sales");
   assert.deepEqual(sales.items.map((r) => r.label), ["Items Sold", "Open Checks"]);
 });
@@ -132,7 +131,7 @@ test("App Review demo: no Insights, Flyers or Vendor contacts, no Setup group", 
     assert.ok(!flat.includes(gone), `${gone} not in the demo menu`);
   }
   assert.ok(flat.includes("Tasks") && flat.includes("Chat") && flat.includes("News"));
-  assert.equal(entries.find((e) => e.key === "sales_insights").label, "Sales");
+  assert.equal(entries.find((e) => e.key === "sales").label, "Sales");
 });
 
 test("flyers-only login: Team holds News + Flyers; nothing admin", () => {
@@ -143,7 +142,7 @@ test("flyers-only login: Team holds News + Flyers; nothing admin", () => {
 test("Setup pages are declared, admin-only and never a landing page", () => {
   const setup = NAV_GROUPS.find((g) => g.key === "setup");
   for (const key of ["setup_users", "setup_teams", "setup_checklist_builder", "setup_issue_leads", "setup_inventory_api", "setup_integrations"]) {
-    assert.ok(setup.features.includes(key), key);
+    assert.ok(groupFeatures(setup).includes(key), key);
     const r = ROUTES_BY_KEY[key];
     assert.equal(r.feature, null);
     assert.equal(routeVisible(r, ctxFor(ADMIN)), true);
@@ -155,38 +154,94 @@ test("Setup pages are declared, admin-only and never a landing page", () => {
   assert.equal(firstAccessiblePath(ctxFor(ADMIN).hasFeature), "/");
 });
 
-test("every menu key points at a route, and every non-retired page is in the menu once", () => {
-  const keys = NAV_GROUPS.flatMap((g) =>
-    g.type === "item" ? [g.feature] : [...g.features, ...(g.subgroups || []).flatMap((s) => s.features)],
-  );
-  for (const k of keys) assert.ok(ROUTES_BY_KEY[k], k);
+test("every menu key points at a route, every page is in the menu once (Insights pages via the hub)", () => {
+  const keys = NAV_GROUPS.flatMap(groupFeatures);
+  for (const k of keys) assert.ok(ROUTES_BY_KEY[k] || k === INSIGHTS_HUB.key, k);
   assert.equal(new Set(keys).size, keys.length, "no page listed twice");
-  const menuless = FEATURE_ROUTES.filter((r) => !keys.includes(r.key || r.feature)).map((r) => r.path);
-  // The cart is the floating button; Transfer Review is retired.
-  assert.deepEqual(menuless.sort(), ["/purchase-order", "/transfer-review"]);
+  const reach = new Set([...keys, ...INSIGHTS_HUB.hubOf]);
+  const menuless = FEATURE_ROUTES.filter((r) => !reach.has(r.key || r.feature)).map((r) => r.path);
+  // Only the retired Transfer Review (it redirects to Delivery Review).
+  assert.deepEqual(menuless.sort(), ["/transfer-review"]);
+  // The hub lists every Insights page once.
+  const insights = FEATURE_ROUTES.filter((r) => r.feature === "sales_insights").map((r) => r.key).sort();
+  assert.deepEqual([...INSIGHTS_HUB.hubOf].sort(), insights);
 });
 
-test("footer: Label Scanner, Help (or Glossary without Help), Change password - no Notifications", () => {
+test("every page has a page id, an area and an icon (registry, search, header)", () => {
+  for (const r of FEATURE_ROUTES.filter((x) => !x.retired)) {
+    assert.ok(r.pageId, r.path);
+    assert.ok(AREAS[r.area], `${r.path} area`);
+    assert.ok(r.icon, `${r.path} icon`);
+    assert.equal(PAGE_META[r.pageId].path, r.path);
+  }
+  assert.equal(routeForPath("/checklists/admin/closing").pageId, "checklist_builder");
+  assert.equal(routeForPath("/insights/busy-hours").pageId, "insights_busy_hours");
+  assert.equal(routeForPath("/").pageId, "home");
+});
+
+test("footer: Help (or Glossary without Help) and Label Scanner; account links in the user menu", () => {
   assert.deepEqual(
     footerLinks(ctxFor(ADMIN)).map((l) => l.label),
-    ["Label Scanner ↗", "Help", "Change password"],
+    ["Help", "Label Scanner"],
   );
   assert.deepEqual(
     footerLinks(ctxFor(FLYERS_ONLY)).map((l) => l.label),
-    ["Label Scanner ↗", "Glossary", "Change password"],
+    ["Glossary", "Label Scanner"],
   );
   const help = footerLinks(ctxFor(ADMIN)).find((l) => l.key === "help");
   assert.deepEqual(help.activePaths, ["/help", "/glossary"]);
+  assert.deepEqual(userMenuLinks(ctxFor(ADMIN)).map((l) => l.label), ["Change password", "Help center", "Glossary"]);
+  assert.deepEqual(userMenuLinks(ctxFor(FLYERS_ONLY)).map((l) => l.label), ["Change password", "Glossary"]);
 });
 
-test("the group holding the current page opens (both levels for Also in Toast)", () => {
+test("the group holding the current page opens", () => {
   const entries = buildSidebar(ctxFor(ADMIN));
-  assert.deepEqual(groupsToOpen(entries, "/insights/busy-hours"), ["sales_insights", "insights_also_toast"]);
+  assert.deepEqual(groupsToOpen(entries, "/insights/busy-hours"), ["sales"]);
   assert.deepEqual(groupsToOpen(entries, "/checklists/admin/closing"), ["setup"]);
-  assert.deepEqual(groupsToOpen(entries, "/delivery-review"), ["ordering"]);
+  assert.deepEqual(groupsToOpen(entries, "/delivery-review"), ["stock"]);
+  assert.deepEqual(groupsToOpen(entries, "/invoices"), ["stock"]);
   assert.deepEqual(groupsToOpen(entries, "/"), []);
   // A prefix that isn't a sub-path doesn't count.
   assert.deepEqual(groupsToOpen(entries, "/reorder-old"), []);
+});
+
+test("every page is two clicks away: a top link, or a group's link, or a hub tile", () => {
+  for (const user of [ADMIN, STAFF, DEMO, FLYERS_ONLY, { ...STAFF, hide_sales: false, allowed_features: [...STAFF.allowed_features, "sales_insights"] }]) {
+    const ctx = ctxFor(user);
+    const entries = buildSidebar(ctx);
+    const clicks = new Map();
+    for (const e of entries) {
+      if (e.type === "link") clicks.set(e.route.path, 1);
+      else for (const r of e.items) clicks.set(r.path, 2);
+    }
+    // Insights hub: its link is 1-2 clicks, each tile one more - but /insights
+    // lands on a page directly, and every tile sits on that page.
+    const { main, alsoIn } = insightsTiles(ctx);
+    for (const r of [...main, ...alsoIn]) clicks.set(r.path, Math.max(clicks.get("/insights") || 2, 2));
+    for (const r of FEATURE_ROUTES.filter((x) => !x.retired && routeVisible(x, ctx))) {
+      assert.ok((clicks.get(r.path) || 99) <= 2, `${user.username}: ${r.path}`);
+    }
+  }
+});
+
+test("Insights hub: remembered tile when still allowed, else the first main page", () => {
+  const ctx = ctxFor(ADMIN);
+  assert.equal(insightsLandingPath("/insights/busy-hours", ctx), "/insights/busy-hours");
+  assert.equal(insightsLandingPath(null, ctx), "/insights/daily");
+  const hide = ctxFor({ ...STAFF, allowed_features: [...STAFF.allowed_features, "sales_insights"] });
+  // A remembered sales-only page is not open to a "Hide sales numbers" user.
+  assert.equal(insightsLandingPath("/insights/daily", hide), "/insights/prep-forecast");
+  assert.deepEqual(insightsTiles(hide).main.map((r) => r.label), ["Prep forecast", "Returning customers"]);
+  assert.deepEqual(insightsTiles(hide).alsoIn.map((r) => r.label), ["Busy hours"]);
+});
+
+test("search lists every page this user can open, with where it lives", () => {
+  const pages = searchablePages(ctxFor(ADMIN));
+  const byPath = Object.fromEntries(pages.map((p) => [p.route.path, p]));
+  assert.equal(byPath["/vendor-calendar"].where, "Ordering");
+  assert.equal(byPath["/insights/busy-hours"].where, "Sales › Insights");
+  assert.equal(byPath["/change-password"].where, "Account");
+  assert.ok(!searchablePages(ctxFor(STAFF)).some((p) => p.route.path === "/users"), "no admin pages for staff");
 });
 
 test("every old address still has a route (bookmarks)", () => {
@@ -213,7 +268,7 @@ test("every old address still has a route (bookmarks)", () => {
   assert.match(app, /path="\/transfer-review" element={<Navigate to="\/delivery-review" replace \/>}/);
   // The Notifications page left the website (docs/PLATFORM_CONTRACT.md P8).
   assert.match(app, /path="\/notifications" element={<Navigate to="\/" replace \/>}/);
-  assert.match(app, /path="\/glossary" element={<HelpPage tab="glossary" \/>}/);
+  assert.match(app, /path="\/glossary" element={<HelpRoute tab="glossary" \/>}/);
 });
 
 test("retired Transfer Review UI is gone; Quick actions gone; worked example not loaded on Reconciliation", () => {
