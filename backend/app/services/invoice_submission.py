@@ -13,6 +13,7 @@ send is visible and individually retryable (`resend_invoice_submission`),
 not a failed submission.
 """
 
+import contextvars
 import datetime as dt
 import hashlib
 import logging
@@ -421,12 +422,15 @@ def send_invoice_notifications(submission_id: int, channels: List[str]) -> None:
     starts). Used for both a fresh submission and a Resend - same underlying attempts, just
     parameterized by which channel(s) to (re)try.
     """
+    # Each worker runs in its own copy of this context: a pool thread does
+    # not inherit context variables, and without the store (multi mode) the
+    # sends could not open the store's database or read its settings.
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = []
         if "whatsapp" in channels:
-            futures.append(executor.submit(_send_whatsapp_only, submission_id))
+            futures.append(executor.submit(contextvars.copy_context().run, _send_whatsapp_only, submission_id))
         if "toast_email" in channels:
-            futures.append(executor.submit(_send_toast_email_only, submission_id))
+            futures.append(executor.submit(contextvars.copy_context().run, _send_toast_email_only, submission_id))
         for f in futures:
             f.result()
 

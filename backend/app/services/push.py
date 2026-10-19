@@ -90,7 +90,7 @@ def _pilot_blocked() -> bool:
     recorded as sent)."""
     from app.ops import pilot
 
-    return pilot.pilot_mode()
+    return pilot.sends_blocked()
 
 
 def is_configured() -> bool:
