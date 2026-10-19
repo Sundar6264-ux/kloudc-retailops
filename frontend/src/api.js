@@ -1,5 +1,6 @@
 import { isNative, getCachedToken, setToken, clearToken } from "./mobileAuth";
 import { saveOrShareBlob } from "./downloadOrShare";
+import { isStoreMismatch, setStoreHeadersOn, storeHeaders } from "./sessionStore";
 
 export { restoreToken } from "./mobileAuth";
 
@@ -17,6 +18,9 @@ const LOGIN_PATHS = ["/api/auth/login", "/api/auth/mobile-login"];
 
 async function request(path, options = {}) {
   const opts = { ...options };
+  // The store this page is signed in to (sessionStore.js): another tab's
+  // sign-in to another store makes this answer 409 instead of mixing stores.
+  opts.headers = { ...(opts.headers || {}), ...storeHeaders(path) };
   // Native (Capacitor): no session cookie - send the stored bearer token
   // instead. Web: unchanged, credentials: "include" sends the httpOnly
   // session cookie in both dev (cross-origin :5173 -> :8000) and prod
@@ -46,6 +50,9 @@ async function request(path, options = {}) {
     // bounce back to the login screen instead of leaving stale/broken pages up.
     if (res.status === 401 && !LOGIN_PATHS.includes(path)) {
       window.dispatchEvent(new Event("auth:unauthorized"));
+    }
+    if (isStoreMismatch(res.status, errorBody)) {
+      window.dispatchEvent(new Event("auth:store-changed"));
     }
     const error = new Error(detail);
     error.status = res.status;
@@ -452,6 +459,7 @@ export function uploadInventoryWithProgress(file, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE}/api/inventory/upload`);
+    setStoreHeadersOn(xhr, "/api/inventory/upload");
     if (isNative()) {
       const token = getCachedToken();
       if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
@@ -500,6 +508,7 @@ export function submitInvoiceWithProgress(fields, file, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE}/api/invoices`);
+    setStoreHeadersOn(xhr, "/api/invoices");
     if (isNative()) {
       const token = getCachedToken();
       if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
@@ -1022,6 +1031,7 @@ export function uploadPurchaseLogWithProgress(file, defaultReceivedDate, onProgr
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE}/api/reconciliation/purchases/upload`);
+    setStoreHeadersOn(xhr, "/api/reconciliation/purchases/upload");
     if (isNative()) {
       const token = getCachedToken();
       if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
@@ -1836,6 +1846,7 @@ export function uploadFlyerWithProgress({ file, title, category, caption }, onPr
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE}${FLYERS}`);
+    setStoreHeadersOn(xhr, `${FLYERS}`);
     if (isNative()) {
       const token = getCachedToken();
       if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);

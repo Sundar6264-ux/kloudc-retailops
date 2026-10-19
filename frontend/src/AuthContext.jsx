@@ -4,12 +4,14 @@ import { UserStoreContext, useBranding } from "./store/StoreContext.jsx";
 import { storeView } from "./store/branding.js";
 import { featureAvailable, setCurrentPosName } from "./store/gating.js";
 import { isPlatformUser, normalizeMe } from "./login/loginModel.js";
+import { setSessionStore } from "./sessionStore.js";
 
 // Tells StoreProvider which store's branding to show (a shared server
 // answers branding per store: docs/PLATFORM_CONTRACT.md 4.4). null = the
 // product's (logged out, or a master on the platform console).
 function announceStore(me) {
   const code = me && !isPlatformUser(me) && typeof me.store_code === "string" ? me.store_code : null;
+  setSessionStore(code);
   window.dispatchEvent(new CustomEvent("store:changed", { detail: { code } }));
 }
 
@@ -50,9 +52,19 @@ export function AuthProvider({ children }) {
   }, [refresh]);
 
   useEffect(() => {
-    const onUnauthorized = () => setUser(null);
+    const onUnauthorized = () => {
+      setSessionStore(null);
+      setUser(null);
+    };
+    // Another tab signed in to another store (409 store_mismatch): nothing
+    // on this page belongs to the store the cookie is for now - start over.
+    const onStoreChanged = () => window.location.reload();
     window.addEventListener("auth:unauthorized", onUnauthorized);
-    return () => window.removeEventListener("auth:unauthorized", onUnauthorized);
+    window.addEventListener("auth:store-changed", onStoreChanged);
+    return () => {
+      window.removeEventListener("auth:unauthorized", onUnauthorized);
+      window.removeEventListener("auth:store-changed", onStoreChanged);
+    };
   }, []);
 
   // Store ID + username + password (contract 4.5). Store ID PLATFORM
