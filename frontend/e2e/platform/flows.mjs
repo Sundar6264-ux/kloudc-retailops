@@ -344,6 +344,42 @@ async function run(browser, width) {
     await s.waitForSelector("nav.sidebar", { timeout: 10000 }).catch(() => {});
     check(await s.isVisible("nav.sidebar"), T("after resume staff signs in again"));
   }
+  // ---- one browser, two tabs, two stores (one session cookie per browser) ----
+  {
+    const ctx = await browser.newContext({ viewport: { width, height: 860 } });
+    const tab1 = await ctx.newPage();
+    const errs = [];
+    tab1.on("pageerror", (e) => errs.push(String(e)));
+    await tab1.goto(`${BASE}/#/login`);
+    await login(tab1, codeA, ownerA, pwA);
+    await tab1.waitForSelector("nav.sidebar", { timeout: 10000 }).catch(() => {});
+    const tab2 = await ctx.newPage();
+    await tab2.goto(`${BASE}/#/login`);
+    await tab2.waitForSelector('[data-testid="login-store-id"]', { timeout: 10000 }).catch(() => {});
+    if (await tab2.isVisible('[data-testid="login-store-id"]')) {
+      await login(tab2, codeB, ownerB, pwB);
+    } else {
+      // Already signed in (shared cookie): sign out first, as a person would.
+      await tab2.waitForSelector("nav.sidebar", { timeout: 10000 }).catch(() => {});
+      if (width < 900) {
+        const t = tab2.locator(".sidebar-toggle");
+        if (await t.isVisible()) await t.click();
+      }
+      await tab2.click(".sidebar-logout");
+      await tab2.waitForSelector('[data-testid="login-store-id"]');
+      await login(tab2, codeB, ownerB, pwB);
+    }
+    await tab2.waitForSelector("nav.sidebar", { timeout: 10000 }).catch(() => {});
+    // Tab 1 still shows store A; its next request must not act on store B as A.
+    await tab1.goto(`${BASE}/#/users`);
+    await settle(tab1, 1500);
+    const meCode = await tab1.evaluate(async () => (await (await fetch("/api/auth/me", { credentials: "include" })).json()).store_code);
+    const shown = (await tab1.innerText("body")).includes(ownerA);
+    check(meCode === codeB && !shown, T(`two tabs: tab 1 no longer shows store A's users (cookie store ${meCode})`));
+    check(errs.length === 0, T(`two tabs: page errors ${errs.join(" | ")}`));
+    await ctx.close();
+  }
+
   for (const p of [reqA, reqB, master, staff]) {
     check(p.errors.length === 0, T(`page errors: ${p.errors.join(" | ")}`));
     await p.ctx.close();
