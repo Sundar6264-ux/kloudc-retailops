@@ -57,6 +57,10 @@ PUBLIC = {
     ("POST", "/api/signup/owner-setup"),
     ("GET", "/api/public/stores/{code}"),
     ("POST", "/api/auth/support-login"),
+    # Help for the logged-out screens (docs/DESIGN_SYSTEM.md 5.2,
+    # tests/test_help_content.py): the public pages' info and the support
+    # contact from content/help - no store data.
+    ("GET", "/api/public/help"),
 }
 # Any logged-in user, no feature grant (small lookups, own account/devices,
 # team hub basics - see the notes in each router).
@@ -68,6 +72,7 @@ LOGIN_ONLY = {
     ("GET", "/api/ordering/forecast"),
     ("GET", "/api/ordering/suppliers"),
     ("GET", "/api/glossary"),
+    ("GET", "/api/help"),  # help content (tests/test_help_content.py)
     ("POST", "/api/notifications/devices"),
     ("DELETE", "/api/notifications/devices"),
     ("GET", "/api/notifications/prefs"),
