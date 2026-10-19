@@ -1,0 +1,38 @@
+{
+ "id": "account-delete",
+ "title": "Deleting your account",
+ "area": null,
+ "group": "account",
+ "order": 804,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Remove your own login for good from the app. The store's records stay.",
+ "pages": [
+  "delete_account"
+ ],
+ "related": [
+  "account-privacy"
+ ],
+ "blocks": [
+  {
+   "type": "steps",
+   "items": [
+    "In the app, open More › Account › **Delete my account**.",
+    "Type your password and confirm."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "You are signed out on every device and stop getting alerts.",
+    "The store's records stay: invoices, checklists and orders you submitted, and team messages and tasks you posted.",
+    "The last admin can't delete their account. Make someone else an admin first.",
+    "The demo account can't be deleted.",
+    "To use RetailOps again, your manager creates a new login."
+   ]
+  }
+ ]
+}

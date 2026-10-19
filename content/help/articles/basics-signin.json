@@ -1,0 +1,93 @@
+{
+ "id": "basics-signin",
+ "title": "Signing in",
+ "area": "help",
+ "group": "basics",
+ "order": 101,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "One sign-in page for everyone: Store ID, username and password. How two-step codes, Face ID, locked logins and store switching work.",
+ "pages": [
+  "login",
+  "face_id",
+  "change_password"
+ ],
+ "related": [
+  "basics-navigation",
+  "account-password",
+  "master-security"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Everyone signs in on the same page, on the website and in the app, with three things:"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "**Store ID**: your store's short code, like MAIN_STORE. It is in your welcome email, or ask your owner.",
+    "**Username**: the name your admin set up for you. Capital letters don't matter.",
+    "**Password**: capital letters do matter here."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "When the Store ID is right, the page shows your store's logo and name, so you know you are signing in to the right place."
+  },
+  {
+   "type": "h",
+   "text": "Forgot your password?"
+  },
+  {
+   "type": "p",
+   "text": "There is no self-service reset, on purpose. Ask an admin at your store to reset it on [Users](page:users). That signs you out everywhere, then you sign in with the new password and can change it to your own on [Change password](page:change_password)."
+  },
+  {
+   "type": "h",
+   "text": "Too many tries"
+  },
+  {
+   "type": "p",
+   "text": "After 5 wrong passwords for the same username within 15 minutes, that login is locked for 15 minutes. Wait, then try again. Every failed try shows the same message, so nobody can use the page to find out which usernames exist."
+  },
+  {
+   "type": "h",
+   "text": "Two-step code (KloudC masters)"
+  },
+  {
+   "type": "p",
+   "text": "KloudC master logins sign in with Store ID **PLATFORM**, then type the 6-digit code from their authenticator app. See [Two-step sign-in](article:master-security)."
+  },
+  {
+   "type": "h",
+   "text": "Face ID in the app"
+  },
+  {
+   "type": "p",
+   "text": "In the app you can turn on Face ID (or your fingerprint) under More › Account, so you don't type your password every time. It only works on that phone."
+  },
+  {
+   "type": "h",
+   "text": "Switching stores"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**App**: More › Switch store, then sign in with the other Store ID.",
+    "**Website**: sign out from your user menu, then sign in with the other Store ID.",
+    "Each store has its own logins. Your username at one store doesn't work at another unless that store made one for you."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "If the store is paused"
+  },
+  {
+   "type": "p",
+   "text": "If your store is suspended, sign-in shows a maintenance message instead. Your data is safe. Your owner or KloudC support can tell you more."
+  }
+ ]
+}

@@ -1,0 +1,64 @@
+{
+ "id": "insights",
+ "title": "Insights",
+ "area": "sales",
+ "group": "sales",
+ "order": 510,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Reports from {pos}'s analytics in one hub: what each one is for, who can see it, and where the numbers come from.",
+ "pages": [
+  "insights"
+ ],
+ "related": [
+  "insights-daily",
+  "insights-prep",
+  "items-sold"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Insights are reports built from {pos}'s own analytics service. Open the **Insights** hub and pick a tile; your last choice is remembered. An admin grants them with the **Sales insights** access on Users."
+  },
+  {
+   "type": "h",
+   "text": "The main reports"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "[Daily compare](article:insights-daily): one day against last week, the 4-week average and last year.",
+    "[Prep forecast](article:insights-prep): how many of each kitchen item to expect on a day.",
+    "[Menu trends](article:insights-menu-trends): risers, fallers and items that didn't sell.",
+    "[Add-ons](article:insights-addons): every modifier and its attach rate.",
+    "[Returning customers](article:insights-returning): how many cards came back.",
+    "[Loss watch](article:insights-loss-watch) and [Odd checks](article:insights-odd-checks): admins only, because they name employees."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "Four more sit together under **Also in {pos}**: Sales channels, Check size & guests, Busy hours and Best & worst sellers. They repeat {pos}'s own reports and are kept here for convenience. See [Also in {pos}](article:insights-also-in-pos)."
+  },
+  {
+   "type": "h",
+   "text": "Where the numbers come from"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Each report says \"From {pos} Analytics, updated ...\" at the top.",
+    "A past day is read once and saved. The last 14 days are read again each night at 4:30 AM, because {pos} keeps changing days after they close.",
+    "Today is read live and reused for a minute or two.",
+    "If {pos} doesn't answer, the last saved copy shows with a yellow note.",
+    "{pos}'s analytics run 2 to 4 hours behind and count by {pos}'s business day (ending at 4 AM), so totals can differ by a few dollars from Items Sold."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "With Hide sales numbers you see only the reports without dollar amounts: Prep forecast, Returning customers and Busy hours (as order counts)."
+  }
+ ]
+}

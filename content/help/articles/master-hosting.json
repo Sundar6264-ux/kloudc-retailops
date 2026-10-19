@@ -1,0 +1,32 @@
+{
+ "id": "master-hosting",
+ "title": "Dedicated servers",
+ "area": "platform",
+ "group": "master",
+ "order": 904,
+ "audience": [
+  "master"
+ ],
+ "summary": "KloudC masters: moving a store to its own server, only with approval, and rolling back.",
+ "pages": [
+  "platform_hosting"
+ ],
+ "related": [
+  "master-stores"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Every store runs on **shared hosting** by default, with its own separate database. A store that needs it can move to a **dedicated server**."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "A store admin or a master asks on the **Hosting** tab. Nothing moves without a master's approval.",
+    "It only works when dedicated hosting is switched on for the platform. While it is off, the tab says so.",
+    "The move follows the dedicated hosting runbook: approve, prepare the server, copy the database during a short read-only window at night, then **Mark moved**.",
+    "**Roll back** within 7 days moves the store back if something is wrong. You are asked why."
+   ]
+  }
+ ]
+}

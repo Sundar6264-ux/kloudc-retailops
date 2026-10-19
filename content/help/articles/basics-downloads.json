@@ -1,0 +1,57 @@
+{
+ "id": "basics-downloads",
+ "title": "Downloading reports",
+ "area": "help",
+ "group": "basics",
+ "order": 106,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Every list can be downloaded as a CSV file for Excel or Google Sheets, and the PO as a PDF.",
+ "pages": [
+  "items_sold",
+  "fix_issues",
+  "inventory_reports"
+ ],
+ "related": [
+  "items-sold",
+  "basics-roles"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "On the website"
+  },
+  {
+   "type": "p",
+   "text": "Look for **Download CSV** on Items Sold, Open Checks, Reconciliation, Invoices without a logged purchase, the purchase log, every Fix Issues list and every Inventory Report. Items Sold also has **Download sales data**: every line item sold, as CSV or PDF."
+  },
+  {
+   "type": "h",
+   "text": "In the app"
+  },
+  {
+   "type": "p",
+   "text": "Tap the download icon at the top right of a report. A preview opens with Share and Save."
+  },
+  {
+   "type": "h",
+   "text": "What's in the file"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "The download always has the **whole list** for the dates you picked, not only the rows your search or sort shows.",
+    "On Fix Issues it is the whole Open or Closed list you are on.",
+    "The button is greyed out while the report loads or when it is empty.",
+    "People with Hide sales numbers don't get sales downloads, and check totals are left blank for them."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "CSV cells that look like formulas are made safe, so a file opens in Excel without running anything."
+  }
+ ]
+}

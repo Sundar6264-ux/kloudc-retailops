@@ -1,0 +1,33 @@
+{
+ "id": "insights-odd-checks",
+ "title": "Odd checks",
+ "area": "sales",
+ "group": "sales",
+ "order": 517,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins only: checks open too long, changed long after payment, or with a large refund.",
+ "pages": [
+  "insights_odd_checks"
+ ],
+ "related": [
+  "insights-loss-watch",
+  "open-checks"
+ ],
+ "blocks": [
+  {
+   "type": "bullets",
+   "items": [
+    "**Open too long**: open for more than 3 hours.",
+    "**Changed after payment**: changed after its business day closed (4 AM the next morning) and more than 60 minutes after it was paid. Online, delivery and kiosk pickup orders aren't counted, since they change when picked up.",
+    "**Large refund**: a refund of $25 or more."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "Odd checks are in the same 9 AM alert as Loss watch and can be acknowledged the same way. Look a check up in {pos} by its number and date."
+  }
+ ]
+}

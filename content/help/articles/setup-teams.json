@@ -1,0 +1,34 @@
+{
+ "id": "setup-teams",
+ "title": "Teams",
+ "area": "setup",
+ "group": "setup",
+ "order": 702,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins: group people into teams for tasks, chat, checklists and news.",
+ "pages": [
+  "teams"
+ ],
+ "related": [
+  "team-tasks",
+  "team-chat"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Teams are the groups that tasks, announcements and chat are sent to. Each team gets its own chat."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Everyone** always contains every user, so its members can't be edited.",
+    "Other teams start empty: add the people who belong, and give the team a colour.",
+    "A task sent to a team can be done by anyone in it; the first one to finish closes it.",
+    "**Archive** a team you no longer use. It disappears from new assignments, and its history is kept."
+   ]
+  }
+ ]
+}

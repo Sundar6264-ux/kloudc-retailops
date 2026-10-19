@@ -1,0 +1,44 @@
+{
+ "id": "ask-bot",
+ "title": "Ask Inventory Bot",
+ "area": "stock",
+ "group": "stock",
+ "order": 406,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Ask a question in plain words and get an answer from the same reports you see. It only reads.",
+ "pages": [
+  "ask_bot"
+ ],
+ "related": [
+  "home-weekly-digest",
+  "setup-integrations"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Open the chat bubble (website) or Store › Stock › Ask Inventory Bot (app) and ask, for example \"what should I order from my dairy vendor?\" or \"which items are dead stock?\"."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "It looks answers up in the real reports: reorder candidates, new order, reconciliation, vendor prices, items sold, price history, dead stock and barcodes. It never makes up a number.",
+    "It only reads. It can't log a purchase, confirm a delivery, change a price or write anything.",
+    "Each answer says which reports it checked.",
+    "Simple lookups go to a fast model; questions that need reasoning go to a stronger one. Each answer says which ran.",
+    "With Hide sales numbers, it won't answer sales questions."
+   ]
+  },
+  {
+   "type": "warning",
+   "text": "It can misunderstand a question. Check important numbers on the report itself before acting on them."
+  },
+  {
+   "type": "p",
+   "text": "It needs the AI key on [Integrations](page:integrations). Without one, the chat says it isn't set up."
+  }
+ ]
+}

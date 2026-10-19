@@ -1,0 +1,78 @@
+{
+ "id": "reconciliation",
+ "title": "Reconciliation",
+ "area": "stock",
+ "group": "stock",
+ "order": 405,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Purchased vs sold vs counted for each item: how it's worked out, why purchases must be logged, and how to read it.",
+ "pages": [
+  "reconciliation",
+  "delivery_review"
+ ],
+ "related": [
+  "delivery-review",
+  "invoices"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "For each item in a chosen window: **expected closing = opening count + purchased - sold**, compared with what was actually counted on the closing date. A negative variance means less is on hand than the math says there should be: waste, spoilage, theft or a miscount."
+  },
+  {
+   "type": "h",
+   "text": "Why purchases are logged by hand"
+  },
+  {
+   "type": "p",
+   "text": "Sold (from {pos}) and counted (from your uploads) are automatic. Purchased only exists once it is logged, because {pos} doesn't share what was received. The fastest way is [Delivery Review](page:delivery_review): it suggests quantities for you to confirm."
+  },
+  {
+   "type": "h",
+   "text": "Worked example",
+   "id": "worked-example"
+  },
+  {
+   "type": "p",
+   "text": "This example uses one real item from your store, with its real opening count, sales and closing count. Type a purchased quantity to see how logging a delivery changes the result."
+  },
+  {
+   "type": "example",
+   "id": "reconciliation_worked"
+  },
+  {
+   "type": "h",
+   "text": "Log a purchase",
+   "id": "log-purchase"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Search for the item, then enter the vendor, quantity and date. Unit cost and notes are optional.",
+    "For a whole delivery, **Bulk-log purchases from a CSV**: an item column (item name or item id) and a quantity column are needed; vendor, unit cost, received date and notes are optional.",
+    "Rows that can't be matched are skipped and listed, never guessed."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Reading the report"
+  },
+  {
+   "type": "warning",
+   "text": "Until logging purchases is routine, expect most items to show a variance. That isn't real loss: nothing has been logged as bought yet, so any restock looks missing."
+  },
+  {
+   "type": "h",
+   "text": "Invoices without a logged purchase",
+   "id": "invoice-gaps"
+  },
+  {
+   "type": "p",
+   "text": "A simpler check: invoices or returns with no purchase logged from that vendor within a few days either side. It matches by vendor and date only, never by item. Each row links to the invoice file."
+  }
+ ]
+}

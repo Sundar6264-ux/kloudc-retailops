@@ -1,0 +1,65 @@
+{
+ "id": "delivery-review",
+ "title": "Delivery Review",
+ "area": "stock",
+ "group": "stock",
+ "order": 402,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Deliveries found in your inventory uploads: check the quantities, then confirm to log them as purchases.",
+ "pages": [
+  "delivery_review",
+  "upload_inventory"
+ ],
+ "related": [
+  "reconciliation",
+  "inventory-reports",
+  "home-upload-inventory"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Delivery Review finds deliveries by itself and lists them under **Suggested deliveries**, one per vendor and upload."
+  },
+  {
+   "type": "h",
+   "text": "Where suggestions come from"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Most come from {pos}: when a delivery is received in {pos}, the next inventory upload carries the receive time and {pos}'s receiving number on each item.",
+    "On a day with no upload, a delivery shows as 3 or more of one vendor's items rising by more than sales explain.",
+    "The quantity is count now, minus count before, plus units sold in between. So 100 on hand, 400 delivered and 50 sold shows 400, not 350."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Confirm a delivery"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Open a suggestion and check each line against the invoice.",
+    "Change any quantity. A box turns red when it differs from the suggestion, as a reminder, not a block.",
+    "Click **Confirm & log**. It writes the purchase log, with each item's cost from that day's file."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Nothing is logged by itself.",
+    "A vendor whose delivery is already logged isn't suggested again.",
+    "**Not a delivery - dismiss** hides one. Undo brings it back.",
+    "You can also tick **We received a delivery today** on the inventory upload, then **Review delivery**."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "Confirmed deliveries with a cost are what fill Vendor price comparison on Inventory Reports, and what make Reconciliation meaningful."
+  }
+ ]
+}

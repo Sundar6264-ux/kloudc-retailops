@@ -1,0 +1,79 @@
+{
+ "id": "team-tasks",
+ "title": "Tasks",
+ "area": "team",
+ "group": "team",
+ "order": 602,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Tasks for you and your teams: the list and the board, finishing a task, can't do, recurring tasks and stats.",
+ "pages": [
+  "team_tasks",
+  "team_templates"
+ ],
+ "related": [
+  "team-chat",
+  "setup-teams"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Team › Tasks lists the tasks for you and your teams. The number on the Team tab is how many of yours are due today or overdue."
+  },
+  {
+   "type": "h",
+   "text": "List and board"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**List** groups open tasks into Overdue, Today and Upcoming.",
+    "**Board** shows them as cards in To do, In progress and Done. Drag a card, or use its buttons.",
+    "**In progress** tells everyone someone has started. The task is still open.",
+    "**Overdue only** shows open tasks past their due time."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Doing a task"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Tap the circle (or swipe right in the app) to finish it. If it needs a photo or a note, you're asked first.",
+    "Tap a task for its steps, comments and history, or to say you **can't do it**, with a reason. Whoever asked is told.",
+    "A task for a team is one task: whoever on the team does it first closes it for everyone.",
+    "A task sent to several people gives each their own copy; the sender sees \"2 of 3 done\"."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Recurring tasks",
+   "id": "recurring"
+  },
+  {
+   "type": "p",
+   "text": "Admins set up reusable tasks with optional **steps** (one per line) under Setup › [Recurring tasks](page:team_templates):"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**On a schedule**: created by itself daily, on weekdays, weekly or monthly. **Someone else on some days?** gives chosen weekdays to another person or team.",
+    "**Only when I create it**: saved without a schedule. **Create task now** makes one at once.",
+    "Repeating tasks show up 7 hours before they are due."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Stats (admins)",
+   "id": "stats"
+  },
+  {
+   "type": "p",
+   "text": "For tasks created in the last 7, 14, 30 or 90 days: per person, assigned and done, on time or late, overdue now, can't do, and the usual time from created to done. Teams get their own rows."
+  }
+ ]
+}

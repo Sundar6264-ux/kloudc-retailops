@@ -1,0 +1,41 @@
+{
+ "id": "insights-prep",
+ "title": "Prep forecast",
+ "area": "sales",
+ "group": "sales",
+ "order": 512,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "How many of each kitchen item to expect on a day, with a low to high range and a printable prep sheet.",
+ "pages": [
+  "insights_prep"
+ ],
+ "related": [
+  "insights"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Pick a day (tomorrow by default, up to 14 days ahead). For each kitchen item you get:"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Expected**: the same weekday over the last 8 weeks, leaving out the highest and lowest day, nudged by the recent trend (never more than 20% either way).",
+    "**Range**: the middle half of those days, low to high.",
+    "The store's usual busiest hours that weekday."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**Print** gives a clean prep sheet with a tick box per item. **Copy as text** copies the list for a message."
+  },
+  {
+   "type": "warning",
+   "text": "It doesn't know about catering orders, holidays or weather. Adjust for those yourself."
+  }
+ ]
+}

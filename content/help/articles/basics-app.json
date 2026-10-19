@@ -1,0 +1,79 @@
+{
+ "id": "basics-app",
+ "title": "The phone app",
+ "area": "help",
+ "group": "basics",
+ "order": 107,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "The RetailOps app for iPhone and Android: the five tabs, scanning and labels, alerts, offline use and updates.",
+ "pages": [
+  "scan",
+  "manual_lookup",
+  "print_labels",
+  "notifications"
+ ],
+ "related": [
+  "account-alerts",
+  "basics-navigation"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "Getting it"
+  },
+  {
+   "type": "p",
+   "text": "Install **KloudC RetailOps** from the App Store or Google Play (it shows as RetailOps under the icon). Sign in with the same Store ID, username and password as the website."
+  },
+  {
+   "type": "h",
+   "text": "The tabs"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Home**: the Today card, quick actions (Print labels, Upload invoice, Fix issues, New order, Daily Checklists) and your numbers.",
+    "**Store**: tap Ordering, Stock or Sales at the top and its tools list right below, on the same screen. It remembers your last choice.",
+    "**Scan**: scan a barcode to look an item up and print its price label. Search by name if a barcode won't scan.",
+    "**Team**: Tasks, Chat, News and Flyers.",
+    "**More**: your account (Notifications, Appearance, Face ID, Change password, Delete my account), Help & info, and Setup for admins."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Labels"
+  },
+  {
+   "type": "p",
+   "text": "Print label history (on Home, or the History icon on Scan) lists recent prints with Reprint. A print still in the printer's queue shows as still printing, not Printed."
+  },
+  {
+   "type": "h",
+   "text": "When the connection drops"
+  },
+  {
+   "type": "p",
+   "text": "A banner says you are offline. Screens you opened keep what they showed. A chat message that couldn't be sent stays with Not sent, tap to retry, and retrying never sends it twice."
+  },
+  {
+   "type": "h",
+   "text": "Updates"
+  },
+  {
+   "type": "p",
+   "text": "Keep the app up to date from the App Store or Google Play. If the store needs a newer version for something to work, the app says so and links to the update."
+  },
+  {
+   "type": "h",
+   "text": "Platform console"
+  },
+  {
+   "type": "p",
+   "text": "The KloudC master console is on the website only. Typing Store ID PLATFORM in the app shows a link to it."
+  }
+ ]
+}

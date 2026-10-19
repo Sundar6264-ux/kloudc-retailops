@@ -1,0 +1,52 @@
+{
+ "id": "open-checks",
+ "title": "Open Checks",
+ "area": "sales",
+ "group": "sales",
+ "order": 502,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Checks {pos} still has open, read live: which need a look, which are waiting for a pickup, and how to find old ones.",
+ "pages": [
+  "open_checks"
+ ],
+ "related": [
+  "items-sold"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Open Checks asks {pos} for the chosen day's checks every time you open it or press Refresh, and shows the ones without a closed time (not voided or deleted). Nothing here is saved by RetailOps, and there is no close button: close the check in {pos} and the next refresh drops it."
+  },
+  {
+   "type": "h",
+   "text": "Two sections"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Needs a look**: open checks worth checking, such as one served but never closed.",
+    "**Scheduled for later**: paid checks whose promised pickup time hasn't come yet. They are expected to stay open, so they aren't a problem. Once the time passes, they move to Needs a look."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Finding old open checks"
+  },
+  {
+   "type": "p",
+   "text": "Picking a past date normally shows nothing, since finished days are closed. **All-time** shows every open check whatever its date, read from a copy RetailOps keeps fresh: today's checks when the last check is over 2 minutes old (and every 15 minutes anyway), and the full history once a day. **Rescan now** forces a full check, which is slow (a minute or more)."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Tab** is the name typed on the check in {pos}, usually the customer's. Search matches it too.",
+    "**Opened by** filters by who {pos} recorded as running the order.",
+    "**Download CSV** saves the list. Check totals are blank for people with Hide sales numbers."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,34 @@
+{
+ "id": "setup-moderation",
+ "title": "Reported messages",
+ "area": "setup",
+ "group": "setup",
+ "order": 709,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Admins: review reported messages, tasks and comments within 24 hours, and see direct-message blocks.",
+ "pages": [
+  "team_moderation"
+ ],
+ "related": [
+  "team-rules",
+  "team-chat"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "When someone reports a message, task or comment, admins see it on Setup › **Reported messages**. Deal with each one promptly: the Team rules promise a review within 24 hours, and app store rules expect it."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Resolve** when it broke the rules. Tick **Delete the message** to remove it; everyone then sees \"Removed by a manager\".",
+    "**Dismiss** when it didn't.",
+    "Add a note so other admins know why. Each report shows who dealt with it and when.",
+    "**Direct-message blocks** lists who has blocked whom. A block stops both people messaging one to one."
+   ]
+  }
+ ]
+}

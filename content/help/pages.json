@@ -353,7 +353,7 @@
   },
   "terms": [
    "concept_daily_checklist",
-   "concept_closing_checklist",
+   "checklist_closing",
    "checklist_issues",
    "checklist_all_clear"
   ],
@@ -419,7 +419,7 @@
    "urgency_check_count",
    "urgency_can_wait",
    "urgency_low_priority",
-   "concept_lead_time",
+   "lead_time",
    "concept_lookback",
    "concept_reorder_candidate"
   ],
@@ -492,7 +492,7 @@
    "class_slow",
    "class_dead",
    "concept_supplier_projection",
-   "concept_similar_product"
+   "similar_products"
   ],
   "article": "new-order",
   "new_until": null
@@ -614,7 +614,7 @@
   },
   "terms": [
    "concept_purchase_order",
-   "concept_po_section",
+   "po_section",
    "send_po",
    "concept_cc",
    "cart_removal_requested",
@@ -662,7 +662,7 @@
    "placed_status_pdf",
    "order_again",
    "concept_placed_order",
-   "concept_placed_outside_app"
+   "order_placed_outside"
   ],
   "article": "placed-orders",
   "new_until": null
@@ -848,7 +848,7 @@
    "delivery_suggested_qty",
    "delivery_new_item",
    "concept_purchase_log",
-   "concept_suggested_delivery"
+   "delivery_suggested"
   ],
   "article": "delivery-review",
   "new_until": null
@@ -906,8 +906,8 @@
    "invoice_close_suggested",
    "invoice_trash",
    "concept_invoice",
-   "concept_return",
-   "concept_transfer"
+   "invoice_type_return",
+   "invoice_transfer"
   ],
   "article": "invoices",
   "new_until": null
@@ -967,7 +967,7 @@
   "terms": [
    "store_vs_container",
    "concept_container",
-   "concept_store_vs_container",
+   "store_vs_container",
    "container_qty"
   ],
   "article": "inventory-reports",
@@ -1029,7 +1029,7 @@
    "recon_variance",
    "recon_invoice_gap",
    "concept_reconciliation",
-   "concept_variance",
+   "recon_variance",
    "concept_purchase_log"
   ],
   "article": "reconciliation",
@@ -1270,7 +1270,7 @@
    "insights_vs_last_week",
    "insights_vs_4wk_avg",
    "insights_vs_last_year",
-   "concept_daily_compare"
+   "insights_compare"
   ],
   "article": "insights-daily",
   "new_until": null
@@ -1312,7 +1312,7 @@
    "insights_void",
    "insights_refund",
    "insights_comp_estimate",
-   "concept_loss_watch"
+   "insights_loss_watch"
   ],
   "article": "insights-loss-watch",
   "new_until": null
@@ -1352,7 +1352,7 @@
    "insights_odd_open_long",
    "insights_odd_modified_after_paid",
    "insights_odd_large_refund",
-   "concept_odd_check"
+   "insights_odd_checks"
   ],
   "article": "insights-odd-checks",
   "new_until": null
@@ -1392,7 +1392,7 @@
   "terms": [
    "insights_prep_expected",
    "insights_prep_range",
-   "concept_prep_forecast"
+   "insights_prep"
   ],
   "article": "insights-prep",
   "new_until": null
@@ -1469,7 +1469,7 @@
   "sections": {},
   "terms": [
    "insights_attach_rate",
-   "concept_add_on"
+   "sales_addons"
   ],
   "article": "insights-addons",
   "new_until": null
@@ -1509,7 +1509,7 @@
    "insights_card_customers",
    "insights_returning_customer",
    "insights_returning_rate",
-   "concept_returning_customer"
+   "insights_returning_customer"
   ],
   "article": "insights-returning",
   "new_until": null
@@ -1547,7 +1547,7 @@
   "terms": [
    "insights_channel",
    "insights_channel_share",
-   "concept_sales_channel"
+   "insights_channel"
   ],
   "article": "insights-also-in-pos",
   "new_until": null
@@ -1585,7 +1585,7 @@
   "terms": [
    "insights_avg_check",
    "insights_guests",
-   "concept_check_size"
+   "insights_avg_check"
   ],
   "article": "insights-also-in-pos",
   "new_until": null
@@ -1625,7 +1625,7 @@
    "insights_heatmap",
    "insights_busiest",
    "insights_quietest",
-   "concept_busy_hours"
+   "insights_heatmap"
   ],
   "article": "insights-also-in-pos",
   "new_until": null
@@ -1852,7 +1852,7 @@
   "terms": [
    "flyer",
    "marketing_group",
-   "concept_flyer",
+   "flyer",
    "concept_whatsapp_group"
   ],
   "article": "flyers",
@@ -1932,8 +1932,8 @@
    "user_features",
    "hide_sales",
    "user_can_assign",
-   "concept_feature_access",
-   "concept_admin"
+   "user_features",
+   "user_admin"
   ],
   "article": "setup-users",
   "new_until": null
@@ -2092,7 +2092,7 @@
   "sections": {},
   "terms": [
    "po_section",
-   "concept_po_section"
+   "po_section"
   ],
   "article": "setup-po-sections",
   "new_until": null
@@ -2218,8 +2218,10 @@
   "info": {
    "summary": "Messages, tasks and comments people reported. Review each within 24 hours.",
    "points": [
-    "Remove what breaks the Team rules, or keep it.",
-    "The person who reported it is never named to the sender."
+    "**Resolve** a report, and tick Delete the message to remove it for everyone.",
+    "**Dismiss** a report that doesn't break the Team rules.",
+    "Add a note so other admins know why.",
+    "Direct-message blocks lists who has blocked whom."
    ],
    "source": null,
    "freshness": null
@@ -2401,7 +2403,7 @@
    "summary": "Choose which phone alerts you get on this phone.",
    "points": [
     "**Reset to recommended** goes back to the store's defaults.",
-    "Quiet hours hold alerts until morning.",
+    "No alerts are sent between 10 PM and 7 AM store time.",
     "Admins also set the store's defaults."
    ],
    "source": null,
@@ -2675,7 +2677,7 @@
   },
   "sections": {},
   "terms": [
-   "concept_feature_access"
+   "user_features"
   ],
   "article": "basics-roles",
   "new_until": null

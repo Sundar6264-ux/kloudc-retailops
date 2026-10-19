@@ -1,0 +1,51 @@
+{
+ "id": "placed-orders",
+ "title": "Placed Orders",
+ "area": "ordering",
+ "group": "ordering",
+ "order": 305,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Every order from the cart, newest first: what counts as placed, PDF only, and Order again.",
+ "pages": [
+  "placed_orders"
+ ],
+ "related": [
+  "po-cart",
+  "vendor-calendar"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "A full history of purchase orders from the cart, newest first. Filter by vendor, dates and status, or search by item name, code or vendor. Click an order to see its items."
+  },
+  {
+   "type": "h",
+   "text": "Placed and PDF only"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Placed**: someone clicked Order placed (or Mark placed in the app), or Send PO sent it. It records exactly what was in that vendor's cart.",
+    "**PDF only**: a PO was made (downloaded or shared) but never marked placed.",
+    "Making the PDF again within a day updates the same entry, and marking it placed within 2 days turns that entry into the placed order. A PDF plus Order placed is one order, not two.",
+    "**Placed outside the app**: an admin said the order went in another way. It has no items."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "Only Placed orders count as ordered. A PDF-only entry doesn't close the order task and isn't the vendor's Last placed date."
+  },
+  {
+   "type": "h",
+   "text": "Order again"
+  },
+  {
+   "type": "p",
+   "text": "Open an order and click **Order again** to put its items back into that vendor's cart with the same quantities. Then check the cart as usual."
+  }
+ ]
+}

@@ -1,0 +1,38 @@
+{
+ "id": "master-security",
+ "title": "Two-step sign-in",
+ "area": "platform",
+ "group": "master",
+ "order": 906,
+ "audience": [
+  "master"
+ ],
+ "summary": "KloudC masters: protect your login with a 6-digit code from an authenticator app.",
+ "pages": [
+  "platform_security",
+  "login"
+ ],
+ "related": [
+  "basics-signin",
+  "master-audit"
+ ],
+ "blocks": [
+  {
+   "type": "steps",
+   "items": [
+    "Sign in with Store ID **PLATFORM**, your username and password.",
+    "Open **Two-step sign-in** and scan the QR code with an authenticator app (or type the key shown).",
+    "Type the current 6-digit code to turn it on."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "From then on, sign-in asks for the code after your password. Codes change every 30 seconds.",
+    "The key is shown once. Scan it on a second device too if you want a spare.",
+    "The platform can require two-step for every master. Until you set it up, the console asks you to.",
+    "Lost every device? The server's operator has to clear two-step for your login, then you set it up again."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,36 @@
+{
+ "id": "basics-limits",
+ "title": "Good to know",
+ "area": "help",
+ "group": "basics",
+ "order": 105,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "What RetailOps deliberately doesn't do: nothing orders by itself, forecasts don't know about holidays, and some data only comes from a file.",
+ "pages": [
+  "not_available"
+ ],
+ "related": [
+  "basics-data-freshness"
+ ],
+ "blocks": [
+  {
+   "type": "bullets",
+   "items": [
+    "**Nothing orders by itself.** Reorder Candidates and New order are decision support. Send PO emails a vendor only when someone presses Send. Suggested deliveries, Looks closed in {pos} and suggested schedules all wait for a person to confirm.",
+    "**RetailOps never changes your POS.** It reads sales, menus and stock from {pos}. Prices, counts and items are changed in {pos} itself.",
+    "**No vendor cost or lead time from {pos}.** Lead time comes from the Vendor Calendar schedule, or the number you set.",
+    "**Forecasts use your own sales history.** They don't know about holidays, promotions, weather or events ahead.",
+    "**Stock is as fresh as the latest snapshot**: your last upload, or {pos}'s nightly snapshot once Inventory from {pos} is on.",
+    "**Some pages need data your POS doesn't give.** Those pages show as not available for your store."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "If something you need is missing, tell us at {support_email}. Requests from stores shape what we build next."
+  }
+ ]
+}

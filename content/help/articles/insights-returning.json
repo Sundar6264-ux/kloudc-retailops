@@ -1,0 +1,38 @@
+{
+ "id": "insights-returning",
+ "title": "Returning customers",
+ "area": "sales",
+ "group": "sales",
+ "order": 515,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "How many different cards paid each week, and how many came back. No card numbers or names are kept.",
+ "pages": [
+  "insights_returning"
+ ],
+ "related": [
+  "insights",
+  "account-privacy"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Each week: how many different cards paid, and how many of them came back (had paid before, or paid on two different days)."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Only a scrambled code of each card is kept, for at most 400 days. Never a card number or a name.",
+    "Cash customers aren't counted, and one person with two cards counts twice.",
+    "The first weeks look lower, because there is less history to match against."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "Read it as a trend, not an exact head count."
+  }
+ ]
+}

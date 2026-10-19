@@ -1,0 +1,39 @@
+{
+ "id": "account-alerts",
+ "title": "Phone alerts",
+ "area": null,
+ "group": "account",
+ "order": 802,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Choose which phone alerts you get, in the app under More › Notifications.",
+ "pages": [
+  "notifications"
+ ],
+ "related": [
+  "basics-app"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Alerts are chosen in the phone app, per phone: **More › Notifications**. The website has no alerts page."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Alerts come in groups: **Needs action** (something to do now), **Team** (chat, mentions, announcements), **Daily summary** and **Admin**.",
+    "Turn each one on or off. **Reset to recommended** goes back to the store's defaults.",
+    "Admins also set the store's defaults for everyone.",
+    "No alerts are sent between 10 PM and 7 AM store time. Alerts due then wait until morning.",
+    "You only get alerts for pages you can open."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "Not getting alerts? Check your phone allows notifications for RetailOps, then see Phone alerts not arriving in the Help Center's Troubleshooting tab."
+  }
+ ]
+}

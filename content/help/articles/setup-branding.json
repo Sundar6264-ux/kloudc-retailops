@@ -1,0 +1,33 @@
+{
+ "id": "setup-branding",
+ "title": "Your store's name, logo and colours",
+ "area": "setup",
+ "group": "setup",
+ "order": 710,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "How your store's logo and brand colour appear, and how to change them.",
+ "pages": [
+  "home",
+  "cart"
+ ],
+ "related": [
+  "master-store-settings"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Your store's logo and colour show on the sign-in page (once your Store ID is typed), in the menu, on buttons and on your POs. The rest of RetailOps uses KloudC's calm blues and a colour for each area."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Your brand colour is adjusted automatically so text on it always stays easy to read, in light and dark.",
+    "Your store's name, address and phone print on every PO's letterhead.",
+    "To change your logo, colours, name, address or phone, email {support_email} with the new details. A KloudC master updates them."
+   ]
+  }
+ ]
+}

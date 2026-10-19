@@ -1,0 +1,45 @@
+{
+ "id": "setup-po-sections",
+ "title": "PO sections",
+ "area": "setup",
+ "group": "setup",
+ "order": 705,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "The heading each item prints under on a vendor's PO, so the vendor can pick the order aisle by aisle.",
+ "pages": [
+  "po_sections",
+  "cart"
+ ],
+ "related": [
+  "po-cart",
+  "setup-leads"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "A **PO section** is the heading an item prints under on a vendor's PO PDF, such as \"Dairy\" or \"Frozen - Ice Cream\". Sections print A to Z with items sorted by name. Lines with no section print under **Other**, always last."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Automatic** is the section RetailOps picks from the item's category and name.",
+    "On the **Items** tab, change one item, or tick several and set their section. Type a new name to make a new section. **Back to automatic** undoes it.",
+    "**Vendor rules** put every item from one vendor in a section, now and in future uploads.",
+    "An item's own rule wins over a vendor rule.",
+    "The **Sections** tab renames or merges sections, and moves all of a section's items.",
+    "**PDF preview** shows a vendor's cart grouped exactly as its PDF."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "In the cart, editors can change a line's section with its small Section link. Every change records who and when, and the latest can be undone. Only the PO section changes, never the item's category in {pos}."
+  },
+  {
+   "type": "note",
+   "text": "Admins and anyone with the **Edit PO sections** access can change sections."
+  }
+ ]
+}

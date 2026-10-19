@@ -1,0 +1,49 @@
+{
+ "id": "home-job-status",
+ "title": "Job status",
+ "area": "home",
+ "group": "home",
+ "order": 205,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "When sales last synced from {pos} and when inventory was last uploaded, and what the colours mean.",
+ "pages": [
+  "home"
+ ],
+ "related": [
+  "basics-data-freshness",
+  "setup-integrations"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "The job status card shows the last run of the two background jobs:"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Sales sync ({pos})**: copies the previous day's orders from {pos} every night. A missed night is caught up on the next run.",
+    "**Inventory upload**: the last time a file was uploaded (or {pos}'s nightly snapshot, when that is on)."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "The colours"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Green**: finished.",
+    "**Amber**: running now.",
+    "**Red**: failed. Open the detail text to see why."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "A red sales sync usually means the {pos} connection needs attention. An admin can check it on [Integrations](page:integrations) with Test connection."
+  }
+ ]
+}

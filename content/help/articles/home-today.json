@@ -1,0 +1,72 @@
+{
+ "id": "home-today",
+ "title": "Home and the Today card",
+ "area": "home",
+ "group": "home",
+ "order": 201,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Your day at a glance: orders due, critical vendors, the closing checklist and how sales compare with last week.",
+ "pages": [
+  "home"
+ ],
+ "related": [
+  "home-kpis",
+  "reorder",
+  "vendor-calendar"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Home is the first page for most people. At the top, the **Today** card lists what needs doing today. When nothing is due it says All caught up."
+  },
+  {
+   "type": "h",
+   "text": "What the Today card shows"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Orders due**: vendor orders due today or tomorrow, from the [Vendor Calendar](page:vendor_calendar). Open one to build that vendor's order.",
+    "**Critical**: vendors with steady sellers that are out of stock or about to be (Critical on [Reorder Candidates](page:reorder)).",
+    "**Closing checklist**: after 6 PM, a reminder when tonight's closing checklist isn't in yet.",
+    "**Sales vs last week**: yesterday's sales next to the same day last week, if you can see sales and use Insights."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Critical vendors (admins)",
+   "id": "critical-vendors"
+  },
+  {
+   "type": "p",
+   "text": "When a Critical vendor has been dealt with, an admin can hide it from Today and from the morning critical-vendors alert, for everyone. It still shows on Reorder Candidates with a Hidden from Today tag."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Order already placed**: the order went in another way (phone, WhatsApp, the vendor's rep). The vendor shows as Ordered until a delivery is recorded.",
+    "**Close**: it's handled. Pick a reason. It comes back when something new turns critical, and after 14 days at most.",
+    "**Skip this week**: hidden until the new store week starts, Monday at midnight.",
+    "**Remind me later**: later today, tomorrow 9 AM, in 3 days, or a day you pick up to 30 days ahead.",
+    "**Undo** right after, or **Show again** later."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Orders due (admins)",
+   "id": "orders-due"
+  },
+  {
+   "type": "p",
+   "text": "Admins can deal with an order due without opening it: **Order already placed**, **Skip this week** or **Other** with a note everyone sees. Each one has Undo."
+  },
+  {
+   "type": "tip",
+   "text": "Admins on the app: long-press the Critical or Orders due tile, or tap its ⋯."
+  }
+ ]
+}

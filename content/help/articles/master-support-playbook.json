@@ -1,0 +1,43 @@
+{
+ "id": "master-support-playbook",
+ "title": "Helping a store",
+ "area": "platform",
+ "group": "master",
+ "order": 907,
+ "audience": [
+  "master"
+ ],
+ "summary": "KloudC masters: how to handle a support email, what you can see, and what you must never ask for.",
+ "pages": [
+  "platform_stores",
+  "platform_audit"
+ ],
+ "related": [
+  "master-audit",
+  "master-stores"
+ ],
+ "blocks": [
+  {
+   "type": "steps",
+   "items": [
+    "Read the email for the Store ID, the page, and what happened. Ask for a screenshot if there isn't one.",
+    "Check the store's status on **Stores** and recent events on **Audit** (for example failed sign-ins or a failed sync).",
+    "Point to the right guide or answer in the Help Center when it covers the question.",
+    "If you need to see what the store sees, start a **support session**: a short sign-in as one of the store's users (30 minutes by default, 2 hours at most), with a reason. The reason goes in the audit log.",
+    "Reply with what you found and what you changed."
+   ]
+  },
+  {
+   "type": "warning",
+   "text": "Never ask anyone for their password. Passwords are reset by the store's own admins on Users."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Masters can't read connection keys. The store's admin re-enters a key on Integrations.",
+    "A locked login unlocks by itself after 15 minutes.",
+    "Store data is the store's. Look only at what the support case needs."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,35 @@
+{
+ "id": "home-weekly-digest",
+ "title": "Weekly digest",
+ "area": "home",
+ "group": "home",
+ "order": 204,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "A short written summary of the last 7 days, made when you ask for it.",
+ "pages": [
+  "home"
+ ],
+ "related": [
+  "ask-bot",
+  "setup-integrations"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Click **Generate this week's digest** on Home. You get a summary of the last 7 days: sales against last week, the top reorder needs, dead stock, vendor savings, the biggest reconciliation gaps and barcode problems."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Every number comes from the same reports you see elsewhere. The AI only writes the short sentence for each part. It is never asked to work out a figure.",
+    "It is made only when you ask, and shown only here. Nothing is emailed or sent.",
+    "It needs the AI key on [Integrations](page:integrations).",
+    "With Hide sales numbers, the sales part is left out."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "id": "team-chat",
+ "title": "Chat",
+ "area": "team",
+ "group": "team",
+ "order": 603,
+ "audience": [
+  "owner",
+  "admin",
+  "staff"
+ ],
+ "summary": "Team chats and direct messages: mentions, voice notes, PDFs, pins, seen by, search, mute and block.",
+ "pages": [
+  "team_chat"
+ ],
+ "related": [
+  "team-rules",
+  "team-news",
+  "setup-moderation"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Team › Chat has a chat for each of your teams, plus direct messages (New message)."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**@mentions**: type @ and pick a name. They are told even if they muted the chat.",
+    "**Voice notes**: tap the microphone, talk, then tap Send (up to 5 minutes). On the website the 🎤 shows in browsers that can record (Safari, recent Chrome and Edge). Everyone can play them.",
+    "**Documents**: 📎 sends a PDF up to 10 MB.",
+    "**Pinned messages** stay at the top, up to 20 per chat. In a team chat admins and shift leads pin; in a direct message either person can.",
+    "**Seen by**: on your own message, ⋯ › Seen by lists who has read it.",
+    "**Search** finds messages and PDF names in the chats you can see. Deleted messages are never found.",
+    "A message that couldn't be sent shows Not sent, tap to retry. Retrying never sends it twice."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Quiet and safe"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Mute a chat with the bell. Chat settings can also hide message text in notifications.",
+    "Long-press (or ⋯) a message to copy it, turn it into a task, report it, or delete your own.",
+    "In a direct message you can hide the conversation or **block** the person. Neither of you can then message the other; in team chats their messages fold away.",
+    "Offensive words are hidden automatically. The [Team rules](article:team-rules) apply to everything."
+   ]
+  }
+ ]
+}

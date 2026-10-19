@@ -1,0 +1,51 @@
+{
+ "id": "master-stores",
+ "title": "Managing stores",
+ "area": "platform",
+ "group": "master",
+ "order": 902,
+ "audience": [
+  "master"
+ ],
+ "summary": "KloudC masters: store statuses, suspend, resume, archive and retry set-up.",
+ "pages": [
+  "platform_stores"
+ ],
+ "related": [
+  "master-store-settings",
+  "master-audit"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "Statuses"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Active**: working normally.",
+    "**Setting up**: being provisioned after approval.",
+    "**Setup failed**: provisioning stopped. Retry set-up continues from the failed step.",
+    "**Suspended**: sign-in is refused, the store's jobs stop and the app shows a maintenance message. Data is kept.",
+    "**Archived**: off-boarded. Sign-in is refused and the store answers like an unknown one. Data is kept until it is purged."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Actions"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Suspend** asks for a reason, which is recorded.",
+    "**Resume** turns a suspended store back on at once.",
+    "**Archive** needs you to type the Store ID to confirm.",
+    "Open a store to see and change its settings in a side panel. See [Store settings](article:master-store-settings)."
+   ]
+  },
+  {
+   "type": "warning",
+   "text": "Every action is written to the audit log with your name."
+  }
+ ]
+}
