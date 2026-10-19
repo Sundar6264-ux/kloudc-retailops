@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -9,6 +10,7 @@ from app.db import get_db
 from app.auth import get_current_user
 from app.features import require_feature
 from app.models import User
+from app.pos.base import NotSupported
 from app.pos.capabilities import Capability
 from app.pos.gating import require_capability
 from app.sales_access import OPEN_ORDER_MONEY_FIELDS, strip_sales
@@ -24,6 +26,8 @@ from app.services.open_orders import (
 )
 from app.timeutil import restaurant_timezone, restaurant_today
 from app.tenancy import tenant_lock
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/orders",
@@ -214,4 +218,16 @@ def open_orders_rescan(db: Session = Depends(get_db)):
 
 @router.get("/employees", dependencies=[Depends(require_capability(Capability.EMPLOYEES))])
 def employees():
-    return {"employees": get_employees()}
+    """The POS employee list for the Open Checks "Server" filter. A POS that is
+    not connected yet (blank Toast keys), down, or refusing the keys answers a
+    plain 503 - the page simply hides the filter - instead of a 500 with a
+    stack trace in error.log."""
+    try:
+        return {"employees": get_employees()}
+    except NotSupported:
+        raise  # this POS has no employee list: 409, as before
+    except Exception as exc:
+        logger.warning("Open Checks: POS employee list unavailable (%s)", type(exc).__name__)
+        raise HTTPException(
+            status_code=503, detail="The POS employee list isn't available right now - try again in a minute."
+        ) from exc
