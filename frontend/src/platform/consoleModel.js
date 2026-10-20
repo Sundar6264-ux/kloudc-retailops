@@ -104,6 +104,16 @@ export function integrationChip(i) {
   return { label: "Saved", tone: "info" };
 }
 
+// The Overview's Connections list: a POS the store doesn't use (Toast on a
+// Clover store, both on a CSV store) is noise unless something was saved.
+const POS_KINDS = new Set(["toast", "clover"]);
+export function visibleConnections(integrations, posProvider) {
+  const pos = String(posProvider || "").toLowerCase();
+  return (Array.isArray(integrations) ? integrations : []).filter(
+    (i) => i && (!POS_KINDS.has(String(i.kind).toLowerCase()) || i.configured || String(i.kind).toLowerCase() === pos),
+  );
+}
+
 // The Overview's headline: one line a master can act on.
 export function healthSummary(h) {
   if (!h) return null;

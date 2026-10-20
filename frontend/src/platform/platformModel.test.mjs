@@ -136,3 +136,15 @@ test("usage flag on the Stores list: near and over only", () => {
   assert.deepEqual(Object.keys(map), ["A1"]);
   assert.deepEqual(usageByStore(null), {});
 });
+
+test("status filter options read like the row chips; POS names are words", async () => {
+  const { statusFilterLabel, posLabel } = await import("./platformModel.js");
+  assert.equal(statusFilterLabel("requests", ""), "All");
+  assert.equal(statusFilterLabel("requests", "pending"), "Waiting");
+  assert.equal(statusFilterLabel("stores", "provisioning"), "Setting up");
+  assert.equal(statusFilterLabel("hosting", "rolled_back"), "Rolled back");
+  assert.equal(posLabel("CLOVER"), "Clover");
+  assert.equal(posLabel("toast"), "Toast");
+  assert.equal(posLabel("csv"), "CSV");
+  assert.equal(posLabel(""), "");
+});

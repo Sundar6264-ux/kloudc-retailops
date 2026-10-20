@@ -28,6 +28,8 @@ import {
   SIGNUP_STATUS_FILTERS,
   STORE_SEARCH_FIELDS,
   STORE_STATUS_FILTERS,
+  posLabel,
+  statusFilterLabel,
   approveBody,
   archiveConfirmed,
   auditDetails,
@@ -257,6 +259,7 @@ export default function PlatformConsolePage() {
                 aria-selected={tab === t.key}
                 className={`pf-tab${tab === t.key ? " active" : ""}`}
                 data-testid={`pf-tab-${t.key}`}
+                title={t.sub}
                 onClick={() => choose(t.key)}
               >
                 <span className="pf-tab-icon" aria-hidden="true">
@@ -292,7 +295,7 @@ export default function PlatformConsolePage() {
                 >
                   {filterOptions.map((s) => (
                     <option key={s || "all"} value={s}>
-                      {s ? s.replace(/_/g, " ") : "All"}
+                      {statusFilterLabel(tab, s)}
                     </option>
                   ))}
                 </select>
@@ -526,7 +529,7 @@ function SignupRow({ req, packs, zones, onDone }) {
         <Chip chip={signupStatusChip(req.status)} />
       </div>
       <div className="pf-row-meta">
-        {[req.contact_name, req.contact_email, req.contact_phone, (req.pos_provider || "").toUpperCase(), req.timezone, when(req.created_at)]
+        {[req.contact_name, req.contact_email, req.contact_phone, posLabel(req.pos_provider), req.timezone, when(req.created_at)]
           .filter(Boolean)
           .join(" · ")}
       </div>
@@ -561,7 +564,7 @@ function SignupRow({ req, packs, zones, onDone }) {
           <label>
             Store pack
             <select value={form.packId} onChange={(e) => setForm((f) => ({ ...f, packId: e.target.value }))}>
-              <option value="">Default for {(req.pos_provider || "the POS").toUpperCase()}</option>
+              <option value="">Default for {posLabel(req.pos_provider) || "the POS"}</option>
               {packs.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
@@ -737,15 +740,10 @@ function StoreRow({ store, usage, onDone, onOpen }) {
             <Chip chip={usageChip(usage)} />
           </span>
         )}
-        {onOpen && (
-          <button type="button" className="btn-secondary pf-row-open" onClick={onOpen} data-testid={`store-details-${store.code}`} style={{ marginLeft: "auto" }}>
-            Details
-          </button>
-        )}
       </div>
       <div className="pf-row-meta">
         {[
-          (store.pos_provider || store.pos || "").toUpperCase(),
+          posLabel(store.pos_provider || store.pos),
           store.timezone,
           store.approved_at ? `approved ${when(store.approved_at)}` : store.created_at ? `created ${when(store.created_at)}` : "",
           store.schema_revision ? `schema ${store.schema_revision}` : "",
@@ -754,8 +752,13 @@ function StoreRow({ store, usage, onDone, onOpen }) {
           .join(" · ")}
       </div>
       {store.status_reason && <div className="pf-row-meta">{store.status_reason}</div>}
-      {actions.length > 0 && (
+      {(actions.length > 0 || onOpen) && (
         <div className="pf-actions">
+          {onOpen && (
+            <button type="button" className="btn-secondary pf-row-open" onClick={onOpen} data-testid={`store-details-${store.code}`}>
+              Details
+            </button>
+          )}
           {actions.includes("suspend") && (
             <button type="button" className="btn-secondary" onClick={() => open("suspend")}>
               Suspend
@@ -831,11 +834,11 @@ function StoreRow({ store, usage, onDone, onOpen }) {
             <input value={text} onChange={(e) => setText(e.target.value)} autoComplete="off" />
           </label>
           <div className="pf-actions">
-            <button type="submit" disabled={busy || !archiveConfirmed(store, text)}>
-              Archive
-            </button>
             <button type="button" className="btn-secondary" onClick={() => setMode(null)}>
               Cancel
+            </button>
+            <button type="submit" className="pf-danger" disabled={busy || !archiveConfirmed(store, text)}>
+              Archive
             </button>
           </div>
         </form>

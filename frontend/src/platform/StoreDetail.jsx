@@ -17,12 +17,13 @@ import {
   detailTab,
   healthSummary,
   integrationChip,
+  visibleConnections,
   jobChip,
   jobLabel,
 } from "./consoleModel.js";
 import StoreDataPanel from "./panels/StoreDataPanel.jsx";
 import StoreUsagePanel from "./panels/StoreUsagePanel.jsx";
-import { platformErrorMessage, storeStatusChip } from "./platformModel.js";
+import { platformErrorMessage, posLabel, storeStatusChip } from "./platformModel.js";
 import "./console.css";
 
 export default function StoreDetail({ store, onClose, onChanged, renderSettings, renderAudit }) {
@@ -97,6 +98,7 @@ function Overview({ code }) {
   if (!h) return <p className="muted">Loading…</p>;
   const summary = healthSummary(h);
   const db = h.database || {};
+  const connections = visibleConnections(h.integrations, h.pos_provider);
   return (
     <div className="pf-health" data-testid="store-health">
       <Feedback message={summary && { tone: summary.tone === "good" ? "ok" : summary.tone, text: summary.text }} />
@@ -116,7 +118,7 @@ function Overview({ code }) {
         )}
         <div>
           <dt>POS</dt>
-          <dd>{(h.pos_provider || "").toUpperCase() || "None"}</dd>
+          <dd>{posLabel(h.pos_provider) || "None"}</dd>
         </div>
         <div>
           <dt>Database version</dt>
@@ -149,11 +151,11 @@ function Overview({ code }) {
       )}
 
       <h3 className="pf-section-title">Connections</h3>
-      {(h.integrations || []).length === 0 ? (
+      {connections.length === 0 ? (
         <p className="muted">Nothing connected yet.</p>
       ) : (
         <ul className="pf-mini-list">
-          {h.integrations.map((i) => (
+          {connections.map((i) => (
             <li key={i.kind}>
               <span className="pf-mini-title">{i.label || i.kind}</span>
               <Chip chip={integrationChip(i)} />

@@ -570,16 +570,24 @@ h2.pf-title {
   letter-spacing: -0.02em;
 }
 
+/* Seven console sections: one row of compact tiles (icon + label) at every
+   width; the one-line description is the tile's tooltip and its ⓘ. */
 .pf-shell .pf-tabs {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.pf-shell .pf-tabs > button.pf-tab {
+  flex: 1 1 auto;
+  width: auto;
 }
 
 .pf-shell button.pf-tab {
   justify-content: flex-start;
   gap: 10px;
   min-height: 0;
-  padding: 12px 14px;
+  padding: 8px 14px 8px 8px;
   border-radius: var(--radius-md);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -626,6 +634,10 @@ h2.pf-title {
   font-size: 14px;
   font-weight: 650;
   color: var(--text);
+}
+
+.pf-shell .pf-tab-sub {
+  display: none;
 }
 
 .pf-tab-sub {
@@ -830,11 +842,12 @@ h2.pf-title {
 @media (max-width: 1023px) {
   .pf-shell .pf-tabs {
     display: flex;
+    flex-wrap: nowrap;
     overflow-x: auto;
     padding-bottom: 4px;
   }
 
-  .pf-shell button.pf-tab {
+  .pf-shell .pf-tabs > button.pf-tab {
     flex: 0 0 auto;
     width: auto;
   }

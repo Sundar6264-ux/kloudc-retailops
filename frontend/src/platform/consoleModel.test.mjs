@@ -76,3 +76,17 @@ test("store detail: health headline, job and integration chips", () => {
   assert.equal(integrationChip({ configured: false }).label, "Not set up");
   assert.equal(integrationChip({ configured: true, status: "ok" }).tone, "good");
 });
+
+test("Overview connections hide a POS the store doesn't use", async () => {
+  const { visibleConnections } = await import("./consoleModel.js");
+  const rows = [
+    { kind: "toast", configured: false },
+    { kind: "clover", configured: false },
+    { kind: "whapi", configured: false },
+    { kind: "smtp", configured: true },
+  ];
+  assert.deepEqual(visibleConnections(rows, "clover").map((r) => r.kind), ["clover", "whapi", "smtp"]);
+  assert.deepEqual(visibleConnections(rows, "csv").map((r) => r.kind), ["whapi", "smtp"]);
+  assert.deepEqual(visibleConnections([{ kind: "toast", configured: true }], "clover").map((r) => r.kind), ["toast"]);
+  assert.deepEqual(visibleConnections(null, "toast"), []);
+});

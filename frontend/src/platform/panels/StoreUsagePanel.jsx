@@ -71,7 +71,7 @@ export default function StoreUsagePanel({ storeCode }) {
         <Section title="Plan" pageId="platform_store_usage" section="plan" testId="plan-section">
           <form className="dt-plan-form" onSubmit={savePlan}>
             <label>
-              Plan of {storeCode}
+              Store's plan
               <select value={plan} onChange={(e) => setPlan(e.target.value)} disabled={!!busy} data-testid="plan-select">
                 {(view.plans || []).map((p) => (
                   <option key={p.id} value={p.id}>

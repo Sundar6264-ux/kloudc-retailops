@@ -387,6 +387,21 @@ button.pf-tab.active:hover:not(:disabled) {
   border-top: 1px dashed var(--border);
 }
 
+/* The confirm buttons span the whole form: Cancel and the action side by side. */
+.pf-shell .pf-inline-form > .pf-actions,
+.pf-inline-form > .pf-actions {
+  grid-column: 1 / -1;
+  padding-left: 0;
+}
+
+/* Spec 2.11: a destructive confirm is a danger fill with white text. */
+.pf-inline-form button.pf-danger:not(:disabled),
+.pf-inline-form button.pf-danger:hover:not(:disabled) {
+  background: var(--danger-fill);
+  border-color: var(--danger-fill);
+  color: var(--on-fill);
+}
+
 .pf-inline-form label {
   display: flex;
   flex-direction: column;
@@ -520,6 +535,10 @@ button.int-tile.active:hover:not(:disabled) {
 
 .int-actions button {
   width: auto;
+}
+
+.int-actions + form {
+  margin-top: var(--space-4);
 }
 
 .int-meta {

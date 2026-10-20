@@ -84,6 +84,21 @@ export function usageByStore(rows) {
 }
 
 export const STORE_STATUS_FILTERS = ["", ...Object.keys(STORE_STATUS)];
+
+// The status filter's option text: the same words as the row chips, "All"
+// for no filter (never the raw "pending" / "rolled_back").
+export function statusFilterLabel(tab, status) {
+  if (!status) return "All";
+  const table = tab === "requests" ? SIGNUP_STATUS : tab === "stores" ? STORE_STATUS : tab === "hosting" ? HOSTING_STATUS : {};
+  return chip(table, status).label;
+}
+
+// "toast" -> "Toast", "clover" -> "Clover", "csv" -> "CSV".
+const POS_LABELS = { toast: "Toast", clover: "Clover", csv: "CSV", square: "Square" };
+export function posLabel(provider) {
+  const k = String(provider || "").trim().toLowerCase();
+  return POS_LABELS[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1) : "");
+}
 export const SIGNUP_STATUS_FILTERS = ["pending", "approved", "rejected", ""];
 
 // What can be done to a store in its status (the buttons on its row).
