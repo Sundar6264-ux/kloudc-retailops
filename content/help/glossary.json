@@ -1839,5 +1839,166 @@
    "concept_audit_log",
    "concept_master"
   ]
+ },
+ {
+  "key": "concept_usage",
+  "label": "Usage",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "How much of RetailOps a store uses: users, items, file storage, database size, sales syncs, POS requests and AI requests.",
+  "aliases": [
+   "usage",
+   "metering"
+  ],
+  "where": "Setup › Data & usage; console › Usage & plan",
+  "pages": [
+   "store_data",
+   "platform_store_usage"
+  ],
+  "related": [
+   "concept_plan",
+   "concept_limit"
+  ]
+ },
+ {
+  "key": "concept_plan",
+  "label": "Plan",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "The package a store is on: Custom, Trial, Starter or Pro. Each plan has its own limits; Custom has none.",
+  "aliases": [
+   "plan",
+   "subscription"
+  ],
+  "where": "Setup › Data & usage; console › Usage & plan",
+  "pages": [
+   "store_data",
+   "platform_store_usage"
+  ],
+  "related": [
+   "concept_limit",
+   "concept_usage"
+  ]
+ },
+ {
+  "key": "concept_limit",
+  "label": "Limit",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "The most users, items or file storage a plan includes. Near the limit means 80% or more; over the limit is flagged, but work is never blocked.",
+  "aliases": [
+   "limit",
+   "near the limit",
+   "over the limit",
+   "soft limit"
+  ],
+  "where": "Setup › Data & usage",
+  "pages": [
+   "store_data",
+   "platform_store_usage"
+  ],
+  "related": [
+   "concept_plan",
+   "concept_usage"
+  ]
+ },
+ {
+  "key": "concept_data_export",
+  "label": "Data export",
+  "category": "concept_data",
+  "area": "setup",
+  "definition": "One ZIP file with everything a store keeps: a spreadsheet (CSV) per table, every stored file, and a checksum list. Passwords, sign-in tokens and saved keys are never in it.",
+  "aliases": [
+   "export all data",
+   "data export",
+   "zip export",
+   "backup"
+  ],
+  "where": "Setup › Data & usage › Export all data",
+  "pages": [
+   "store_data",
+   "platform_store_data"
+  ],
+  "related": [
+   "concept_download_link"
+  ]
+ },
+ {
+  "key": "concept_download_link",
+  "label": "Download link",
+  "category": "concept_data",
+  "area": "setup",
+  "definition": "A private link to a data export that stops working after a few hours. Making a new link ends the old one.",
+  "aliases": [
+   "download link",
+   "export link"
+  ],
+  "where": "Setup › Data & usage",
+  "pages": [
+   "store_data",
+   "platform_store_data"
+  ],
+  "related": [
+   "concept_data_export"
+  ]
+ },
+ {
+  "key": "concept_offboarding",
+  "label": "Off-boarding",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "Closing a store's account: Archived, a final data export, Deleting on a date after the grace period, then Deleted.",
+  "aliases": [
+   "off-boarding",
+   "offboarding",
+   "close store",
+   "archive store"
+  ],
+  "where": "Master console › store › Data",
+  "pages": [
+   "platform_store_data"
+  ],
+  "related": [
+   "concept_grace_period",
+   "concept_delete_store_data"
+  ]
+ },
+ {
+  "key": "concept_grace_period",
+  "label": "Grace period",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "The days between archiving a store and deleting its data. Deletion can be cancelled any time before the date.",
+  "aliases": [
+   "grace period",
+   "grace days"
+  ],
+  "where": "Master console › store › Data",
+  "pages": [
+   "platform_store_data"
+  ],
+  "related": [
+   "concept_offboarding"
+  ]
+ },
+ {
+  "key": "concept_delete_store_data",
+  "label": "Delete store data",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "The last off-boarding step: the store's database, files and saved keys are deleted for good. Only the store's name and history in the audit log stay.",
+  "aliases": [
+   "purge",
+   "delete store data",
+   "deleted"
+  ],
+  "where": "Master console › store › Data",
+  "pages": [
+   "platform_store_data"
+  ],
+  "related": [
+   "concept_offboarding",
+   "concept_data_export"
+  ]
  }
 ]

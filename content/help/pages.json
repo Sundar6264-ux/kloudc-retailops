@@ -2874,5 +2874,146 @@
   ],
   "article": "master-security",
   "new_until": null
+ },
+ {
+  "id": "store_data",
+  "title": "Data & usage",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/settings/data"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "How much of RetailOps your store uses, your plan's limits, and Export all data: one file with everything your store keeps.",
+   "points": [
+    "Usage numbers update every minute; users, items and storage are measured each night.",
+    "A limit never stops your work. Near or over a limit, KloudC support will contact you.",
+    "Export all data makes a ZIP file. Its Download link works for a limited time; make a new one any time."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "usage": {
+    "title": "Usage",
+    "summary": "Users, items, file storage and the last 30 days of sales syncs, POS requests and AI requests.",
+    "points": []
+   },
+   "plan": {
+    "title": "Plan and limits",
+    "summary": "Your plan and how close the store is to each limit. Limits never block work.",
+    "points": []
+   },
+   "export": {
+    "title": "Export all data",
+    "summary": "One ZIP file with a spreadsheet per table and every file your store keeps. No passwords or keys.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_usage",
+   "concept_plan",
+   "concept_limit",
+   "concept_data_export",
+   "concept_download_link"
+  ],
+  "article": "setup-data-usage",
+  "new_until": "2026-12-31"
+ },
+ {
+  "id": "platform_store_usage",
+  "title": "Usage & plan",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": null,
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "One store's usage, its plan and soft limits. Change the plan here; the change is audited.",
+   "points": [
+    "Counters are the last 30 days; users, items and storage are measured each night.",
+    "Measure now updates users, items, storage and database size straight away.",
+    "Limits are soft: a store over a limit keeps working and is flagged on the Stores list."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "plan": {
+    "title": "Plan",
+    "summary": "Custom has no limits. Trial, Starter and Pro limits are placeholders until prices are set.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_usage",
+   "concept_plan",
+   "concept_limit"
+  ],
+  "article": "master-data-offboarding",
+  "new_until": "2026-12-31"
+ },
+ {
+  "id": "platform_store_data",
+  "title": "Data",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": null,
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Data exports of one store, and off-boarding: archive, a final export, a grace period, then Delete store data.",
+   "points": [
+    "Archiving makes a final data export and schedules deletion after the grace period.",
+    "Cancel deletion any time before the date; Bring back makes the store suspended so you can resume it.",
+    "Delete store data needs the typed Store ID and your two-step code. A pilot store is never deleted by itself."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "exports": {
+    "title": "Data exports",
+    "summary": "Make a data export for the store and get a Download link for it.",
+    "points": []
+   },
+   "offboarding": {
+    "title": "Off-boarding",
+    "summary": "Archived, then Deleting on a date, then Deleted. Every step is in the audit log.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_data_export",
+   "concept_offboarding",
+   "concept_grace_period",
+   "concept_delete_store_data"
+  ],
+  "article": "master-data-offboarding",
+  "new_until": "2026-12-31"
  }
 ]

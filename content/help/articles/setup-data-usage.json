@@ -1,0 +1,67 @@
+{
+ "id": "setup-data-usage",
+ "title": "Data & usage: your plan, usage and Export all data",
+ "area": "setup",
+ "group": "setup",
+ "order": 704,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "See how much of RetailOps your store uses, your plan's limits, and download everything your store keeps.",
+ "pages": [
+  "store_data"
+ ],
+ "related": [
+  "setup-integrations"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Setup › **Data & usage** shows what your store uses and lets an owner or admin download all of the store's data. Staff do not see this page."
+  },
+  {
+   "type": "h",
+   "text": "Usage",
+   "id": "usage"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Users**, **Items** and **File storage** are measured each night.",
+    "**Sales synced**, **POS requests** and **AI requests** add up over the last 30 days.",
+    "**Last activity** is the last time someone at the store used RetailOps."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Plan and limits",
+   "id": "plan"
+  },
+  {
+   "type": "p",
+   "text": "Your plan sets how many users, items and how much file storage are included. From 80% of a limit the bar turns amber (near the limit); above it, red (over the limit). A limit never stops your store's work."
+  },
+  {
+   "type": "h",
+   "text": "Export all data",
+   "id": "export"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Press **Export all data**. Making the file takes a minute or two for most stores.",
+    "When it shows **Ready**, press **Download**. The Download link works for a limited time.",
+    "Open the ZIP: **tables/** has one spreadsheet (CSV) per table, **files/** every stored file, and **manifest.json** a checksum for each file."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "Passwords, sign-in tokens, push tokens and saved keys are never in a data export. A data export is kept for 7 days; make a new one any time."
+  },
+  {
+   "type": "tip",
+   "text": "If an export fails, press **Try again**. One export runs at a time per store."
+  }
+ ]
+}
