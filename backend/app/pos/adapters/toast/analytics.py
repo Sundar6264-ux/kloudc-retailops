@@ -39,6 +39,7 @@ from typing import Callable, Optional
 
 import httpx
 
+from app.pos import http as pos_http  # POS call metering (website-ready C7)
 from app.config import get_settings
 from app.tenancy import tenant_local, tenant_lock
 
@@ -312,7 +313,7 @@ def run_report(
         raise AnalyticsNotConfigured("Toast Analytics credentials are not set (TOAST_ANALYTICS_CLIENT_ID/SECRET)")
     post_path = f"{ERA_PREFIX}/{kind}" + (f"/{time_range}" if time_range else "")
     own_client = client is None
-    client = client or httpx.Client()
+    client = client or httpx.Client(event_hooks=pos_http.metering_hooks())
     started = _now()
     try:
         recreates = 0

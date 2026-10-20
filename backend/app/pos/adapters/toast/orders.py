@@ -27,6 +27,7 @@ from typing import Callable, List, Optional
 
 import httpx
 
+from app.pos import http as pos_http  # POS call metering (website-ready C7)
 from app.config import get_settings
 from app.pos.adapters.toast import client as _client
 from app.pos.models import Check, Order, OrderLine, to_decimal
@@ -43,7 +44,7 @@ def fetch_orders_for_business_date(business_date: dt.date) -> list[dict]:
     date_str = business_date.strftime("%Y%m%d")
 
     orders: list[dict] = []
-    with httpx.Client() as client:
+    with httpx.Client(event_hooks=pos_http.metering_hooks()) as client:
         token = _client.get_access_token(client)
         headers = {
             "Authorization": f"Bearer {token}",
