@@ -11,6 +11,7 @@
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { auditPage } from "./contrast.mjs";
 
 const BASE = process.env.BASE || "http://127.0.0.1:8881";
 const OUT = process.env.OUT || "/tmp/website-ready-a";
@@ -58,6 +59,10 @@ async function shoot(page, name) {
   if (sx > 1) problem(`${name}: page scrolls sideways by ${sx}px`);
   const crashed = await page.getByText(/something went wrong|unexpected application error/i).first().isVisible().catch(() => false);
   if (crashed) problem(`${name}: crashed`);
+  // WCAG AA contrast of every visible text, and nothing poking out sideways (audit.mjs's check).
+  const audit = await page.evaluate(auditPage);
+  for (const s of audit.low) problem(`${name}: low contrast ${s}`);
+  for (const s of audit.over) problem(`${name}: sticks out ${s}`);
   if (width < 640) {
     const small = await page.evaluate(() => {
       const out = [];
