@@ -3308,7 +3308,7 @@ platform metadata (and its migration check) knows the two tables.
 | Guards + `tests/tenancy` + `test_platform_db` (p0004 up/down + metadata compare) + help content + interfaces | 92 passed, 1 failed: the name guard flags line 43 of `docs/WEBSITE_READY_CONTRACT.md` (the m1heavy path, committed in the Plan stage, not a track C file) |
 | Touched areas unchanged: team core / chat / W5 / tasks / public checklist / builder; Toast adapter, inventory API, sales accuracy, verify2 failure modes; platform e2e flows; ops ready + deploy files | 330 + 93 + 43 + 5 + 29 passed |
 | Website node tests | 320 of 320 (12 new in `systemModel.test.mjs`) |
-| `e2e/system/run.sh` (real server, queue + live updates on, 1440 + 375, light + dark) | 47 of 47 checks; screenshots in `/Users/sundar/storeops/screenshots/ready/C/` |
+| `e2e/system/run.sh` (real server, queue + live updates on, 1440 + 375, light + dark) | 47 of 47 checks; screenshots in `screenshots/ready/C/` |
 
 Key queue properties tested on PostgreSQL: two workers claiming 60 jobs
 concurrently never share one; priority then age; backoff 30 s then dead at
@@ -3470,7 +3470,7 @@ guides `setup-data-usage`, `master-data-offboarding`.
 | `tests/platform/test_data_ownership.py` (scratch PostgreSQL, prefix `so_wrb`) | 27 passed |
 | + `test_platform_db` (p0002 parity, up/down/up), interfaces, cache lint, demo guard, help content, stores/integrations/platform auth | 39 + 51 + 18 + 22 passed |
 | Website node tests (all, incl. 9 new in `dataModel.test.mjs`) | 317 of 317 |
-| Screens (`e2e/data-harness`, 7 views x 1440/375 x light/dark) | 28 screenshots, no sideways scroll, no console errors (`/Users/sundar/storeops/screenshots/ready/B/`) |
+| Screens (`e2e/data-harness`, 7 views x 1440/375 x light/dark) | 28 screenshots, no sideways scroll, no console errors (`screenshots/ready/B/`) |
 | Name guard | only the pre-existing hit in `docs/WEBSITE_READY_CONTRACT.md:43` (not this track) |
 
 **For Integrate.**
@@ -3602,7 +3602,7 @@ mode only), `clover_webhooks_enabled`, `clover_webhook_auth`.
   interfaces, help content - all pass except two not caused by D (below).
 - Website node tests: 319 of 319 (+11: `itemVendorsModel` 7, Clover view model 4).
 - `vite build` OK.
-- Playwright (`/Users/sundar/storeops/screenshots/ready/D/`, local preview on
+- Playwright (`screenshots/ready/D/`, local preview on
   8884, made-up items): 30 screenshots - Integrations Clover card not
   connected / validation / connected / back-from-Clover banner, Item vendors
   list / without a vendor / editor / import preview / after import, Toast

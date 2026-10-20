@@ -49,6 +49,7 @@ from app.pos.models import (
     StockLevel,
     StockStatus,
 )
+from app.timeutil import restaurant_today
 
 CENTS = Decimal(100)
 CENT = Decimal("0.01")
@@ -268,7 +269,7 @@ def map_order(raw: dict, tz: zoneinfo.ZoneInfo, cutoff_hour: int, business_date:
     channel, channel_raw, type_id = channel_of(raw.get("orderType"))
     raw_lines = _elements(raw.get("lineItems"))
     employee = raw.get("employee") or {}
-    bdate = business_date or business_date_of(created, tz, cutoff_hour) or dt.date.today()
+    bdate = business_date or business_date_of(created, tz, cutoff_hour) or restaurant_today()
     check = Check(
         external_id=oid,
         paid_at=paid_at,
