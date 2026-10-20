@@ -57,6 +57,11 @@
   }
 }
 
+/* The console's store drawer is 560 px wide: two tiles a row. */
+.pf-detail .dt-tiles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .dt-tile {
   display: flex;
   gap: var(--space-3);
@@ -97,6 +102,12 @@
   color: var(--text);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
+}
+
+.dt-tile-value.is-pending {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .dt-tile-hint {
@@ -534,4 +545,9 @@
 .dt-plan-form select {
   min-height: 40px;
   min-width: 140px;
+}
+
+.dt-chart-none {
+  margin: var(--space-3) 0 0;
+  font-size: 0.85rem;
 }

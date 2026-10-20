@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { absoluteLink } from "../../clients/data.js";
 import {
+  NOT_MEASURED,
   dailyBars,
   dataErrorMessage,
   exportRow,
@@ -54,7 +55,7 @@ export function UsageTiles({ snapshot }) {
           </span>
           <span className="dt-tile-body">
             <span className="dt-tile-label">{t.label}</span>
-            <span className="dt-tile-value">{t.value}</span>
+            <span className={`dt-tile-value${t.value === NOT_MEASURED ? " is-pending" : ""}`}>{t.value}</span>
             <span className="dt-tile-hint">{t.hint}</span>
           </span>
         </div>
@@ -67,6 +68,14 @@ export function DailyChart({ days, metric = "orders_synced", label = "Sales sync
   const bars = dailyBars(days, metric);
   if (!bars.length) return null;
   const total = bars.reduce((s, b) => s + b.value, 0);
+  // A flat row of empty bars says nothing: one quiet line instead.
+  if (!total) {
+    return (
+      <p className="dt-muted dt-chart-none" data-testid="daily-chart-none">
+        {label}: none in the last {bars.length} days.
+      </p>
+    );
+  }
   const summary = `${label}: ${total.toLocaleString("en-US")} over ${bars.length} days, from ${bars[0].day} to ${bars[bars.length - 1].day}.`;
   return (
     <div className="dt-chart">

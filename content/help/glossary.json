@@ -1921,10 +1921,11 @@
   "label": "Usage",
   "category": "concept_setup",
   "area": "setup",
-  "definition": "How much of RetailOps a store uses: users, items, file storage, database size, sales syncs, POS requests and AI requests.",
+  "definition": "How much of RetailOps a store uses: users, items, file storage, database size, sales syncs, POS requests and AI requests. Sizes and counts are measured each night; until the first measurement they read \"Not measured yet\".",
   "aliases": [
    "usage",
-   "metering"
+   "metering",
+   "not measured yet"
   ],
   "where": "Setup › Data & usage; console › Usage & plan",
   "pages": [

@@ -76,7 +76,7 @@ test("limit bars and the store admin's notice", () => {
     [100, "bad", "Over the limit"], [85, "warn", "Near the limit"], [0, "good", "Within the limit"],
   ]);
   assert.equal(bars[0].text, "6 of 5");
-  assert.equal(bars[2].text, "Not measured yet of 1 GB");
+  assert.equal(bars[2].text, "Not measured yet - limit 1 GB");
   const over = planNotice({ label: "Trial", limit_states: states });
   assert.equal(over.tone, "bad");
   assert.match(over.text, /over the limit for users on the Trial plan/);

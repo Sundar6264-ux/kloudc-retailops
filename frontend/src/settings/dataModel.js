@@ -8,8 +8,11 @@ export const REMEMBER_PANEL_KEY = "kc.data.section";
 
 const UNITS = ["bytes", "KB", "MB", "GB", "TB"];
 
+// Shown until the nightly usage job has measured a number.
+export const NOT_MEASURED = "Not measured yet";
+
 export function formatBytes(n) {
-  if (n === null || n === undefined || Number.isNaN(Number(n))) return "Not measured yet";
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return NOT_MEASURED;
   let v = Number(n);
   let i = 0;
   while (v >= 1024 && i < UNITS.length - 1) {
@@ -21,7 +24,7 @@ export function formatBytes(n) {
 }
 
 export function formatCount(n) {
-  if (n === null || n === undefined || Number.isNaN(Number(n))) return "Not measured yet";
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return NOT_MEASURED;
   return Number(n).toLocaleString("en-US");
 }
 
@@ -112,7 +115,7 @@ export function limitBars(states) {
       tone: STATE_TONE[s.state] || "good",
       state: s.state,
       stateText: STATE_TEXT[s.state] || STATE_TEXT.ok,
-      text: used === null ? `Not measured yet of ${fmt(s.limit)}` : `${fmt(used)} of ${fmt(s.limit)}`,
+      text: used === null ? `Not measured yet - limit ${fmt(s.limit)}` : `${fmt(used)} of ${fmt(s.limit)}`,
     };
   });
 }
