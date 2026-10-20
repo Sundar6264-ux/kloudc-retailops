@@ -149,7 +149,7 @@ function ReportTable({ report }) {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="table-wrap">
-            <table>
+            <table className="kc-table--stack">
               <thead>
                 <tr>
                   {report.columns.map((c) => (
@@ -270,7 +270,7 @@ function PriceHistorySearch() {
                 {item.barcode && `· ${item.barcode}`} {item.category && `· ${item.category}`}
               </span>
               <div className="table-wrap" style={{ marginTop: "0.4rem" }}>
-                <table>
+                <table className="kc-table--stack">
                   <thead>
                     <tr>
                       <th>Date</th>

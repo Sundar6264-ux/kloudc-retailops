@@ -667,7 +667,7 @@ function InvoiceTrash({ refreshKey, onChanged }) {
       {items === null && <p className="muted">Loading…</p>}
       {items && items.length > 0 && (
         <div className="table-wrap">
-          <table>
+          <table className="kc-table--stack">
             <thead>
               <tr>
                 <th>Vendor</th>
@@ -793,7 +793,7 @@ function SubmissionsTable({ items, onResend, isAdmin, onDataChanged }) {
         style={{ marginBottom: "0.75rem" }}
       />
       <div className="table-wrap">
-        <table>
+        <table className="kc-table--stack">
           <thead>
             <tr>
               <SortableTh sortKey="created_at" currentSortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>

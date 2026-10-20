@@ -29,7 +29,7 @@ ul.pf-list { list-style: none; margin: 0; padding: 0; }
   background: var(--surface); border: 1px solid var(--border-strong); overflow-wrap: anywhere; user-select: all;
 }
 .pf-qr { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; grid-column: 1 / -1; }
-.pf-qr img { background: #fff; border-radius: 8px; padding: 4px; }
+.pf-qr img { background: var(--surface); border-radius: 8px; padding: 4px; }
 
 /* Platform settings: label + help on the left, the control on the right; stacked on phones. */
 .pf-settings-form { display: grid; gap: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; }
@@ -96,3 +96,12 @@ ul.pf-list { list-style: none; margin: 0; padding: 0; }
   .kc-drawer.pf-detail { top: 0; max-height: none; height: 100dvh; border-radius: 0; }
   .pf-detail-name { max-width: 150px; }
 }
+
+/* Setup > Store settings (A5) reuses the settings rows above. */
+.kc-store-settings { margin-top: 0.8rem; }
+.kc-fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+.kc-fieldset legend { padding: 14px 16px 0; }
+.kc-color-field { display: flex; gap: 8px; align-items: center; }
+.kc-color-field input[type="color"] { width: 44px; min-width: 44px; height: 44px; padding: 2px; border-radius: 8px; }
+.kc-own-server { margin-top: 0.8rem; }
+.pf-setting-control textarea { width: 100%; box-sizing: border-box; }

@@ -47,7 +47,7 @@ function OrdersTable({ list, allTime, search, columns, th }) {
   const colCount = (allTime ? 9 : 8) - (canSeeSales ? 0 : 1);
   return (
     <div className="table-wrap">
-      <table>
+      <table className="kc-table--stack">
         <thead>
           <tr>
             {allTime && th("Business date", "business_date")}

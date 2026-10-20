@@ -247,7 +247,7 @@ export default function PlacedOrders() {
             {orders.length < total ? ` - showing ${orders.length}` : ""}
           </p>
           <div className="table-wrap">
-            <table>
+            <table className="kc-table--stack">
               <thead>
                 <tr>
                   {th("Placed at", "placed_at")}

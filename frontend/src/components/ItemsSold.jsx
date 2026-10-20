@@ -231,7 +231,7 @@ function ItemsSoldReport() {
                 onChange={(e) => setSearch(e.target.value)}
               />
               <div className="table-wrap">
-                <table>
+                <table className="kc-table--stack">
                   <thead>
                     <tr>
                       {th("Item", "name")}

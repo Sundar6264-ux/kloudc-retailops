@@ -290,7 +290,7 @@ export function ReconciliationWorkedExample() {
           </p>
 
           <div className="table-wrap">
-            <table>
+            <table className="kc-table--stack">
               <thead>
                 <tr>
                   <th>Item</th>
@@ -466,7 +466,7 @@ function RecentEntries({ refreshSignal }) {
       {entries && entries.length === 0 && <p className="muted">Nothing logged yet.</p>}
       {entries && entries.length > 0 && (
         <div className="table-wrap">
-          <table>
+          <table className="kc-table--stack">
             <thead>
               <tr>
                 <th>Date</th>
@@ -590,7 +590,7 @@ function ReconciliationReport() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="table-wrap">
-            <table>
+            <table className="kc-table--stack">
               <thead>
                 <tr>
                   {th("Item", "name")}
@@ -714,7 +714,7 @@ function InvoiceGaps() {
           </button>
         </div>
         <div className="table-wrap">
-          <table>
+          <table className="kc-table--stack">
             <thead>
               <tr>
                 <th>Date</th>

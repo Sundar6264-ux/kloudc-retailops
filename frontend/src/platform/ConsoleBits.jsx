@@ -1,5 +1,6 @@
 // Small shared pieces of the master console (status chip, feedback banner),
 // the same look as the console's own (DESIGN_SYSTEM 1.4: colour + icon + word).
+import { storeDateTimeFormat } from "../format.js";
 import Icon from "../ui/icons.jsx";
 
 const CHIP_ICON = { good: "circle-check", warn: "triangle-alert", bad: "octagon-alert", info: "info", neutral: "circle", off: "circle" };
@@ -27,5 +28,5 @@ export function when(iso) {
   if (!iso) return "never";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return storeDateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(d);
 }

@@ -367,7 +367,7 @@ export default function VendorContacts({ isAdmin }) {
         {sends && sends.length === 0 && <p className="muted">No POs sent from the app yet.</p>}
         {sends && sends.length > 0 && (
           <div className="table-wrap">
-            <table>
+            <table className="kc-table--stack">
               <thead>
                 <tr>
                   <th>When</th>

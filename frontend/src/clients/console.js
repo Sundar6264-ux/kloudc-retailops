@@ -27,3 +27,10 @@ export const resetPlatformSetting = (key) => del(`${P}/settings/${enc(key)}`);
 
 // Store detail (A4)
 export const getStoreHealth = (code) => getJSON(`${P}/stores/${enc(code)}/health`);
+
+// Setup > Store settings (A5): the store admin's own store (store session).
+export const getOwnStoreSettings = () => getJSON("/api/settings/store");
+export const saveOwnStoreSettings = (changes) => patchJSON("/api/settings/store", changes);
+export const getHostingStatus = () => getJSON("/api/settings/hosting");
+export const requestOwnServer = ({ reason, targetUrl }) =>
+  postJSON("/api/settings/hosting/request", { reason, target_api_base_url: targetUrl || null });
