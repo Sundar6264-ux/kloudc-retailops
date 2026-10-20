@@ -3297,16 +3297,22 @@ by default: the pilot behaves as today.
 
 - Server (PostgreSQL 5433, `so_wra_`): `tests/platform` + `tests/tenancy` +
   touched files: **410 passed**, 3 failed before the last fix -> cache lint
-  fixed; the 2 left are outside this track (below). New: `test_store_date.py`
-  (17), `test_console_masters_settings.py` (21), `test_help_pos.py` (12).
+  fixed; the 2 left are outside this track (below). New: 49 tests in
+  `test_store_date.py`, `platform/test_console_masters_settings.py` and
+  `test_help_pos.py`.
   Date-sensitive suites pass with `TZ=UTC` and `TZ=America/New_York`
   (408 + 5 skipped each); 14 older tests that used the server's date as
   "today" now use the store's.
 - Website node tests: **337 of 337** (was 308).
 - `vite build`: OK, no warnings.
 - Playwright (real server, `run_website_ready_a.sh`, throwaway `so_wra_e2e`
-  databases, dropped): 36 screenshots in `/Users/sundar/storeops/screenshots/ready/A/`,
-  0 problems, 0 page errors.
+  databases, dropped): 36 screenshots in `screenshots/ready/A/` (outside the
+  repo), 0 problems, 0 page errors.
+- Existing suites on this branch: `e2e/platform/run_real.sh` 144 checks, 0
+  failed; `run_flows.sh` 114 checks, 0 failed; `e2e/store` (Toast, Clover,
+  DEMO; 1280 + 375) 760 checks, 0 failures (was 748: the new Setup pages).
+  On a single-store server Store settings answers 409 (as Integrations
+  does) and the page says "Managed by KloudC support".
 
 **Decisions**
 
