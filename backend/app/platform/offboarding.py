@@ -294,8 +294,13 @@ def _drop_database(db_name: str) -> bool:
 def _delete_files(code: str) -> int:
     from app.storage import get_storage
 
+    from app.storage import StorageError
+
     storage = get_storage()
-    n = storage.delete_prefix("", code=code)
+    try:
+        n = storage.delete_prefix("", code=code)
+    except StorageError:  # a backend that refuses the empty prefix: one by one
+        n = sum(int(storage.delete(o.key, code=code)) for o in list(storage.list(code=code)))
     if storage.backend == "local":
         # Also the hidden files (keys, identity marker) and empty folders.
         from app.tenancy.paths import store_root, uploads_base

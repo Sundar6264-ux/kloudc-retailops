@@ -615,3 +615,32 @@ def test_jobs_are_registered():
     assert kinds["usage_gauges"].per_store is True
     assert kinds["offboarding_daily"].per_store is False
     assert jobqueue.handler_for("store_export").max_attempts == 2
+
+
+def test_responses_have_the_fields_the_website_reads(alpha, alpha_admin, master_client):
+    """frontend/src/settings/dataModel.js and the panels read these keys."""
+    from app.platform import usage
+
+    usage.record(usage.ORDERS_SYNCED, 3, code="ALPHA")
+    usage.flush()
+    own = alpha_admin.get("/api/settings/usage").json()
+    assert {"available", "store_code", "metrics", "days", "updated_at", "window_days", "plan"} <= set(own)
+    assert {"plan", "label", "limits", "limit_states", "state"} <= set(own["plan"])
+    assert set(usage.METRICS) <= set(own["metrics"])
+    assert {"day", "orders_synced"} <= set(own["days"][0])
+    master_client.put("/api/platform/stores/ALPHA/plan", json={"plan": "trial"})
+    states = master_client.get("/api/platform/stores/ALPHA/usage").json()["plan"]["limit_states"]
+    assert states and {"key", "label", "used", "limit", "unit", "state"} <= set(states[0])
+
+    export_id = alpha_admin.post("/api/settings/exports").json()["id"]
+    _wait_export("ALPHA", export_id)
+    listed = alpha_admin.get("/api/settings/exports").json()
+    assert {"available", "exports", "link_hours", "keep_days"} <= set(listed)
+    row = listed["exports"][0]
+    assert {"id", "status", "reason", "size_bytes", "tables", "files", "error", "created_at", "expires_at",
+            "filename", "downloads"} <= set(row)
+    link = alpha_admin.post(f"/api/settings/exports/{export_id}/link").json()
+    assert {"url", "expires_at", "filename"} <= set(link)
+    off = master_client.get("/api/platform/stores/ALPHA/offboarding").json()
+    assert {"status", "state", "purge_after", "purged_at", "final_export", "pilot_mode", "grace_days", "hosting",
+            "timeline"} <= set(off)
