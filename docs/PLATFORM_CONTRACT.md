@@ -3303,7 +3303,8 @@ platform metadata (and its migration check) knows the two tables.
 
 | Check | Result |
 |---|---|
-| New track C tests (`test_storage_s3`, `test_storage_team_media`, `test_pos_call_metering`, `test_pgbouncer_mode`, `test_deploy_multi_process`, `platform/test_jobqueue`, `platform/test_livebus`) | 57 passed |
+| New track C tests (`test_storage_s3`, `test_storage_team_media`, `test_pos_call_metering`, `test_pgbouncer_mode`, `test_deploy_multi_process`, `platform/test_jobqueue`, `platform/test_livebus`) | 58 passed |
+| Full server suite on this branch (PostgreSQL for `tests/platform`, `tests/tenancy`; SQLite elsewhere) | 3056 passed, 18 skipped, 2 failed: the name guard line above, and `test_ops_glossary::test_app_bundled_copy_is_current`, because the four new glossary terms are not yet in the app's bundled copy (the app repo is not changed tonight: regenerate it with `scripts/help/sync_help_to_app.sh` as an app follow-up; every track that adds terms hits the same check) |
 | Guards + `tests/tenancy` + `test_platform_db` (p0004 up/down + metadata compare) + help content + interfaces | 92 passed, 1 failed: the name guard flags line 43 of `docs/WEBSITE_READY_CONTRACT.md` (the m1heavy path, committed in the Plan stage, not a track C file) |
 | Touched areas unchanged: team core / chat / W5 / tasks / public checklist / builder; Toast adapter, inventory API, sales accuracy, verify2 failure modes; platform e2e flows; ops ready + deploy files | 330 + 93 + 43 + 5 + 29 passed |
 | Website node tests | 320 of 320 (12 new in `systemModel.test.mjs`) |
