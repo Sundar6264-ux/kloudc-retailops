@@ -156,7 +156,7 @@ export default function PlacedOrders() {
       <InfoBlock brief="Every purchase order from the cart, newest first - click an order to see what was on it.">
         <p style={{ marginTop: 0 }}>
           An order shows here as <strong>Placed</strong> once someone clicks <strong>Order placed</strong> on
-          the Purchase Order Cart (web) or <strong>Mark placed</strong> (app). It records exactly what was in
+          the Purchase Order Cart. It records exactly what was in
           that vendor's cart at that moment.
         </p>
         <p style={{ marginBottom: 0 }}>

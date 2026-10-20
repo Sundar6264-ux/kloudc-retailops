@@ -21,6 +21,8 @@ import {
   validStoreCode,
 } from "../login/loginModel.js";
 import "../platform/platform.css";
+import { takeSignOutReason } from "../login/signOutReason.js";
+import "../platform/console.css";
 
 function storage() {
   try {
@@ -51,6 +53,8 @@ export default function LoginPage() {
   const [needTotp, setNeedTotp] = useState(false);
   const [totp, setTotp] = useState("");
   const [error, setError] = useState(null);
+  // Signed out because a master paused the store (A12): shown once.
+  const [signedOutReason] = useState(() => takeSignOutReason(typeof window !== "undefined" ? window.sessionStorage : null));
   const [loading, setLoading] = useState(false);
   // The store the typed Store ID belongs to (public lookup on blur), for
   // its name and logo above the form. null = not looked up / not found.
@@ -228,6 +232,12 @@ export default function LoginPage() {
               className="kc-mono-input"
             />
           </label>
+        )}
+
+        {signedOutReason && !error && (
+          <p className="pf-banner warn" role="status" data-testid="signed-out-reason">
+            {signedOutReason}
+          </p>
         )}
 
         {error && (
