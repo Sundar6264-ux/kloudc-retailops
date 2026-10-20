@@ -3938,3 +3938,33 @@ fixes and what was checked and found sound are in `docs/SECURITY_REVIEW.md`
   - Regenerate the help bundle: Masters has a new info point.
   - Any app screen that changes a password should expect the other sessions to
     end.
+
+## As built - Website ready: Ship
+
+Final regression of `main` @ `52d7892` on this Mac (2026-10-20, 01:50-02:02
+EDT, dev cluster 5433, `so_ship` databases, dropped), with the new pins
+installed in `backend/.venv`:
+
+| Check | Result |
+|---|---|
+| Backend, PostgreSQL | 3211 passed, 18 skipped, 0 failed (`test_app_bundled_copy_is_current` deselected, as in Integrate) |
+| Backend, SQLite | 3202 passed, 27 skipped, 1 failed: `test_app_bundled_copy_is_current` (the app's help bundle; app follow-up, CI skips it) |
+| Name guard (`tests/test_no_origin_names.py`) | passed in both suites |
+| Website node tests | 372 of 372 |
+| `vite build` | OK; largest chunk 434.8 kB (133 kB gzip), limit 500 kB |
+| GitHub CI on `52d7892` | green, run 39375737125 |
+
+**Pilot.** `deploy/pilot-mac/run-backup.sh backup` ran at 02:02 (platform +
+`SPICETOWN`, both OK, 66 MB). `update.sh main` was then refused by the
+session's permission policy as a production deploy, so the pilot stays on
+`9595a49`, unchanged and ready (`active_stores` 1, error log unchanged). The
+parity command was not run (the pilot did not change; the 07:30 job runs it).
+The owner's update and roll-back commands are in the handoff, section 0.3.
+Roll-back note: the release adds platform migrations p0002-p0004 only (store
+databases stay at 0062); going back to `9595a49` needs
+`downgrade_platform_db(None, "p0001")` first, run with the new code.
+
+**Handoff.** `KLOUDC_RETAILOPS_HANDOFF.md` section 0 (outside git): what's
+new, how to try it in the preview and the pilot, decisions, owner actions
+(Clover developer app + sandbox, R2, Stripe, plans, `app.kloudc.com`, Terms
+page, console API two-step header) and the app follow-up list.
