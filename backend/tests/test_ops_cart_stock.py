@@ -8,6 +8,7 @@ import json
 
 import pytest
 
+from app.timeutil import restaurant_today
 from app.models import CartItem, InventorySnapshot, PlacedOrder
 from app.services import po_export
 from tests.conftest import client_for, make_user
@@ -41,7 +42,7 @@ def _snap(db, day, item_id, name, qty, price=3.99, supplier=VENDOR):
 
 @pytest.fixture
 def stocked(db):
-    today = dt.date.today()
+    today = restaurant_today()
     old = today - dt.timedelta(days=3)
     # An older upload must not be used.
     _snap(db, old, "rice", "Basmati Rice 10lb", 99)

@@ -225,16 +225,61 @@ def schema_errors(raw: Dict[str, Any], schema: Optional[dict] = None) -> List[st
 # ----------------------------------------------------------------- store words
 
 
+# POS providers whose "name" is not a POS people work in: a CSV-only store
+# reads "your POS" (website ready A7), never "CSV upload".
+NO_POS_NAME = frozenset({"csv"})
+POS_LABELS = {"toast": "Toast", "clover": "Clover", "csv": "inventory file"}
+
+
+def store_pos() -> Optional[str]:
+    """This store's POS provider id ("toast", "clover", "csv"), or None."""
+    try:
+        from app.pos.gating import pos_provider
+
+        return (pos_provider() or "").strip().lower() or None
+    except Exception:  # noqa: BLE001 - no store context
+        return None
+
+
+def pos_word() -> str:
+    """How help and the glossary name this store's POS: "Toast", "Clover", or
+    "your POS" for a store without one (CSV-only)."""
+    from app.pos.gating import pos_name
+
+    if store_pos() in NO_POS_NAME:
+        return "your POS"
+    return pos_name() or "the POS"
+
+
+def only_for_pos(value, pos: Optional[str]):
+    """A copy of help JSON without the entries marked for another POS
+    (``"pos": ["toast"]``, schema.json; website ready A8). ``pos=None`` (a
+    master, or a signed-out reader): every entry stays, and a marked one gets
+    ``pos_label`` ("Toast only") so the reader sees which POS it is about."""
+    if isinstance(value, list):
+        out = []
+        for v in value:
+            if isinstance(v, dict) and isinstance(v.get("pos"), list) and pos is not None and pos not in v["pos"]:
+                continue
+            out.append(only_for_pos(v, pos))
+        return out
+    if isinstance(value, dict):
+        out = {k: only_for_pos(v, pos) for k, v in value.items()}
+        if pos is None and isinstance(value.get("pos"), list) and value["pos"]:
+            out["pos_label"] = " / ".join(POS_LABELS.get(p, p.title()) for p in value["pos"]) + " only"
+        return out
+    return value
+
+
 def store_words() -> Dict[str, str]:
     """This store's words, the same ones the glossary uses."""
     from app.config import get_settings
-    from app.pos.gating import pos_name
 
     s = get_settings()
     tz = getattr(s, "store_timezone", "") or getattr(s, "toast_timezone", "") or "America/New_York"
     store = (getattr(s, "store_name", "") or "").strip()
     return {
-        "{pos}": pos_name() or "the POS",
+        "{pos}": pos_word(),
         "{store}": store or "your store",
         "{store_city}": tz.rsplit("/", 1)[-1].replace("_", " "),
         "{support_email}": content().get("contact", {}).get("email") or SUPPORT_EMAIL,
@@ -289,10 +334,16 @@ def _contact(words: Dict[str, str]) -> dict:
     return fill(c, words)
 
 
-def help_body(words: Optional[Dict[str, str]] = None) -> dict:
-    """GET /api/help: everything, this store's words filled in."""
+_ALL_POS = object()
+
+
+def help_body(words: Optional[Dict[str, str]] = None, pos=_ALL_POS) -> dict:
+    """GET /api/help: everything, this store's words filled in and entries
+    for another POS left out (``pos``: this store's POS by default)."""
     words = words or store_words()
-    c = content()
+    if pos is _ALL_POS:
+        pos = store_pos()
+    c = only_for_pos(content(), pos)
     return {
         "version": c["manifest"].get("version", 0),
         "updated": c["manifest"].get("updated"),
@@ -311,7 +362,7 @@ def public_help_body(words: Optional[Dict[str, str]] = None) -> dict:
     only, for the sign-in and sign-up screens of older app builds. Logged
     out there is no store, so the words are generic."""
     words = words or generic_words()
-    c = content()
+    c = only_for_pos(content(), None)
     return {
         "version": c["manifest"].get("version", 0),
         "updated": c["manifest"].get("updated"),

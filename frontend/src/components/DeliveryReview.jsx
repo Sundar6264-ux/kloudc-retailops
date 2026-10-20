@@ -176,7 +176,7 @@ export default function DeliveryReview() {
 
       {!loading && candidates && candidates.items.length > 0 && (
         <div className="table-wrap">
-          <table>
+          <table className="kc-table--stack">
             <thead>
               <tr>
                 <th>Item</th>
@@ -288,7 +288,7 @@ function RecentDeliveries() {
       )}
       {data && data.deliveries.length > 0 && (
         <div className="table-wrap">
-          <table>
+          <table className="kc-table--stack">
             <thead>
               <tr>
                 <th>Date</th>

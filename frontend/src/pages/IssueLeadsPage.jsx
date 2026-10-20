@@ -46,7 +46,7 @@ function ProposalNote({ row }) {
 function LeadRows({ rows, kind, nameKey, edits, setEdit, people }) {
   return (
     <div className="table-wrap">
-      <table className="leads-table">
+      <table className="kc-table--stack leads-table">
         <thead>
           <tr>
             <th>{kind === "section" ? "PO section" : "Vendor"}</th>

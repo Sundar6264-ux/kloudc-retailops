@@ -80,7 +80,10 @@ export function storeView(branding, me) {
   return {
     ...b,
     code: (me && typeof me.store_code === "string" && me.store_code) || b.code,
-    posName: str(me?.pos_name) || b.posName,
+    // A CSV-only store has no POS to name: "your POS", never "CSV upload" (A7).
+    posName: str(me?.pos_provider) === "csv" ? "your POS" : str(me?.pos_name) || b.posName,
+    posProvider: str(me?.pos_provider) || null,
+    timezone: str(me?.store_timezone) || b.timezone,
     capabilities: strList(me?.capabilities) || b.capabilities,
     storeFeatures: strList(me?.store_features) || b.storeFeatures,
   };

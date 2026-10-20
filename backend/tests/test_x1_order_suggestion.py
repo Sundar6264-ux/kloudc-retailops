@@ -16,12 +16,12 @@ import pytest
 
 from app.models import CartItem, InventorySnapshot, Order, PlacedOrder, VendorSchedule
 from app.services import order_suggestion as OS
-from app.timeutil import utcnow
+from app.timeutil import restaurant_today, utcnow
 from tests.conftest import client_for, make_user
 
 PROJ = "/api/ordering/supplier-projection"
 CART = "/api/ordering/cart"
-TODAY = dt.date.today()
+TODAY = restaurant_today()
 
 
 # --------------------------------------------------------------------------

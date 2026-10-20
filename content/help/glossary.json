@@ -2047,14 +2047,17 @@
   "definition": "The days between archiving a store and deleting its data. Deletion can be cancelled any time before the date.",
   "aliases": [
    "grace period",
-   "grace days"
+   "grace days",
+   "off-boarding"
   ],
   "where": "Master console › store › Data",
   "pages": [
-   "platform_store_data"
+   "platform_store_data",
+   "platform_settings"
   ],
   "related": [
-   "concept_offboarding"
+   "concept_offboarding",
+   "concept_archive"
   ]
  },
  {
@@ -2170,6 +2173,96 @@
   "related": [
    "concept_merchant_id",
    "concept_integration"
+  ]
+ },
+ {
+  "key": "concept_temporary_password",
+  "label": "Temporary password",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "A password made for a new master, shown once. They sign in with it and must choose their own before using the console.",
+  "aliases": [
+   "temp password",
+   "first password"
+  ],
+  "where": "Console > Masters",
+  "pages": [
+   "platform_masters"
+  ],
+  "related": [
+   "concept_master"
+  ]
+ },
+ {
+  "key": "concept_platform_setting",
+  "label": "Platform setting",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "A setting for the whole platform, not one store, changed in the console. A value saved there wins over the server's own value until you reset it.",
+  "aliases": [
+   "platform settings"
+  ],
+  "where": "Console > Platform settings",
+  "pages": [
+   "platform_settings"
+  ],
+  "related": [
+   "concept_sign_ups"
+  ]
+ },
+ {
+  "key": "concept_sign_ups",
+  "label": "New store sign-ups",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "Whether the public sign-up page takes requests from new stores. Off: it says sign-ups are closed. Existing stores are not affected.",
+  "aliases": [
+   "sign-ups",
+   "signup"
+  ],
+  "where": "Console > Platform settings",
+  "pages": [
+   "platform_settings"
+  ],
+  "related": [
+   "concept_platform_setting"
+  ]
+ },
+ {
+  "key": "concept_store_health",
+  "label": "Store health",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "A store's status at a glance in the console: database version, the last run of each background job, last activity and its connections.",
+  "aliases": [
+   "health",
+   "overview"
+  ],
+  "where": "Console > Stores > a store > Overview",
+  "pages": [
+   "platform_stores"
+  ],
+  "related": [
+   "concept_audit_log"
+  ]
+ },
+ {
+  "key": "concept_store_time",
+  "label": "Store time",
+  "category": "concept_basics",
+  "area": "help",
+  "definition": "Dates and \"today\" always follow your store's time zone, wherever you are. After midnight in your store it's the next day here too.",
+  "aliases": [
+   "store date",
+   "time zone",
+   "today"
+  ],
+  "where": "Every date on the website and app",
+  "pages": [
+   "store_settings"
+  ],
+  "related": [
+   "concept_store_id"
   ]
  }
 ]

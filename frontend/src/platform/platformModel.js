@@ -10,6 +10,8 @@ export const PLATFORM_TABS = [
   { key: "stores", label: "Stores", icon: "store", pageId: "platform_stores", sub: "Every store and its status" },
   { key: "hosting", label: "Hosting", icon: "server", pageId: "platform_hosting", sub: "Moves to a store's own server" },
   { key: "audit", label: "Audit", icon: "scroll-text", pageId: "platform_audit", sub: "Everything done, newest first" },
+  { key: "masters", label: "Masters", icon: "key-round", pageId: "platform_masters", sub: "Who can sign in here" },
+  { key: "settings", label: "Platform settings", icon: "settings", pageId: "platform_settings", sub: "Sign-ups, support, plans" },
   { key: "help", label: "Help", icon: "life-buoy", pageId: "help", sub: "The master guide and support" },
 ];
 

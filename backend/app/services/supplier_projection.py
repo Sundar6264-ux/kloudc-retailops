@@ -36,6 +36,7 @@ from app.services.item_vendors import vendors_of
 from app.services.reorder import latest_inventory_by_item
 from app.services.similar_products import aligned_codes, other_vendor_refs, split_aligned
 from app.services.vendor_schedule import decode_weekdays, get_vendor_schedule_by_name
+from app.timeutil import restaurant_today
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +264,7 @@ def compute_supplier_projection(
     extra keys inside each projection). If it fails for any reason the old
     calculation is used, so the screen never breaks.
     """
-    as_of_date = as_of_date or dt.date.today()
+    as_of_date = as_of_date or restaurant_today()
     method = method or get_settings().projection_method
 
     # Live Toast counts on top of the latest snapshot when
@@ -304,7 +305,7 @@ def project_suppliers(
     profiles and one forecast model per item are built ONCE for all of them
     instead of once per supplier. A model depends only on its own item, so
     the numbers are the same."""
-    as_of_date = as_of_date or dt.date.today()
+    as_of_date = as_of_date or restaurant_today()
     method = method or get_settings().projection_method
     latest_inventory = overlay_live_stock(latest_inventory_by_item(db))
     matching_by_supplier = {
@@ -439,7 +440,7 @@ def project_items(
     (supplier_item_id, other_vendors) are not meaningful here - the numbers
     (on hand, demand, projections, forecast) are exactly what the vendor's
     projection shows. Used for the cart lines' projection context."""
-    as_of_date = as_of_date or dt.date.today()
+    as_of_date = as_of_date or restaurant_today()
     method = method or get_settings().projection_method
     latest_inventory = overlay_live_stock(latest_inventory_by_item(db))
     wanted = {i for i in item_ids if i}

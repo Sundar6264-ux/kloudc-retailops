@@ -48,7 +48,7 @@ from app.services.supplier_projection import (
     forecast_summary,
     store_container_pairs,
 )
-from app.timeutil import to_restaurant_date
+from app.timeutil import restaurant_today, to_restaurant_date
 from app.tenancy import spawn_in_store, tenant_local, tenant_lock
 
 logger = logging.getLogger(__name__)
@@ -189,7 +189,7 @@ def forecasts_by_item(db: Session, latest: dict, excluded_groups: set) -> dict:
     refreshes it with the latest sales, so the Fix Issues page stays fast."""
     if get_settings().projection_method != "availability" or not latest:
         return {}
-    as_of = dt.date.today()  # same "today" Supplier Projection uses
+    as_of = restaurant_today()  # same "today" Supplier Projection uses
     latest_date = max(s.snapshot_date for s in latest.values())
     groups = tuple(sorted(excluded_groups))
     key = (
@@ -403,7 +403,7 @@ def dead_zero_stock_items(
     if not latest or not forecasts:
         return []
     latest_date = max(s.snapshot_date for s in latest.values())
-    today = today or dt.date.today()
+    today = today or restaurant_today()
     sold_since = today - dt.timedelta(days=ZERO_STOCK_NO_SALE_DAYS)
     old_by = latest_date - dt.timedelta(days=ZERO_STOCK_MIN_AGE_DAYS)
 

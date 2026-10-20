@@ -19,13 +19,13 @@ from app.services.fix_issues import get_issue_list
 from app.services.reorder import latest_inventory_by_item
 from app.services.store_vs_container import EXPORT_COLUMNS, get_store_vs_container
 from app.services.supplier_projection import _split_suppliers, compute_supplier_projection
-from app.timeutil import utcnow
+from app.timeutil import restaurant_today, utcnow
 from tests.conftest import client_for, make_user
 
 # Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
 pytestmark = pytest.mark.suite_pack
 
-TODAY = dt.date.today()
+TODAY = restaurant_today()
 OLDER = TODAY - dt.timedelta(days=3)
 URL = "/api/reports/store-vs-container"
 

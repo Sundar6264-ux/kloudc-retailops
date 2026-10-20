@@ -1,0 +1,64 @@
+{
+ "id": "master-masters",
+ "title": "Masters and platform settings",
+ "area": "platform",
+ "group": "master",
+ "order": 905,
+ "audience": [
+  "master"
+ ],
+ "summary": "Add or remove masters, reset a lost phone's two-step sign-in, and change platform-wide settings.",
+ "pages": [
+  "platform_masters",
+  "platform_settings"
+ ],
+ "related": [
+  "master-security",
+  "master-stores"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "Masters",
+   "id": "masters"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Open the **Masters** tab and choose **Add master**.",
+    "Type their username (and name). Choose **Add**.",
+    "Copy the **temporary password** and send it to them privately. It is shown once.",
+    "They sign in with Store ID **PLATFORM**, then choose their own password."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Remove** turns a master off and signs them out everywhere. You can't remove yourself or the last master.",
+    "**Reset two-step** is for a lost phone: their two-step sign-in is turned off and they set it up again at their next sign-in.",
+    "To move your own two-step sign-in to a new phone, enter a code from your current phone first."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Platform settings",
+   "id": "settings"
+  },
+  {
+   "type": "p",
+   "text": "The **Platform settings** tab changes settings for the whole platform. A change works straight away, with no restart, and is recorded in Audit with the old and new value. **Reset** goes back to the server's own value."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**New store sign-ups**: off closes the public sign-up page. Existing stores are not affected.",
+    "**Terms page link** and **Support email** are shown to store owners.",
+    "**Plan for new stores**, **Days before an archived store's data is deleted** and **Hours a download link works**."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "Security switches (two-step sign-in for masters, dedicated hosting, keys and database addresses) are set on the server, never in the console."
+  }
+ ]
+}

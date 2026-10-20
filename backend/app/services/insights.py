@@ -30,7 +30,7 @@ from app.services import insights_data as data
 from app.services.insights_data import r2
 from app.store import pack as store_pack
 from app.store import settings_view as sv
-from app.timeutil import restaurant_timezone, utcnow
+from app.timeutil import restaurant_timezone, restaurant_today, utcnow
 
 DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 LONG_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -164,7 +164,7 @@ MENU_MAP_NOTE = (
 def _nightly_time() -> str:
     s = get_settings()
     return data.fmt_time(
-        dt.datetime.combine(dt.date.today(), dt.time(s.insights_nightly_hour, s.insights_nightly_minute), restaurant_timezone())
+        dt.datetime.combine(restaurant_today(), dt.time(s.insights_nightly_hour, s.insights_nightly_minute), restaurant_timezone())
     )
 
 

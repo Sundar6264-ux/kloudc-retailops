@@ -18,6 +18,7 @@ import time
 
 import pytest
 
+from app.timeutil import restaurant_today
 from app.db import SessionLocal
 from app.models import CriticalVendorDismissal, PurchaseLogEntry, User
 from app.routers import ordering as ordering_router
@@ -41,7 +42,7 @@ from tests.test_critical_dismissals import (  # noqa: F401  (clock, report: fixt
 def _deliveries(db, *vendors):
     """Recent deliveries keep each spelling's group active (not inactive)."""
     for vendor in vendors:
-        for day in {TUESDAY, dt.date.today()}:
+        for day in {TUESDAY, restaurant_today()}:
             db.add(
                 PurchaseLogEntry(
                     item_id="x", item_name="x", supplier=vendor, quantity_received=1, received_date=day,
@@ -220,10 +221,11 @@ def test_can_edit_is_false_for_the_demo_login_even_as_an_admin(db, admin_client,
 def test_a_report_for_the_servers_date_not_the_stores_doesnt_end_a_close(admin_client, report, clock, db, monkeypatch):
     created = admin_client.post(API, json={"vendor": "Raja Foods", "kind": "close", "reason": "ordered"}).json()
     report.set(raja=(["r1", "r2", "r3", "r4"], ["r5"]), chetak=(["c1", "c2", "c3"], ["c4", "c5"]))
-    # The endpoint's default as_of is the server's date (dt.date.today()); a
-    # server clock in another zone can be on another day than the store.
+    # The report's date and the dismissal's "today" are both the STORE's
+    # date now; a report for any other day (e.g. the server's, in another
+    # zone) is not the Today report and never ends a close.
     real_today = svc.restaurant_today
-    monkeypatch.setattr(svc, "restaurant_today", lambda: dt.date.today() - dt.timedelta(days=1))
+    monkeypatch.setattr(svc, "restaurant_today", lambda: real_today() - dt.timedelta(days=1))
     raja = {g["vendor"]: g for g in admin_client.get(REORDER).json()["vendors"]}["Raja Foods"]
     assert raja["critical_dismissed"] is True
     assert _row(db, created["id"]).cleared_at is None

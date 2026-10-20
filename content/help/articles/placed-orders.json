@@ -29,7 +29,7 @@
   {
    "type": "bullets",
    "items": [
-    "**Placed**: someone selected Order placed (or Mark placed in the app), or Send PO sent it. It records exactly what was in that vendor's cart.",
+    "**Placed**: someone selected **Order placed** (called Mark placed in older app versions), or Send PO sent it. It records exactly what was in that vendor's cart.",
     "**PDF only**: a PO was made (downloaded or shared) but never marked placed.",
     "Making the PDF again within a day updates the same entry, and marking it placed within 2 days turns that entry into the placed order. A PDF plus Order placed is one order, not two.",
     "**Placed outside the app**: an admin said the order went in another way. It has no items."

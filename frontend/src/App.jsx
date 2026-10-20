@@ -1,64 +1,70 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext.jsx";
 import { FEATURE_ROUTES, firstAccessiblePath, insightsHomePath, insightsLandingPath, routeForPath } from "./featureRoutes.js";
 import { StoreProvider } from "./store/StoreContext.jsx";
 import { featureAvailable, routeAvailable } from "./store/gating.js";
-import NotAvailablePage from "./pages/NotAvailablePage.jsx";
+const NotAvailablePage = lazy(() => import("./pages/NotAvailablePage.jsx"));
 import Sidebar, { readCollapsed, writeCollapsed } from "./components/Sidebar.jsx";
 import TopBar from "./components/TopBar.jsx";
 import HelpDrawer from "./components/HelpDrawer.jsx";
-import ChatWidget from "./components/ChatWidget.jsx";
+const ChatWidget = lazy(() => import("./components/ChatWidget.jsx"));
 import { HelpCenter, HelpPanel } from "./ui/helpBridge.jsx";
 import { readRemembered } from "./ui/useRemembered.js";
 import { INSIGHTS_TAB_KEY } from "./components/insights/InsightsHub.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
-import Overview from "./pages/Overview.jsx";
-import InvoiceSubmissionPage from "./pages/InvoiceSubmissionPage.jsx";
-import DailyChecklistsPage from "./pages/DailyChecklistsPage.jsx";
-import ChecklistAdminPage from "./pages/ChecklistAdminPage.jsx";
-import OpenOrdersPage from "./pages/OpenOrdersPage.jsx";
-import ItemsSoldPage from "./pages/ItemsSoldPage.jsx";
-import ReorderPage from "./pages/ReorderPage.jsx";
-import SupplierProjectionPage from "./pages/SupplierProjectionPage.jsx";
-import VendorCalendarPage from "./pages/VendorCalendarPage.jsx";
-import PurchaseOrderPage from "./pages/PurchaseOrderPage.jsx";
-import PlacedOrdersPage from "./pages/PlacedOrdersPage.jsx";
-import VendorContactsPage from "./pages/VendorContactsPage.jsx";
-import DeliveryReviewPage from "./pages/DeliveryReviewPage.jsx";
-import InventoryReportsPage from "./pages/InventoryReportsPage.jsx";
-import FixIssuesPage from "./pages/FixIssuesPage.jsx";
-import ReconciliationPage from "./pages/ReconciliationPage.jsx";
-import PoSectionsPage from "./pages/PoSectionsPage.jsx";
-import HelpPage from "./pages/HelpPage.jsx";
-import UsersPage from "./pages/UsersPage.jsx";
-import TeamsPage from "./pages/TeamsPage.jsx";
-import TeamTasksPage from "./pages/TeamTasksPage.jsx";
-import TeamTemplatesPage from "./pages/TeamTemplatesPage.jsx";
-import TeamAnnouncementsPage from "./pages/TeamAnnouncementsPage.jsx";
-import TeamModerationPage from "./pages/TeamModerationPage.jsx";
-import TeamChatPage from "./pages/TeamChatPage.jsx";
-import ChangePasswordPage from "./pages/ChangePasswordPage.jsx";
-import NoAccessPage from "./pages/NoAccessPage.jsx";
-import SignupPage from "./pages/SignupPage.jsx";
-import SignupPendingPage from "./pages/SignupPendingPage.jsx";
-import OwnerSetupPage from "./pages/OwnerSetupPage.jsx";
-import PlatformConsolePage from "./pages/PlatformConsolePage.jsx";
-import IntegrationsPage from "./pages/IntegrationsPage.jsx";
-import FlyersPage from "./pages/FlyersPage.jsx";
-import InventoryApiPage from "./pages/InventoryApiPage.jsx";
-import IssueLeadsPage from "./pages/IssueLeadsPage.jsx";
-import DailyComparePage from "./pages/insights/DailyComparePage.jsx";
-import HeatmapPage from "./pages/insights/HeatmapPage.jsx";
-import ChannelsPage from "./pages/insights/ChannelsPage.jsx";
-import CheckTrendsPage from "./pages/insights/CheckTrendsPage.jsx";
-import MenuPerformancePage from "./pages/insights/MenuPerformancePage.jsx";
-import AddonsPage from "./pages/insights/AddonsPage.jsx";
-import PrepForecastPage from "./pages/insights/PrepForecastPage.jsx";
-import ReturningCustomersPage from "./pages/insights/ReturningCustomersPage.jsx";
-import LossWatchPage from "./pages/insights/LossWatchPage.jsx";
-import OddChecksPage from "./pages/insights/OddChecksPage.jsx";
+const LoginPage = lazy(() => import("./pages/LoginPage.jsx"));
+const Overview = lazy(() => import("./pages/Overview.jsx"));
+const InvoiceSubmissionPage = lazy(() => import("./pages/InvoiceSubmissionPage.jsx"));
+const DailyChecklistsPage = lazy(() => import("./pages/DailyChecklistsPage.jsx"));
+const ChecklistAdminPage = lazy(() => import("./pages/ChecklistAdminPage.jsx"));
+const OpenOrdersPage = lazy(() => import("./pages/OpenOrdersPage.jsx"));
+const ItemsSoldPage = lazy(() => import("./pages/ItemsSoldPage.jsx"));
+const ReorderPage = lazy(() => import("./pages/ReorderPage.jsx"));
+const SupplierProjectionPage = lazy(() => import("./pages/SupplierProjectionPage.jsx"));
+const VendorCalendarPage = lazy(() => import("./pages/VendorCalendarPage.jsx"));
+const PurchaseOrderPage = lazy(() => import("./pages/PurchaseOrderPage.jsx"));
+const PlacedOrdersPage = lazy(() => import("./pages/PlacedOrdersPage.jsx"));
+const VendorContactsPage = lazy(() => import("./pages/VendorContactsPage.jsx"));
+const DeliveryReviewPage = lazy(() => import("./pages/DeliveryReviewPage.jsx"));
+const InventoryReportsPage = lazy(() => import("./pages/InventoryReportsPage.jsx"));
+const FixIssuesPage = lazy(() => import("./pages/FixIssuesPage.jsx"));
+const ReconciliationPage = lazy(() => import("./pages/ReconciliationPage.jsx"));
+const PoSectionsPage = lazy(() => import("./pages/PoSectionsPage.jsx"));
+const HelpPage = lazy(() => import("./pages/HelpPage.jsx"));
+const UsersPage = lazy(() => import("./pages/UsersPage.jsx"));
+const TeamsPage = lazy(() => import("./pages/TeamsPage.jsx"));
+const TeamTasksPage = lazy(() => import("./pages/TeamTasksPage.jsx"));
+const TeamTemplatesPage = lazy(() => import("./pages/TeamTemplatesPage.jsx"));
+const TeamAnnouncementsPage = lazy(() => import("./pages/TeamAnnouncementsPage.jsx"));
+const TeamModerationPage = lazy(() => import("./pages/TeamModerationPage.jsx"));
+const TeamChatPage = lazy(() => import("./pages/TeamChatPage.jsx"));
+const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage.jsx"));
+const NoAccessPage = lazy(() => import("./pages/NoAccessPage.jsx"));
+const SignupPage = lazy(() => import("./pages/SignupPage.jsx"));
+const SignupPendingPage = lazy(() => import("./pages/SignupPendingPage.jsx"));
+const OwnerSetupPage = lazy(() => import("./pages/OwnerSetupPage.jsx"));
+const PlatformConsolePage = lazy(() => import("./pages/PlatformConsolePage.jsx"));
+const IntegrationsPage = lazy(() => import("./pages/IntegrationsPage.jsx"));
+const FlyersPage = lazy(() => import("./pages/FlyersPage.jsx"));
+const InventoryApiPage = lazy(() => import("./pages/InventoryApiPage.jsx"));
+const IssueLeadsPage = lazy(() => import("./pages/IssueLeadsPage.jsx"));
+// Website ready: Setup > Data & usage (track B), Item vendors (track D) and
+// Store settings (A5) - each in its own chunk like every page.
+const StoreDataPage = lazy(() => import("./pages/StoreDataPage.jsx"));
+const ItemVendorsPage = lazy(() => import("./pages/ItemVendorsPage.jsx"));
+const StoreSettingsPage = lazy(() => import("./pages/StoreSettingsPage.jsx"));
+const DailyComparePage = lazy(() => import("./pages/insights/DailyComparePage.jsx"));
+const HeatmapPage = lazy(() => import("./pages/insights/HeatmapPage.jsx"));
+const ChannelsPage = lazy(() => import("./pages/insights/ChannelsPage.jsx"));
+const CheckTrendsPage = lazy(() => import("./pages/insights/CheckTrendsPage.jsx"));
+const MenuPerformancePage = lazy(() => import("./pages/insights/MenuPerformancePage.jsx"));
+const AddonsPage = lazy(() => import("./pages/insights/AddonsPage.jsx"));
+const PrepForecastPage = lazy(() => import("./pages/insights/PrepForecastPage.jsx"));
+const ReturningCustomersPage = lazy(() => import("./pages/insights/ReturningCustomersPage.jsx"));
+const LossWatchPage = lazy(() => import("./pages/insights/LossWatchPage.jsx"));
+const OddChecksPage = lazy(() => import("./pages/insights/OddChecksPage.jsx"));
 import { menuPerformanceRedirect } from "./components/insights/insightsModel.js";
+import PageSkeleton from "./ui/PageSkeleton.jsx";
 import { GlossaryProvider } from "./glossary.jsx";
 import { isPlatformUser } from "./login/loginModel.js";
 // Styles last, so the design layer (styles/kc.css) wins over older rules:
@@ -186,22 +192,26 @@ function AppShell() {
   // every address, plus the public sign-up pages.
   if (!user) {
     return (
-      <Routes>
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/signup/pending" element={<SignupPendingPage />} />
-        <Route path="/setup" element={<OwnerSetupPage />} />
-        <Route path="*" element={<LoginPage />} />
-      </Routes>
+      <Suspense fallback={<PageSkeleton bare />}>
+        <Routes>
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup/pending" element={<SignupPendingPage />} />
+          <Route path="/setup" element={<OwnerSetupPage />} />
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      </Suspense>
     );
   }
 
   // A master (Store ID PLATFORM) sees only the platform console.
   if (isPlatformUser(user)) {
     return (
-      <Routes>
-        <Route path="/platform" element={<PlatformConsolePage />} />
-        <Route path="*" element={<Navigate to="/platform" replace />} />
-      </Routes>
+      <Suspense fallback={<PageSkeleton bare />}>
+        <Routes>
+          <Route path="/platform" element={<PlatformConsolePage />} />
+          <Route path="*" element={<Navigate to="/platform" replace />} />
+        </Routes>
+      </Suspense>
     );
   }
 
@@ -224,6 +234,7 @@ function AppShell() {
       <div className="app-body">
         <TopBar navOpen={navOpen} onToggleNav={() => setNavOpen((v) => !v)} />
       <main className="main" id="main" tabIndex={-1} data-area={area || undefined}>
+        <Suspense fallback={<PageSkeleton />}>
         <Routes>
           <Route
             path="/"
@@ -477,11 +488,41 @@ function AppShell() {
           {/* Fix Issues category & vendor leads (W4): admins only (the API is require_admin). */}
           <Route path="/issue-leads" element={user.is_admin ? <IssueLeadsPage /> : <Navigate to="/" replace />} />
           <Route path="/teams" element={user.is_admin ? <TeamsPage /> : <Navigate to="/" replace />} />
+          {/* Website ready: Setup > Data & usage, Item vendors and Store settings (admins; their APIs are admin-only). */}
+          <Route
+            path="/settings/data"
+            element={
+              <AdminPage routeKey="setup_data">
+                <StoreDataPage />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/setup/item-vendors"
+            element={
+              <AdminPage routeKey="setup_item_vendors">
+                <ItemVendorsPage />
+              </AdminPage>
+            }
+          />
+          <Route
+            path="/settings/store"
+            element={
+              <AdminPage routeKey="setup_store_settings">
+                <StoreSettingsPage />
+              </AdminPage>
+            }
+          />
         </Routes>
+        </Suspense>
       </main>
       </div>
       {HelpPanel ? <HelpPanel /> : <HelpDrawer />}
-      {hasFeature("ask_bot") && !onTeamChat && <ChatWidget />}
+      {hasFeature("ask_bot") && !onTeamChat && (
+        <Suspense fallback={null}>
+          <ChatWidget />
+        </Suspense>
+      )}
     </div>
   );
 }

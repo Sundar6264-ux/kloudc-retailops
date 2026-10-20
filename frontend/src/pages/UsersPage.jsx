@@ -378,7 +378,7 @@ export default function UsersPage() {
         {error && <p className="error">{error}</p>}
         {users && (
           <div className="table-wrap">
-            <table>
+            <table className="kc-table--stack">
               <thead>
                 <tr>
                   <th>Username</th>

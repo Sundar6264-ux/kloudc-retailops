@@ -78,12 +78,15 @@ test("admin menu (final pass): Home, Daily Checklists, Ordering, Stock, Sales, T
     { Team: ["Tasks", "Chat", "News", "Flyers"] },
     {
       Setup: [
+        "Store settings",
+        "Data & usage",
         "Users",
         "Teams",
         "Integrations",
         "Inventory from Toast",
         "PO sections",
         "Vendor contacts",
+        "Item vendors",
         "Category & vendor leads",
         "Checklist builder",
         "Recurring tasks",
@@ -95,7 +98,7 @@ test("admin menu (final pass): Home, Daily Checklists, Ordering, Stock, Sales, T
   const setup = buildSidebar(ctxFor(ADMIN)).find((e) => e.key === "setup");
   assert.deepEqual(
     setup.sections.map((s) => s.label),
-    ["People", "Connections", "Ordering setup", "Team setup"],
+    ["Store", "People", "Connections", "Ordering setup", "Team setup"],
   );
   // Every group carries its area (identity colour).
   for (const e of buildSidebar(ctxFor(ADMIN)).filter((x) => x.type === "group")) assert.ok(AREAS[e.area], e.key);

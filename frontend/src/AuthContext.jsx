@@ -5,6 +5,8 @@ import { storeView } from "./store/branding.js";
 import { featureAvailable, setCurrentPosName } from "./store/gating.js";
 import { isPlatformUser, normalizeMe } from "./login/loginModel.js";
 import { setSessionStore } from "./sessionStore.js";
+import { setStoreTimeZone } from "./format.js";
+import { rememberSignOutReason, suspendedMessage } from "./login/signOutReason.js";
 
 // Tells StoreProvider which store's branding to show (a shared server
 // answers branding per store: docs/PLATFORM_CONTRACT.md 4.4). null = the
@@ -26,6 +28,8 @@ export function AuthProvider({ children }) {
     const view = storeView(branding, user);
     // Text built outside React (store/gating.js currentPosName) follows /me too.
     setCurrentPosName(view.posName);
+    // "Today" and every time follow the store's zone from /me (store_timezone).
+    setStoreTimeZone(view.timezone);
     return view;
   }, [branding, user]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +70,35 @@ export function AuthProvider({ children }) {
       window.removeEventListener("auth:store-changed", onStoreChanged);
     };
   }, []);
+
+  // A master can suspend the store mid-session (website ready A12): every
+  // minute, and when the tab comes back, /me is asked again; a 403
+  // store_suspended signs this browser out and the sign-in page shows the
+  // message (the next sign-in shows the master's maintenance message).
+  useEffect(() => {
+    if (!user || isPlatformUser(user)) return undefined;
+    let stopped = false;
+    const check = async () => {
+      if (stopped || document.visibilityState === "hidden") return;
+      try {
+        await getMe();
+      } catch (err) {
+        const message = suspendedMessage(err);
+        if (message && !stopped) {
+          rememberSignOutReason(window.sessionStorage, message);
+          setSessionStore(null);
+          setUser(null);
+        }
+      }
+    };
+    const timer = window.setInterval(check, 60000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [user]);
 
   // Store ID + username + password (contract 4.5). Store ID PLATFORM
   // signs a master in: user.scope === "platform".

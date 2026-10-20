@@ -153,7 +153,7 @@ function BlocksCard() {
       {blocks && blocks.length === 0 && <p className="muted">No blocks.</p>}
       {blocks && blocks.length > 0 && (
         <div className="table-wrap">
-          <table>
+          <table className="kc-table--stack">
             <thead>
               <tr>
                 <th>Blocked by</th>

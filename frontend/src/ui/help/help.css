@@ -1809,3 +1809,16 @@ a.kc-search-item:visited {
 .kc-search-title {
   color: var(--kh-text, var(--text));
 }
+
+/* A note about one POS, for a reader whose POS isn't known (website ready A8). */
+.kc-help-pos-block { border-left: 3px solid var(--border-strong); padding-left: 10px; margin: 8px 0; }
+.kc-help-pos-label {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--neutral-soft);
+  color: var(--neutral-text);
+}

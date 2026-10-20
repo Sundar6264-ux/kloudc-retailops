@@ -78,6 +78,11 @@ export const FEATURE_ROUTES = [
   // Settings -> Integrations (docs/PLATFORM_CONTRACT.md 13.5): the store's
   // POS, WhatsApp, email and AI connections.
   { path: "/settings/integrations", label: "Integrations", feature: null, key: "setup_integrations", admin: true, pageId: "integrations", area: "setup", icon: "plug" },
+  // Website ready: who supplies each item (track D), the store's own details
+  // (A5) and its data, usage and export (track B).
+  { path: "/setup/item-vendors", label: "Item vendors", feature: null, key: "setup_item_vendors", admin: true, pageId: "item_vendors", area: "setup", icon: "truck" },
+  { path: "/settings/store", label: "Store settings", feature: null, key: "setup_store_settings", admin: true, pageId: "store_settings", area: "setup", icon: "store" },
+  { path: "/settings/data", label: "Data & usage", feature: null, key: "setup_data", admin: true, pageId: "store_data", area: "setup", icon: "server" },
 ];
 
 // The Insights pages that only repeat the POS's own reports (owner, Oct 14):
@@ -188,9 +193,10 @@ export const NAV_GROUPS = [
     label: "Setup",
     area: "setup",
     sections: [
+      { label: "Store", features: ["setup_store_settings", "setup_data"] },
       { label: "People", features: ["setup_users", "setup_teams"] },
       { label: "Connections", features: ["setup_integrations", "setup_inventory_api"] },
-      { label: "Ordering setup", features: ["category_edits", "vendor_contacts", "setup_issue_leads"] },
+      { label: "Ordering setup", features: ["category_edits", "vendor_contacts", "setup_item_vendors", "setup_issue_leads"] },
       { label: "Team setup", features: ["setup_checklist_builder", "team_templates", "team_moderation"] },
     ],
   },

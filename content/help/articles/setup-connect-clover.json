@@ -1,5 +1,8 @@
 {
  "id": "setup-connect-clover",
+ "pos": [
+  "clover"
+ ],
  "title": "Connect Clover",
  "area": "setup",
  "group": "setup",

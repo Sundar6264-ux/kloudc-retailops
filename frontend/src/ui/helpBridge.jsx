@@ -5,7 +5,7 @@
 // (title, area and a link to Help) stands in. Page titles and areas come
 // from the help registry when it has the page, else from featureRoutes.js
 // PAGE_META - so a title can't differ between header, menu and search.
-import { useEffect, useId, useRef, useState } from "react";
+import { lazy, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AREAS, PAGE_META } from "../featureRoutes.js";
 import Icon from "./icons.jsx";
@@ -15,7 +15,10 @@ const H = mods["./help/index.js"] || {};
 
 export const helpAvailable = !!H.useHelp;
 export const HelpPanel = H.HelpPanel || null;
-export const HelpCenter = H.HelpCenter || null;
+// The Help Center is a page of its own: loaded on first visit, in its own
+// chunk (website ready A10). Rendered inside the router's <Suspense>.
+const helpCenterFile = import.meta.glob("./help/HelpCenter.jsx");
+export const HelpCenter = helpCenterFile["./help/HelpCenter.jsx"] ? lazy(helpCenterFile["./help/HelpCenter.jsx"]) : null;
 export const HelpProvider = H.HelpProvider || null;
 
 const useHelpImpl = H.useHelp || (() => null);

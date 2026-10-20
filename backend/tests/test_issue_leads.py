@@ -7,6 +7,7 @@ import zoneinfo
 
 import pytest
 
+from app.timeutil import restaurant_today
 from app.config import get_settings
 from app.issue_lead_models import IssueLead, IssueLeadTaskRun
 from app.models import InventorySnapshot, JobRun
@@ -18,7 +19,7 @@ from app.team.tasks_models import Task
 from tests.conftest import client_for, make_user
 
 NY = zoneinfo.ZoneInfo("America/New_York")
-TODAY = dt.date.today()
+TODAY = restaurant_today()
 
 
 def at(hour, minute=0, day=0):

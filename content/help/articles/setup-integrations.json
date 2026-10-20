@@ -29,9 +29,34 @@
   },
   {
    "type": "bullets",
+   "pos": [
+    "toast"
+   ],
    "items": [
-    "**Toast**: your Toast API client ID and secret and the restaurant's GUID, from Toast's developer portal or your Toast contact. The analytics client is optional and turns on Insights.",
-    "**Clover**: choose **Connect with Clover** and approve RetailOps in Clover, or paste your Merchant ID and an API token from the Clover dashboard. See [Connect Clover](article:setup-connect-clover).",
+    "**Toast**: your Toast API client ID and secret and the restaurant's GUID, from Toast's developer portal or your Toast contact. The analytics client is optional and turns on Insights."
+   ]
+  },
+  {
+   "type": "bullets",
+   "pos": [
+    "clover"
+   ],
+   "items": [
+    "**Clover**: choose **Connect with Clover** and approve RetailOps in Clover, or paste your Merchant ID and an API token from the Clover dashboard. See [Connect Clover](article:setup-connect-clover)."
+   ]
+  },
+  {
+   "type": "bullets",
+   "pos": [
+    "csv"
+   ],
+   "items": [
+    "**No POS connection**: this store sends its stock and sales as an inventory file. Upload it on Home, or ask KloudC support to connect a POS later."
+   ]
+  },
+  {
+   "type": "bullets",
+   "items": [
     "Saving the POS starts a catch-up of recent sales."
    ]
   },

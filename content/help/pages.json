@@ -3129,5 +3129,119 @@
   ],
   "article": "setup-item-vendors",
   "new_until": "2026-11-03"
+ },
+ {
+  "id": "platform_masters",
+  "title": "Masters",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": {
+   "route": "/platform"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Everyone who can sign in to this console. Add a master, remove one, or reset a lost phone's two-step sign-in.",
+   "points": [
+    "A new master gets a **temporary password** and must choose their own at first sign-in.",
+    "You can't remove yourself or the last master.",
+    "Every change is in the Audit tab."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_master",
+   "concept_two_step",
+   "concept_temporary_password"
+  ],
+  "article": "master-masters",
+  "new_until": "2026-12-31"
+ },
+ {
+  "id": "platform_settings",
+  "title": "Platform settings",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": {
+   "route": "/platform"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Settings for the whole platform: new store sign-ups, the terms link, the support email, the starting plan and how long data is kept.",
+   "points": [
+    "Changes work straight away, no restart.",
+    "**Reset** goes back to the server's own value.",
+    "Security switches are set on the server, not here."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {
+   "system": {
+    "title": "System",
+    "summary": "Storage, background jobs, workers and live updates on this server.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_platform_setting",
+   "concept_sign_ups",
+   "concept_grace_period"
+  ],
+  "article": "master-masters",
+  "new_until": "2026-12-31"
+ },
+ {
+  "id": "store_settings",
+  "title": "Store settings",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/settings/store"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Your store's name, address, phone, time zone and logo, as they appear on POs, emails and the app.",
+   "points": [
+    "Changes show on the next page load.",
+    "Your Store ID can't change.",
+    "Want your own server? Ask from here when it's offered."
+   ],
+   "source": null,
+   "freshness": null
+  },
+  "sections": {},
+  "terms": [
+   "concept_store_id",
+   "concept_store_time"
+  ],
+  "article": "setup-store-settings",
+  "new_until": "2026-12-31"
  }
 ]

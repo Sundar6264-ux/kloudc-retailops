@@ -7,6 +7,7 @@ import { useStore } from "../../store/StoreContext.jsx";
 import { useGlossary } from "../../glossary.jsx";
 import { HELP } from "./content.js";
 import {
+  contentForPos,
   fillDeep,
   mergeTerms,
   pageIdForPath,
@@ -70,8 +71,12 @@ export function useHelp() {
   const ctx = useContext(HelpContext);
   const words = useHelpWords();
   const glossary = useGlossary();
-  const storeCode = useStore()?.code || null;
-  const content = ctx?.content || HELP;
+  const store = useStore();
+  const storeCode = store?.code || null;
+  // Only this store's POS entries (A8); everything, labelled, when the POS is unknown.
+  const posProvider = store?.posProvider || null;
+  const baseContent = ctx?.content || HELP;
+  const content = useMemo(() => contentForPos(baseContent, posProvider), [baseContent, posProvider]);
 
   return useMemo(() => {
     const cache = new Map();

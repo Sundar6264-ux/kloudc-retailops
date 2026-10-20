@@ -117,6 +117,9 @@ class PlatformUser(PlatformBase):
     totp_secret_enc: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[dt.datetime] = mapped_column(TS, nullable=False, default=utcnow)
     last_login_at: Mapped[Optional[dt.datetime]] = mapped_column(TS)
+    # p0003 (website ready A2): a master added by another master signs in
+    # with a temporary password and must choose their own first.
+    must_change_password: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("false"))
 
 
 class PlatformSession(PlatformBase):

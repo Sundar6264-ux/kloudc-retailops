@@ -9,6 +9,7 @@ import uuid
 
 import pytest
 
+from app.timeutil import restaurant_today
 from app.models import InventorySnapshot, IssueResolution, Order
 from app.services import stock_issues
 from app.services.fix_issues import ISSUE_TYPES, get_issue_list, get_summary
@@ -17,7 +18,7 @@ from app.services.supplier_projection import compute_supplier_projection
 # Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
 pytestmark = pytest.mark.suite_pack
 
-TODAY = dt.date.today()  # the forecast's "today", same as Supplier Projection
+TODAY = restaurant_today()  # the forecast's "today", same as Supplier Projection
 LATEST = TODAY
 EARLY = TODAY - dt.timedelta(days=25)  # an older upload, so "first seen" means something
 

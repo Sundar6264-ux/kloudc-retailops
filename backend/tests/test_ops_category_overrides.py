@@ -22,10 +22,10 @@ from app.services.po_sections import group_po_items, section_for
 from app.services.price_history import get_price_changed_items
 from app.services.reorder import latest_inventory_by_item
 from app.services.supplier_projection import compute_supplier_projection
-from app.timeutil import utcnow
+from app.timeutil import restaurant_today, utcnow
 
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
-TODAY = dt.date.today()
+TODAY = restaurant_today()
 YESTERDAY = TODAY - dt.timedelta(days=1)
 TARGET = ("RETAIL", "Snacks & Savories", "Biscuits, Cookies & Rusk")
 

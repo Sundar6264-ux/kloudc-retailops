@@ -50,7 +50,22 @@ export function HelpText({ text, links = true, onNavigate }) {
 export function HelpBlocks({ blocks, links = true, examples = {}, onNavigate }) {
   return (
     <>
-      {(blocks || []).map((b, i) => {
+      {(blocks || []).map((b, i) =>
+        b.pos_label ? (
+          // A note about one POS, shown to a reader whose POS isn't known (A8).
+          <div key={i} className="kc-help-pos-block">
+            <span className="kc-help-pos-label">{b.pos_label}</span>
+            {renderBlock(b, i, { links, examples, onNavigate })}
+          </div>
+        ) : (
+          renderBlock(b, i, { links, examples, onNavigate })
+        ),
+      )}
+    </>
+  );
+}
+
+function renderBlock(b, i, { links, examples, onNavigate }) {
         switch (b.type) {
           case "h":
             return (
@@ -100,7 +115,4 @@ export function HelpBlocks({ blocks, links = true, examples = {}, onNavigate }) 
               </p>
             );
         }
-      })}
-    </>
-  );
 }

@@ -12,6 +12,7 @@ from app.sales_access import hides_sales
 from app.schemas import JobStatusOut
 from app.services.open_orders import JOB_NAME as OPEN_ORDERS_JOB
 from app.services.sales_sync import JOB_NAME as SALES_SYNC_JOB, latest_job_run, sync_sales_for_date
+from app.timeutil import restaurant_today
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"], dependencies=[Depends(require_feature("overview"))])
 
@@ -38,7 +39,7 @@ def run_sales_sync_now(
     business_date: Optional[dt.date] = None, db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ):
     """Manually trigger the sales sync (e.g. for backfilling a missed day or testing)."""
-    target_date = business_date or (dt.date.today() - dt.timedelta(days=1))
+    target_date = business_date or (restaurant_today() - dt.timedelta(days=1))
     job = sync_sales_for_date(db, target_date)
     if hides_sales(user):  # the detail is the day's order/line counts
         return JobStatusOut.model_validate(job).model_copy(update={"detail": None})

@@ -2387,3 +2387,82 @@ button.info-toggle:hover:not(:disabled) {
   width: auto;
   margin: 2px 0 0;
 }
+
+/* Page skeleton while a page's code loads (website ready A10). Same height
+   as the compact frozen header, so nothing jumps when the page arrives. */
+.kc-skeleton { padding: var(--space-4, 16px) var(--gutter, 16px); display: grid; gap: 12px; }
+.kc-skeleton--bare { min-height: 100vh; background: var(--bg); align-content: start; max-width: 720px; margin: 0 auto; }
+.kc-skeleton-header { display: flex; gap: 12px; align-items: center; min-height: 44px; }
+.kc-skeleton-body { display: grid; gap: 10px; }
+.kc-skeleton-bar {
+  display: block;
+  border-radius: var(--radius-sm, 6px);
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
+  background-size: 200% 100%;
+  animation: kc-skeleton-shine 1.2s ease-in-out infinite;
+}
+.kc-skeleton-bar--title { width: 180px; height: 22px; }
+.kc-skeleton-bar--search { flex: 1; max-width: 360px; height: 36px; }
+.kc-skeleton-bar--row { height: 44px; }
+@keyframes kc-skeleton-shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .kc-skeleton-bar { animation: none; } }
+
+/* ---------- wide tables as stacked cards on phones (website ready A6) ----------
+   ui/stackTables.js labels each cell (data-label) from its header. Under 768 px
+   every row is a card of "label  value" lines: no sideways scroll. */
+@media (max-width: 767px) {
+  table.kc-table--stack,
+  table.kc-table--stack tbody,
+  table.kc-table--stack tr,
+  table.kc-table--stack td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  table.kc-table--stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  table.kc-table--stack tr {
+    margin: 0 0 10px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: var(--card-bg, var(--surface));
+  }
+  table.kc-table--stack tr:hover { background: var(--card-bg, var(--surface)); }
+  table.kc-table--stack td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 6px 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  table.kc-table--stack td:last-child { border-bottom: none; }
+  table.kc-table--stack td::before {
+    content: attr(data-label);
+    flex: 0 0 38%;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  table.kc-table--stack td[data-label=""]::before { content: none; }
+  table.kc-table--stack td[data-label=""] { justify-content: flex-end; }
+  table.kc-table--stack td > * { max-width: 100%; }
+  .table-wrap:has(> table.kc-table--stack) {
+    overflow: visible;
+    max-height: none;
+    border: none;
+  }
+}

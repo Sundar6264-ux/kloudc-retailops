@@ -19,6 +19,7 @@ import pytest
 
 from app.models import InventorySnapshot, Order
 from app.services import product_match
+from app.timeutil import restaurant_today
 from tests.conftest import client_for, make_user
 
 CASES = json.loads(
@@ -73,7 +74,7 @@ def _snap(db, day, item_id, name, qty=5, supplier="Raja Foods", code=None, barco
 
 @pytest.fixture
 def catalog(db):
-    today = dt.date.today()
+    today = restaurant_today()
     _snap(
         db,
         today,
@@ -164,7 +165,7 @@ def test_supplier_filter_still_applies_and_resolves_that_vendors_code(buyer, cat
 
 
 def test_reorder_and_projection_rows_carry_codes(admin_client, catalog, db):
-    today = dt.date.today()
+    today = restaurant_today()
     for i in range(14):
         day = today - dt.timedelta(days=i + 1)
         db.add(
@@ -202,7 +203,7 @@ def test_reorder_and_projection_rows_carry_codes(admin_client, catalog, db):
 
 
 def test_items_sold_rows_carry_codes(admin_client, catalog, db):
-    day = dt.date.today() - dt.timedelta(days=3)
+    day = restaurant_today() - dt.timedelta(days=3)
     db.add(
         Order(
             toast_order_guid="o1",

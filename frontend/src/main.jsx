@@ -1,7 +1,7 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
-import PublicChecklistPage from "./pages/PublicChecklistPage.jsx";
+import { installTableStacking } from "./ui/stackTables.js";
 import { storeFromPath } from "./login/loginModel.js";
 import { StoreProvider } from "./store/StoreContext.jsx";
 import { HelpProvider } from "./ui/help/index.js";
@@ -12,6 +12,10 @@ import "./ui/help/help.css";
 // backend's /c/ route): it renders ONLY that checklist's form - never the
 // app, its login check or its navigation.
 const isPublicChecklist = window.location.pathname.startsWith("/c/");
+const PublicChecklistPage = lazy(() => import("./pages/PublicChecklistPage.jsx"));
+
+// Wide tables (class kc-table--stack) stack as cards on phones (ui/stackTables.js).
+installTableStacking();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -19,7 +23,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <HelpProvider>
       {isPublicChecklist ? (
         <StoreProvider storeCode={storeFromPath(window.location.pathname)}>
-          <PublicChecklistPage />
+          <Suspense fallback={null}>
+            <PublicChecklistPage />
+          </Suspense>
         </StoreProvider>
       ) : (
         <App />

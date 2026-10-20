@@ -317,7 +317,7 @@ export default function TeamsPage() {
         {!teams && !error && <p className="muted">Loading…</p>}
         {teams && (
           <div className="table-wrap">
-            <table>
+            <table className="kc-table--stack">
               <thead>
                 <tr>
                   <th>Team</th>
@@ -334,7 +334,7 @@ export default function TeamsPage() {
           <>
             <h3 style={{ fontSize: "0.95rem", marginTop: "1.2rem" }}>Archived</h3>
             <div className="table-wrap">
-              <table>
+              <table className="kc-table--stack">
                 <thead>
                   <tr>
                     <th>Team</th>

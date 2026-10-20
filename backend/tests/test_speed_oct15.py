@@ -34,13 +34,13 @@ from app.models import (
 )
 from app.services import critical_dismissals as svc
 from app.services import open_orders, reorder, report_cache, supplier_projection, vendor_calendar
-from app.timeutil import utcnow
+from app.timeutil import restaurant_today, utcnow
 from tests.conftest import client_for, make_user
 
 BACKEND = pathlib.Path(__file__).resolve().parents[1]
 REORDER = "/api/ordering/reorder-candidates"
 DISMISS = "/api/reorder/critical-dismissals"
-TODAY = dt.date.today()
+TODAY = restaurant_today()
 
 
 def _snap(db, item_id, qty, supplier="Raja Foods", day=TODAY, name=None):

@@ -235,3 +235,9 @@ app/pos/adapters/clover/auth.py:_refresh_locks_guard  # guards _refresh_locks
 app/pos/adapters/clover/auth.py:_refresh_locks  # one OAuth refresh at a time per store, keyed by store code
 app/pos/adapters/clover/webhooks.py:_last_lock  # guards _last_run
 app/pos/adapters/clover/webhooks.py:_last_run  # webhook sync debounce, keyed by (store code, what) - per store by key
+app/platform/platform_settings.py:SPECS  # constant table (console labels / limits of the editable platform settings)
+app/platform/platform_settings.py:_cache  # platform-wide console values (never per store), a few seconds, dropped on save
+app/platform/platform_settings.py:_cache_lock  # guards _cache
+app/platform/routes_console.py:NO_STORE  # constant table (response headers)
+app/platform/routes_console.py:_EMPTY_DB  # constant template (copied per request)
+app/help_content.py:POS_LABELS  # constant table (POS id -> the name a 'Toast only' label shows)
