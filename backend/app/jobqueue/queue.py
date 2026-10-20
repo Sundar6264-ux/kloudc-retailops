@@ -386,7 +386,7 @@ def retry(job_id: int) -> Optional[Dict[str, Any]]:
     with _engine().begin() as conn:
         row = conn.execute(
             text(
-                "UPDATE jobs SET status = 'queued', attempts = 0, run_after = :now, updated_at = :now, "
+                "UPDATE jobs SET status = 'queued', attempts = 0, run_after = :now, updated_at = :now, error = NULL, "
                 "finished_at = NULL, locked_by = NULL WHERE id = :id AND status IN ('failed', 'dead') "
                 "AND NOT (dedupe_key IS NOT NULL AND EXISTS (SELECT 1 FROM jobs o WHERE o.kind = jobs.kind AND "
                 "o.dedupe_key = jobs.dedupe_key AND o.id <> jobs.id AND o.status IN ('queued', 'running', 'failed'))) "

@@ -1,0 +1,61 @@
+{
+ "id": "master-system",
+ "title": "System: storage, background jobs and workers",
+ "area": "platform",
+ "group": "master",
+ "order": 907,
+ "audience": [
+  "master"
+ ],
+ "summary": "KloudC masters: check where store files live, see background jobs that failed and retry them, and watch the workers.",
+ "pages": [
+  "platform_system"
+ ],
+ "related": [
+  "master-audit",
+  "master-stores"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Open **Platform settings** and look at **System**. It shows four things: **Storage**, **Background jobs**, **Workers** and **Live updates**. Tap **Refresh** to read them again."
+  },
+  {
+   "type": "h",
+   "text": "Background jobs"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Waiting**: in the queue. **Running**: a worker has it.",
+    "**Retrying soon**: it failed and tries again by itself, waiting 30 seconds, then 1 minute, then longer.",
+    "**Failed**: it stopped after its last try. Read the error, fix the cause, then tap **Retry**. Every retry is in the audit log.",
+    "**Inline** means there is no queue: each job runs inside the web server, as before."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Workers"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Each worker checks in every 15 seconds.",
+    "**Not responding** means no check in for 2 minutes. Its jobs are handed to another worker.",
+    "Workers are started on the server (see the multi-process deploy guide), never from this page."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Storage and live updates"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**On this server** keeps files in each store's folder. **Object storage** keeps them in a bucket such as Cloudflare R2.",
+    "Access keys are never shown, only the bucket and its host.",
+    "**Live updates** across processes are needed only when more than one server process runs."
+   ]
+  }
+ ]
+}

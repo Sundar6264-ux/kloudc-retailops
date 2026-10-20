@@ -1839,5 +1839,81 @@
    "concept_audit_log",
    "concept_master"
   ]
+ },
+ {
+  "key": "concept_object_storage",
+  "label": "Object storage",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "A storage service for files, such as Cloudflare R2 or Amazon S3. Each store's files sit in their own folder in one bucket.",
+  "aliases": [
+   "R2",
+   "S3",
+   "bucket",
+   "file storage"
+  ],
+  "where": "Master Platform settings, System",
+  "pages": [
+   "platform_system"
+  ],
+  "related": [
+   "concept_background_job"
+  ]
+ },
+ {
+  "key": "concept_background_job",
+  "label": "Background job",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "Work the server does away from the screen, such as a nightly sales sync or a data export. A failed job is tried again a few times.",
+  "aliases": [
+   "job",
+   "queue",
+   "job queue"
+  ],
+  "where": "Master Platform settings, System",
+  "pages": [
+   "platform_system"
+  ],
+  "related": [
+   "concept_job_worker"
+  ]
+ },
+ {
+  "key": "concept_job_worker",
+  "label": "Worker",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "A server process that takes background jobs from the queue and runs them. Several workers can share one queue safely.",
+  "aliases": [
+   "job worker",
+   "worker process"
+  ],
+  "where": "Master Platform settings, System",
+  "pages": [
+   "platform_system"
+  ],
+  "related": [
+   "concept_background_job"
+  ]
+ },
+ {
+  "key": "concept_live_updates",
+  "label": "Live updates",
+  "category": "concept_platform",
+  "area": "platform",
+  "definition": "How a change saved on one server process reaches the others, so open lists refresh by themselves.",
+  "aliases": [
+   "notify",
+   "listen",
+   "refresh"
+  ],
+  "where": "Master Platform settings, System",
+  "pages": [
+   "platform_system"
+  ],
+  "related": [
+   "concept_background_job"
+  ]
  }
 ]
