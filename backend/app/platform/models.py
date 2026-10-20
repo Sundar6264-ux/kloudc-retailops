@@ -260,3 +260,8 @@ class OwnerSetupToken(PlatformBase):
     created_at: Mapped[dt.datetime] = mapped_column(TS, nullable=False, default=utcnow)
     expires_at: Mapped[dt.datetime] = mapped_column(TS, nullable=False)
     used_at: Mapped[Optional[dt.datetime]] = mapped_column(TS)
+
+
+# Website-ready track C: the job queue tables (p0004) live with the platform
+# metadata. Imported last: app/jobqueue/models.py builds on PlatformBase.
+from app.jobqueue import models as _jobqueue_models  # noqa: E402,F401

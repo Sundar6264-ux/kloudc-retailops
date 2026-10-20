@@ -56,8 +56,15 @@ def start_multi_tenant() -> None:
     for fn in list(_startup_hooks):
         fn()
     check_connection_budget()
+    from app import livebus
+
+    # Cross-process live updates (LIVE_UPDATES_MODE=postgres; a no-op in
+    # the default local mode) before the leader so its reconcile hears them.
+    livebus.start()
     if s.scheduler_enabled or s.notifications_enabled or s.team_jobs_enabled:
-        url = (s.platform_database_url or "").strip()
+        # The advisory lock needs a session connection: PLATFORM_DIRECT_URL
+        # when the platform database sits behind PgBouncer (C5).
+        url = livebus.direct_url()
         if url.startswith("postgresql"):
             loop = LeaderLoop(url, on_elected=_elected, on_lost=_lost)
             _loop["leader"] = loop
@@ -79,6 +86,9 @@ def stop_multi_tenant() -> None:
         loop.stop()
     else:
         _lost()
+    from app import livebus
+
+    livebus.stop()
     for fn in list(_shutdown_hooks):
         try:
             fn()

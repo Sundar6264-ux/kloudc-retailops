@@ -208,3 +208,10 @@ app/ops/pilot.py:_blocked  # counts of sends blocked by pilot mode, keyed "<STOR
 app/ops/pilot.py:_lock  # guards _blocked
 app/jobqueue/__init__.py:_HANDLERS  # job kind -> handler, filled once at import by @register (code, the same for every store)
 app/jobqueue/__init__.py:_PERIODIC  # job kind -> daily schedule, filled once at import by register_periodic (code, the same for every store)
+app/jobqueue/kinds.py:_loaded  # the job modules are imported once per process (code, the same for every store)
+app/livebus.py:_handlers  # event -> subscriber functions, registered once at import (code, the same for every store)
+app/livebus.py:_handlers_lock  # guards _handlers and the lazy publisher
+app/livebus.py:_state  # the process's one LISTEN thread and one NOTIFY sender (signals carry their store code)
+app/livebus.py:_stats  # counters for the masters' System panel (process-wide, no store data)
+app/platform/routes_system.py:NO_STORE  # constant header
+app/storage/__init__.py:_backend_cache  # the one storage client of the process, keyed by its settings (keys are per store inside)

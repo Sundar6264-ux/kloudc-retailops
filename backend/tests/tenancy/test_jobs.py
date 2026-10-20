@@ -208,11 +208,15 @@ def test_multi_tenant_schedulers_start_with_every_stores_jobs(multi, clean_jobs,
             assert f"team_team_changes_prune:{code}" in team_ids
         # Interval jobs once, running every store per tick.
         assert "open_orders_today_refresh" in main_ids and "notify_invoice_failed" in notif_ids
-        assert {j.id for j in started["platform"].get_jobs()} == {
+        platform_ids = {j.id for j in started["platform"].get_jobs()}
+        # Daily app.jobqueue jobs (register_periodic, per_store=False) are
+        # added as "periodic_<kind>" next to the fixed platform jobs.
+        assert {i for i in platform_ids if not i.startswith("periodic_")} == {
             "tenancy_reconcile_store_jobs",
             "tenancy_sweep_idle_engines",
             "platform_prune_login_attempts",  # track C's PLATFORM_JOBS, leader only
         }
+        assert "periodic_jobqueue_maintenance" in platform_ids
         prune = started["platform"].get_job("platform_prune_login_attempts")
         assert "hour='3', minute='30'" in repr(prune.trigger) and "UTC" in repr(prune.trigger)
         from app.pos.gating import job_func_name

@@ -1,14 +1,20 @@
 """Background jobs (docs/WEBSITE_READY_CONTRACT.md, interface I2).
 
-INTERFACE STUB landed with the website-ready contract. Track C owns this
-package and replaces the bodies with the PostgreSQL queue (``SELECT ... FOR
-UPDATE SKIP LOCKED``, separate worker processes, retries, dedupe). Tracks B
-(store export, purge, usage roll-up) and D (Clover backfill) register and
-enqueue jobs through these names only.
+Two modes (``mode()``):
 
-Today (and whenever ``JOB_QUEUE_MODE`` is ``inline``, the default) a job runs
-in a daemon thread of the calling process, in the caller's store (or in
-``code=``'s store), exactly once, with no retry.
+- ``inline`` (the default, and always in single mode): a job runs in a
+  daemon thread of the calling process, in the caller's store (or in
+  ``code=``'s store), exactly once, with no retry and no record.
+- ``queue`` (``JOB_QUEUE_MODE=queue`` in multi mode with a PostgreSQL
+  platform database): ``enqueue`` adds a row to the platform ``jobs`` table
+  (``app/jobqueue/queue.py``); worker processes
+  (``python -m app.jobqueue worker``) claim rows with ``SELECT ... FOR
+  UPDATE SKIP LOCKED``, retry with backoff, and mark a job dead after
+  ``max_attempts``. Masters see failed jobs and retry them in the console
+  (System panel, ``/api/platform/system``).
+
+Tracks B (store export, purge, usage roll-up) and D (Clover backfill)
+register and enqueue jobs through these names only.
 
 Handlers are plain functions ``fn(payload: dict) -> Optional[dict]``. The
 payload must be JSON (it is stored in the queue table); the return value is
@@ -56,7 +62,7 @@ _HANDLERS: Dict[str, JobSpec] = {}
 def register(kind: str, *, max_attempts: int = 3, timeout_seconds: int = 900) -> Callable[[Handler], Handler]:
     """Decorator: ``@register("store_export")`` on a module-level function.
     A kind is registered once; the module must be imported by the web
-    process and by the workers (track C imports ``app.jobqueue.kinds``)."""
+    process and by the workers (``app.jobqueue.kinds`` lists the modules)."""
 
     def deco(fn: Handler) -> Handler:
         existing = _HANDLERS.get(kind)
@@ -103,9 +109,26 @@ def handler_for(kind: str) -> JobSpec:
 
 
 def mode() -> str:
-    """"inline" (stub, and the default) or "queue" (track C: JOB_QUEUE_MODE
-    =queue with a platform database; single mode is always inline)."""
-    return "inline"
+    """"queue" when JOB_QUEUE_MODE=queue, the server is in multi mode and the
+    platform database is PostgreSQL; "inline" otherwise (the default; single
+    mode is always inline)."""
+    from app.platform.config import is_multi, pget
+
+    if str(pget("job_queue_mode") or "inline").strip().lower() != "queue" or not is_multi():
+        return "inline"
+    url = str(pget("platform_database_url") or "").strip()
+    return "queue" if url.startswith("postgresql") else "inline"
+
+
+def run_handler(kind: str, payload: Dict[str, Any], code: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Run ``kind``'s handler once, in store ``code`` (or with no store for
+    a platform job). Used by the inline thread and by the workers."""
+    spec = handler_for(kind)
+    if code:
+        from app.tenancy.context import run_in_store
+
+        return run_in_store(code, spec.fn, payload)
+    return spec.fn(payload)
 
 
 def enqueue(
@@ -132,6 +155,21 @@ def enqueue(
     from app.tenancy.context import current_store_code, run_in_store, spawn_in_store
 
     store = code or current_store_code()
+    if mode() == "queue":
+        from app.jobqueue import queue
+
+        row = queue.insert_job(
+            kind,
+            body,
+            store_code=store,
+            dedupe_key=dedupe_key,
+            run_after=run_after,
+            priority=priority,
+            max_attempts=spec.max_attempts,
+            timeout_seconds=spec.timeout_seconds,
+        )
+        _wake_workers()
+        return JobHandle(id=int(row["id"]), kind=kind, status=str(row["status"]), store_code=row["store_code"])
 
     def run() -> None:
         try:
@@ -149,7 +187,26 @@ def enqueue(
 def job_status(job_id: int) -> Optional[Dict[str, Any]]:
     """{id, kind, status, attempts, result, error, created_at, finished_at}
     of a queued job, or None (inline jobs are not recorded)."""
-    return None
+    if job_id is None or mode() != "queue":
+        return None
+    from app.jobqueue import queue
+
+    row = queue.get_job(int(job_id))
+    if row is None:
+        return None
+    keys = ("id", "kind", "store_code", "status", "attempts", "max_attempts", "result", "error", "created_at",
+            "started_at", "finished_at", "run_after")
+    return {k: row.get(k) for k in keys}
+
+
+def _wake_workers() -> None:
+    """Tell idle workers a job is waiting (NOTIFY; they also poll)."""
+    try:
+        from app import livebus
+
+        livebus.publish("jobs", None, {})
+    except Exception:  # noqa: BLE001 - the workers poll anyway
+        logger.debug("job wake-up not sent", exc_info=True)
 
 
 __all__ = (
@@ -162,6 +219,10 @@ __all__ = (
     "job_status",
     "mode",
     "periodic_jobs",
+    "run_handler",
     "register",
     "register_periodic",
 )
+
+# The queue's own kinds (store_job, jobqueue_maintenance): always known.
+from app.jobqueue import builtin as _builtin  # noqa: E402,F401
