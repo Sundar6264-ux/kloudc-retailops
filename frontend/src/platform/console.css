@@ -68,7 +68,12 @@ ul.pf-list { list-style: none; margin: 0; padding: 0; }
 .kc-drawer.pf-detail { width: min(560px, 100vw); }
 .pf-detail-head { gap: 8px; }
 .pf-detail-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
-.pf-detail-head-actions { display: inline-flex; align-items: center; gap: 4px; }
+.pf-detail-head-actions { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+/* A long Store ID must never push ⓘ and Close off a phone screen: the title
+   shrinks, the name and the ID each end in "…". */
+.pf-detail-head .kc-drawer-title { min-width: 0; flex: 1 1 auto; }
+.pf-detail-head .kc-drawer-title > svg { flex-shrink: 0; }
+.pf-detail-head .pf-code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pf-detail-head-actions .kc-icon-btn { min-width: 44px; min-height: 44px; }
 .pf-detail-tabs { padding: 10px 16px 4px; }
 /* Five sections fit one row in the 560 px drawer; phones scroll them sideways. */

@@ -78,7 +78,9 @@
 .iv-chip.is-on:hover:not(:disabled) {
   background: var(--brand-soft-strong);
   border-color: var(--brand-text);
-  color: var(--brand-text);
+  /* --brand-text reaches 4.5:1 on the surface, not on the stronger soft
+     fill (a green store brand measured 3.9:1): the label stays --text. */
+  color: var(--text);
 }
 .iv-chip-count {
   font-variant-numeric: tabular-nums;
@@ -178,7 +180,8 @@
 .iv-code {
   font-family: var(--font-mono);
   font-size: var(--fs-label);
-  color: var(--text-muted);
+  /* Sits on the vendor chip's tinted fill: --text-muted fell to 4.3:1 in dark. */
+  color: var(--text-2);
 }
 .iv-none {
   font-size: var(--fs-small);
