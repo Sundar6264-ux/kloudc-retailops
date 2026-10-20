@@ -177,14 +177,17 @@ def main() -> None:
         cfg.attributes["configure_logger"] = False
         return cfg
 
+    from alembic.script import ScriptDirectory
+
+    platform_head = ScriptDirectory.from_config(pcfg()).get_current_head()
     rev = upgrade_platform_db(purl)
     s1 = signature(purl)
-    check(rev == "p0001" and len(s1) > 5, f"platform: upgrade head -> {rev} ({len(s1) - 1} tables)")
+    check(rev == platform_head and len(s1) > 5, f"platform: upgrade head -> {rev} ({len(s1) - 1} tables)")
     command.downgrade(pcfg(), "base")
     s0 = signature(purl)
     check(set(s0) == {"__triggers__"} and not s0["__triggers__"], f"platform: downgrade base leaves no tables ({sorted(s0)})")
     rev = upgrade_platform_db(purl)
-    check(rev == "p0001" and signature(purl) == s1, "platform: upgrade head again -> identical schema")
+    check(rev == platform_head and signature(purl) == s1, "platform: upgrade head again -> identical schema")
     reset_platform_engine()
 
     # 2. store DB from the baseline
