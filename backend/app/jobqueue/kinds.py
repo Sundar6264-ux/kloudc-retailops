@@ -13,7 +13,7 @@ JOB_MODULES = (
     "app.platform.usage",  # track B: usage roll-up and gauges
     "app.platform.export",  # track B: store data export
     "app.platform.offboarding",  # track B: final export, purge
-    "app.pos.adapters.clover.jobs",  # track D: Clover backfill
+    "app.pos.adapters.clover.webhooks",  # track D: clover_webhook_sync (webhooks, off by default)
 )
 
 _loaded = {"done": False}
