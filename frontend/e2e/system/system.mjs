@@ -40,7 +40,7 @@ async function openPanel(page, width, theme) {
   await page.click('button[type="submit"]');
   await page.waitForURL(/#\/platform/, { timeout: 15000 });
   await settle(page);
-  await page.getByRole("tab", { name: /System/ }).click();
+  await page.getByRole("tab", { name: /Platform settings/ }).click();
   await page.waitForSelector('[data-testid="system-tile-storage"] .ss-tile-value:not(:empty)');
   await page.waitForSelector('[data-testid^="job-"]');
   await settle(page);
@@ -125,7 +125,7 @@ try {
     await page.screenshot({ path: join(SHOTS, `system-1440-light-after-retry.png`), fullPage: true });
     // The filter is remembered.
     await page.reload();
-    await page.getByRole("tab", { name: /System/ }).click();
+    await page.getByRole("tab", { name: /Platform settings/ }).click();
     await settle(page);
     const pressed = await page.getAttribute('.ss-filter[aria-pressed="true"]', "aria-pressed");
     const label = await page.textContent('.ss-filter[aria-pressed="true"]');

@@ -5,9 +5,7 @@
 #
 #   E2E_PLAYWRIGHT=/path/to/playwright/index.mjs frontend/e2e/system/run.sh
 #
-# Track A mounts <SystemStatusPanel /> in the console's Platform settings;
-# until that merge this script builds a copy of the website with a "System"
-# tab added (the copy only, never the tree) so the panel is seen in place.
+# The panel sits in the console's Platform settings tab (track A).
 set -e
 setopt no_bg_nice 2>/dev/null || true
 HERE=${0:A:h}
@@ -16,26 +14,8 @@ W=${SYSTEM_E2E_WORK:-/tmp/retailops-system-e2e}
 PORT=${MOCK_PORT:-8883}
 OUT=${SYSTEM_SHOTS:-$W/shots}
 case "$W" in /|"$HOME"|"$REPO"*) echo "refusing SYSTEM_E2E_WORK=$W"; exit 2;; esac
-rm -rf "$W" && mkdir -p "$W/site"
-rsync -a --exclude node_modules --exclude dist "$REPO/frontend/" "$W/site/frontend/"
-rsync -a "$REPO/content/" "$W/site/content/"
-ln -s "$REPO/frontend/node_modules" "$W/site/frontend/node_modules"
-if ! grep -q 'SystemStatusPanel' "$W/site/frontend/src/pages/PlatformConsolePage.jsx"; then
-  python3 - "$W/site/frontend/src" <<'PY'
-import pathlib, sys
-src = pathlib.Path(sys.argv[1])
-m = src / "platform/platformModel.js"
-s = m.read_text()
-s = s.replace('  { key: "help", label: "Help"', '  { key: "system", label: "System", icon: "server", pageId: "platform_system", sub: "Storage, jobs and workers" },\n  { key: "help", label: "Help"', 1)
-m.write_text(s)
-p = src / "pages/PlatformConsolePage.jsx"
-s = p.read_text()
-s = s.replace('import { HelpCenter, InfoButton } from "../ui/helpBridge.jsx";', 'import { HelpCenter, InfoButton } from "../ui/helpBridge.jsx";\nimport SystemStatusPanel from "../platform/panels/SystemStatusPanel.jsx";', 1)
-s = s.replace('      {tab === "help" && <MasterHelp />}', '      {tab === "system" && <SystemStatusPanel />}\n      {tab === "help" && <MasterHelp />}', 1)
-p.write_text(s)
-PY
-fi
-(cd "$W/site/frontend" && npx vite build --outDir "$W/dist" --emptyOutDir >/dev/null)
+rm -rf "$W" && mkdir -p "$W"
+(cd "$REPO/frontend" && npx vite build --outDir "$W/dist" --emptyOutDir >/dev/null)
 MASTER_PW=$(node -e 'console.log(require("crypto").randomBytes(15).toString("base64url"))')
 MOCK_DIST="$W/dist" MOCK_PORT=$PORT MOCK_MASTER_PASSWORD=$MASTER_PW E2E_DB_PREFIX=${E2E_DB_PREFIX:-so_wrc_e2e} \
   "$REPO/backend/.venv/bin/python" "$HERE/system_server.py" > "$W/server.log" 2>&1 &
