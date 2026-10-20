@@ -51,6 +51,9 @@ const DEMO_PAGES = [
   ["checklist-builder", "/checklists/admin"],
   ["recurring-tasks", "/team/templates"],
   ["reported-messages", "/team/moderation"],
+  ["data-usage", "/settings/data"],
+  ["item-vendors", "/setup/item-vendors"],
+  ["store-settings", "/settings/store"],
   ["help", "/help"],
   ["glossary", "/glossary"],
   ["change-password", "/change-password"],
@@ -63,6 +66,11 @@ const TOAST_PAGES = [
   ["integrations", "/settings/integrations"],
   ["inventory-from-pos", "/inventory-api"],
   ["flyers", "/flyers"],
+];
+const CLOVER_PAGES = [
+  ["clover-integrations", "/settings/integrations"],
+  ["clover-item-vendors", "/setup/item-vendors"],
+  ["clover-data-usage", "/settings/data"],
 ];
 
 const results = { shots: 0, sideways: [], noHeading: [], crashed: [], errors: [] };
@@ -194,11 +202,22 @@ async function master(browser, width, theme) {
   const dir = join(OUT, theme, String(width));
   await page.goto(`${BASE}/#/platform`);
   await settle(page);
-  for (const tab of ["requests", "stores", "hosting", "audit", "help"]) {
+  for (const tab of ["requests", "stores", "hosting", "audit", "masters", "settings", "help"]) {
     if (ONLY && !`platform-${tab}`.includes(ONLY)) continue;
     await page.click(`[data-testid="pf-tab-${tab}"]`);
     await settle(page);
     await shoot(page, dir, `platform-${tab}`, { check: false });
+  }
+  // A store's detail panel (Stores row -> Details), first tab.
+  if (!ONLY || "platform-store-detail".includes(ONLY)) {
+    await page.click('[data-testid="pf-tab-stores"]');
+    await settle(page);
+    const open = page.locator('[data-testid="store-details-DEMO"]');
+    if (await open.count()) {
+      await open.click();
+      await settle(page);
+      await shoot(page, dir, "platform-store-detail", { check: false });
+    }
   }
   await ctx.close();
 }
@@ -210,6 +229,7 @@ try {
       await loggedOut(browser, width, theme);
       await storePages(browser, width, theme, login("DEMO"), DEMO_PAGES, shellExtras);
       await storePages(browser, width, theme, login("RETAILOPS_TEST_TOAST"), TOAST_PAGES);
+      await storePages(browser, width, theme, login("RETAILOPS_TEST_CLOVER"), CLOVER_PAGES);
       await master(browser, width, theme);
       console.log(`done ${theme} ${width} (${results.shots} shots)`);
     }
