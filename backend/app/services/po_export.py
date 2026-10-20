@@ -21,6 +21,8 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import HRFlowable, Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from app.timeutil import restaurant_today
+
 # The letterhead icon: DOCUMENT_LOGO_FILE (a local image) when set, else the
 # bundled KloudC RetailOps icon; no icon when neither file exists. The store's name,
 # address and phone are real text next to it (store settings), so their size
@@ -117,7 +119,7 @@ def export_simple_po_pdf(
     doc_block = [
         Paragraph("PURCHASE ORDER", title_style_right),
         Paragraph(f"Supplier: <b>{supplier}</b>", subtitle_style_right),
-        Paragraph(f"Prepared: {dt.date.today().isoformat()}", subtitle_style_right),
+        Paragraph(f"Prepared: {restaurant_today().isoformat()}", subtitle_style_right),
     ]
     icon_path = _icon_file()
     if icon_path is not None:

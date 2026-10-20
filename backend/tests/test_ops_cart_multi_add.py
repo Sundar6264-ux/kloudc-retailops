@@ -15,6 +15,7 @@ import datetime as dt
 
 import pytest
 
+from app.timeutil import restaurant_today
 from app.models import InventorySnapshot
 from tests.conftest import client_for, make_user
 
@@ -49,7 +50,7 @@ def _snap(db, day, item_id, name, qty, price=3.99, supplier="Babco", code=None):
 
 @pytest.fixture
 def catalog(db):
-    today = dt.date.today()
+    today = restaurant_today()
     # An older upload must not be used.
     _snap(db, today - dt.timedelta(days=2), "rice", "Basmati Rice 10lb", 99)
     _snap(db, today, "rice", "Basmati Rice 10lb", 4, supplier="Babco;Raja Foods", code="BR10;RJ-77")

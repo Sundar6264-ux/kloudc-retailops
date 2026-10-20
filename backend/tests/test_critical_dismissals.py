@@ -27,6 +27,7 @@ import zoneinfo
 
 import pytest
 
+from app.timeutil import restaurant_today
 from app import glossary as g
 from app.db import Base
 from app.demo_guard import ALLOWLIST, DEMO_READ_ONLY
@@ -208,7 +209,7 @@ def report(db, monkeypatch):
     # A delivery on both the test dates and the real today keeps every vendor
     # active (not "inactive") whichever date the report is computed for.
     for vendor in VENDORS:
-        for day in {TUESDAY, dt.date.today()}:
+        for day in {TUESDAY, restaurant_today()}:
             db.add(
                 PurchaseLogEntry(
                     item_id="x", item_name="x", supplier=vendor, quantity_received=1, received_date=day,
@@ -304,10 +305,10 @@ def test_only_the_today_report_ends_a_close(db, admin, report):
     svc.annotate_vendor_groups(db, groups, now=t0 + dt.timedelta(hours=1), today_report=False)
     assert {grp["vendor"]: grp for grp in groups}["Raja Foods"]["critical_dismissed"] is True
     assert _row(db, row.id).cleared_at is None
-    assert svc.is_today_report(30, 7) and svc.is_today_report(30, 7, dt.date.today())
+    assert svc.is_today_report(30, 7) and svc.is_today_report(30, 7, restaurant_today())
     assert not svc.is_today_report(60, 7)
     assert not svc.is_today_report(30, 14)
-    assert not svc.is_today_report(30, 7, dt.date.today() - dt.timedelta(days=1))
+    assert not svc.is_today_report(30, 7, restaurant_today() - dt.timedelta(days=1))
     assert not svc.is_today_report(30, 7, None, "legacy")
 
 

@@ -52,6 +52,7 @@ from app.services.similar_products import similar_counts, similar_items_payload
 from app.services.supplier_projection import compute_supplier_projection, list_suppliers, protection_days
 from app.services.weekly_sales import container_twin_id, weekly_sales_for_item
 from app.sales_access import WEEKLY_SALES_MONEY_FIELDS, strip_sales
+from app.timeutil import restaurant_today
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ def get_forecast(
     as_of: Optional[dt.date] = None,
     db: Session = Depends(get_db),
 ):
-    as_of_date = as_of or dt.date.today()
+    as_of_date = as_of or restaurant_today()
     demand = forecast_daily_demand(db, lookback_days, as_of_date)
     items = [
         {"item_id": item_id, **data}
@@ -94,7 +95,7 @@ def get_reorder_candidates(
     ),
     db: Session = Depends(get_db),
 ):
-    as_of_date = as_of or dt.date.today()
+    as_of_date = as_of or restaurant_today()
     # Kept in memory a few minutes (speed #3, services/report_cache.py): the
     # same report for every request until sales / stock / orders change.
     report = cached_report(
@@ -165,7 +166,7 @@ def get_supplier_projection(
     ),
     db: Session = Depends(get_db),
 ):
-    as_of_date = end or dt.date.today()
+    as_of_date = end or restaurant_today()
     if start is not None:
         effective_lookback_days = max(1, (as_of_date - start).days)
     elif lookback_days is not None:
@@ -296,7 +297,7 @@ def export_purchase_order_pdf(
     # placed order (services/purchase_order_log.py).
     record_pdf_export(db, payload.supplier, items, user)
     safe_supplier = "".join(c if c.isalnum() else "-" for c in payload.supplier.lower()).strip("-")
-    filename = f"purchase-order-{safe_supplier}-{dt.date.today().isoformat()}.pdf"
+    filename = f"purchase-order-{safe_supplier}-{restaurant_today().isoformat()}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -433,7 +434,7 @@ def get_cart(
     contexts: dict = {}
     if projection:
         try:
-            contexts = cart_projection_context(db, rows, lookback_days, horizon_days, dt.date.today())
+            contexts = cart_projection_context(db, rows, lookback_days, horizon_days, restaurant_today())
         except Exception:  # noqa: BLE001
             logger.exception("Cart projection context failed")
             contexts = {}

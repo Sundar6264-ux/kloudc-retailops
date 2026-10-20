@@ -13,7 +13,7 @@ import types
 import pytest
 
 from app.models import OpenOrderCache, Order, User
-from app.timeutil import utcnow
+from app.timeutil import restaurant_today, utcnow
 from tests.conftest import client_for, make_user
 
 PAST = "2026-09-01"
@@ -283,7 +283,7 @@ def test_weekly_digest_without_sales(db, fake_claude, monkeypatch, seller, hider
     monkeypatch.setattr(
         weekly_digest, "get_dead_stock", lambda db: [{"name": "Old Jar", "inventory_value": 50.0, "last_90_day_sales": 12.5}]
     )
-    _sale(db, date=dt.date.today().isoformat())
+    _sale(db, date=restaurant_today().isoformat())
     body = hider.post("/api/weekly-digest/generate").json()
     assert "sales" not in body["data"]
     assert body["data"]["dead_stock"] == [{"name": "Old Jar", "inventory_value": 50.0}]
@@ -373,7 +373,7 @@ def _issue_snaps(db):
     unit sales columns."""
     from app.models import InventorySnapshot
 
-    today = dt.date.today()
+    today = restaurant_today()
     common = dict(
         snapshot_date=today, category_group="RETAIL", category="Snacks", inventory_quantity=6,
         cost=2.0, supplier="Acme", last_7_day_sales=9.0, last_30_day_sales=62.16,

@@ -31,7 +31,7 @@ from app.services.inventory_api import overlay_live_stock
 from app.services.item_vendors import vendors_of
 from app.services.product_match import code_fields
 from app.services.vendor_schedule import decode_weekdays, get_vendor_schedule_by_name
-from app.timeutil import to_restaurant_date
+from app.timeutil import restaurant_today, to_restaurant_date
 
 logger = logging.getLogger(__name__)
 
@@ -455,7 +455,7 @@ def compute_reorder_candidates(
     inventory_snapshot_date - and new data is only added (container_qty,
     safety_buffer, forecast). Any failure falls back to the old calculation.
     """
-    as_of_date = as_of_date or dt.date.today()
+    as_of_date = as_of_date or restaurant_today()
     method = method or get_settings().projection_method
     if method == "availability":
         try:

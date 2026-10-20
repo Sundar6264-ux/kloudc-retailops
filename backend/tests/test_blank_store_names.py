@@ -16,6 +16,7 @@ import re
 
 import pytest
 
+from app.timeutil import restaurant_today
 from tests.conftest import client_for, make_user
 from tests.origin_names import find_origin_names
 
@@ -37,7 +38,7 @@ def test_every_recorded_read_endpoint(db):
 
     admin = make_user(db, "owner", is_admin=True)
     client = client_for(db, admin)
-    today = dt.date.today()
+    today = restaurant_today()
     checked = 0
     for call in build_calls(today, ["Acme Foods"], ISSUE_TYPES):
         if call.path == "/api/glossary":

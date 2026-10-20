@@ -29,6 +29,7 @@ from app.services.inventory_intelligence import get_dead_stock
 from app.services.reconciliation import get_reconciliation
 from app.services.reorder import compute_reorder_candidates
 from app.services.vendor_cost import get_vendor_price_comparison
+from app.timeutil import restaurant_today
 
 MODEL = "claude-opus-5"
 
@@ -59,7 +60,7 @@ def _sales_totals(db: Session, start: dt.date, end: dt.date) -> dict:
 
 
 def get_weekly_digest_data(db: Session, end_date: dt.date = None) -> dict:
-    end_date = end_date or dt.date.today()
+    end_date = end_date or restaurant_today()
     start_date = end_date - dt.timedelta(days=6)
     prev_start = start_date - dt.timedelta(days=7)
     prev_end = start_date - dt.timedelta(days=1)

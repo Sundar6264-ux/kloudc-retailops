@@ -16,13 +16,14 @@ import pytest
 
 from app.models import InventorySnapshot, Order
 from app.services import similar_products as sp
+from app.timeutil import restaurant_today
 from tests.conftest import client_for, make_user
 from tests.similar_products_eval import FIXTURE_PATH, LABELS_PATH, evaluate, load_fixture, load_labels, split
 
 # Made-up rules in the shape these tests were written for: tests/fixtures/packs/suite.json.
 pytestmark = pytest.mark.suite_pack
 
-TODAY = dt.date.today()
+TODAY = restaurant_today()  # the store's date, same as the server
 
 
 @pytest.fixture(autouse=True)

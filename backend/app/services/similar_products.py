@@ -52,6 +52,7 @@ from app.dbcompat import fsum, group_order
 from app.models import InventorySnapshot, Order
 from app.services.item_vendors import aligned_item_codes, split_field
 from app.tenancy import tenant_local, tenant_lock
+from app.timeutil import restaurant_today
 
 logger = logging.getLogger(__name__)
 
@@ -929,7 +930,7 @@ def units_sold_by_item(db: Session, item_ids: Sequence[str], days: int = 30, as_
     synced orders - Toast's last_N_day_sales columns are dollars)."""
     if not item_ids:
         return {}
-    as_of = as_of or dt.date.today()
+    as_of = as_of or restaurant_today()
     start = as_of - dt.timedelta(days=days)
     stmt = (
         select(Order.item_guid, fsum(Order.quantity))
