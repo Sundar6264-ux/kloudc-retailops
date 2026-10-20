@@ -26,5 +26,19 @@ export default defineConfig(({ mode }) => ({
     // mount). A stray mobile build there would silently ship a
     // hardcoded-today's-domain bundle to every web visitor.
     outDir: mode === "mobile" ? "dist-mobile" : "dist",
+    // Route-level code splitting (website ready A10): every page is its own
+    // chunk (React.lazy in App.jsx); React and the router are one long-cached
+    // vendor chunk. The manifest lets a test check chunk sizes and that the
+    // first page loads only its own chunk.
+    manifest: true,
+    chunkSizeWarningLimit: 500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/node_modules\/(react|react-dom|scheduler|react-router|react-router-dom|@remix-run)\//.test(id)) return "vendor-react";
+          return undefined;
+        },
+      },
+    },
   },
 }));

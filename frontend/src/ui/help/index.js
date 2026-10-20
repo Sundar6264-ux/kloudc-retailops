@@ -7,7 +7,7 @@ export { HelpProvider, useHelp, useHelpWords } from "./HelpProvider.jsx";
 export { default as InfoButton, FieldInfo, InfoContent } from "./InfoButton.jsx";
 export { default as HelpLink, helpHref } from "./HelpLink.jsx";
 export { default as HelpPanel } from "./HelpPanel.jsx";
-export { default as HelpCenter } from "./HelpCenter.jsx";
+// HelpCenter is not re-exported: it is its own chunk (ui/helpBridge.jsx loads it lazily).
 export { default as GlossaryList } from "./GlossaryList.jsx";
 export { HelpText, HelpBlocks } from "./HelpText.jsx";
 export { HelpSearchResults, useHelpSearch, canOpenPageFor } from "./HelpSearch.jsx";

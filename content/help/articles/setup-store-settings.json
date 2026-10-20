@@ -1,0 +1,36 @@
+{
+ "id": "setup-store-settings",
+ "title": "Store settings",
+ "area": "setup",
+ "group": "setup",
+ "order": 704,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Your store's name, address, phone, time zone and logo, as POs, emails and the app show them.",
+ "pages": [
+  "store_settings"
+ ],
+ "related": [
+  "setup-integrations"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Setup › **Store settings** holds the details printed on purchase orders and emails and shown in the app. Change a field and choose **Save**."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "**Time zone** decides \"today\" everywhere: dates, reports and the daily jobs follow your store's clock, wherever you are.",
+    "Your **Store ID** never changes. KloudC support can help if it must.",
+    "When KloudC offers it, you can ask for your store to move to its own server here."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "Only owners and admins see this page."
+  }
+ ]
+}

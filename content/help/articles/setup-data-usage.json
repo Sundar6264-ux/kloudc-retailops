@@ -1,0 +1,32 @@
+{
+ "id": "setup-data-usage",
+ "title": "Data & usage",
+ "area": "setup",
+ "group": "setup",
+ "order": 705,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "See your store's usage against its plan, and download everything with Export all data.",
+ "pages": [
+  "data_usage"
+ ],
+ "related": [
+  "setup-store-settings"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Setup › **Data & usage** shows how much your store uses: users, items and file storage, against the limits of its plan. Numbers update every night."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Near or over a limit, a note says so. Nothing stops working: KloudC will contact you about the plan.",
+    "**Export all data** makes one file with everything your store has: every list as a spreadsheet file, plus your uploaded files. Passwords and keys are never in it.",
+    "When it is ready, a **Download link** appears. It works for a limited time; after that, make a new export."
+   ]
+  }
+ ]
+}

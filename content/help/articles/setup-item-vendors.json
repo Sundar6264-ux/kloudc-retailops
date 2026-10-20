@@ -1,0 +1,37 @@
+{
+ "id": "setup-item-vendors",
+ "title": "Item vendors",
+ "area": "setup",
+ "group": "setup",
+ "order": 706,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Who supplies each item. Edit it by hand or import a CSV; ordering and Fix Issues use it.",
+ "pages": [
+  "item_vendors"
+ ],
+ "related": [
+  "setup-integrations",
+  "po-cart"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Setup › **Item vendors** says who supplies each item, for stores whose {pos} has no supplier field. Ordering and Fix Issues use it to group items by vendor."
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Search an item, then add or change its vendors. The first vendor is the usual one.",
+    "**Items without a vendor** shows what is still missing.",
+    "Many at once: import a CSV. You see every row and any problems before anything is saved."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "On a Toast store the inventory file still decides vendors; this page shows them read-only."
+  }
+ ]
+}
