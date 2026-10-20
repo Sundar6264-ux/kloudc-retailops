@@ -57,6 +57,8 @@ DEFAULTS: Dict[str, Any] = {
     # --- website-ready track A (console) - docs/WEBSITE_READY_CONTRACT.md 2 ---
     # --- website-ready track B (exports, plans, billing) ---
     "billing_provider": "none",  # "none" | "stripe" (stub until the owner adds keys)
+    "stripe_secret_key": "",  # secret: environment only, never logged or returned
+    "stripe_webhook_secret": "",  # secret: environment only
     # --- website-ready track C (storage, job queue, live updates) ---
     "storage_backend": "local",  # "local" | "s3"
     "job_queue_mode": "inline",  # "inline" | "queue"

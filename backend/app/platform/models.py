@@ -260,3 +260,7 @@ class OwnerSetupToken(PlatformBase):
     created_at: Mapped[dt.datetime] = mapped_column(TS, nullable=False, default=utcnow)
     expires_at: Mapped[dt.datetime] = mapped_column(TS, nullable=False)
     used_at: Mapped[Optional[dt.datetime]] = mapped_column(TS)
+
+
+# Website-ready track B: the data-ownership tables share this metadata (p0002).
+from app.platform import data_models as _data_models  # noqa: E402,F401
