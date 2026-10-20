@@ -1,4 +1,8 @@
-fastapi==0.115.0
+# Security review (docs/SECURITY_REVIEW.md SR-11): 0.116.2 + Starlette 0.47.3
+# fix the multipart/form advisories; FastAPI 0.150 / Starlette 1.x break 8
+# route-introspection tests and wait for a calmer night.
+fastapi==0.116.2
+starlette==0.47.3
 uvicorn[standard]==0.30.6
 SQLAlchemy==2.0.35
 # PostgreSQL driver (production database, platform contract P2). The binary
@@ -15,23 +19,23 @@ httpx==0.27.2
 pandas==2.2.3
 openpyxl==3.1.5
 reportlab==4.2.5
-python-multipart==0.0.9
+python-multipart==0.0.32
 pydantic-settings==2.5.2
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 bcrypt==4.2.0
 anthropic==0.125.0
-Pillow==11.3.0
+Pillow==12.3.0
 # Team hub recurring tasks (dateutil.rrule). Already installed via pandas;
 # pinned here because app/team uses it directly.
 python-dateutil==2.9.0.post0
-pillow-heif==0.18.0
+pillow-heif==1.8.1
 # Push notifications (FCM). Held below 7.x: 7.x hard-pins httpx==0.28.1,
 # which conflicts with the httpx pin above.
 firebase-admin==6.8.0
 # Toast email attachment (app/services/toast_pdf.py): Letter-sized pages +
 # a local OCR text layer. pytesseract needs the tesseract binary
 # (brew install tesseract); without it pages are still normalized.
-pypdf==5.1.0
+pypdf==6.21.1
 pytesseract==0.3.13
 # Object storage on S3 / Cloudflare R2 (app/storage/s3.py, website-ready C1).
 # Imported only when STORAGE_BACKEND=s3.

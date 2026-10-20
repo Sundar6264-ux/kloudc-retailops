@@ -1,8 +1,8 @@
 # Test-only dependencies: pip install -r requirements-dev.txt
 -r requirements.txt
-pytest==8.3.3
+pytest==9.0.3
 # PDF text checks (tests/test_ops_po_sections_edit.py).
-pypdf==5.1.0
+pypdf==6.21.1
 # Fixed clocks in time-of-day dependent tests
 time-machine==2.16.0
 # In-process S3 for the object storage tests (no network).
