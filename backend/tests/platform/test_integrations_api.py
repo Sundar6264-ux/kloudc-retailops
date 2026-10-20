@@ -113,8 +113,11 @@ def test_test_connection_rate_limit_and_errors(store_admin, fake_testers):
 
 @needs_b
 def test_clover_placeholder_and_delete(store_admin):
+    # Website-ready track D: the old connect route answers like
+    # /clover/authorize-url - off until the owner sets the Clover app keys.
     r = store_admin.post("/api/settings/integrations/clover/connect")
-    assert r.status_code == 501 and r.json() == {"error": "not_available", "message": "Clover connection arrives with M3"}
+    assert r.status_code == 409 and r.json()["error"] == "clover_app_not_configured"
+    # Clover is saved through /clover/manual or the OAuth callback, never the generic PUT.
     assert store_admin.put("/api/settings/integrations/clover", json={}).status_code == 501
     store_admin.put("/api/settings/integrations/ai", json={"secrets": SECRETS["ai"]})
     assert store_admin.delete("/api/settings/integrations/ai").json() == {"kind": "ai", "deleted": True}
