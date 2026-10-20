@@ -54,6 +54,17 @@ DEFAULTS: Dict[str, Any] = {
     "session_lifetime_days": 14,
     "terms_url": "",
     "product_name": "KloudC RetailOps",
+    # --- website-ready track A (console) - docs/WEBSITE_READY_CONTRACT.md 2 ---
+    # --- website-ready track B (exports, plans, billing) ---
+    "billing_provider": "none",  # "none" | "stripe" (stub until the owner adds keys)
+    # --- website-ready track C (storage, job queue, live updates) ---
+    "storage_backend": "local",  # "local" | "s3"
+    "job_queue_mode": "inline",  # "inline" | "queue"
+    "live_updates_mode": "local",  # "local" | "postgres" (LISTEN/NOTIFY)
+    # --- website-ready track D (Clover) ---
+    "clover_app_id": "",
+    "clover_app_secret": "",
+    "clover_environment": "sandbox",  # "sandbox" | "us" | "eu" | "la"
 }
 
 _TRUE = {"1", "true", "yes", "on"}

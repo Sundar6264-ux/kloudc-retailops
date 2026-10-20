@@ -195,6 +195,9 @@ app.include_router(team_router_core.app_router)
 app.include_router(team_router_chat.router)
 app.include_router(team_router_tasks.router)
 app.include_router(issue_leads_router.router)
+from app.routers import item_vendors as item_vendors_router  # noqa: E402 - item vendors editor (website-ready track D)
+
+app.include_router(item_vendors_router.router)
 # Platform (docs/PLATFORM_CONTRACT.md 13; track C): /api/platform, /api/signup,
 # /api/public/stores, /api/settings/integrations - and, in multi mode, the
 # platform registry/settings sources.

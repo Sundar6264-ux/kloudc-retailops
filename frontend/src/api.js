@@ -2177,3 +2177,8 @@ export async function deleteIntegration(kind) {
 }
 
 export const connectClover = () => postJSON(`${I}/clover/connect`, {});
+
+// Shared base helpers for the per-track API modules in src/clients/
+// (docs/WEBSITE_READY_CONTRACT.md 3.6): new endpoints get their client
+// functions there, not in this file.
+export { request, postJSON, patchJSON };

@@ -670,6 +670,15 @@ def install(app: FastAPI) -> None:
     app.include_router(signup_router)
     app.include_router(public_router)
     app.include_router(settings_router)
+    # Website-ready tracks (docs/WEBSITE_READY_CONTRACT.md 2): one router
+    # module each, mounted here once so the tracks never edit this block.
+    from app.platform import routes_clover, routes_console, routes_data, routes_system
+
+    app.include_router(routes_console.router)
+    app.include_router(routes_data.router)
+    app.include_router(routes_data.store_router)
+    app.include_router(routes_system.router)
+    app.include_router(routes_clover.router)
     from app.platform.config import is_multi
 
     if is_multi():

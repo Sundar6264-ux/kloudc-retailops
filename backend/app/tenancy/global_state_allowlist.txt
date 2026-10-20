@@ -206,3 +206,5 @@ app/ops/http.py:_hash_cache  # CSP hashes of the built index.html, keyed by file
 app/ops/logs.py:_state  # logging is configured once per process (root logger, record factory)
 app/ops/pilot.py:_blocked  # counts of sends blocked by pilot mode, keyed "<STORE>:<channel>" (log/tests only)
 app/ops/pilot.py:_lock  # guards _blocked
+app/jobqueue/__init__.py:_HANDLERS  # job kind -> handler, filled once at import by @register (code, the same for every store)
+app/jobqueue/__init__.py:_PERIODIC  # job kind -> daily schedule, filled once at import by register_periodic (code, the same for every store)
