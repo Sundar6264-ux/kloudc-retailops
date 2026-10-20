@@ -19,7 +19,7 @@ const LOGINS = JSON.parse(readFileSync(process.env.SCREENS_LOGINS, "utf8"));
 const WIDTHS = (process.env.SCREENS_WIDTHS || "1440,1280,375").split(",").map(Number);
 const THEMES = (process.env.SCREENS_THEMES || "light,dark").split(",");
 
-const results = { shots: 0, sideways: [], crashed: [], errors: [], missing: [] };
+const results = { shots: 0, sideways: [], crashed: [], errors: [], missing: [] }; // crashed: also layout breaks
 const who = (code) => ({ code, username: LOGINS[code][0].username, password: LOGINS[code][0].password });
 
 async function context(browser, width, theme) {
@@ -82,6 +82,9 @@ async function master(browser, width, theme, dir) {
   await settle(page);
   if (await tryClick(page, '[data-testid="store-details-RETAILOPS_TEST_CLOVER"]', "store details")) {
     await settle(page);
+    // A long Store ID must not push Close off a phone screen.
+    const close = await page.getByRole("button", { name: "Close store detail" }).boundingBox();
+    if (!close || close.x + close.width > width) results.crashed.push(`drawer Close off screen @${width}`);
     for (const [key, label] of [
       ["overview", "Overview"],
       ["usage", "Usage & plan"],

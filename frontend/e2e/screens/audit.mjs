@@ -11,9 +11,14 @@ const WIDTHS = (process.env.SCREENS_WIDTHS || "1280,375").split(",").map(Number)
 const pagesFor = {
   DEMO: ["/", "/daily-checklists", "/reorder", "/supplier-projection", "/vendor-calendar", "/purchase-order", "/placed-orders", "/fix-issues", "/delivery-review", "/invoices", "/inventory-reports", "/reconciliation", "/items-sold", "/team/tasks", "/team/chat", "/team/announcements", "/users", "/teams", "/po-sections", "/vendor-contacts", "/issue-leads", "/checklists/admin", "/team/templates", "/team/moderation", "/help", "/glossary", "/change-password", "/settings/store", "/settings/data", "/setup/item-vendors"],
   RETAILOPS_TEST_TOAST: ["/open-orders", "/insights/daily", "/insights/prep-forecast", "/insights/busy-hours", "/settings/integrations", "/inventory-api", "/flyers"],
+  RETAILOPS_TEST_CLOVER: ["/settings/integrations", "/setup/item-vendors", "/settings/data"],
   PLATFORM: ["/platform"],
   "": ["/", "/signup", "/setup"],
 };
+
+// AUDIT_ONLY=/setup/item-vendors re-checks just the routes containing it.
+const ONLY = process.env.AUDIT_ONLY || "";
+for (const k of Object.keys(pagesFor)) pagesFor[k] = pagesFor[k].filter((r) => !ONLY || r.includes(ONLY));
 
 const browser = await chromium.launch();
 for (const theme of THEMES) for (const width of WIDTHS) for (const [code, routes] of Object.entries(pagesFor)) {
