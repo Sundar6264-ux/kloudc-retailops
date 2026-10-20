@@ -197,7 +197,8 @@ async function run(browser, width) {
     await shot(page, `integrations-toast-${width}`);
     check(!(await page.isVisible('[data-testid="int-tile-clover"]')), T("a Toast store has no Clover tile"));
 
-    // A Clover store: its Connect placeholder, and never a Toast tile.
+    // A Clover store: Connect with Clover (off until the service has its Clover
+    // app) with the API token form instead, and never a Toast tile.
     await logout(page, width);
     await login(page, "CLOVER_MART", "owner", STORE_PW);
     await page.goto(`${BASE}/#/settings/integrations`);
@@ -205,9 +206,10 @@ async function run(browser, width) {
     check(!(await page.isVisible('[data-testid="int-tile-toast"]')), T("a Clover store has no Toast tile"));
     check(!/Toast/.test(await page.innerText("main")), T("a Clover store's Integrations never says Toast"));
     await page.click('[data-testid="int-tile-clover"]');
-    await page.click('[data-testid="clover-connect"]');
-    await settle(page);
-    check((await page.textContent('[data-testid="int-message"]'))?.includes("M3"), T("Clover Connect placeholder"));
+    await page.waitForSelector('[data-testid="clover-connect"]');
+    check(await page.isDisabled('[data-testid="clover-connect"]'), T("Connect with Clover is off without the Clover app"));
+    check((await page.textContent('[data-testid="clover-oauth-off"]'))?.includes("API token"), T("Clover: says to use an API token"));
+    check(await page.isVisible('[data-testid="clover-merchant-id"]'), T("Clover: Merchant ID + API token form"));
     await shot(page, `integrations-clover-${width}`);
 
     // Remembered Store ID after sign-out
