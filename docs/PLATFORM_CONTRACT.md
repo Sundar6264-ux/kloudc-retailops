@@ -3731,3 +3731,88 @@ by default: the pilot behaves as today.
 - The in-session 403 message itself is the generic "This store is
   suspended" (the server's `db.py`, owned by C); the master's maintenance
   message shows on the next sign-in.
+
+## As built - Website ready: Integrate
+
+Merged into `main` with `--no-ff` in the order C -> B -> D -> A (infra first,
+UI last). Conflicts were only in the shared append-only files; every entry
+of every track was kept.
+
+**Conflicts and how they were resolved**
+
+- `app/platform/models.py`: both the job queue models (C) and the
+  data-ownership models (B) are imported at the end.
+- `app/tenancy/global_state_allowlist.txt`, `docs/PLATFORM_CONTRACT.md`:
+  union, each track's block intact.
+- `content/help/pages.json` / `glossary.json`: merged by id (3-way, by
+  key), so no entry was lost or duplicated. One page per thing:
+  - **Data & usage** is `store_data` (B's page, with its Usage / Plan /
+    Export sections). A's placeholder `data_usage` was removed and the
+    `/settings/data` route now uses `pageId: "store_data"`.
+  - **Item vendors** keeps D's info text (A's placeholder points were
+    dropped). `concept_grace_period` keeps B's wording.
+- Articles: `setup-data-usage` is B's, `setup-item-vendors` is D's.
+  `setup-integrations` keeps A's per-POS blocks, and its Clover block now
+  describes Connect with Clover and the API token (D) instead of "arrives
+  with a later release". `setup-connect-clover` is tagged `"pos": ["clover"]`
+  (A8), so Toast and CSV stores don't see it.
+
+**Wiring across tracks**
+
+- Export all data (B) runs as the `store_export` job through C's queue
+  when `JOB_QUEUE_MODE=queue`, and writes its ZIP through C's storage, so it
+  lands in R2 when `STORAGE_BACKEND=s3`. New test
+  `tests/platform/test_website_ready_integration.py` covers it with a
+  worker job onto moto S3, streamed back and checked against its sha256.
+- Workers load Clover's `clover_webhook_sync` job kind:
+  `app/jobqueue/kinds.py` named a module that does not exist
+  (`clover.jobs`), which would have been skipped silently. The test fails
+  if any job module listed there is missing. Clover's nightly sales sync is
+  the scheduled `store_job`, so it already goes through the queue.
+- Usage: Clover requests are counted through the shared helper
+  `app/pos/http.py` (once per request, as for Toast). AI requests are now
+  counted as `ai_calls` (an httpx request hook on the Anthropic client;
+  `tests/test_ai_call_metering.py`, mock transport, no network).
+- Console: the Stores list shows **Near the limit** / **Over the limit**
+  from `GET /api/platform/usage/summary` (best effort; the list works
+  without it). Store detail renders B's Usage & plan and Data panels, and
+  Platform settings renders C's System panel.
+- Clover order fallback date uses `restaurant_today()` (A1 guard).
+- Route gates: the export Download link (token only), Clover's OAuth return
+  (sealed state only) and Clover webhooks (off by default, `X-Clover-Auth`)
+  are listed as reviewed public routes.
+- e2e: `e2e/system/run.sh` opens the panel in Platform settings and no
+  longer builds a patched copy. `e2e/platform/platform.mjs` expects Connect
+  with Clover to be off without the Clover app, with the API token form
+  shown, in place of the old "M3" placeholder.
+- Paths in the earlier As built sections are relative (name guard).
+
+**Tests (integrated `main`)**
+
+| Suite | Result |
+|---|---|
+| Backend, SQLite (`TZ=America/New_York`) | 3185 passed, 27 skipped, 0 failed |
+| Backend, PostgreSQL (`TZ`/`PGTZ` America/New_York) | 3193 passed, 18 skipped, 1 failed: the backup drill under load (two full suites at once); its file passes alone (8 of 8) and in CI |
+| Deselected locally | `test_ops_glossary::test_app_bundled_copy_is_current`: the app's bundled glossary is stale until `scripts/help/sync_help_to_app.sh` runs (app follow-up). CI skips it because the app repo is not checked out there |
+| Website node tests | 370 of 370 |
+| `vite build` | OK; largest chunk 434.6 kB (limit 500 kB) |
+| `e2e/store` | 760 checks, 0 failures |
+| `e2e/platform` real server / mock | 148 / 133 checks, 0 failed |
+| `run_flows.sh` | 114 checks, 0 failed |
+| `e2e/system` | 47 of 47 |
+| Track A screens on the merged site | 36 shots (1440 + 375, light + dark), 0 problems, 0 page errors |
+
+The first SQLite run crossed midnight and 11 date-based tests failed (a
+test computed "today" before midnight and the server after). All 11 passed
+when re-run, and so did the full suite. This is a timing flake in old tests,
+not a product bug.
+
+**Deferred**
+
+- The master's maintenance message is still not shown during a session.
+  The store's code would have to reach `db.py` from the tenancy middleware,
+  which is a hot path to change on a ship night. The message does show at
+  the next sign-in.
+- A presigned R2 Download link can't be withdrawn early, and downloads
+  made through it aren't counted; it simply expires. Server-streamed links
+  are withdrawn and counted. Set `STORAGE_PRESIGN=false` to always stream.
