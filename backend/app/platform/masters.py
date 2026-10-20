@@ -132,7 +132,7 @@ def authenticate(db: Session, username: str, password: str, totp_code: Optional[
             return None, "bad_login"
         if not totp_code:
             return None, "totp_required"
-        if not totp.verify(secret, totp_code):
+        if not totp.verify_once(secret, totp_code, key=user.username, purpose="login"):
             return None, "bad_login"
     return user, None
 
@@ -211,6 +211,29 @@ def actor_name(user: PlatformUser) -> str:
     return f"platform:{user.username}"
 
 
+# --- step-up: a fresh two-step code for the most sensitive actions --------------
+
+STEP_UP_HEADER = "X-Two-Step-Code"
+
+
+def check_step_up(user: Optional[PlatformUser], code: Optional[str]) -> None:
+    """A current two-step code from the acting master, when that master has
+    two-step sign-in (always, in production). Used for adding a master,
+    removing one, resetting another's two-step, starting a support session
+    and deleting store data, so a stolen session cookie alone cannot do them
+    (docs/SECURITY_REVIEW.md SR-07). Each code works once."""
+    if user is None or not getattr(user, "totp_secret_enc", None):
+        return
+    if not (code or "").strip():
+        raise PlatformError(400, "totp_required", "Enter the code from your two-step sign-in app.")
+    try:
+        secret = crypto.open_text(user.totp_secret_enc, crypto.totp_aad(user.username))
+    except Exception:  # noqa: BLE001
+        raise PlatformError(400, "totp_invalid", "That two-step code is not right.") from None
+    if not totp.verify_once(secret, str(code).strip(), key=user.username, purpose="step_up"):
+        raise PlatformError(400, "totp_invalid", "That two-step code is not right.")
+
+
 # --- TOTP enrolment ------------------------------------------------------------
 
 _PENDING_SUFFIX = ":pending"
@@ -232,7 +255,7 @@ def totp_begin(db: Session, user: PlatformUser, current_code: Optional[str] = No
             current = crypto.open_text(user.totp_secret_enc, crypto.totp_aad(user.username))
         except crypto.DecryptError:
             raise PlatformError(400, "invalid", "That code is not right.") from None
-        if not totp.verify(current, current_code):
+        if not totp.verify_once(current, current_code, key=user.username, purpose="step_up"):
             raise PlatformError(400, "invalid", "That code is not right. Use the code from your current phone.")
     secret = totp.new_secret()
     # Stateless enrolment: the new secret goes back to the client sealed

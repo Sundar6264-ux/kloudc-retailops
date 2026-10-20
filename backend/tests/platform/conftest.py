@@ -99,9 +99,10 @@ def store_migrator():
 def platform_env(platform_db_url, monkeypatch, tmp_path):
     """Multi mode against this run's platform database."""
     from app.config import process_settings
-    from app.platform import crypto, provisioning, throttle
+    from app.platform import crypto, provisioning, throttle, totp
     from app.platform.db import platform_engine, reset_platform_engine
 
+    totp.reset_used()
     s = process_settings()
     values = {
         "tenancy_mode": "multi",

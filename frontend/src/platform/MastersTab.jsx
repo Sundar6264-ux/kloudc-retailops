@@ -28,6 +28,8 @@ export default function MastersTab({ search = "" }) {
     load();
   }, [load]);
 
+  // A master with two-step sign-in confirms these changes with a fresh code.
+  const needCode = !!(rows || []).find((m) => m.is_me)?.two_step;
   const needle = search.trim().toLowerCase();
   const shown = (rows || []).filter(
     (m) => !needle || m.username.includes(needle) || (m.display_name || "").toLowerCase().includes(needle),
@@ -44,6 +46,7 @@ export default function MastersTab({ search = "" }) {
       </div>
       {adding && (
         <AddMasterForm
+          needCode={needCode}
           onDone={async (text) => {
             setMessage(text ? { tone: "ok", text } : null);
             await load();
@@ -62,6 +65,7 @@ export default function MastersTab({ search = "" }) {
               key={m.id}
               master={m}
               all={rows}
+              needCode={needCode}
               onDone={async (text, tone = "ok") => {
                 setMessage({ text, tone });
                 await load();
@@ -74,9 +78,10 @@ export default function MastersTab({ search = "" }) {
   );
 }
 
-function AddMasterForm({ onDone, onClose }) {
+function AddMasterForm({ needCode = false, onDone, onClose }) {
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState(null);
@@ -86,10 +91,15 @@ function AddMasterForm({ onDone, onClose }) {
     e.preventDefault();
     const problem = masterUsernameError(username);
     if (problem) return setError(problem);
+    if (needCode && cleanTotp(code).length !== 6) return setError("Enter the 6-digit code from your two-step sign-in app.");
     setBusy(true);
     setError(null);
     try {
-      const out = await addMaster({ username: username.trim(), displayName: displayName.trim() });
+      const out = await addMaster({
+        username: username.trim(),
+        displayName: displayName.trim(),
+        code: needCode ? cleanTotp(code) : null,
+      });
       setCreated(out);
       onDone(null);
     } catch (err) {
@@ -145,6 +155,7 @@ function AddMasterForm({ onDone, onClose }) {
         Name <span className="muted">(optional)</span>
         <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} autoComplete="off" />
       </label>
+      {needCode && <StepUpCode value={code} onChange={setCode} />}
       <div className="pf-actions">
         <button type="submit" disabled={busy}>
           {busy ? "Adding…" : "Add"}
@@ -162,18 +173,21 @@ function AddMasterForm({ onDone, onClose }) {
   );
 }
 
-function MasterRow({ master, all, onDone }) {
+function MasterRow({ master, all, needCode = false, onDone }) {
   const [mode, setMode] = useState(null); // remove | reset | move
+  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const can = masterActions(master, all);
   const name = master.display_name && master.display_name !== master.username ? master.display_name : master.username;
 
   async function act(fn) {
+    if (needCode && cleanTotp(code).length !== 6) return setError("Enter the 6-digit code from your two-step sign-in app.");
     setBusy(true);
     setError(null);
     try {
-      await fn();
+      await fn(needCode ? cleanTotp(code) : null);
+      setCode("");
       setMode(null);
     } catch (err) {
       setError(platformErrorMessage(err));
@@ -217,7 +231,8 @@ function MasterRow({ master, all, onDone }) {
           text={`Turn off ${name}'s two-step sign-in? They are signed out and set it up again at their next sign-in.`}
           action="Reset two-step"
           busy={busy}
-          onYes={() => act(async () => (await resetMasterTwoStep(master.id), onDone(`${name}'s two-step sign-in was reset.`)))}
+          code={needCode ? { value: code, onChange: setCode } : null}
+          onYes={() => act(async (c) => (await resetMasterTwoStep(master.id, c), onDone(`${name}'s two-step sign-in was reset.`)))}
           onNo={() => setMode(null)}
         />
       )}
@@ -227,7 +242,8 @@ function MasterRow({ master, all, onDone }) {
           action="Remove"
           danger
           busy={busy}
-          onYes={() => act(async () => (await removeMaster(master.id), onDone(`${name} was removed.`)))}
+          code={needCode ? { value: code, onChange: setCode } : null}
+          onYes={() => act(async (c) => (await removeMaster(master.id, c), onDone(`${name} was removed.`)))}
           onNo={() => setMode(null)}
         />
       )}
@@ -241,10 +257,29 @@ function MasterRow({ master, all, onDone }) {
   );
 }
 
-function ConfirmLine({ text, action, danger = false, busy, onYes, onNo }) {
+// "Your two-step code": the acting master's current code for a sensitive change.
+function StepUpCode({ value, onChange }) {
+  return (
+    <label className="pf-stepup">
+      Your two-step code
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        maxLength={7}
+        placeholder="123456"
+        data-testid="stepup-code"
+      />
+    </label>
+  );
+}
+
+function ConfirmLine({ text, action, danger = false, busy, code = null, onYes, onNo }) {
   return (
     <div className="pf-confirm" role="group" aria-label={action}>
       <p>{text}</p>
+      {code && <StepUpCode value={code.value} onChange={code.onChange} />}
       <div className="pf-actions">
         <button type="button" className={danger ? "pf-btn-danger" : undefined} disabled={busy} onClick={onYes}>
           {busy ? "Working…" : action}

@@ -203,6 +203,7 @@ class SupportBody(BaseModel):
     reason: str = Field(min_length=5, max_length=500)
     username: Optional[str] = Field(default=None, max_length=64)
     minutes: Optional[int] = Field(default=None, ge=5, le=120)
+    totp_code: Optional[str] = Field(default=None, max_length=12)
 
 
 @platform_router.post("/stores/{code}/support-session")
@@ -211,6 +212,7 @@ def start_support(code: str, body: SupportBody, request: Request, user: Platform
     """Impersonate for support: a time-limited store session (default 30
     minutes, max 120) as the store's first admin or a named user. Audited.
     The website signs in with it through ``POST /api/auth/support-login``."""
+    masters.check_step_up(user, body.totp_code or request.headers.get(masters.STEP_UP_HEADER))
     store = stores.store_by_code(db, code)
     if store.status != "active":
         raise PlatformError(409, "conflict", f"Store {store.code} is {store.status}.")
@@ -326,11 +328,13 @@ class NewMasterBody(BaseModel):
     password: str
     display_name: Optional[str] = None
     email: Optional[str] = None
+    totp_code: Optional[str] = Field(default=None, max_length=12)
 
 
 @platform_router.post("/users", status_code=201)
 def create_master(body: NewMasterBody, request: Request, user: PlatformUser = Depends(platform_write),
                   db: Session = Depends(get_platform_db)):
+    masters.check_step_up(user, body.totp_code or request.headers.get(masters.STEP_UP_HEADER))
     created = masters.create_master(db, body.username, body.password, body.display_name or "", body.email,
                                     actor=masters.actor_name(user), client_ip=_ip(request))
     return masters.user_view(created)

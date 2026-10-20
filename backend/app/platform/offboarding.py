@@ -193,18 +193,9 @@ def cancel(code: str, *, actor: str, restore: bool = False, client_ip: Optional[
 
 def _check_two_step(user, code: Optional[str]) -> None:
     """The master's current two-step code, when the master has two-step sign-in."""
-    from app.platform import crypto, totp
+    from app.platform.masters import check_step_up
 
-    if user is None or not getattr(user, "totp_secret_enc", None):
-        return
-    if not code:
-        raise PlatformError(400, "totp_required", "Enter the code from your two-step sign-in app.")
-    try:
-        secret = crypto.open_text(user.totp_secret_enc, crypto.totp_aad(user.username))
-    except Exception:  # noqa: BLE001
-        raise PlatformError(400, "totp_invalid", "That two-step code is not right.") from None
-    if not totp.verify(secret, str(code).strip()):
-        raise PlatformError(400, "totp_invalid", "That two-step code is not right.")
+    check_step_up(user, code)
 
 
 def purge(code: str, *, actor: str, confirm: str, master=None, totp_code: Optional[str] = None,

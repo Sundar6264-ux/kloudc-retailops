@@ -269,14 +269,29 @@ def me(
 @router.post("/change-password")
 def change_password(
     body: ChangePasswordRequest,
+    request: Request,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    session_token: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+    authorization: Optional[str] = Header(default=None),
 ):
+    """Change your own password. Five tries a minute (a stolen session cannot
+    guess the current password at speed), and every other session of this
+    account ends - this one stays (docs/SECURITY_REVIEW.md SR-04)."""
+    from app.platform.throttle import check_rate
+    from app.tenancy.tokens import token_hash
+
+    wait = check_rate("change_password", f"{store_code() or '-'}:{user.id}", per_minute=5)
+    if wait is not None:
+        raise HTTPException(status_code=429, detail="Too many tries. Wait a minute and try again.",
+                            headers={"Retry-After": str(wait)})
     if not verify_password(body.current_password, user.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
     user.password_hash = hash_password(body.new_password)
     db.add(user)
+    current = session_token or extract_bearer_token(authorization) or ""
+    db.execute(delete(UserSession).where(UserSession.user_id == user.id, UserSession.token != token_hash(current)))
     db.commit()
     return {"status": "ok"}
 

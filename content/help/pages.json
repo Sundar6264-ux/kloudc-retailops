@@ -3152,6 +3152,7 @@
    "points": [
     "A new master gets a **temporary password** and must choose their own at first sign-in.",
     "You can't remove yourself or the last master.",
+    "With two-step sign-in on, adding, removing or resetting a master asks for **your current code** first.",
     "Every change is in the Audit tab."
    ],
    "source": null,

@@ -141,7 +141,19 @@ async def lifespan(app: FastAPI):
 # demo_write_guard: the App Review demo login is read-only except for an
 # explicit allowlist (app/demo_guard.py). Set here, on the app, so every
 # route included below - and any added later - runs it.
-app = FastAPI(title="KloudC RetailOps", lifespan=lifespan, dependencies=[Depends(demo_write_guard)])
+def api_docs_urls(app_env) -> dict:
+    """FastAPI's /docs, /redoc and /openapi.json: off in production (the
+    full list of routes and fields is a map for an attacker; docs/
+    SECURITY_REVIEW.md SR-02), on in development and tests."""
+    from app.platform.config import env_is_production
+
+    if env_is_production(app_env):
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
+
+
+app = FastAPI(title="KloudC RetailOps", lifespan=lifespan, dependencies=[Depends(demo_write_guard)],
+              **api_docs_urls(get_settings().app_env))
 
 settings = get_settings()
 # The store of each request (multi mode; a no-op in single mode). Added

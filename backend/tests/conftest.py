@@ -139,9 +139,11 @@ def _pg_run_database():
 
 @pytest.fixture(autouse=True)
 def _fresh_db():
+    from app.platform import throttle
     from app.services.checklist_schemas import clear_cache as clear_checklist_cache
 
     _refuse_a_real_database()
+    throttle.reset_limiters()  # in-memory rate limits never carry over between tests
     if IS_PG:
         if _pg_schema_signature is None or pg_harness.schema_signature(engine) != _pg_schema_signature:
             _pg_build_schema()

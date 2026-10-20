@@ -12,10 +12,21 @@ const enc = encodeURIComponent;
 
 // Masters (A2)
 export const listMasters = () => getJSON(`${P}/masters`);
-export const addMaster = ({ username, displayName, email }) =>
-  postJSON(`${P}/masters`, { username, display_name: displayName || null, email: email || null });
-export const removeMaster = (id) => del(`${P}/masters/${enc(id)}`);
-export const resetMasterTwoStep = (id) => postJSON(`${P}/masters/${enc(id)}/reset-two-step`, {});
+// Adding, removing and resetting a master need a fresh two-step code from a
+// master who has two-step sign-in on (docs/SECURITY_REVIEW.md SR-07).
+const stepUp = (code) => (code ? { "X-Two-Step-Code": code } : {});
+export const addMaster = ({ username, displayName, email, code }) =>
+  postJSON(`${P}/masters`, { username, display_name: displayName || null, email: email || null, totp_code: code || null });
+export const removeMaster = async (id, code) =>
+  (await request(`${P}/masters/${enc(id)}`, { method: "DELETE", headers: stepUp(code) })).json();
+export const resetMasterTwoStep = async (id, code) =>
+  (
+    await request(`${P}/masters/${enc(id)}/reset-two-step`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...stepUp(code) },
+      body: "{}",
+    })
+  ).json();
 // Moving your own two-step sign-in to a new phone: a code from the current one first.
 export const moveTwoStep = (currentCode) => postJSON(`${P}/masters/me/two-step/move`, { current_code: currentCode });
 export const changeMasterPassword = (current, next) => postJSON(`${P}/users/me/password`, { current, new: next });

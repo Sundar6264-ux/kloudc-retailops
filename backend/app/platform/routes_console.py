@@ -55,11 +55,17 @@ class AddMasterBody(BaseModel):
     username: str = Field(min_length=1, max_length=64)
     display_name: Optional[str] = Field(default=None, max_length=120)
     email: Optional[str] = Field(default=None, max_length=200)
+    totp_code: Optional[str] = Field(default=None, max_length=12)
+
+
+def _step_up_code(request: Request, body_code: Optional[str] = None) -> Optional[str]:
+    return body_code or request.headers.get(masters.STEP_UP_HEADER)
 
 
 @router.post("/masters", status_code=201)
 def add_master(body: AddMasterBody, request: Request, user: PlatformUser = Depends(_write),
                db: Session = Depends(get_platform_db)):
+    masters.check_step_up(user, _step_up_code(request, body.totp_code))
     created, password = masters.add_master(
         db, body.username, display_name=body.display_name or "", email=body.email, actor=user, client_ip=_ip(request)
     )
@@ -72,6 +78,7 @@ def add_master(body: AddMasterBody, request: Request, user: PlatformUser = Depen
 @router.delete("/masters/{user_id}")
 def remove_master(user_id: int, request: Request, user: PlatformUser = Depends(_write),
                   db: Session = Depends(get_platform_db)):
+    masters.check_step_up(user, _step_up_code(request))
     removed = masters.remove_master(db, user_id, actor=user, client_ip=_ip(request))
     return {"ok": True, "username": removed.username}
 
@@ -79,6 +86,7 @@ def remove_master(user_id: int, request: Request, user: PlatformUser = Depends(_
 @router.post("/masters/{user_id}/reset-two-step")
 def reset_two_step(user_id: int, request: Request, user: PlatformUser = Depends(_write),
                    db: Session = Depends(get_platform_db)):
+    masters.check_step_up(user, _step_up_code(request))
     target = masters.reset_two_step(db, user_id, actor=user, client_ip=_ip(request))
     return masters.user_view(target)
 

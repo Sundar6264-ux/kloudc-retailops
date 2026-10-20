@@ -19,6 +19,8 @@ ul.pf-list { list-style: none; margin: 0; padding: 0; }
 
 .pf-confirm { border-top: 1px dashed var(--border); padding-top: 0.5rem; display: grid; gap: 0.4rem; }
 .pf-confirm p { margin: 0; font-size: 0.88rem; }
+.pf-stepup { display: grid; gap: 0.25rem; font-size: 0.85rem; max-width: 12rem; }
+.pf-stepup input { font-variant-numeric: tabular-nums; letter-spacing: 0.08em; }
 
 .pf-created { border-color: var(--success-border); background: var(--success-soft); }
 .pf-secret-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
