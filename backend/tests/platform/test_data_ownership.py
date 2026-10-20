@@ -429,6 +429,10 @@ def test_export_links_expire_and_other_stores_and_staff_are_refused(client, alph
     beta = _bearer(client, store_login(client, "BETA", "bob", "beta-owner-pass").json()["token"])
     assert beta.post(f"/api/settings/exports/{export_id}/link").status_code == 404  # ALPHA's export
     assert beta.get("/api/settings/exports").json()["exports"] == []
+    master_made = master_client.post("/api/platform/stores/ALPHA/exports").json()["id"]
+    _wait_export("ALPHA", master_made)
+    who = {e["id"]: e["requested_by"] for e in alpha_admin.get("/api/settings/exports").json()["exports"]}
+    assert who[master_made] == "KloudC" and who[export_id] == "store:ALPHA:ann"
     assert master_client.post(f"/api/platform/stores/BETA/exports/{export_id}/link").status_code == 404
     _add_user("ALPHA", "staff1", "staff-pass-1")
     staff = _bearer(client, store_login(client, "ALPHA", "staff1", "staff-pass-1").json()["token"])

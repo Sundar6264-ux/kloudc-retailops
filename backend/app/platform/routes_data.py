@@ -219,7 +219,11 @@ def own_exports(user: User = Depends(require_admin)):
     code = _own_store(user)
     if code is None:
         return {"available": False, "exports": []}
-    return {"available": True, "store_code": code, "exports": export.list_exports(code),
+    rows = export.list_exports(code)
+    for row in rows:  # a store sees its own people; masters and jobs are "KloudC"
+        if not str(row.get("requested_by") or "").startswith(f"store:{code}:"):
+            row["requested_by"] = "KloudC"
+    return {"available": True, "store_code": code, "exports": rows,
             "link_hours": export.link_hours(), "keep_days": export.KEEP_DAYS}
 
 
