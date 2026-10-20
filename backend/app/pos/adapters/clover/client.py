@@ -241,12 +241,11 @@ Params = Union[Dict[str, Any], Sequence[Tuple[str, Any]]]
 
 
 def _meter() -> None:
-    try:
-        from app.platform import usage
+    """One Clover request for the store's usage: the shared POS helper
+    (app/pos/http.py, C7), so Toast and Clover are counted the same way."""
+    from app.pos.http import record_pos_call
 
-        usage.record(usage.POS_API_CALLS)
-    except Exception:  # noqa: BLE001 - metering never breaks a sync
-        pass
+    record_pos_call()
 
 
 class CloverClient:
