@@ -40,7 +40,7 @@ multi-store plan M3 (MT14-MT19) and M5 (MT28-MT32), the owner handoff
 - Tests: during Build run only your own files plus the guards
   (`tests/test_no_origin_names.py`, `tests/tenancy/test_cache_lint.py`,
   `tests/test_website_ready_interfaces.py`). Full suites, Playwright and
-  builds only through `/Users/sundar/.claude/jobs/e26a1611/tmp/m1heavy.sh`.
+  builds only through the local heavy-job queue script (outside the repo).
 - Scratch Postgres: dev cluster `127.0.0.1:5433` user `storeops`, database
   prefixes **`so_wra_` (A), `so_wrb_` (B), `so_wrc_` (C), `so_wrd_` (D)**,
   dropped when done. Preview ports: A 8881, B 8882, C 8883, D 8884.
