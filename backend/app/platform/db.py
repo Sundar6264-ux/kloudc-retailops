@@ -44,7 +44,12 @@ def make_engine(url: str, **kwargs) -> Engine:
     if url.startswith("sqlite"):
         return create_engine(url, connect_args={"check_same_thread": False}, **kwargs)
     connect_args = kwargs.pop("connect_args", {})
-    connect_args.setdefault("options", "-c timezone=UTC")
+    if str(pget("db_pool_mode") or "direct").strip().lower() == "pgbouncer":
+        # Transaction pooling (website-ready C5): no startup options, no
+        # server-side prepared statements.
+        connect_args.setdefault("prepare_threshold", None)
+    else:
+        connect_args.setdefault("options", "-c timezone=UTC")
     from app.dbcompat import force_utc_sessions  # PGTZ would override the option alone
 
     return force_utc_sessions(create_engine(url, pool_pre_ping=True, connect_args=connect_args, **kwargs))

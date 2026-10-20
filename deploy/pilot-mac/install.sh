@@ -17,16 +17,24 @@
 # again. Options: --no-tailscale  --skip-web  --dry-run (render the plists to
 # a folder and stop; no root needed)  --uninstall (stop and remove the jobs;
 # data, backups and secrets stay).
+#
+# OPTIONAL, never part of the default path (docs/DEPLOY_MULTI_PROCESS.md):
+#   --worker         install + start only the background job worker
+#                    (needs JOB_QUEUE_MODE=queue in config/pilot.env);
+#                    with --dry-run, also render its plist
+#   --remove-worker  stop and remove only the worker
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-TAILSCALE=1; DRY_RUN=""; UNINSTALL=0; PREP_ARGS=()
+TAILSCALE=1; DRY_RUN=""; UNINSTALL=0; PREP_ARGS=(); WORKER=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --no-tailscale) TAILSCALE=0 ;;
     --skip-web) PREP_ARGS+=(--skip-web) ;;
     --dry-run) DRY_RUN="$2"; shift ;;
     --uninstall) UNINSTALL=1 ;;
+    --worker) WORKER=install ;;
+    --remove-worker) WORKER=remove ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
   shift
@@ -58,6 +66,11 @@ render() {  # render <job> <out file>
 
 if [ -n "$DRY_RUN" ]; then
   mkdir -p "$DRY_RUN"
+  if [ "$WORKER" = install ]; then
+    render worker "$DRY_RUN/$PILOT_LABEL_PREFIX.worker.plist"
+    echo "rendered the worker plist into $DRY_RUN (nothing installed)"
+    exit 0
+  fi
   for j in "${JOBS[@]}"; do render "$j" "$DRY_RUN/$PILOT_LABEL_PREFIX.$j.plist"; done
   echo "rendered ${#JOBS[@]} plists into $DRY_RUN (nothing installed)"
   exit 0
@@ -75,8 +88,21 @@ start_job() {
   echo "  started $PILOT_LABEL_PREFIX.$1"
 }
 
+if [ "$WORKER" = remove ]; then
+  stop_job worker; rm -f "$(daemon_path worker)"
+  echo "Removed the worker. Queued jobs wait until a worker runs again (or set JOB_QUEUE_MODE=inline and restart the server)."
+  exit 0
+fi
+if [ "$WORKER" = install ]; then
+  grep -Eq "^JOB_QUEUE_MODE=(\"|')?queue(\"|')?\$" "$PILOT_ROOT/config/pilot.env" 2>/dev/null \
+    || { echo "JOB_QUEUE_MODE=queue is not set in $PILOT_ROOT/config/pilot.env: no worker needed (jobs run in the server)." >&2; exit 1; }
+  start_job worker
+  echo "Worker installed. Check it in the master console: Platform settings > System > Workers."
+  exit 0
+fi
+
 if [ "$UNINSTALL" = 1 ]; then
-  for j in parity drill backup server postgres; do stop_job "$j"; rm -f "$(daemon_path "$j")"; done
+  for j in worker parity drill backup server postgres; do stop_job "$j"; rm -f "$(daemon_path "$j")"; done
   echo "Removed the pilot's launchd jobs. Data, backups and secrets are still in $PILOT_ROOT."
   exit 0
 fi

@@ -2874,5 +2874,68 @@
   ],
   "article": "master-security",
   "new_until": null
+ },
+ {
+  "id": "platform_system",
+  "title": "System",
+  "area": "platform",
+  "audience": [
+   "master"
+  ],
+  "web": {
+   "route": "/platform"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": false,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "How the shared service runs: where store files are kept, background jobs and the workers that run them, and live updates.",
+   "points": [
+    "**Failed** jobs stopped after their last try. Fix the cause, then tap **Retry**.",
+    "**Retrying soon** jobs failed once and try again by themselves, waiting longer each time.",
+    "A worker that stops checking in is shown as **Not responding**. Its jobs go to another worker.",
+    "Storage, background jobs and live updates are switched on by the server settings, not here."
+   ],
+   "source": "The server and its platform database, read when you open this panel or tap Refresh.",
+   "freshness": null
+  },
+  "sections": {
+   "storage": {
+    "title": "Storage",
+    "summary": "Where store files are kept: on this server, or in object storage such as Cloudflare R2.",
+    "points": [
+     "Keys are never shown. Only the bucket and its host."
+    ]
+   },
+   "jobs": {
+    "title": "Background jobs",
+    "summary": "Work that runs away from the screen, such as nightly syncs and data exports.",
+    "points": [
+     "Inline means jobs run inside the web server, one at a time per request."
+    ]
+   },
+   "workers": {
+    "title": "Workers",
+    "summary": "Separate server processes that run background jobs from the queue.",
+    "points": []
+   },
+   "live_updates": {
+    "title": "Live updates",
+    "summary": "How a change on one server process reaches the others, so lists refresh without a reload.",
+    "points": []
+   }
+  },
+  "terms": [
+   "concept_object_storage",
+   "concept_background_job",
+   "concept_job_worker",
+   "concept_live_updates"
+  ],
+  "article": "master-system",
+  "new_until": "2026-12-31"
  }
 ]

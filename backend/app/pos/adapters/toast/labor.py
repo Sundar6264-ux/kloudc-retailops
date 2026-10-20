@@ -8,6 +8,7 @@ that lived in ``services/open_orders.py`` (``_employee_name``).
 
 import httpx
 
+from app.pos import http as pos_http  # POS call metering (website-ready C7)
 from app.config import get_settings
 from app.pos.adapters.toast import client as _client
 from app.pos.models import Employee
@@ -20,7 +21,7 @@ def fetch_employees() -> list[dict]:
     being true).
     """
     settings = get_settings()
-    with httpx.Client() as client:
+    with httpx.Client(event_hooks=pos_http.metering_hooks()) as client:
         token = _client.get_access_token(client)
         headers = {
             "Authorization": f"Bearer {token}",

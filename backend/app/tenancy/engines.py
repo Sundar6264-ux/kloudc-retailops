@@ -68,9 +68,27 @@ def install_sqlite_pragmas(engine: Engine) -> None:
         cursor.close()
 
 
-def postgres_connect_args() -> dict:
+def pool_mode() -> str:
+    """DB_POOL_MODE: "direct" (default: the app keeps its own pools to
+    PostgreSQL) or "pgbouncer" (the URLs point at PgBouncer in transaction
+    pooling mode; docs/DEPLOY_MULTI_PROCESS.md)."""
+    from app.platform.config import pget
+
+    return "pgbouncer" if str(pget("db_pool_mode") or "direct").strip().lower() == "pgbouncer" else "direct"
+
+
+def postgres_connect_args(*, direct: bool = False) -> dict:
+    """psycopg connect arguments. Direct connections send the time zone and
+    statement timeout as startup options. Through PgBouncer in transaction
+    mode (``direct=False`` and DB_POOL_MODE=pgbouncer) there are no startup
+    options (PgBouncer refuses unknown ones; set them per database / role,
+    see the deploy doc) and no server-side prepared statements (a
+    transaction-pooled connection is shared, so a prepared statement would
+    land on the wrong server connection)."""
     from app.config import process_settings
 
+    if not direct and pool_mode() == "pgbouncer":
+        return {"prepare_threshold": None}
     timeout = int(process_settings().statement_timeout_ms or 0)
     options = "-c timezone=UTC"
     if timeout > 0:
@@ -91,7 +109,13 @@ def create_store_engine(url: str, *, tenant: bool = True) -> Engine:
     kwargs: dict = {}
     if url.startswith("postgresql"):
         kwargs["connect_args"] = postgres_connect_args()
-    if tenant:
+    if tenant and url.startswith("postgresql") and pool_mode() == "pgbouncer":
+        # PgBouncer pools the server connections for every process and
+        # store: no idle per-store pool here (C5).
+        from sqlalchemy.pool import NullPool
+
+        kwargs["poolclass"] = NullPool
+    elif tenant:
         s = process_settings()
         kwargs.update(
             pool_size=max(1, int(s.tenant_pool_size)),
@@ -417,6 +441,9 @@ def check_connection_budget(max_connections: Optional[int] = None) -> int:
     from app.config import process_settings
 
     s = process_settings()
+    if pool_mode() == "pgbouncer":
+        # PgBouncer's pool sizes bound the server connections, not ours.
+        return PLATFORM_CONNECTION_RESERVE
     need = int(s.tenant_max_engines) * (int(s.tenant_pool_size) + int(s.tenant_max_overflow)) + PLATFORM_CONNECTION_RESERVE
     if max_connections is None:
         url = (s.platform_database_url or "").strip()

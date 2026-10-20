@@ -222,12 +222,10 @@ def public_form_image(token: str, media_token: str, request: Request, db: Sessio
         media = svc.form_image(db, link, media_token) if link is not None else None
         if media is None:
             return _not_active()
-        path = media_svc.media_file(media)
-        if not path.is_file():
-            return _not_active()
         headers = dict(SECURITY_HEADERS)
         headers["Cache-Control"] = "private, max-age=300"
-        return FileResponse(path, media_type=media.content_type, headers=headers)
+        response = media_svc.media_response(media, headers)  # local file or object storage
+        return response if response is not None else _not_active()
     except svc.PublicError as exc:
         return _error(exc.status_code, exc.detail)
     except Exception:  # noqa: BLE001

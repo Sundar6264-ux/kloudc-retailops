@@ -5,3 +5,5 @@ pytest==8.3.3
 pypdf==5.1.0
 # Fixed clocks in time-of-day dependent tests
 time-machine==2.16.0
+# In-process S3 for the object storage tests (no network).
+moto[s3]==5.0.28

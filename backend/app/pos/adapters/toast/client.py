@@ -110,7 +110,7 @@ def toast_get(path: str, timeout: float = 90.0, max_tries: int = MAX_TRIES):
     if not (settings.toast_client_id and settings.toast_client_secret and settings.toast_restaurant_guid):
         raise ToastFetchError("Toast API credentials are not configured")
     try:
-        with httpx.Client() as client:
+        with httpx.Client(event_hooks=pos_http.metering_hooks()) as client:
             headers = _headers(settings, get_access_token(client))
             relogged = False
             attempt = 0

@@ -13,6 +13,9 @@ version (record_change marks the session; the after_commit hook below) and
 wakes the waiting requests, which then re-run the query. The app runs as ONE
 uvicorn process (the launchd plist has no --workers), so the in-process
 signal sees every write - the request handlers' and the scheduler thread's.
+With more than one process (LIVE_UPDATES_MODE=postgres, website-ready C4)
+the signal also travels between processes through PostgreSQL NOTIFY
+(app/livebus.py); local mode is unchanged.
 """
 
 import asyncio
@@ -196,10 +199,14 @@ def change_version() -> int:
     return _signal_versions.get(current_store_code(), 0)
 
 
-def notify_changed(store_code: Optional[str] = None) -> None:
+def notify_changed(store_code: Optional[str] = None, *, _remote: bool = False) -> None:
     """Wakes every waiting /updates long-poll of the current store (or of
-    `store_code`), from any thread."""
+    `store_code`), from any thread. With LIVE_UPDATES_MODE=postgres the
+    other server processes are told too (app/livebus.py) and wake theirs;
+    ``_remote`` marks a signal that came from another process."""
     code = store_code if store_code is not None else current_store_code()
+    if not _remote:
+        _publish_team_change(code)
     with _signal_lock:
         _signal_versions[code] = _signal_versions.get(code, 0) + 1
         waiters = [(loop, ev) for (c, loop, ev) in _waiters if c == code]
@@ -208,6 +215,28 @@ def notify_changed(store_code: Optional[str] = None) -> None:
             loop.call_soon_threadsafe(ev.set)
         except RuntimeError:  # that request's loop is gone
             pass
+
+
+def _publish_team_change(code: Optional[str]) -> None:
+    try:
+        from app import livebus
+
+        livebus.publish("team", code)
+    except Exception:  # noqa: BLE001 - other processes' long-polls end within MAX_WAIT_S anyway
+        logger.debug("team change not published", exc_info=True)
+
+
+def _remote_team_change(code: Optional[str], _data: dict) -> None:
+    notify_changed(code, _remote=True)
+
+
+def _subscribe_remote_changes() -> None:
+    from app import livebus
+
+    livebus.subscribe("team", _remote_team_change)
+
+
+_subscribe_remote_changes()
 
 
 async def wait_for_change(version: int, timeout: float) -> bool:

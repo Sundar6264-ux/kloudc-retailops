@@ -1,10 +1,18 @@
 """Object storage for store files (docs/WEBSITE_READY_CONTRACT.md, interface I1).
 
-INTERFACE STUB landed with the website-ready contract. Track C owns this
-package and replaces the bodies (S3-compatible backend for Cloudflare R2,
-presigned downloads, the local -> S3 migration tool); the names and
-signatures below are the contract that tracks B (store export) and D build
-against, and they do not change without a contract update.
+Two backends behind one interface (``ObjectStorage``):
+
+- ``local`` (the default, ``STORAGE_BACKEND=local``): files under the
+  store's folder, exactly today's layout (``LocalStorage`` below).
+- ``s3`` (``STORAGE_BACKEND=s3``): an S3-compatible bucket - Cloudflare R2,
+  AWS S3, MinIO - configured with ``STORAGE_S3_*`` (``app/storage/s3.py``).
+  Refused at start-up unless endpoint, bucket and both keys are set
+  (``check_storage_config``).
+
+Moving existing files: ``python -m app.storage migrate --to s3 [--store CODE]
+[--dry-run] [--verify]`` (``app/storage/migrate.py``; copy, verify size and
+SHA-256, idempotent and resumable). The names and signatures below are the
+contract tracks B (store export) and D build against.
 
 A *key* is a relative, "/"-separated path inside one store's area, e.g.
 ``invoices/2026/10/abc.pdf`` or ``exports/42.zip``. Every call works on the
@@ -179,10 +187,71 @@ class LocalStorage:
         return self._path(key, code)
 
 
+_backend_cache: dict = {"key": None, "storage": None}
+
+
+def backend_name() -> str:
+    from app.platform.config import pget
+
+    return str(pget("storage_backend") or "local").strip().lower() or "local"
+
+
+def check_storage_config() -> None:
+    """Start-up check (lifespan): STORAGE_BACKEND is "local" or "s3", and
+    s3 has its endpoint, bucket and keys. Raises StorageError otherwise."""
+    name = backend_name()
+    if name == "local":
+        return
+    if name != "s3":
+        raise StorageError(f"STORAGE_BACKEND={name!r} is not one of: local, s3")
+    from app.storage.s3 import StorageConfigError, missing_settings
+
+    missing = missing_settings()
+    if missing:
+        raise StorageConfigError("STORAGE_BACKEND=s3 needs " + ", ".join(missing))
+
+
 def get_storage() -> ObjectStorage:
-    """The storage backend of this process (stub: always local; track C
-    adds the S3/R2 backend behind STORAGE_BACKEND=s3)."""
-    return LocalStorage()
+    """The storage backend of this process (STORAGE_BACKEND, default local).
+    Built once per configuration; cheap to call."""
+    name = backend_name()
+    if name != "s3":
+        return LocalStorage()
+    from app.storage.s3 import S3Storage, s3_settings
+
+    cfg = s3_settings()
+    key = tuple(sorted(cfg.items()))
+    if _backend_cache["key"] != key:
+        _backend_cache["storage"] = S3Storage(cfg)
+        _backend_cache["key"] = key
+    return _backend_cache["storage"]
+
+
+def storage_status() -> dict:
+    """For the masters' System panel: backend, bucket and endpoint host
+    (never the keys), and whether the configuration is complete."""
+    from urllib.parse import urlparse
+
+    name = backend_name()
+    out = {"backend": name, "ok": True, "problem": None, "bucket": None, "endpoint_host": None,
+           "presign": False, "keys_set": False}
+    if name == "local":
+        return out
+    from app.storage.s3 import missing_settings, s3_settings
+
+    cfg = s3_settings()
+    missing = missing_settings(cfg) if name == "s3" else []
+    out.update(
+        bucket=cfg["bucket"] or None,
+        endpoint_host=(urlparse(cfg["endpoint"]).hostname if cfg["endpoint"] else None),
+        presign=bool(cfg["presign"]),
+        keys_set=bool(cfg["access_key_id"] and cfg["secret_access_key"]),
+    )
+    if name != "s3":
+        out.update(ok=False, problem=f"Unknown STORAGE_BACKEND {name!r}")
+    elif missing:
+        out.update(ok=False, problem="Missing " + ", ".join(missing))
+    return out
 
 
 __all__ = (
@@ -191,6 +260,9 @@ __all__ = (
     "ObjectStorage",
     "StorageError",
     "StoredObject",
+    "backend_name",
     "check_key",
+    "check_storage_config",
     "get_storage",
+    "storage_status",
 )

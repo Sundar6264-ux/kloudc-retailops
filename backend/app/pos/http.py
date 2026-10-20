@@ -40,3 +40,23 @@ def retry_wait_seconds(
             except ValueError:
                 pass
     return min(2.0 * (attempt + 1), max_wait)
+
+
+# --- usage metering (website-ready C7, interface I3) ----------------------------------------
+
+
+def record_pos_call(_request: Optional[httpx.Request] = None) -> None:
+    """Count one HTTP request sent to a POS API for the current store
+    (``usage.POS_API_CALLS``). Cheap, never raises, no-op without a store."""
+    try:
+        from app.platform import usage
+
+        usage.record(usage.POS_API_CALLS)
+    except Exception:  # noqa: BLE001 - metering must never break a POS call
+        pass
+
+
+def metering_hooks() -> dict:
+    """``httpx.Client(event_hooks=metering_hooks())``: every request the
+    client sends (retries and logins included) is counted once."""
+    return {"request": [record_pos_call]}

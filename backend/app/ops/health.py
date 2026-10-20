@@ -9,7 +9,9 @@
   Multi mode: the platform database answers and is at its head, and no
   active shared store is behind the store schema head (from the registry's
   ``schema_revision``, so no store database is opened). A failing check names
-  only the kind of problem, never a URL, a host or a store code.
+  only the kind of problem, never a URL, a host or a store code. Multi mode
+  also reports (never fails on) the job queue depth, worker heartbeats and
+  the live updates mode.
 
 Both are logged-out routes (tests/test_review_route_gates.py PUBLIC).
 """
@@ -89,7 +91,34 @@ def _multi_checks() -> Dict[str, str]:
         # The check that was running fails (never left out: a check that
         # could not run is not a passed check).
         checks[step] = _fail(exc)
+    checks.update(_queue_info())
     return checks
+
+
+def _queue_info() -> Dict[str, str]:
+    """Job queue depth, worker heartbeats and live updates (website-ready
+    C6). Information only, never "fail": a web process stays ready without
+    workers (jobs wait in the queue; the master console flags it)."""
+    try:
+        from app import jobqueue, livebus
+
+        out = {"job_queue": jobqueue.mode(), "live_updates": livebus.mode()}
+        if out["job_queue"] != "queue":
+            return out
+        from app.jobqueue import queue
+
+        counts = queue.counts()
+        workers = queue.list_workers()
+        alive = sum(1 for w in workers if w["state"] == "running")
+        silent = sum(1 for w in workers if w["state"] == "silent")
+        out["jobs_due"] = f"{counts['due']} (oldest {counts['oldest_due_seconds']} s)"
+        out["jobs_dead"] = str(counts["dead"])
+        out["job_workers"] = f"{alive} alive" + (f", {silent} silent" if silent else "")
+        if livebus.mode() == "postgres":
+            out["live_updates"] = "postgres, listening" if livebus.status()["listening"] else "postgres, reconnecting"
+        return out
+    except Exception as exc:  # noqa: BLE001 - information only
+        return {"job_queue": f"unknown ({type(exc).__name__})"}
 
 
 def readiness() -> Tuple[bool, Dict[str, str]]:

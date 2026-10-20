@@ -40,7 +40,9 @@ class Leadership:
         if self._engine is None:
             kwargs = {"poolclass": NullPool}
             if self.url.startswith("postgresql"):
-                kwargs["connect_args"] = postgres_connect_args()
+                # A session connection (the advisory lock lives on it): the
+                # direct URL, never through PgBouncer's transaction pool.
+                kwargs["connect_args"] = postgres_connect_args(direct=True)
             self._engine = create_engine(self.url, **kwargs).execution_options(isolation_level="AUTOCOMMIT")
         conn = self._engine.connect()
         try:

@@ -9,7 +9,6 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -198,13 +197,14 @@ def get_media(token: str, user: User = Depends(get_current_user), db: Session = 
     # reveals nothing.
     if media is None or not media_svc.can_access(db, user, media):
         raise HTTPException(status_code=404, detail="Not found")
-    path = media_svc.media_file(media)
-    if not path.is_file():
-        raise HTTPException(status_code=404, detail="Not found")
     headers = {"Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff"}
     if (media.kind or "image") == media_svc.KIND_DOCUMENT:
         from urllib.parse import quote
 
         name = media.display_name or "document.pdf"
         headers["Content-Disposition"] = f"inline; filename=\"document.pdf\"; filename*=UTF-8''{quote(name)}"
-    return FileResponse(path, media_type=media.content_type, headers=headers)
+    # The local file or the store's object (STORAGE_BACKEND=s3), same answer.
+    response = media_svc.media_response(media, headers)
+    if response is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    return response

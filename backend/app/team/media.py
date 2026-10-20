@@ -126,6 +126,25 @@ def _uploads_root() -> pathlib.Path:
     return pathlib.Path(get_settings().team_uploads_dir)
 
 
+# Object storage (website-ready C2, app.storage I1). With the default local
+# backend nothing changes: files stay under team_uploads_dir exactly as
+# before. With STORAGE_BACKEND=s3 a file is the store's object
+# "team/<media.path>" (the same name the migration tool gives the local file
+# <store folder>/team/<media.path>).
+STORAGE_PREFIX = "team"
+
+
+def _object_storage():
+    """The S3 / R2 storage when STORAGE_BACKEND=s3, else None (local files)."""
+    from app.storage import backend_name, get_storage
+
+    return get_storage() if backend_name() == "s3" else None
+
+
+def media_key(rel: str) -> str:
+    return f"{STORAGE_PREFIX}/{rel}"
+
+
 def check_request_size(request: Request) -> None:
     """Refuses an upload request by its Content-Length alone, before the
     multipart body is read - FastAPI/Starlette would otherwise spool the
@@ -423,8 +442,12 @@ def save_upload(
 
     now = utcnow()
     rel = pathlib.Path(f"{now:%Y}") / f"{now:%m}" / f"{secrets.token_urlsafe(24)}.{ext}"
+    remote = _object_storage()
     dest = _uploads_root() / rel
-    _write_atomically(dest, stored)
+    if remote is not None:
+        remote.put_bytes(media_key(rel.as_posix()), stored, content_type=content_type)
+    else:
+        _write_atomically(dest, stored)
 
     media = TeamMedia(
         token=secrets.token_urlsafe(24),
@@ -447,7 +470,10 @@ def save_upload(
         db.commit()
     except Exception:
         db.rollback()
-        dest.unlink(missing_ok=True)
+        if remote is not None:
+            remote.delete(media_key(rel.as_posix()))
+        else:
+            dest.unlink(missing_ok=True)
         raise
     db.refresh(media)
     return media
@@ -511,9 +537,55 @@ def media_file(media: TeamMedia) -> pathlib.Path:
     return path
 
 
+def media_response(media: TeamMedia, headers: dict):
+    """The file as an HTTP response, or None when it is missing: a
+    FileResponse from the local folder, or (object storage) a stream from
+    the bucket through this server - same URL, same headers and access
+    checks, so the website's CSP (media-src / connect-src 'self') and the
+    apps never see the bucket."""
+    remote = _object_storage()
+    if remote is None:
+        path = media_file(media)
+        if not path.is_file():
+            return None
+        from fastapi.responses import FileResponse
+
+        return FileResponse(path, media_type=media.content_type, headers=headers)
+    from app.storage import ObjectNotFound, StorageError
+
+    key = media_key(media.path)
+    try:
+        fh = remote.open(key)
+    except ObjectNotFound:
+        return None
+    except StorageError:
+        logger.exception("Team media %s could not be read from object storage", media.path)
+        raise HTTPException(status_code=503, detail="This file can't be loaded right now. Try again soon.")
+    from fastapi.responses import StreamingResponse
+
+    def chunks():
+        try:
+            while True:
+                block = fh.read(64 * 1024)
+                if not block:
+                    break
+                yield block
+        finally:
+            fh.close()
+
+    out = dict(headers)
+    if media.bytes:
+        out["Content-Length"] = str(media.bytes)
+    return StreamingResponse(chunks(), media_type=media.content_type, headers=out)
+
+
 def delete_media_file(media: TeamMedia) -> None:
     try:
-        media_file(media).unlink(missing_ok=True)
+        remote = _object_storage()
+        if remote is not None:
+            remote.delete(media_key(media.path))
+        else:
+            media_file(media).unlink(missing_ok=True)
     except Exception:  # noqa: BLE001
         logger.exception("Could not delete team media file %s", media.path)
 

@@ -184,6 +184,33 @@ def store_job_runner(func: Callable[..., Any], code: str) -> Callable[..., Any]:
     return run
 
 
+def queued_store_job_runner(job_id: str, code: str) -> Callable[[], None]:
+    """Queue mode (JOB_QUEUE_MODE=queue): instead of running the job here,
+    the leader's scheduler adds a ``store_job`` row for store `code`; a
+    worker runs it. The dedupe key keeps at most one waiting or running
+    copy per job and store (the queue's form of coalesce + max_instances=1)."""
+
+    def run() -> None:
+        from app import jobqueue
+
+        try:
+            jobqueue.enqueue("store_job", {"job_id": job_id}, code=code, dedupe_key=f"{job_id}:{code}")
+        except Exception:  # noqa: BLE001 - the next fire time tries again
+            logger.exception("Job %s for store %s not queued", job_id, code)
+
+    run.__name__ = f"queue_{job_id}"
+    run.store_code = code  # type: ignore[attr-defined]
+    return run
+
+
+def _runner(job_id: str, func: Callable[[], None], code: str) -> Callable[..., Any]:
+    from app import jobqueue
+
+    if jobqueue.mode() == "queue":
+        return queued_store_job_runner(job_id, code)
+    return store_job_runner(func, code)
+
+
 # --- per-store jobs ------------------------------------------------------------------------
 
 
@@ -340,7 +367,7 @@ def reconcile_store_jobs() -> Dict[str, Dict[str, int]]:
                     if spec.misfire_grace_time is not None:
                         kwargs["misfire_grace_time"] = spec.misfire_grace_time
                     sched.add_job(
-                        store_job_runner(spec.func, code),
+                        _runner(spec.job_id, spec.func, code),
                         trigger=trig,
                         id=jid,
                         replace_existing=True,
@@ -355,7 +382,7 @@ def reconcile_store_jobs() -> Dict[str, Dict[str, int]]:
             for jid, (sspec, code) in startups[name].items():
                 delay = float(sspec.delay_seconds) + store_jitter_seconds(code)
                 sched.add_job(
-                    store_job_runner(sspec.func, code),
+                    _runner(sspec.job_id, sspec.func, code),
                     trigger=DateTrigger(run_date=now + dt.timedelta(seconds=delay)),
                     id=jid,
                     replace_existing=True,
@@ -365,12 +392,15 @@ def reconcile_store_jobs() -> Dict[str, Dict[str, int]]:
         return stats
 
 
-def rerun_store_startup_jobs(code: str) -> None:
+def rerun_store_startup_jobs(code: str, *, _remote: bool = False) -> None:
     """Run store `code`'s startup catch-ups again (once, after the usual
     delay): its POS keys were just saved in Settings > Integrations - the
     multi-mode moment a single-store server has at the restart after its
-    .env changed. Other stores are untouched."""
+    .env changed. Other stores are untouched. With several processes
+    (LIVE_UPDATES_MODE=postgres) the scheduler leader is told too."""
     norm = normalize_store_code(code)
+    if not _remote:
+        _publish("store_startup", norm)
     with _reconcile_lock:
         for seen in _started.values():
             seen.discard(norm)
@@ -380,7 +410,7 @@ def rerun_store_startup_jobs(code: str) -> None:
         logger.exception("Store %s: startup jobs not rescheduled", norm)
 
 
-def on_store_changed(code: str) -> None:
+def on_store_changed(code: str, *, _remote: bool = False) -> None:
     """Track C calls this after approve / suspend / resume / archive /
     settings, timezone or POS changes: drops the cached registry row and
     settings, clears the store's caches and engine when it is no longer
@@ -390,6 +420,8 @@ def on_store_changed(code: str) -> None:
     from app.tenancy.settings import invalidate_store_settings
 
     norm = normalize_store_code(code)
+    if not _remote:
+        _publish("store_changed", norm)
     invalidate_store(norm)
     invalidate_store_settings(norm)
     ref = find_store(norm)
@@ -406,3 +438,35 @@ def on_store_changed(code: str) -> None:
         reconcile_store_jobs()
     except Exception:  # noqa: BLE001 - the 5-minute reconcile retries
         logger.exception("Store %s: job reconcile after a change failed", norm)
+
+
+# --- other processes (website-ready C4, app/livebus.py) ------------------------------------
+
+
+def _publish(event: str, code: str) -> None:
+    try:
+        from app import livebus
+
+        livebus.publish(event, code)
+    except Exception:  # noqa: BLE001 - the 5-minute reconcile is the safety net
+        logger.debug("store change not published", exc_info=True)
+
+
+def _remote_store_changed(code: Optional[str], _data: dict) -> None:
+    if code:
+        on_store_changed(code, _remote=True)
+
+
+def _remote_store_startup(code: Optional[str], _data: dict) -> None:
+    if code:
+        rerun_store_startup_jobs(code, _remote=True)
+
+
+def _subscribe_remote() -> None:
+    from app import livebus
+
+    livebus.subscribe("store_changed", _remote_store_changed)
+    livebus.subscribe("store_startup", _remote_store_startup)
+
+
+_subscribe_remote()

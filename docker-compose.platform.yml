@@ -66,6 +66,39 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
 
+  # Background job workers (docs/DEPLOY_MULTI_PROCESS.md). Profile "queue":
+  # start them only with JOB_QUEUE_MODE=queue in .env.platform (otherwise jobs
+  # run inside "app" and a worker refuses to start):
+  #   docker compose -f docker-compose.platform.yml --profile queue up -d --scale worker=2
+  # The app container migrates; workers only run jobs (the image entrypoint
+  # runs any other command as is, under tini). SIGTERM lets running
+  # jobs finish for 25 s and puts the rest back in the queue.
+  worker:
+    image: ${RETAILOPS_IMAGE:-kloudc-retailops:local}
+    profiles: ["queue"]
+    env_file:
+      - .env.platform
+    environment:
+      TENANCY_MODE: multi
+      PLATFORM_DATABASE_URL: postgresql+psycopg://retailops_admin:${POSTGRES_PASSWORD}@db:5432/so_platform
+      STORE_DATABASE_URL_TEMPLATE: postgresql+psycopg://retailops_admin:${POSTGRES_PASSWORD}@db:5432/{db_name}
+      PG_ADMIN_URL: postgresql+psycopg://retailops_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      UPLOADS_ROOT: /data/uploads
+      # The schedulers stay on the app's elected leader.
+      SCHEDULER_ENABLED: "false"
+      NOTIFICATIONS_ENABLED: "false"
+      TEAM_JOBS_ENABLED: "false"
+    command: ["python", "-m", "app.jobqueue", "worker", "--concurrency", "${WORKER_CONCURRENCY:-2}", "--grace", "25"]
+    volumes:
+      - platform-files:/data
+    depends_on:
+      db:
+        condition: service_healthy
+      app:
+        condition: service_started
+    restart: unless-stopped
+    stop_grace_period: 30s
+
   # HTTPS for PLATFORM_HOST (e.g. app.kloudc.com -> this VM's IP, a DNS A
   # record). Profile "https".
   caddy:

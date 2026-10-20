@@ -1,0 +1,198 @@
+/* System panel of the master console (track C). Uses the console's pf-*
+   rows and chips (platform.css) and the design tokens only. */
+
+.ss-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.ss-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ss-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.ss-title svg {
+  color: var(--area, var(--area-platform));
+}
+
+button.kc-icon-btn.ss-refresh {
+  margin-left: auto;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.ss-panel .pf-row p {
+  margin: 0;
+}
+
+.ss-tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (max-width: 1100px) {
+  .ss-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .ss-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ss-tile {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.75rem;
+  min-width: 0;
+}
+
+.ss-tile.tone-good {
+  border-left-color: var(--success-text);
+}
+
+.ss-tile.tone-warn {
+  border-left-color: var(--running-text);
+}
+
+.ss-tile.tone-bad {
+  border-left-color: var(--failed-text);
+}
+
+.ss-tile-top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.ss-tile-icon {
+  display: inline-flex;
+  color: var(--area, var(--area-platform));
+}
+
+.ss-tile-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.ss-tile-value {
+  margin: 0.25rem 0 0.1rem;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.ss-tile-detail {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ss-db {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.ss-section-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.ss-h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.ss-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+button.ss-filter {
+  width: auto;
+  min-height: 36px;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.ss-filter[aria-pressed="true"] {
+  background: var(--area-platform-soft);
+  border-color: var(--area-platform);
+  color: var(--text);
+}
+
+button.ss-filter:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.ss-error {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--failed-text);
+  background: var(--failed-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.ss-more,
+.ss-inline-btn {
+  width: auto;
+  align-self: flex-start;
+}
+
+@media (max-width: 639px) {
+  .ss-filters {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  button.ss-filter {
+    min-height: 44px;
+    flex: 1 1 auto;
+  }
+
+  .pf-actions button {
+    min-height: 44px;
+  }
+}

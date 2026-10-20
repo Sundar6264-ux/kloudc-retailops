@@ -709,6 +709,64 @@ def declare_team_store_jobs() -> None:
         )
 
 
+def declare_all_store_jobs() -> None:
+    """Every per-store job declaration (a worker process runs queued
+    ``store_job`` rows by job id without starting any scheduler)."""
+    declare_main_store_jobs()
+    declare_notification_store_jobs()
+    declare_team_store_jobs()
+
+
+def _periodic_enqueuer(kind: str):
+    """A scheduler job that hands daily job `kind` to app.jobqueue (a worker
+    in queue mode, a thread inline). Per-store: runs inside the store's
+    context (store_job_runner), so the job is the store's."""
+
+    def run() -> None:
+        from app import jobqueue
+        from app.tenancy import current_store_code
+
+        code = current_store_code()
+        day = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+        try:
+            jobqueue.enqueue(kind, {}, code=code, dedupe_key=f"periodic:{kind}:{code or '-'}:{day}")
+        except Exception:  # noqa: BLE001 - tomorrow's run tries again
+            logger.exception("Daily job %s not queued (store %s)", kind, code)
+
+    run.__name__ = f"periodic_{kind}"
+    return run
+
+
+def add_periodic_jobs(platform: BackgroundScheduler) -> int:
+    """app.jobqueue.register_periodic jobs: per-store ones as store jobs on
+    the "platform" scheduler (store time zone), platform ones as UTC cron
+    jobs. Returns how many kinds were added."""
+    from app.jobqueue import periodic_jobs
+    from app.jobqueue.kinds import load_all
+    from app.tenancy import register_store_job
+
+    load_all()
+    n = 0
+    for kind, spec in sorted(periodic_jobs().items()):
+        if spec.per_store:
+            register_store_job(
+                f"periodic_{kind}", _periodic_enqueuer(kind), _cron(spec.hour, spec.minute),
+                scheduler="platform", misfire_grace_time=3600,
+            )
+        else:
+            platform.add_job(
+                _periodic_enqueuer(kind),
+                trigger=CronTrigger(hour=spec.hour, minute=spec.minute, timezone=dt.timezone.utc),
+                id=f"periodic_{kind}",
+                replace_existing=True,
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=3600,
+            )
+        n += 1
+    return n
+
+
 def _new_multi_scheduler() -> BackgroundScheduler:
     from apscheduler.executors.pool import ThreadPoolExecutor
 
@@ -808,6 +866,13 @@ def start_multi_tenant_schedulers() -> dict:
             max_instances=1,
             misfire_grace_time=3600,
         )
+    # Daily jobs of app.jobqueue (track B's usage gauges and purge, the
+    # queue's own maintenance): enqueued here, run by a worker in queue mode.
+    try:
+        add_periodic_jobs(platform)
+    except Exception:  # noqa: BLE001 - a broken job module must not stop the store jobs
+        logger.exception("Daily jobs (app.jobqueue) not scheduled")
+    attach_scheduler("platform", platform)
     _platform_scheduler = started["platform"] = platform
     try:
         stats = reconcile_store_jobs()
