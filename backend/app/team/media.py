@@ -540,8 +540,9 @@ def media_file(media: TeamMedia) -> pathlib.Path:
 def media_response(media: TeamMedia, headers: dict):
     """The file as an HTTP response, or None when it is missing: a
     FileResponse from the local folder, or (object storage) a stream from
-    the bucket through this server - same URL, same headers, so the
-    website's CSP and the apps never see the bucket."""
+    the bucket through this server - same URL, same headers and access
+    checks, so the website's CSP (media-src / connect-src 'self') and the
+    apps never see the bucket."""
     remote = _object_storage()
     if remote is None:
         path = media_file(media)

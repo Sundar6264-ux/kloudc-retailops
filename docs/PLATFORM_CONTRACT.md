@@ -3269,3 +3269,97 @@ Before this, it lived only in a scratch job folder. It validates with
   database.
 - No simulator was run. The app is unchanged since `d558be7`, which the
   visual review walked on iPhone 17 and iPad Pro 11.
+
+## As built - Website ready: C (scale)
+
+Track C of `docs/WEBSITE_READY_CONTRACT.md`: object storage, the job queue
+and workers, live updates across processes, PgBouncer settings, the
+multi-process deploy, POS call metering and the masters' System panel.
+**Every switch is off by default**: with no new setting the server behaves
+exactly as before (one process, local files, jobs inline, local live
+updates, direct database pools).
+
+### What was built
+
+| Item | Where | Switch (default) |
+|---|---|---|
+| C1 S3 / R2 storage (I1) | `app/storage/s3.py`, `get_storage()`, `check_storage_config()` (lifespan refuses `s3` without endpoint, bucket and both keys), `storage_status()` | `STORAGE_BACKEND=local` |
+| C1 migration tool | `python -m app.storage migrate --to s3 [--store CODE] [--dry-run] [--verify]` (`app/storage/migrate.py`): copies every object of each store, skips what is already there (size + SHA-256 metadata), verifies, never touches local files, never uploads hidden files (`.keys/`, identity marker) | - |
+| C2 call sites | Team media (tasks, chat photos / voice / PDFs, news, checklists): object `team/<path>`, streamed through the same URLs (`media_response`) | follows `STORAGE_BACKEND` |
+| C3 job queue (I2) | `jobs` + `job_workers` (p0004), `app/jobqueue/queue.py` (SKIP LOCKED claim, backoff 30 s x 2^n up to 1 h, dead after `max_attempts`, dedupe among open jobs, heartbeats, reaper, prune), `app/jobqueue/worker.py` + `python -m app.jobqueue worker|status|retry`, `store_job` + `jobqueue_maintenance` kinds, leader enqueues per-store scheduled jobs and every `register_periodic` job | `JOB_QUEUE_MODE=inline` |
+| C4 live updates | `app/livebus.py` (NOTIFY on `retailops_live`, one LISTEN thread per process, own messages ignored, reconnect with backoff); Team change signals (`team/changes.py`), `on_store_changed` / `rerun_store_startup_jobs` (`tenancy/jobs.py`: saved POS keys reach the leader), job wake-ups | `LIVE_UPDATES_MODE=local` |
+| C5 PgBouncer | `DB_POOL_MODE=pgbouncer`: no startup options, no prepared statements, NullPool for store engines, budget check skipped; leader lock + LISTEN on `PLATFORM_DIRECT_URL` | `direct` |
+| C6 deploy | `docs/DEPLOY_MULTI_PROCESS.md`; pilot worker template `launchd/worker.plist` + `start-worker.sh`, installed only by `install.sh --worker` (refused unless `JOB_QUEUE_MODE=queue`; `--remove-worker`); compose `worker` service in profile `queue`; `/api/ready` adds `job_queue`, `jobs_due`, `jobs_dead`, `job_workers`, `live_updates` (information, never a failure) | not installed |
+| C7 POS metering | `app/pos/http.py` `metering_hooks()` on every Toast client: each request (logins, retries) records `usage.POS_API_CALLS` (I3); never raises | always (B's `record`) |
+| System panel | `/api/platform/system/status`, `/jobs`, `/jobs/{id}/retry` (masters, audited `job.retried`, no URLs or keys returned); `SystemStatusPanel.jsx` (tiles Storage, Background jobs, Workers, Live updates; Needs attention / Waiting / Running / Done / All, remembered; Retry; workers); `clients/system.js`; help page `platform_system`, article `master-system`, glossary `concept_object_storage`, `concept_background_job`, `concept_job_worker`, `concept_live_updates` | - |
+
+Also: `app/main.py` lifespan calls `usage.start()` / `usage.stop()` in both
+modes (B fills them); track C settings block in `platform/config.py`
+(`storage_s3_*`, `storage_presign`, `db_pool_mode`, `platform_direct_url`);
+`app/platform/models.py` imports `app/jobqueue/models.py` at its end so the
+platform metadata (and its migration check) knows the two tables.
+
+### Tests (2026-10-19, PostgreSQL dev cluster, `so_wrc_*` databases, dropped)
+
+| Check | Result |
+|---|---|
+| New track C tests (`test_storage_s3`, `test_storage_team_media`, `test_pos_call_metering`, `test_pgbouncer_mode`, `test_deploy_multi_process`, `platform/test_jobqueue`, `platform/test_livebus`) | 57 passed |
+| Guards + `tests/tenancy` + `test_platform_db` (p0004 up/down + metadata compare) + help content + interfaces | 92 passed, 1 failed: the name guard flags line 43 of `docs/WEBSITE_READY_CONTRACT.md` (the m1heavy path, committed in the Plan stage, not a track C file) |
+| Touched areas unchanged: team core / chat / W5 / tasks / public checklist / builder; Toast adapter, inventory API, sales accuracy, verify2 failure modes; platform e2e flows; ops ready + deploy files | 330 + 93 + 43 + 5 + 29 passed |
+| Website node tests | 320 of 320 (12 new in `systemModel.test.mjs`) |
+| `e2e/system/run.sh` (real server, queue + live updates on, 1440 + 375, light + dark) | 47 of 47 checks; screenshots in `/Users/sundar/storeops/screenshots/ready/C/` |
+
+Key queue properties tested on PostgreSQL: two workers claiming 60 jobs
+concurrently never share one; priority then age; backoff 30 s then dead at
+`max_attempts`; Retry only for failed / dead and never a second open copy
+of a dedupe key; a silent worker's job is reaped and its late result
+dropped; a job past its timeout is reaped; SIGTERM-style stop returns the
+running job to the queue uncounted; a scheduled per-store job lands in the
+queue (deduped) and the worker runs it in its store; inline mode still runs
+it in-process. Live updates: two listeners each receive one NOTIFY in under
+1 s; a Team commit in another process wakes a local long-poll; a POS key
+save in a web process makes the leader reconcile; a killed LISTEN
+connection reconnects.
+
+### Decisions
+
+- **One status list**: `queued` Waiting, `running` Running, `failed`
+  Retrying soon (will retry by itself), `dead` Failed (needs a master's
+  Retry), `done` Done. Retry resets attempts and clears the old error; it
+  is audited with the previous status.
+- **Timeouts**: Python cannot stop a thread, so a job past
+  `timeout_seconds` (+60 s) is counted failed by the reaper and retried
+  elsewhere; the overrunning thread's result is dropped (`complete` checks
+  worker + attempt). Handlers must be idempotent (I2 already says so).
+- **Only cron and startup jobs go through the queue**; interval jobs (open
+  orders refresh, alerts) stay on the leader - they are frequent and short.
+- **Team media is streamed through the server**, never redirected to a
+  presigned URL: the website's CSP keeps `media-src` and `connect-src` at
+  `'self'` (voice notes, fetched files), access checks stay on every
+  request, and the apps keep working unchanged. Presigned links remain
+  available to B's exports.
+- **Readiness never fails on the queue**: a web process without workers is
+  still ready; the System panel and `jobs_due` show the backlog.
+- **The worker LaunchDaemon is part of `install.sh` as an opt-in flag**
+  rather than a second root script: the existing deploy guard ("only
+  install.sh uses root and launchctl") stays true.
+- **PgBouncer** needs the time zone and statement timeout set per role
+  (documented), because transaction pooling drops startup options.
+
+### Deferred
+
+- **C2 invoices and flyers on object storage**: their files are read by
+  local tools (PDF conversion, Toast email attachments, WhatsApp media
+  upload, flyer rendering), so they need a local read-through cache first;
+  they stay on local disk (layout unchanged) and the migration tool already
+  copies them. Branding images are bundled with the code, not uploads.
+- **Single-store mode with a custom `TEAM_UPLOADS_DIR`** outside
+  `UPLOADS_ROOT`: the migration tool reads `UPLOADS_ROOT`; object storage
+  is meant for the shared (multi) service.
+- **A global Clover / POS rate budget across processes** (contract "not in
+  this job"): the queue makes it one process per kind later
+  (`--kinds clover_*`).
+- **Track A integration**: `<SystemStatusPanel />` is rendered by A's
+  Platform settings tab; until that merge `e2e/system/run.sh` builds a copy
+  of the website with a System tab for the screens (the tree is not
+  changed).
