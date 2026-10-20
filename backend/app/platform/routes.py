@@ -66,7 +66,7 @@ def platform_config(user: PlatformUser = Depends(masters.require_master_any)):
         "public_url": platform_public_url(),
         "dedicated_hosting_enabled": dedicated_enabled(),
         "require_totp": require_totp(),
-        "signup_enabled": bool(pget("signup_enabled")),
+        "signup_enabled": signup.signup_open(),
         "user": masters.user_view(user),
     }
 
@@ -390,7 +390,7 @@ def totp_enable(body: TotpEnableBody, request: Request, user: PlatformUser = Dep
 
 
 def _signup_enabled() -> None:
-    if not bool(pget("signup_enabled")) or not is_multi_tenant():
+    if not signup.signup_open() or not is_multi_tenant():
         raise PlatformError(404, "signup_disabled")
 
 

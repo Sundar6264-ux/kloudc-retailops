@@ -27,6 +27,15 @@ USERNAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$")
 OWNER_PASSWORD_MIN = 10
 
 
+def signup_open() -> bool:
+    """Whether the public sign-up takes new requests: the console's platform
+    setting (website ready A3) > SIGNUP_ENABLED > on. Read on every request,
+    so the console switch works without a restart."""
+    from app.platform.platform_settings import SIGNUP_ENABLED, get_platform_setting
+
+    return bool(get_platform_setting(SIGNUP_ENABLED))
+
+
 def _hash(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 

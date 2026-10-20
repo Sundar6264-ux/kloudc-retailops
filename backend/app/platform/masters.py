@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import segno
 from fastapi import Cookie, Depends, Header, Request
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, event, func, select
 from sqlalchemy.orm import Session
 
 from app.auth import SESSION_COOKIE_NAME, extract_bearer_token, hash_password, verify_password
@@ -73,6 +73,7 @@ def user_view(user: PlatformUser) -> Dict[str, Any]:
         "totp_enrolled": bool(user.totp_secret_enc),
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None,
+        "must_change_password": bool(getattr(user, "must_change_password", False)),
     }
 
 
@@ -198,6 +199,9 @@ def require_master_any(user: PlatformUser = Depends(_master)) -> PlatformUser:
 
 
 def require_master(user: PlatformUser = Depends(_master)) -> PlatformUser:
+    if getattr(user, "must_change_password", False):
+        # A master added by another master: their own password first (A2).
+        raise PlatformError(403, "password_change_required", "Choose your own password first.")
     if require_totp() and not user.totp_secret_enc:
         raise PlatformError(403, "totp_setup_required")
     return user
@@ -212,8 +216,24 @@ def actor_name(user: PlatformUser) -> str:
 _PENDING_SUFFIX = ":pending"
 
 
-def totp_begin(db: Session, user: PlatformUser) -> Dict[str, str]:
-    """A new secret, shown once; becomes active only after ``totp_enable``."""
+def totp_begin(db: Session, user: PlatformUser, current_code: Optional[str] = None) -> Dict[str, str]:
+    """A new secret, shown once; becomes active only after ``totp_enable``.
+
+    A master who already has two-step sign-in on moves it to a new phone only
+    with a code from the current one (website ready A2): a stolen session
+    alone cannot replace the second step. Lost phone: another master resets it
+    (``reset_two_step``)."""
+    if user.totp_secret_enc:
+        if not current_code:
+            raise PlatformError(
+                409, "two_step_on", "Two-step sign-in is already on. Enter a code from your current phone to move it."
+            )
+        try:
+            current = crypto.open_text(user.totp_secret_enc, crypto.totp_aad(user.username))
+        except crypto.DecryptError:
+            raise PlatformError(400, "invalid", "That code is not right.") from None
+        if not totp.verify(current, current_code):
+            raise PlatformError(400, "invalid", "That code is not right. Use the code from your current phone.")
     secret = totp.new_secret()
     # Stateless enrolment: the new secret goes back to the client sealed
     # (bound to this username) and is stored only when a code confirms it.
@@ -344,3 +364,133 @@ def end_support_session(master: PlatformUser, session_id: int, client_ip: Option
     except Exception:  # noqa: BLE001 - it expires on its own anyway
         pass
     return True
+
+
+# --- managing masters (website ready A2: console tab "Masters") -------------------------
+
+TEMP_PASSWORD_BYTES = 12
+
+
+def _set_password_hash(user: PlatformUser, password: str) -> None:
+    user.password_hash = hash_password(password)
+
+
+def temporary_password() -> str:
+    """A random temporary password (shown once; must be changed at first sign-in)."""
+    return secrets.token_urlsafe(TEMP_PASSWORD_BYTES)
+
+
+def active_masters(db: Session) -> list:
+    return list(
+        db.execute(
+            select(PlatformUser).where(PlatformUser.is_active.is_(True)).order_by(PlatformUser.username)
+        ).scalars()
+    )
+
+
+def add_master(
+    db: Session,
+    username: str,
+    *,
+    display_name: str = "",
+    email: Optional[str] = None,
+    actor: PlatformUser,
+    client_ip: Optional[str] = None,
+) -> Tuple[PlatformUser, str]:
+    """A new master with a temporary password they must change at first
+    sign-in. A removed master's username is reactivated (fresh password, no
+    two-step). Returns (user, temporary password)."""
+    uname = _clean_username(username)
+    password = temporary_password()
+    existing = find_master(db, uname)
+    if existing is not None and existing.is_active:
+        raise PlatformError(409, "conflict", "That username is already a master.")
+    if existing is not None:
+        user = existing
+        user.is_active = True
+        user.totp_secret_enc = None
+        _set_password_hash(user, password)
+        if display_name:
+            user.display_name = display_name.strip()[:120]
+        if email is not None:
+            user.email = email.strip().lower()[:200] or None
+        action = "platform_user.reactivated"
+    else:
+        user = PlatformUser(
+            username=uname,
+            password_hash=hash_password(password),
+            display_name=(display_name or uname).strip()[:120],
+            email=(email or None) and email.strip().lower()[:200],
+            role="master",
+            is_active=True,
+            created_at=utcnow(),
+        )
+        db.add(user)
+        action = "platform_user.created"
+    user.must_change_password = True
+    db.flush()
+    audit(
+        action, actor_type="platform_user", actor_id=actor.id, actor_name=actor_name(actor), target=uname,
+        details={"role": "master", "temporary_password": True}, client_ip=client_ip, db=db,
+    )
+    db.commit()
+    return user, password
+
+
+def _target(db: Session, user_id: int) -> PlatformUser:
+    user = db.get(PlatformUser, user_id)
+    if user is None or not user.is_active:
+        raise PlatformError(404, "not_found", "No such master.")
+    return user
+
+
+def remove_master(db: Session, user_id: int, *, actor: PlatformUser, client_ip: Optional[str] = None) -> PlatformUser:
+    """Turn a master off and end their sessions. Never yourself, never the last one."""
+    user = _target(db, user_id)
+    if user.id == actor.id:
+        raise PlatformError(400, "self", "You cannot remove yourself. Ask another master.")
+    if len(active_masters(db)) <= 1:
+        raise PlatformError(400, "last_master", "This is the last master. Add another one first.")
+    user.is_active = False
+    db.execute(delete(PlatformSession).where(PlatformSession.platform_user_id == user.id))
+    audit(
+        "platform_user.removed", actor_type="platform_user", actor_id=actor.id, actor_name=actor_name(actor),
+        target=user.username, client_ip=client_ip, db=db,
+    )
+    db.commit()
+    return user
+
+
+def reset_two_step(db: Session, user_id: int, *, actor: PlatformUser, client_ip: Optional[str] = None) -> PlatformUser:
+    """Turn off another master's two-step sign-in (lost phone) and end their
+    sessions; they set it up again at their next sign-in. Never your own:
+    you move yours with a code from your current phone."""
+    user = _target(db, user_id)
+    if user.id == actor.id:
+        raise PlatformError(400, "self", "Move your own two-step sign-in with a code from your current phone.")
+    had = bool(user.totp_secret_enc)
+    user.totp_secret_enc = None
+    db.execute(delete(PlatformSession).where(PlatformSession.platform_user_id == user.id))
+    audit(
+        "platform_user.two_step_reset", actor_type="platform_user", actor_id=actor.id, actor_name=actor_name(actor),
+        target=user.username, details={"was_on": had}, client_ip=client_ip, db=db,
+    )
+    db.commit()
+    return user
+
+
+def masters_view(db: Session, me: PlatformUser) -> list:
+    rows = []
+    for u in active_masters(db):
+        v = user_view(u)
+        v["two_step"] = v["totp_enrolled"]
+        v["is_me"] = u.id == me.id
+        rows.append(v)
+    return rows
+
+
+@event.listens_for(PlatformUser.password_hash, "set")
+def _password_set(target, value, oldvalue, initiator):  # noqa: ARG001
+    """Any new password (the master's own change) ends "must change": the
+    temporary-password paths set the flag again right after."""
+    target.must_change_password = False

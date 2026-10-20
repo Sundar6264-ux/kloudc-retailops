@@ -208,3 +208,8 @@ app/ops/pilot.py:_blocked  # counts of sends blocked by pilot mode, keyed "<STOR
 app/ops/pilot.py:_lock  # guards _blocked
 app/jobqueue/__init__.py:_HANDLERS  # job kind -> handler, filled once at import by @register (code, the same for every store)
 app/jobqueue/__init__.py:_PERIODIC  # job kind -> daily schedule, filled once at import by register_periodic (code, the same for every store)
+app/platform/platform_settings.py:SPECS  # constant table (console labels / limits of the editable platform settings)
+app/platform/platform_settings.py:_cache  # platform-wide console values (never per store), a few seconds, dropped on save
+app/platform/platform_settings.py:_cache_lock  # guards _cache
+app/platform/routes_console.py:NO_STORE  # constant table (response headers)
+app/platform/routes_console.py:_EMPTY_DB  # constant template (copied per request)
