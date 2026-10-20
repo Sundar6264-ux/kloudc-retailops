@@ -122,6 +122,14 @@ def _me_out(user: User) -> dict:
     # non-POS switches (ap_inbox / labels / whatsapp / ai).
     out["store_code"] = store_code() or None
     out["store_features"] = store_features()
+    # Website ready (additive): the POS id (help drops entries for another
+    # POS; a CSV-only store reads "your POS") and the store's time zone (the
+    # website's "today" is the store's date, format.js storeToday()).
+    from app.help_content import store_pos
+    from app.timeutil import restaurant_timezone
+
+    out["pos_provider"] = store_pos()
+    out["store_timezone"] = str(restaurant_timezone())
     return out
 
 

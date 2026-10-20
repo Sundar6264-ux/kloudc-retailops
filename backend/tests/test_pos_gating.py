@@ -132,7 +132,8 @@ def test_me_adds_pos_fields_and_keeps_allowed_features(db, admin_client):
     staff = make_user(db, "clerk", features=["open_orders", "sales_insights", "overview"])
     me = client_for(db, staff).get("/api/auth/me").json()
     assert me["allowed_features"] == ["open_orders", "sales_insights", "overview"]
-    assert list(me)[-4:] == ["pos_name", "capabilities", "store_code", "store_features"]
+    assert list(me)[-6:] == ["pos_name", "capabilities", "store_code", "store_features", "pos_provider", "store_timezone"]
+    assert me["pos_provider"] == "toast" and me["store_timezone"]
     assert me["pos_name"] == "Toast" and me["capabilities"] == gating.capability_values()
     admin_me = admin_client.get("/api/auth/me").json()
     assert admin_me["allowed_features"] == [f["key"] for f in FEATURES]
