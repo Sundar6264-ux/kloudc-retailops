@@ -139,6 +139,7 @@ class Worker:
 
     def _run(self, job: dict) -> None:
         from app.jobqueue import UnknownJobKind, run_handler
+        from app.tenancy.errors import StoreMoved, StoreNotActive, UnknownStore
 
         job_id, attempt = int(job["id"]), int(job["attempts"])
         with self._lock:
@@ -153,6 +154,14 @@ class Worker:
                 result = {"value": result}
         except UnknownJobKind:
             self._failed(job_id, attempt, f"No handler for job kind {job['kind']!r} in this worker.")
+        except (StoreNotActive, UnknownStore, StoreMoved) as exc:
+            # The store was suspended, archived or moved after the job was
+            # queued: skipped, as the in-process scheduler does - not a
+            # failure for a master to look at.
+            logger.info("job %s (%s) skipped for store %s: %s", job_id, job["kind"], job.get("store_code"), exc)
+            if queue.complete(job_id, self.id, attempt, {"skipped": type(exc).__name__}):
+                self.done += 1
+                self._count(done=1)
         except Exception as exc:  # noqa: BLE001 - recorded on the job
             logger.exception("job %s (%s) failed", job_id, job["kind"])
             tb = traceback.format_exception_only(type(exc), exc)

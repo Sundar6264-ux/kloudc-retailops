@@ -426,3 +426,18 @@ def test_readiness_reports_the_queue_without_failing(client, platform_env, monke
     assert checks["jobs_due"].startswith("1 (oldest") and checks["jobs_dead"] == "0"
     assert checks["job_workers"] == "0 alive"  # no worker: information, not a failure
     assert not any(str(v).startswith("fail") for k, v in checks.items() if k.startswith("job"))
+
+
+def test_a_job_for_a_suspended_store_is_skipped_not_failed(queue_mode, pdb):
+    from app.jobqueue import queue
+    from app.jobqueue.worker import Worker
+    from app.platform import stores
+
+    provision("ALPHA")
+    h = queue_mode.enqueue("t_ok", {"n": 1}, code="ALPHA")
+    stores.suspend(pdb, "ALPHA", actor="platform:test", reason="test")
+    w = Worker(worker_id="w")
+    queue.register_worker("w", "h", 1, None, 1)
+    assert w.run_once()
+    row = _job(h.id)
+    assert row["status"] == "done" and row["result"] == {"skipped": "StoreNotActive"}
