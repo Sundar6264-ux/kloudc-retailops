@@ -521,3 +521,13 @@ def test_catalog_rows_for_a_clover_store_use_item_vendors_and_pos_cost(db):
     # Toast's rule is unchanged: without a CSV row nothing is built.
     toast_rows, _ = build_inventory_rows(db, items, stock, snapshot_date=dt.date(2025, 10, 15))
     assert toast_rows == {}
+
+
+def test_empty_stock_is_fine_for_a_clover_catalog(db, monkeypatch):
+    from app.pos.sync import catalog as cat
+
+    meta = {"stats": {"rows": 3}}
+    monkeypatch.setattr(cat, "_pos_is_catalog_source", lambda: True)
+    assert cat.implausible_build(db, [], meta) is None
+    monkeypatch.setattr(cat, "_pos_is_catalog_source", lambda: False)
+    assert cat.implausible_build(db, [], meta) == "Toast's stock list came back empty"

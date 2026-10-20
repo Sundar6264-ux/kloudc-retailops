@@ -252,7 +252,12 @@ def implausible_build(db: Session, stock: list, meta: dict) -> Optional[str]:
     inv = _inv()
     stats = meta.get("stats") or {}
     if not stock:
-        return "Toast's stock list came back empty"
+        if _pos_is_catalog_source() and int((meta.get("stats") or {}).get("rows") or 0) > 0:
+            # Clover: a store that tracks no stock has an empty stock list;
+            # its catalog alone is a real snapshot (items "in stock").
+            pass
+        else:
+            return "Toast's stock list came back empty"
     latest_day = inv.latest_csv_date(db)
     if latest_day is None:
         return None
