@@ -121,7 +121,7 @@ export default function InventoryUpload({ onUploaded }) {
       <h2>Upload today's inventory</h2>
       <InfoBlock
         brief={
-          /csv/i.test(currentPosName())
+          /csv|^(your|the) POS$/i.test(currentPosName())
             ? "Upload today's inventory file (CSV or XLSX)."
             : `Upload today's ${currentPosName()} Retail export (CSV or XLSX).`
         }

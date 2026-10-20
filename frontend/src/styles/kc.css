@@ -1287,6 +1287,21 @@ button.kc-hub-tile:hover:not(:disabled) {
   flex-wrap: wrap;
 }
 
+/* Phones: two or more header actions share one full-width row (never a
+   half-width stack). A single action stays beside the title. */
+@media (max-width: 639px) {
+  .kc-page-actions:has(> :nth-child(2)) {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  .kc-page-actions:has(> :nth-child(2)) > * {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+  }
+}
+
 .kc-area-chip {
   display: inline-flex;
   align-items: center;

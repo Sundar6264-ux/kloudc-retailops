@@ -55,7 +55,8 @@ export default function WeeklyDigest({ compact = false }) {
           </span>
           {error && <span className="error">{error}</span>}
         </div>
-        <button onClick={handleGenerate} disabled={loading}>
+        {/* Secondary: Home's one primary action is New order (spec 2.11). */}
+        <button type="button" className="btn-secondary" onClick={handleGenerate} disabled={loading}>
           {loading ? "Generating…" : "Generate"}
         </button>
       </section>
