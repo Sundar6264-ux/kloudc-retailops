@@ -224,3 +224,14 @@ app/platform/usage.py:_activity_noted  # per store code: when activity was last 
 app/platform/usage.py:_lock  # guards the usage buffers
 app/platform/usage.py:_stop  # stop event of the flush thread
 app/platform/usage.py:global _thread  # the process's one flush thread
+app/pos/adapters/clover/client.py:API_HOSTS  # constant table (never changed at run time)
+app/pos/adapters/clover/client.py:WEB_HOSTS  # constant table (never changed at run time)
+app/pos/adapters/clover/client.py:_limiters_lock  # guards the two limiter maps below
+app/pos/adapters/clover/client.py:_token_limiters  # Clover's rate limit is per token (16/s, 5 concurrent): one limiter per token hash, shared by every store in the process on purpose
+app/pos/adapters/clover/client.py:_app_limiter  # Clover's per-app limit (50/s, 10 concurrent) covers every store: one per process (cross-process budget deferred, contract 1 "Not in this job")
+app/pos/adapters/clover/auth.py:_used_lock  # guards _used_nonces
+app/pos/adapters/clover/auth.py:_used_nonces  # one-time OAuth state nonces; each sealed state already names its store, entries expire after 10 minutes
+app/pos/adapters/clover/auth.py:_refresh_locks_guard  # guards _refresh_locks
+app/pos/adapters/clover/auth.py:_refresh_locks  # one OAuth refresh at a time per store, keyed by store code
+app/pos/adapters/clover/webhooks.py:_last_lock  # guards _last_run
+app/pos/adapters/clover/webhooks.py:_last_run  # webhook sync debounce, keyed by (store code, what) - per store by key

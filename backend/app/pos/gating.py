@@ -39,7 +39,8 @@ logger = logging.getLogger(__name__)
 # provider -> (name shown to people, capabilities)
 PROVIDERS: Dict[str, Tuple[str, FrozenSet[Capability]]] = {
     "toast": ("Toast", TOAST_CAPABILITIES),
-    # No adapter in M2: these fallback entries gate pages and jobs (M2 contract 7).
+    # Fallback entries for a provider without a registered adapter (M2
+    # contract 7). Clover has its adapter since website-ready track D.
     "clover": ("Clover", CLOVER_CAPABILITIES),
     "csv": ("CSV upload", CSV_CAPABILITIES),
 }
@@ -154,7 +155,13 @@ def usable_capabilities() -> FrozenSet[Capability]:
     the website and app (store_capabilities), but the server's own gates -
     routes, jobs, has_capability - must not call a POS it can't talk to."""
     have = store_capabilities()
-    if _connector(pos_provider()) is not None:
+    conn = _connector(pos_provider())
+    if conn is not None:
+        # A POS the store connects itself (Clover: Connect with Clover or an
+        # API token) gates exactly like "no adapter" until it is connected,
+        # so no job or page calls a POS that would only answer "not connected".
+        if getattr(conn, "requires_connection", False) and not conn.is_configured():
+            return have & OFFLINE_CAPABILITIES
         return have
     return have & OFFLINE_CAPABILITIES
 

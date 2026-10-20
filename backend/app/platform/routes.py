@@ -581,10 +581,11 @@ def delete_integration(kind: str, request: Request, user: User = Depends(require
 
 @settings_router.post("/integrations/clover/connect")
 def clover_connect(user: User = Depends(require_admin)):
-    _store_admin_context(user)
-    # M3 replaces this with the Clover OAuth v2 redirect (authorize_url) and
-    # GET /api/settings/integrations/clover/callback (contract 9.3).
-    raise PlatformError(501, "not_available")
+    """Kept for older website builds: the same answer as
+    GET /api/settings/integrations/clover/authorize-url (routes_clover)."""
+    from app.platform.routes_clover import authorize_link
+
+    return authorize_link(user)
 
 
 # Store admin: the whitelisted, non-secret store settings (contract 13.5 "should").

@@ -2169,12 +2169,24 @@
     "title": "AI",
     "summary": "The key for Ask Inventory Bot and the weekly digest's sentences.",
     "points": []
+   },
+   "clover": {
+    "title": "Clover",
+    "summary": "Connects your Clover POS so RetailOps can read sales, items, stock and employees. Nothing is ever changed in Clover.",
+    "points": [
+     "**Connect with Clover**: sign in to Clover and approve RetailOps. Shown when this service has a Clover app.",
+     "**API token**: paste the Merchant ID and a token made in your Clover dashboard. Fine for a single store.",
+     "Choose **Test connection** after saving. **Disconnect** stops syncing until you connect again."
+    ]
    }
   },
   "terms": [
    "concept_integration",
    "concept_pos",
-   "concept_whatsapp_group"
+   "concept_whatsapp_group",
+   "concept_connect_with_clover",
+   "concept_merchant_id",
+   "concept_api_token"
   ],
   "article": "setup-integrations",
   "new_until": null
@@ -3078,5 +3090,44 @@
   ],
   "article": "master-data-offboarding",
   "new_until": "2026-12-31"
+ },
+ {
+  "id": "item_vendors",
+  "title": "Item vendors",
+  "area": "setup",
+  "audience": [
+   "owner",
+   "admin"
+  ],
+  "web": {
+   "route": "/setup/item-vendors"
+  },
+  "app": null,
+  "gating": {
+   "feature": null,
+   "admin": true,
+   "salesOnly": false
+  },
+  "public": false,
+  "info": {
+   "summary": "Who supplies each item. Reorder, New order, purchase orders and Fix Issues use this list.",
+   "points": [
+    "The first vendor is the first choice when ordering. Use the arrows to change the order.",
+    "**Without a vendor** lists the items no vendor is set for yet.",
+    "**Import CSV** checks the whole file first and shows each row's problem. Nothing changes until you apply it.",
+    "When your inventory file has a Supplier column, it replaces the list for the items it names.",
+    "If your inventory file always carries the vendors, this page is read-only there."
+   ],
+   "source": "What admins type here or import, and the Supplier column of your inventory file.",
+   "freshness": "Changes show on every page at once."
+  },
+  "sections": {},
+  "terms": [
+   "concept_item_vendor",
+   "concept_vendor_item_code",
+   "concept_vendor"
+  ],
+  "article": "setup-item-vendors",
+  "new_until": "2026-11-03"
  }
 ]

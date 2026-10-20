@@ -1,0 +1,14 @@
+{"elements": [
+  {"id": "ITEM_RICE", "name": "Basmati Rice 10 lb", "code": "012345678905", "sku": "RICE10", "price": 1899,
+   "priceType": "FIXED", "cost": 1250, "hidden": false, "available": true, "modifiedTime": 1760400000000,
+   "itemStock": {"item": {"id": "ITEM_RICE"}, "quantity": 12.0},
+   "categories": {"elements": [{"id": "C2", "name": "Rice & Grains", "sortOrder": 2}, {"id": "C1", "name": "Pantry", "sortOrder": 1}]}},
+  {"id": "ITEM_ONION", "name": "Red Onions", "code": "", "sku": "", "price": 149, "priceType": "PER_UNIT",
+   "unitName": "lb", "cost": 60, "modifiedTime": 1760500000000,
+   "itemStock": {"item": {"id": "ITEM_ONION"}, "quantity": -3.5},
+   "categories": {"elements": [{"id": "C3", "name": "Produce"}]}},
+  {"id": "ITEM_GIFT", "name": "Gift Card", "price": 0, "priceType": "VARIABLE", "modifiedTime": 1760300000000,
+   "categories": {"elements": []}},
+  {"id": "ITEM_OLD", "name": "Discontinued Tea", "price": 499, "priceType": "FIXED", "hidden": true,
+   "modifiedTime": 1760200000000, "categories": {"elements": [{"id": "C4", "name": "Tea"}]}}
+]}

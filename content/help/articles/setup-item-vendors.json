@@ -1,0 +1,70 @@
+{
+ "id": "setup-item-vendors",
+ "title": "Item vendors",
+ "area": "setup",
+ "group": "setup",
+ "order": 705,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Set who supplies each item, by hand or from a spreadsheet. Reorder, New order, purchase orders and Fix Issues use the list.",
+ "pages": [
+  "item_vendors"
+ ],
+ "related": [
+  "setup-connect-clover",
+  "reorder",
+  "new-order"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Setup › **Item vendors** lists every item with its vendors. Use it when your POS has no vendor field, for example Clover."
+  },
+  {
+   "type": "h",
+   "text": "Edit one item",
+   "id": "edit"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Find the item with the search box, or choose **Without a vendor**.",
+    "Choose **Edit**, type the vendor (names you used before are suggested) and the vendor item code if you have one.",
+    "Add more vendors if needed and use the arrows to put the first choice on top. Choose **Save**."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Import from a spreadsheet",
+   "id": "import"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Choose **Import CSV**, then **Download the template**, or **Export CSV** to start from your current list.",
+    "One row per item and vendor: Item ID (or Barcode, or Item name), Vendor, and optionally Vendor item code and Rank (1 = first choice).",
+    "Pick the file. RetailOps checks every row and shows the problems. Rows with a problem are skipped.",
+    "Choose **Apply**. An item's rows in the file replace its list."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "Importing the same file again changes nothing, so it is safe to retry."
+  },
+  {
+   "type": "h",
+   "text": "Where the list comes from",
+   "id": "source"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "What you type or import here.",
+    "When your inventory file has a Supplier column, that column replaces the list for the items it names.",
+    "For a store whose inventory file always carries the vendors, this page is read-only: change vendors in the POS export and upload it again."
+   ]
+  }
+ ]
+}

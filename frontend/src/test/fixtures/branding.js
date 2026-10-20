@@ -81,6 +81,7 @@ export const BRANDING = {
     "phone": "(555) 010-0200",
     "pos_name": "Clover",
     "capabilities": [
+      "orders_by_business_date",
       "orders_incremental",
       "open_orders",
       "live_today_sales",

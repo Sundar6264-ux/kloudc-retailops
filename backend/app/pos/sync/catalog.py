@@ -120,9 +120,16 @@ def build_inventory_rows(
     snapshot_date: Optional[dt.date] = None,
     now: Optional[dt.datetime] = None,
     sales_end_offset_days: int = 1,
+    pos_is_catalog_source: bool = False,
 ) -> Tuple[Dict[str, dict], dict]:
     """item_id -> InventorySnapshot field dict (not written), plus build
-    stats. Pure apart from reading our DB."""
+    stats. Pure apart from reading our DB.
+
+    ``pos_is_catalog_source`` (a POS without a catalog file, e.g. Clover -
+    website-ready track D): every active POS item is kept even without a CSV
+    row, the POS's own cost is used when no CSV gives one, and the vendor
+    fields come from the ``item_vendors`` table (the Item vendors editor).
+    False (Toast) keeps today's rules exactly."""
     inv = _inv()
     sales_windows = inv.SALES_WINDOWS
     snapshot_date = snapshot_date or restaurant_today()
@@ -140,6 +147,12 @@ def build_inventory_rows(
     } if latest_day else set()
     sales = inv.sales_by_item(db, snapshot_date, sales_end_offset_days)
 
+    vendor_table = {}
+    if pos_is_catalog_source:
+        from app.services.item_vendors import load_vendor_table
+
+        vendor_table = load_vendor_table(db, [i.external_id for i in items])
+
     rows: Dict[str, dict] = {}
     menu_ids = set()
     stats = defaultdict(int)
@@ -148,7 +161,10 @@ def build_inventory_rows(
         menu_ids.add(guid)
         prev = carried.get(guid)
         group, category, sub = placement(item, prev)
-        if prev is None and _norm(group) not in groups:
+        if pos_is_catalog_source and not item.active:
+            stats["skipped_inactive"] += 1
+            continue
+        if prev is None and _norm(group) not in groups and not pos_is_catalog_source:
             stats["skipped_not_inventory"] += 1
             continue
         level = stock_by_id.get(guid)
@@ -156,6 +172,8 @@ def build_inventory_rows(
         qty = snapshot_quantity(level)
         price = to_float(item.price)
         cost = prev.cost if prev is not None else None
+        if pos_is_catalog_source and cost is None:
+            cost = to_float(item.cost)
         sold = sales.get(guid) or {"units": {n: 0.0 for n in sales_windows}, "dollars": {n: 0.0 for n in sales_windows}}
         units90 = sold["units"][90]
         if qty is None:
@@ -195,6 +213,12 @@ def build_inventory_rows(
             row[f"last_{n}_day_sales"] = sold["dollars"][n]
         for f in inv.CARRIED_FIELDS:
             row[f] = getattr(prev, f) if prev is not None else None
+        if pos_is_catalog_source:
+            from app.services.item_vendors import render_vendor_fields
+
+            row["cost"] = cost
+            supplier, codes = render_vendor_fields(vendor_table.get(guid, []))
+            row["supplier"], row["supplier_item_id"] = supplier, codes
         rows[guid] = row
         stats["rows"] += 1
         stats["out_of_stock" if out_of_stock else ("counted" if qty is not None else "not_tracked")] += 1
@@ -228,7 +252,12 @@ def implausible_build(db: Session, stock: list, meta: dict) -> Optional[str]:
     inv = _inv()
     stats = meta.get("stats") or {}
     if not stock:
-        return "Toast's stock list came back empty"
+        if _pos_is_catalog_source() and int((meta.get("stats") or {}).get("rows") or 0) > 0:
+            # Clover: a store that tracks no stock has an empty stock list;
+            # its catalog alone is a real snapshot (items "in stock").
+            pass
+        else:
+            return "Toast's stock list came back empty"
     latest_day = inv.latest_csv_date(db)
     if latest_day is None:
         return None
@@ -513,6 +542,17 @@ def _default_changed_at() -> Optional[dt.datetime]:
     return registry.get_connector().catalog_changed_at()
 
 
+def _pos_is_catalog_source() -> bool:
+    """The store's POS has no catalog file to carry vendors and cost from
+    (Clover): its snapshot is built from the POS and the item_vendors table."""
+    try:
+        from app.pos.capabilities import Capability
+
+        return not registry.get_connector().supports(Capability.CSV_CATALOG_IMPORT)
+    except Exception:  # noqa: BLE001 - unknown provider: today's rules
+        return False
+
+
 def save_catalog_cache(
     db: Session, items: Sequence[Item], last_updated: Optional[dt.datetime], now: Optional[dt.datetime] = None
 ) -> int:
@@ -564,7 +604,10 @@ def run_snapshot(
         stock = (fetch_stock or _default_stock)()
         pulled_at = now or dt.datetime.now(dt.timezone.utc)
         catalog = (fetch_catalog or _default_catalog)()
-        rows, meta = build_inventory_rows(db, catalog.items, stock, catalog.changed_at, snapshot_date, now)
+        rows, meta = build_inventory_rows(
+            db, catalog.items, stock, catalog.changed_at, snapshot_date, now,
+            pos_is_catalog_source=_pos_is_catalog_source(),
+        )
         save_catalog_cache(db, catalog.items, catalog.changed_at, now)
         # The switch (the page's setting, else .env) is read now, after
         # the POS answered - the two GETs can take minutes, and an admin who

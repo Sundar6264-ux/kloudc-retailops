@@ -326,7 +326,15 @@ def refresh_after_csv_upload(db: Session, item_ids: Iterable[str]) -> Optional[d
     puts the table right)."""
     try:
         with db.begin_nested():
-            return refresh_from_csv(db, item_ids)
+            ids = list(item_ids)
+            stats = refresh_from_csv(db, ids)
+            if editor_editable():
+                # A store without Toast keeps vendors typed in the Item
+                # vendors editor for items its file lists none for: the
+                # snapshot rows get the table's list (the file's own list
+                # when it has one - refresh_from_csv just stored it).
+                stats["snapshot_rows_filled"] = apply_to_snapshots(db, ids)
+            return stats
     except Exception:  # noqa: BLE001
         logger.exception("item_vendors: refresh after CSV upload failed")
         return None
@@ -368,3 +376,371 @@ def compare_with_snapshots(db: Session) -> dict:
     stray = set(table) - set(latest)
     out["table_items_without_csv_row"] = len(stray)
     return out
+
+
+# ---------------------------------------------------------------------------
+# The Item vendors editor (website-ready track D4: Setup > Item vendors)
+# ---------------------------------------------------------------------------
+#
+# Who may edit: a store whose POS gives no vendor field in a catalog file -
+# every POS except Toast (Clover, CSV-only). A Toast store's list follows its
+# inventory CSV (the CSV wins), so the editor is read-only there.
+#
+# The editor writes "manual" rows (rank = the order given) and then puts the
+# same list into the item's rows of the newest inventory snapshot date
+# (`supplier` / `supplier_item_id`, render_vendor_fields), so every page that
+# reads vendors_of(row) - reorder, supplier projection, PO sections, Fix
+# Issues - sees the change at once. The nightly Clover snapshot fills those
+# fields from this table too (pos/sync/catalog.py, pos_is_catalog_source).
+
+import csv as _csv
+import io as _io
+import re as _re
+
+MAX_VENDORS_PER_ITEM = 10
+MAX_NAME_LEN = 80
+MAX_CODE_LEN = 64
+MAX_IMPORT_ROWS = 20000
+EXPORT_HEADERS = ("Item ID", "Item name", "Barcode", "Vendor", "Vendor item code", "Rank")
+_ID_HEADERS = frozenset({"item id", "item_id", "itemid", "item guid", "clover item id", "id"})
+_BARCODE_HEADERS = frozenset({"barcode", "upc", "code", "sku"})
+_NAME_HEADERS = frozenset({"item name", "item", "name", "product", "product name"})
+_VENDOR_HEADERS = frozenset({"vendor", "vendor name", "supplier", "supplier name"})
+_CODE_HEADERS = frozenset({"vendor item code", "vendor code", "supplier item id", "supplier item code", "item code"})
+_RANK_HEADERS = frozenset({"rank", "order", "priority"})
+
+
+class VendorEditError(ValueError):
+    """A bad value from the editor (HTTP 400)."""
+
+
+def editor_editable() -> bool:
+    """False for a Toast store (its inventory CSV holds the vendors)."""
+    from app.pos.registry import provider_name
+
+    return provider_name() != "toast"
+
+
+def _latest_date(db: Session) -> Optional[dt.date]:
+    return db.execute(select(func.max(InventorySnapshot.snapshot_date))).scalar()
+
+
+def catalog_items(db: Session) -> Dict[str, InventorySnapshot]:
+    """item_id -> the item's row on the newest snapshot date (the editor's
+    item list: what the store stocks now)."""
+    day = _latest_date(db)
+    if day is None:
+        return {}
+    rows = db.execute(select(InventorySnapshot).where(InventorySnapshot.snapshot_date == day)).scalars()
+    out: Dict[str, InventorySnapshot] = {}
+    for r in rows:
+        out.setdefault(r.item_id, r)
+    return out
+
+
+def _clean_name(raw: Any) -> str:
+    v = " ".join(str(raw or "").split())
+    if not v:
+        raise VendorEditError("Enter a vendor name.")
+    if len(v) > MAX_NAME_LEN:
+        raise VendorEditError(f"A vendor name can be at most {MAX_NAME_LEN} characters.")
+    if FIELD_SEP in v or any(ord(c) < 32 for c in v):
+        raise VendorEditError('A vendor name can\'t contain ";".')
+    return v
+
+
+def _clean_code(raw: Any) -> Optional[str]:
+    v = str(raw or "").strip()
+    if not v:
+        return None
+    if len(v) > MAX_CODE_LEN:
+        raise VendorEditError(f"A vendor item code can be at most {MAX_CODE_LEN} characters.")
+    if FIELD_SEP in v or any(ord(c) < 32 for c in v):
+        raise VendorEditError('A vendor item code can\'t contain ";".')
+    return v
+
+
+def clean_vendor_list(vendors: Iterable[Mapping[str, Any]]) -> List[RankedVendor]:
+    """The editor's list -> ranked vendors (order given = rank). Refuses
+    blanks, repeats (ignoring case) and more than 10."""
+    out: List[RankedVendor] = []
+    seen = set()
+    for v in vendors or []:
+        name = _clean_name((v or {}).get("name"))
+        key = name.lower()
+        if key in seen:
+            raise VendorEditError(f"{name} is listed twice.")
+        seen.add(key)
+        out.append(RankedVendor(len(out) + 1, name, _clean_code((v or {}).get("item_code"))))
+    if len(out) > MAX_VENDORS_PER_ITEM:
+        raise VendorEditError(f"An item can have at most {MAX_VENDORS_PER_ITEM} vendors.")
+    return out
+
+
+def _same_manual(current: List[ItemVendor], wanted: List[RankedVendor]) -> bool:
+    return [(r.rank, r.vendor_name, r.vendor_item_code) for r in current] == [
+        (v.rank, v.name, v.item_code) for v in wanted
+    ]
+
+
+def apply_to_snapshots(db: Session, item_ids: Iterable[str]) -> int:
+    """Put the table's lists into these items' rows of the newest snapshot
+    date (what the pages read). Returns the rows updated."""
+    ids = sorted({i for i in item_ids if i})
+    day = _latest_date(db)
+    if not ids or day is None:
+        return 0
+    table = load_vendor_table(db, ids)
+    changed = 0
+    for chunk in _chunks(ids):
+        for row in db.execute(
+            select(InventorySnapshot).where(InventorySnapshot.snapshot_date == day, InventorySnapshot.item_id.in_(chunk))
+        ).scalars():
+            supplier, codes = render_vendor_fields(table.get(row.item_id, []))
+            if (row.supplier, row.supplier_item_id) != (supplier, codes):
+                row.supplier, row.supplier_item_id = supplier, codes
+                changed += 1
+    db.flush()
+    return changed
+
+
+def set_item_vendors(db: Session, item_id: str, vendors: Iterable[Mapping[str, Any]]) -> Tuple[List[ItemVendor], bool]:
+    """Replace one item's vendor list with `vendors` (manual rows). Returns
+    (the rows now stored, whether anything changed). Does not commit."""
+    wanted = clean_vendor_list(vendors)
+    have = load_vendor_table(db, [item_id]).get(item_id, [])
+    if have and all(r.source == SOURCE_MANUAL for r in have) and _same_manual(have, wanted):
+        return have, False
+    if not have and not wanted:
+        return [], False
+    now = utcnow()
+    if have:
+        db.execute(delete(ItemVendor).where(ItemVendor.item_id == item_id))
+    for v in wanted:
+        db.add(ItemVendor(item_id=item_id, vendor_name=v.name, vendor_item_code=v.item_code, rank=v.rank,
+                          source=SOURCE_MANUAL, source_date=None, created_at=now, updated_at=now))
+    db.flush()
+    apply_to_snapshots(db, [item_id])
+    return load_vendor_table(db, [item_id]).get(item_id, []), True
+
+
+def vendor_view(rows: Iterable[ItemVendor]) -> List[dict]:
+    return [{"name": r.vendor_name, "item_code": r.vendor_item_code, "rank": r.rank, "source": r.source} for r in rows]
+
+
+def item_view(row: InventorySnapshot, vendors: Iterable[ItemVendor]) -> dict:
+    return {
+        "item_id": row.item_id,
+        "name": row.name,
+        "barcode": (split_field(row.barcode) or [None])[0],
+        "category": " / ".join(p for p in (row.category_group, row.category) if p) or None,
+        "vendors": vendor_view(vendors),
+    }
+
+
+def list_editor_items(db: Session, q: str = "", show: str = "all", limit: int = 50, offset: int = 0) -> dict:
+    """The editor's page: items (newest snapshot) matching `q` (name, id,
+    barcode or vendor), `show` = all | missing (no vendor) | with."""
+    items = catalog_items(db)
+    table = load_vendor_table(db, list(items))
+    needle = (q or "").strip().lower()
+    out = []
+    missing = 0
+    for item_id, row in items.items():
+        vendors = table.get(item_id, [])
+        if not vendors:
+            missing += 1
+        if show == "missing" and vendors:
+            continue
+        if show == "with" and not vendors:
+            continue
+        if needle:
+            hay = " ".join(
+                [row.name or "", item_id, row.barcode or ""] + [v.vendor_name for v in vendors] + [v.vendor_item_code or "" for v in vendors]
+            ).lower()
+            if needle not in hay:
+                continue
+        out.append((row, vendors))
+    out.sort(key=lambda p: ((p[0].name or "").lower(), p[0].item_id))
+    names = sorted({r.vendor_name for rows in table.values() for r in rows}, key=str.lower)
+    page = out[max(0, offset): max(0, offset) + max(1, min(limit, 200))]
+    return {
+        "items": [item_view(r, v) for r, v in page],
+        "total": len(out),
+        "catalog_total": len(items),
+        "missing_count": missing,
+        "vendor_names": names[:2000],
+        "offset": offset,
+        "limit": limit,
+    }
+
+
+# --- CSV import / export -------------------------------------------------------------------------
+
+
+def _norm_header(h: Any) -> str:
+    return _re.sub(r"\s+", " ", str(h or "").strip().lower().replace("_", " "))
+
+
+def _find(headers: List[str], names: set) -> Optional[int]:
+    for i, h in enumerate(headers):
+        if h in names:
+            return i
+    return None
+
+
+def parse_import(db: Session, filename: str, content: bytes) -> dict:
+    """Read an Item vendors CSV. One row per (item, vendor); an item's rows
+    in the file are its whole new list (by Rank, else file order). Items are
+    found by Item ID, else barcode/SKU, else an exact, unique item name.
+
+    Returns {"rows": [{line, item_id, item_name, vendor, item_code, error}],
+    "items": {item_id: [RankedVendor]}, "errors": n, "headers_ok": bool}.
+    Nothing is written."""
+    if not (filename or "").lower().endswith(".csv"):
+        raise VendorEditError("Upload a .csv file (save a spreadsheet as CSV first).")
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = content.decode("latin-1")
+    reader = list(_csv.reader(_io.StringIO(text)))
+    reader = [r for r in reader if any((c or "").strip() for c in r)]
+    if not reader:
+        raise VendorEditError("The file is empty.")
+    if len(reader) - 1 > MAX_IMPORT_ROWS:
+        raise VendorEditError(f"The file has more than {MAX_IMPORT_ROWS:,} rows. Split it and import each part.")
+    headers = [_norm_header(h) for h in reader[0]]
+    i_id, i_bar, i_name = _find(headers, _ID_HEADERS), _find(headers, _BARCODE_HEADERS), _find(headers, _NAME_HEADERS)
+    i_vendor, i_code, i_rank = _find(headers, _VENDOR_HEADERS), _find(headers, _CODE_HEADERS), _find(headers, _RANK_HEADERS)
+    if i_vendor is None or (i_id is None and i_bar is None and i_name is None):
+        raise VendorEditError("The file needs a Vendor column and an Item ID (or Barcode, or Item name) column. "
+                              "Download the template to see the columns.")
+    items = catalog_items(db)
+    by_barcode: Dict[str, List[str]] = defaultdict(list)
+    by_name: Dict[str, List[str]] = defaultdict(list)
+    for item_id, row in items.items():
+        for code in split_field(row.barcode):
+            by_barcode[code.lower()].append(item_id)
+        if row.name:
+            by_name[" ".join(row.name.split()).lower()].append(item_id)
+
+    def cell(r: List[str], i: Optional[int]) -> str:
+        return (r[i] if i is not None and i < len(r) else "").strip()
+
+    rows_out: List[dict] = []
+    grouped: Dict[str, List[Tuple[float, int, str, Optional[str]]]] = defaultdict(list)
+    for n, r in enumerate(reader[1:], start=2):
+        item_id, error = None, None
+        raw_id, raw_bar, raw_name = cell(r, i_id), cell(r, i_bar), cell(r, i_name)
+        if raw_id and raw_id in items:
+            item_id = raw_id
+        elif raw_bar and len(set(by_barcode.get(raw_bar.lower(), []))) == 1:
+            item_id = by_barcode[raw_bar.lower()][0]
+        elif raw_name and len(by_name.get(" ".join(raw_name.split()).lower(), [])) == 1:
+            item_id = by_name[" ".join(raw_name.split()).lower()][0]
+        elif raw_bar and len(set(by_barcode.get(raw_bar.lower(), []))) > 1:
+            error = f"Barcode {raw_bar} belongs to more than one item: use the Item ID."
+        elif raw_name and len(by_name.get(" ".join(raw_name.split()).lower(), [])) > 1:
+            error = f"More than one item is called {raw_name}: use the Item ID."
+        else:
+            error = "No item with this Item ID, barcode or name."
+        vendor, code, note = None, None, None
+        if not cell(r, i_vendor):
+            # An item without a vendor (as the export writes it): nothing to do.
+            rows_out.append({"line": n, "item_id": item_id, "item_name": items[item_id].name if item_id in items else (raw_name or None),
+                             "vendor": None, "item_code": None, "error": None, "note": "No vendor on this row: skipped."})
+            continue
+        try:
+            vendor = _clean_name(cell(r, i_vendor))
+            code = _clean_code(cell(r, i_code))
+        except VendorEditError as exc:
+            error = error or str(exc)
+        rank_raw = cell(r, i_rank)
+        rank = float(n)
+        if rank_raw:
+            try:
+                rank = float(rank_raw)
+            except ValueError:
+                error = error or "Rank must be a number (1 = first choice)."
+        if item_id and vendor and not error:
+            if any(v[2].lower() == vendor.lower() for v in grouped[item_id]):
+                error = f"{vendor} is listed twice for this item."
+        if item_id and vendor and not error:
+            grouped[item_id].append((rank, n, vendor, code))
+        rows_out.append({
+            "line": n,
+            "item_id": item_id,
+            "item_name": items[item_id].name if item_id in items else (raw_name or None),
+            "vendor": vendor or cell(r, i_vendor) or None,
+            "item_code": code,
+            "error": error,
+            "note": note,
+        })
+    lists: Dict[str, List[RankedVendor]] = {}
+    for item_id, entries in grouped.items():
+        entries.sort(key=lambda e: (e[0], e[1]))
+        if len(entries) > MAX_VENDORS_PER_ITEM:
+            for row in rows_out:
+                if row["item_id"] == item_id and not row["error"]:
+                    row["error"] = f"More than {MAX_VENDORS_PER_ITEM} vendors for this item."
+            continue
+        lists[item_id] = [RankedVendor(i + 1, e[2], e[3]) for i, e in enumerate(entries)]
+    return {"rows": rows_out, "items": lists, "errors": sum(1 for r in rows_out if r["error"])}
+
+
+def import_vendors(db: Session, filename: str, content: bytes, apply: bool = False) -> dict:
+    """Preview (default) or apply an import. Apply writes only the items
+    whose rows are all valid; an item with any bad row is left as it is.
+    Idempotent: the same file again changes nothing. Does not commit."""
+    parsed = parse_import(db, filename, content)
+    bad_items = {r["item_id"] for r in parsed["rows"] if r["error"] and r["item_id"]}
+    table = load_vendor_table(db, list(parsed["items"]))
+    changes = []
+    for item_id, wanted in parsed["items"].items():
+        if item_id in bad_items:
+            continue
+        have = table.get(item_id, [])
+        if have and all(r.source == SOURCE_MANUAL for r in have) and _same_manual(have, wanted):
+            continue
+        changes.append((item_id, wanted))
+    if apply:
+        for item_id, wanted in changes:
+            set_item_vendors(db, item_id, [{"name": v.name, "item_code": v.item_code} for v in wanted])
+    return {
+        "rows": parsed["rows"][:500],
+        "row_count": len(parsed["rows"]),
+        "errors": parsed["errors"],
+        "items_in_file": len(parsed["items"]),
+        "items_to_change": len(changes),
+        "items_skipped": len(bad_items),
+        "applied": bool(apply),
+    }
+
+
+def _safe(value: Any) -> str:
+    """A cell a spreadsheet won't run as a formula."""
+    v = "" if value is None else str(value)
+    return "'" + v if v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
+
+
+def export_csv(db: Session, template: bool = False) -> bytes:
+    """Every item with its vendors, one row per vendor (an item without a
+    vendor has one row with an empty Vendor). ``template``: the headers and
+    one example row."""
+    buf = _io.StringIO()
+    w = _csv.writer(buf, lineterminator="\n")
+    w.writerow(EXPORT_HEADERS)
+    if template:
+        w.writerow(["(item id from the export)", "Basmati Rice 10 lb", "012345678905", "Main Street Wholesale", "BR-10", "1"])
+        return buf.getvalue().encode("utf-8")
+    items = catalog_items(db)
+    table = load_vendor_table(db, list(items))
+    for item_id, row in sorted(items.items(), key=lambda p: ((p[1].name or "").lower(), p[0])):
+        barcode = (split_field(row.barcode) or [""])[0]
+        vendors = table.get(item_id, [])
+        if not vendors:
+            w.writerow([_safe(item_id), _safe(row.name), _safe(barcode), "", "", ""])
+        for v in vendors:
+            w.writerow([_safe(item_id), _safe(row.name), _safe(barcode), _safe(v.vendor_name),
+                        _safe(v.vendor_item_code), v.rank])
+    return buf.getvalue().encode("utf-8")
