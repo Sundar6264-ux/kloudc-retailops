@@ -107,7 +107,7 @@ def test_oauth_connect_flow(store_admin, clover_app, pdb, client):
     cb = anon.get("/api/settings/integrations/clover/callback",
                   params={"code": "good-code", "merchant_id": "TESTMERCH0001", "state": state, "client_id": "APPID123"},
                   follow_redirects=False)
-    assert cb.status_code == 303 and cb.headers["location"] == "/settings/integrations?clover=connected"
+    assert cb.status_code == 303 and cb.headers["location"] == "/#/settings/integrations?clover=connected"
     assert clover_app.calls[0][0] == "/oauth/v2/token"
     public, secrets = creds.stored_values("ALPHA", "clover")
     assert public["mode"] == "oauth" and public["merchant_id"] == "TESTMERCH0001" and public["region"] == "sandbox"
@@ -120,7 +120,7 @@ def test_oauth_connect_flow(store_admin, clover_app, pdb, client):
     # The same state can't be used twice.
     again = anon.get("/api/settings/integrations/clover/callback",
                      params={"code": "good-code", "merchant_id": "TESTMERCH0001", "state": state}, follow_redirects=False)
-    assert again.headers["location"] == "/settings/integrations?clover=error&reason=invalid"
+    assert again.headers["location"] == "/#/settings/integrations?clover=error&reason=invalid"
 
 
 @needs_b
@@ -134,14 +134,14 @@ def test_state_tampered_expired_or_refused(store_admin, clover_app, client):
 
     good = cauth.make_state("ALPHA", "ann")
     tampered = good[:-4] + ("AAAA" if not good.endswith("AAAA") else "BBBB")
-    assert cb(tampered) == "/settings/integrations?clover=error&reason=invalid"
-    assert cb("") == "/settings/integrations?clover=error&reason=invalid"
+    assert cb(tampered) == "/#/settings/integrations?clover=error&reason=invalid"
+    assert cb("") == "/#/settings/integrations?clover=error&reason=invalid"
     old = cauth.make_state("ALPHA", "ann", now=time.time() - cauth.STATE_TTL_SECONDS - 5)
-    assert cb(old) == "/settings/integrations?clover=error&reason=expired"
-    assert cb(cauth.make_state("ALPHA", "ann"), code="bad-code") == "/settings/integrations?clover=error&reason=refused"
+    assert cb(old) == "/#/settings/integrations?clover=error&reason=expired"
+    assert cb(cauth.make_state("ALPHA", "ann"), code="bad-code") == "/#/settings/integrations?clover=error&reason=refused"
     assert creds.stored_values("ALPHA", "clover")[1] == {}
     # The merchant said no (Clover sends no code).
-    assert cb(cauth.make_state("ALPHA", "ann"), code="") == "/settings/integrations?clover=error&reason=denied"
+    assert cb(cauth.make_state("ALPHA", "ann"), code="") == "/#/settings/integrations?clover=error&reason=denied"
 
 
 @needs_b

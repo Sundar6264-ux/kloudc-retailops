@@ -40,7 +40,8 @@ from app.platform.errors import PlatformError
 
 router = APIRouter(prefix="/api/settings/integrations/clover", tags=["settings"])
 
-RETURN_PATH = "/settings/integrations"
+# The website uses a hash router: Settings > Integrations is /#/settings/integrations.
+RETURN_PATH = "/#/settings/integrations"
 MERCHANT_ID_RE = re.compile(r"^[A-Za-z0-9]{6,32}$")
 REGIONS = ("us", "eu", "la", "sandbox")
 NOT_CONFIGURED = (
