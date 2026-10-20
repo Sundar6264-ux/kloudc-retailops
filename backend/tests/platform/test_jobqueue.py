@@ -410,3 +410,19 @@ def test_system_routes_for_masters_only(master_client, client, queue_mode, pdb):
     assert master_client.post("/api/platform/system/jobs/999999/retry").status_code == 404
     audit = master_client.get("/api/platform/audit", params={"action": "job.retried"}).json()
     assert [a["target"] for a in audit] == [f"job:{h.id}"]
+
+
+def test_readiness_reports_the_queue_without_failing(client, platform_env, monkeypatch):
+    monkeypatch.delenv("JOB_QUEUE_MODE", raising=False)
+    body = client.get("/api/ready").json()
+    assert body["checks"]["job_queue"] == "inline" and body["checks"]["live_updates"] == "local"
+    monkeypatch.setenv("JOB_QUEUE_MODE", "queue")
+    from app import jobqueue
+
+    jobqueue.enqueue("t_ok", {})
+    r = client.get("/api/ready")
+    checks = r.json()["checks"]
+    assert checks["job_queue"] == "queue"
+    assert checks["jobs_due"].startswith("1 (oldest") and checks["jobs_dead"] == "0"
+    assert checks["job_workers"] == "0 alive"  # no worker: information, not a failure
+    assert not any(str(v).startswith("fail") for k, v in checks.items() if k.startswith("job"))
