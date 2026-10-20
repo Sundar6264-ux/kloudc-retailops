@@ -222,4 +222,4 @@ jobs:
             -e TOAST_API_BASE -e TOAST_ANALYTICS_BASE -e WHAPI_BASE_URL \
             -e RETAILOPS_TEST_DB=sqlite -e TZ=America/New_York \
             -v "$PWD:/repo" -w /repo/backend kloudc-retailops:ci \
-            -c "pip install -q pytest==8.3.3 && python -m pytest -q -p no:cacheprovider"
+            -c "pip install -q pytest==8.3.3 time-machine==2.16.0 && python -m pytest -q -p no:cacheprovider"

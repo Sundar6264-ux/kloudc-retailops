@@ -315,6 +315,11 @@ def test_a_corrupted_copy_fails_the_import_and_leaves_the_store_untouched(tmp_pa
         cur.execute("DELETE FROM users WHERE id = 4")
 
     monkeypatch.setattr(tool, "_reset_sequences", corrupt)
+    # Provisioning leaves a pooled connection to the store's database; the
+    # import refuses while any is open (as it should), so release it first -
+    # otherwise this test fails whenever that connection is still alive.
+    from app.tenancy.engines import dispose_engine
+    dispose_engine("ALPHA")
     with pytest.raises(store_import.StoreImportError) as exc:
         store_import.import_sqlite("ALPHA", src, log=lambda *a: None)
     message = str(exc.value)
