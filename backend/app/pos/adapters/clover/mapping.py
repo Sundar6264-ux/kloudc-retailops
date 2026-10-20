@@ -12,8 +12,9 @@ Lines: each ``lineItem`` is one top-level row; each ``modification`` is its
 own row (``is_modifier``) under it - Clover's line price does NOT include
 modifiers, so the connector does not claim MODIFIER_PRICE_IN_PARENT.
 Net = price x quantity + discounts (amount, negative cents, or a
-percentage); tax = net x the sum of the line's ``taxRates`` (Clover rates
-are in 1/100000 of a percent: 1000000 = 10 %). A refunded or exchanged line
+percentage), then the order-level discounts spread over the sold lines in
+proportion to their net; tax = net x the sum of the line's ``taxRates``
+(Clover rates are in 1/100000 of a percent: 1000000 = 10 %). A refunded or exchanged line
 counts as voided (not sold).
 
 Business date: the local date of the order's creation time in the merchant's
@@ -147,14 +148,18 @@ def _discount_total(base: Decimal, discounts: Iterable[dict]) -> Decimal:
     return total
 
 
-def _tax(net: Decimal, line: dict) -> Decimal:
+def _tax_rate(line: dict) -> Decimal:
     rate = Decimal(0)
     for t in _elements(line.get("taxRates")):
         try:
             rate += Decimal(int(t.get("rate") or 0)) / TAX_RATE_SCALE
         except (TypeError, ValueError):
             continue
-    return (net * rate).quantize(CENT, rounding=ROUND_HALF_UP)
+    return rate
+
+
+def _tax(net: Decimal, line: dict) -> Decimal:
+    return (net * _tax_rate(line)).quantize(CENT, rounding=ROUND_HALF_UP)
 
 
 def map_lines(order_id: str, raw_lines: List[dict]) -> List[OrderLine]:
@@ -212,6 +217,39 @@ def map_lines(order_id: str, raw_lines: List[dict]) -> List[OrderLine]:
     return out
 
 
+def spread_order_discounts(
+    lines: List[OrderLine], discounts: List[dict], tax_rates: Optional[Dict[str, Decimal]] = None
+) -> List[OrderLine]:
+    """Order-level discounts (Clover ``order.discounts``: an amount in
+    negative cents, or a percentage) spread over the order's sold top-level
+    lines in proportion to their net, so the lines add up to what the
+    customer paid. The last line takes the rounding remainder; tax is
+    recomputed at the line's own rate."""
+    if not discounts:
+        return lines
+    sold = [i for i, l in enumerate(lines) if not l.is_modifier and not l.voided and l.net_amount > 0]
+    base = sum((lines[i].net_amount for i in sold), Decimal(0))
+    if not sold or base <= 0:
+        return lines
+    total = -_discount_total(base, discounts)  # positive amount off
+    total = min(total, base)
+    if total <= 0:
+        return lines
+    out = list(lines)
+    left = total
+    for n, i in enumerate(sold):
+        line = lines[i]
+        share = left if n == len(sold) - 1 else (total * line.net_amount / base).quantize(CENT, rounding=ROUND_HALF_UP)
+        share = min(share, left)
+        left -= share
+        new_net = line.net_amount - share
+        rate = (tax_rates or {}).get(line.external_id)
+        if rate is None:
+            rate = (line.tax_amount / line.net_amount) if line.net_amount else Decimal(0)
+        out[i] = OrderLine(**{**line.__dict__, "net_amount": new_net, "tax_amount": (new_net * rate).quantize(CENT, rounding=ROUND_HALF_UP)})
+    return out
+
+
 def map_order(raw: dict, tz: zoneinfo.ZoneInfo, cutoff_hour: int, business_date: Optional[dt.date] = None) -> Order:
     oid = str(raw.get("id") or "")
     created = from_ms(raw.get("createdTime")) or from_ms(raw.get("clientCreatedTime"))
@@ -228,6 +266,7 @@ def map_order(raw: dict, tz: zoneinfo.ZoneInfo, cutoff_hour: int, business_date:
         and sum(int(r.get("amount") or 0) for r in refunds) >= int(raw.get("total") or 0)
     )
     channel, channel_raw, type_id = channel_of(raw.get("orderType"))
+    raw_lines = _elements(raw.get("lineItems"))
     employee = raw.get("employee") or {}
     bdate = business_date or business_date_of(created, tz, cutoff_hour) or dt.date.today()
     check = Check(
@@ -255,7 +294,10 @@ def map_order(raw: dict, tz: zoneinfo.ZoneInfo, cutoff_hour: int, business_date:
         server_external_id=employee.get("id"),
         approval_status=None,
         checks=(check,),
-        lines=tuple(map_lines(oid, _elements(raw.get("lineItems")))),
+        lines=tuple(spread_order_discounts(
+            map_lines(oid, raw_lines), _elements(raw.get("discounts")),
+            {str(l.get("id")): _tax_rate(l) for l in raw_lines if l.get("id")},
+        )),
         voided=fully_refunded,
         deleted=bool(raw.get("deleted")),
         updated_at=modified,

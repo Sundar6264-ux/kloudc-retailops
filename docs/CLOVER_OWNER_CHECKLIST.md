@@ -85,7 +85,7 @@ with a fixture in `backend/tests/fixtures/clover/`.
 | 6 | **`summaryHour`** | Compare `/properties.summaryHour` with Clover's day-end report | Business date = local time minus the store's cutoff (`BUSINESS_DAY_CUTOFF_HOUR`, default 4); confirm whether summaryHour should set the cutoff |
 | 7 | **Cost units** | Item with cost $1.25 | `cost` = 125 (cents) → 1.25 |
 | 8 | **Tax** | Taxed line | `taxRates[].rate` 1000000 = 10 %; tax = net × rate (rounded half up) - compare with Clover's tax report |
-| 9 | **Discounts** | % and $ line discounts, an order-level discount | Line discounts applied; **order-level discounts are not spread over lines yet** (note the difference) |
+| 9 | **Discounts** | % and $ line discounts, an order-level discount | Line discounts applied to their line; order-level discounts spread over the sold lines by their net (compare the day total) |
 | 10 | **Refunds** | Full and partial refund | Full refund → order and lines voided; partial refund: compare totals and note |
 | 11 | **Stock** | Item at -2 | `/item_stocks` quantity -2 shows as a negative count |
 | 12 | **Rate limits** | Run a 90-day backfill | No 429 errors (16/s and 5 at once per token are respected); if 429s appear, note `Retry-After` |
@@ -110,7 +110,7 @@ with a fixture in `backend/tests/fixtures/clover/`.
 
 - Clover webhooks (they carry ids only and need an installed app; scheduled
   pulls stay the main path).
-- Spreading order-level discounts over lines; partial-refund lines.
+- Partial refunds by line (a partly refunded order keeps its lines as sold).
 - One Clover rate budget shared by several server processes (today: per
   process).
 - Clover App Market billing.

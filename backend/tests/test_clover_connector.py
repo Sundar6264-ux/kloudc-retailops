@@ -531,3 +531,17 @@ def test_empty_stock_is_fine_for_a_clover_catalog(db, monkeypatch):
     assert cat.implausible_build(db, [], meta) is None
     monkeypatch.setattr(cat, "_pos_is_catalog_source", lambda: False)
     assert cat.implausible_build(db, [], meta) == "Toast's stock list came back empty"
+
+
+def test_order_level_discount_is_spread_over_lines():
+    raw = dict(load("orders.json")["elements"][0])
+    raw["discounts"] = {"elements": [{"id": "OD1", "name": "$5 off", "amount": -500}]}
+    o = cm.map_order(raw, NY, 4)
+    top = [l for l in o.lines if not l.is_modifier]
+    assert sum(l.net_amount for l in top) == Decimal("18.99") + Decimal("17.09") + Decimal("3.73") - Decimal("5.00")
+    first = top[0]
+    assert first.net_amount == Decimal("16.60")  # 18.99 - 5.00 x 18.99/39.81 (2.39)
+    assert first.tax_amount == Decimal("1.05")  # the line's own 6.35 % on the new net
+    pct = dict(raw, discounts={"elements": [{"id": "OD2", "percentage": 10}]})
+    top2 = [l for l in cm.map_order(pct, NY, 4).lines if not l.is_modifier]
+    assert sum(l.net_amount for l in top2) == Decimal("35.83")  # 39.81 - 3.98
