@@ -58,5 +58,9 @@ def record_pos_call(_request: Optional[httpx.Request] = None) -> None:
 
 def metering_hooks() -> dict:
     """``httpx.Client(event_hooks=metering_hooks())``: every request the
-    client sends (retries and logins included) is counted once."""
-    return {"request": [record_pos_call]}
+    client sends (retries and logins included) is counted once, and refused
+    when a store-typed address resolves to a private network
+    (``app.platform.egress``, shared service only)."""
+    from app.platform.egress import httpx_request_hook
+
+    return {"request": [httpx_request_hook, record_pos_call]}

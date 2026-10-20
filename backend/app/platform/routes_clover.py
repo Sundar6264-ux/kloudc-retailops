@@ -261,6 +261,13 @@ def clover_disconnect(request: Request, user: User = Depends(require_admin)):
 # --- Webhooks (D6, off by default) -------------------------------------------
 
 
+def _rate_webhook(request: Request) -> None:
+    """Unauthenticated webhook calls (the verification POST, a wrong auth
+    code): 20 a minute per client address."""
+    r = _routes()
+    r._rate("clover_webhook_unauth", r._ip(request), per_minute=20)
+
+
 @router.post("/webhook")
 async def clover_webhook(request: Request):
     """Clover's webhook. 404 unless CLOVER_WEBHOOKS_ENABLED; the one-time
@@ -282,12 +289,18 @@ async def clover_webhook(request: Request):
     except ValueError:
         raise PlatformError(400, "invalid") from None
     if isinstance(payload, dict) and payload.get("verificationCode") and not payload.get("merchants"):
-        code = str(payload.get("verificationCode"))[:64]
+        # Only letters, digits, - and _ reach the log: a forged line break
+        # cannot write fake log lines (docs/SECURITY_REVIEW.md SR-06).
+        code = re.sub(r"[^A-Za-z0-9_-]", "", str(payload.get("verificationCode")))[:64]
+        if not code:
+            raise PlatformError(400, "invalid")
+        _rate_webhook(request)
         logging.getLogger(__name__).warning("Clover webhook verification code (paste it into the Clover app): %s", code)
         return {"ok": True}
     expected = webhooks.auth_code()
     given = request.headers.get("x-clover-auth") or ""
     if not expected or not hmac.compare_digest(given.encode(), expected.encode()):
+        _rate_webhook(request)  # wrong codes are slowed down per address
         raise PlatformError(401, "unauthorized")
     from starlette.concurrency import run_in_threadpool
 

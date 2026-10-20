@@ -114,6 +114,9 @@ def send_toast_invoice_email(
 
 def _connect(smtp):
     """SMTP_SSL (implicit TLS) or STARTTLS, per the SMTP_* settings."""
+    from app.platform.egress import check_host
+
+    check_host(smtp.host, smtp.port)  # OSError when it resolves to a private network (shared service)
     if smtp.ssl:
         return smtplib.SMTP_SSL(smtp.host, smtp.port)
     server = smtplib.SMTP(smtp.host, smtp.port)

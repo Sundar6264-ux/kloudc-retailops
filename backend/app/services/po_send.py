@@ -402,6 +402,9 @@ def whatsapp_caption(supplier: str, items: list) -> str:
 
 def _smtp_connect(cfg):
     """An SMTP connection per SMTP_SSL: implicit TLS, or STARTTLS."""
+    from app.platform.egress import check_host
+
+    check_host(cfg.host, cfg.port)  # OSError when it resolves to a private network (shared service)
     if cfg.ssl:
         return smtplib.SMTP_SSL(cfg.host, cfg.port, timeout=SMTP_TIMEOUT)
     server = smtplib.SMTP(cfg.host, cfg.port, timeout=SMTP_TIMEOUT)

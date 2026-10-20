@@ -57,6 +57,14 @@ class WhapiPilotBlocked(WhapiNotConfigured):
     A WhapiNotConfigured, so every caller already records it as not sent."""
 
 
+
+def _base_url(settings) -> str:
+    """WHAPI_BASE_URL, refused when it resolves to a private network on the
+    shared service (app.platform.egress; httpx.ConnectError)."""
+    from app.platform.egress import check_url
+
+    return check_url(settings.whapi_base_url)
+
 def _pilot_guard(what: str) -> None:
     from app.ops import pilot
 
@@ -103,7 +111,7 @@ def send_whatsapp_message(text: str, to: Optional[str] = None) -> None:
         )
     try:
         resp = httpx.post(
-            f"{settings.whapi_base_url}/messages/text",
+            f"{_base_url(settings)}/messages/text",
             headers={"Authorization": f"Bearer {settings.whapi_api_token}"},
             json={"to": target, "body": text, "no_link_preview": True},
             timeout=25,
@@ -133,7 +141,7 @@ def find_sent_message(text: str, to: Optional[str] = None, count: int = 10) -> b
         return False
     try:
         resp = httpx.get(
-            f"{settings.whapi_base_url}/messages/list/{target}",
+            f"{_base_url(settings)}/messages/list/{target}",
             headers={"Authorization": f"Bearer {settings.whapi_api_token}"},
             params={"count": count},
             timeout=15,
@@ -165,7 +173,7 @@ def list_groups() -> list:
     offset = 0
     for _ in range(GROUPS_MAX_PAGES):
         resp = httpx.get(
-            f"{settings.whapi_base_url}/groups",
+            f"{_base_url(settings)}/groups",
             headers={"Authorization": f"Bearer {settings.whapi_api_token}"},
             params={"count": GROUPS_PAGE_SIZE, "offset": offset},
             timeout=15,
@@ -275,7 +283,7 @@ def upload_media(data: bytes, mime: str) -> str:
     _pilot_guard("media upload")
     token = _require_token()
     resp = httpx.post(
-        f"{get_settings().whapi_base_url}/media",
+        f"{_base_url(get_settings())}/media",
         headers={"Authorization": f"Bearer {token}", "Content-Type": mime},
         content=data,
         timeout=MEDIA_TIMEOUT,
@@ -310,7 +318,7 @@ def send_media_message(
         payload["filename"] = filename
     try:
         resp = httpx.post(
-            f"{get_settings().whapi_base_url}/messages/{kind}",
+            f"{_base_url(get_settings())}/messages/{kind}",
             headers={"Authorization": f"Bearer {token}"},
             json=payload,
             timeout=MEDIA_TIMEOUT,
@@ -375,7 +383,7 @@ def find_sent_media(
             params["offset"] = offset
         try:
             resp = httpx.get(
-                f"{settings.whapi_base_url}/messages/list/{to}",
+                f"{_base_url(settings)}/messages/list/{to}",
                 headers={"Authorization": f"Bearer {settings.whapi_api_token}"},
                 params=params,
                 timeout=15,
