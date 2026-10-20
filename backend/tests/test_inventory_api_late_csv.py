@@ -11,6 +11,7 @@ import zoneinfo
 
 import httpx
 import pytest
+import time_machine
 
 from app.config import get_settings
 from app.models import InventorySnapshot, JobRun
@@ -24,6 +25,15 @@ NY = zoneinfo.ZoneInfo("America/New_York")
 
 def at(hour, minute=0, day=TODAY):
     return dt.datetime.combine(day, dt.time(hour, minute), tzinfo=NY)
+
+
+@pytest.fixture(autouse=True)
+def _afternoon_clock():
+    """These tests build TODAY's 04:05 nightly run and a 06:49 CSV, so "now"
+    must be later that day. Without this they failed whenever CI ran between
+    midnight and 04:05 New York time (the nightly run was still in the future)."""
+    with time_machine.travel(dt.datetime.combine(TODAY, dt.time(14, 0), tzinfo=NY), tick=True):
+        yield
 
 
 @pytest.fixture(autouse=True)

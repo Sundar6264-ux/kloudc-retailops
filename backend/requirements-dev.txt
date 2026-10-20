@@ -3,3 +3,5 @@
 pytest==8.3.3
 # PDF text checks (tests/test_ops_po_sections_edit.py).
 pypdf==5.1.0
+# Fixed clocks in time-of-day dependent tests
+time-machine==2.16.0
