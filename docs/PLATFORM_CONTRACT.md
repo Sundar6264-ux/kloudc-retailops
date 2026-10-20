@@ -3816,3 +3816,82 @@ not a product bug.
 - A presigned R2 Download link can't be withdrawn early, and downloads
   made through it aren't counted; it simply expires. Server-streamed links
   are withdrawn and counted. Set `STORAGE_PRESIGN=false` to always stream.
+
+## As built - Website ready: Final design review
+
+A harsh design review of the integrated `main` (`390a5a1`). It ran on a
+separate preview (port 8873, its own `so_fin` databases, made-up data and
+fakes only). Every store and master page was checked at 1440, 1280 and 375 px,
+in light and dark, plus the website-ready flows.
+
+**Fixed**
+- **Master console**
+  - The seven section tabs fit on one row of compact tiles. The one-line
+    descriptions had been cut off with "..." across two rows; each is now
+    the tile's tooltip, with the ⓘ for more. On phones the row still
+    scrolls sideways.
+  - The status filter uses the same words as the row chips (Waiting,
+    Setting up, Rolled back) instead of the raw "pending". POS names read
+    Toast / Clover / CSV instead of TOAST.
+  - Details now sits in the store row's action bar, which saves a line per
+    store on phones.
+  - Archive's confirm puts Cancel and a red Archive side by side. They used
+    to be stacked in a 160 px column.
+- **Store drawer**
+  - The five section pills fit on one row.
+  - Usage tiles show two per row. With four per row the words broke
+    mid-word ("meas / ured").
+  - Overview lists a POS only if the store uses it or something was saved
+    for it, so a CSV store no longer lists Toast and Clover as "Not set up".
+  - The plan field is now labelled "Store's plan".
+  - A long Store ID pushed ⓘ and Close off a 375 px screen. The name and
+    the ID now shrink and end in "…". `flows.mjs` checks this.
+- **Data & usage**
+  - "Not measured yet" shows as muted body text instead of the large
+    number style.
+  - A limit with no measurement reads "Not measured yet - limit 1 GB".
+  - A chart of 30 empty bars is replaced by one line of text.
+  - The glossary entry for Usage explains when the numbers are measured.
+- **Item vendors**
+  - The selected filter chip and the vendor codes now pass AA. A green
+    store brand measured 3.9:1, and dark mode 4.3:1.
+  - On phones, two or more page-header actions share one full-width row.
+- **Home**
+  - A CSV-only store read "Upload today's your POS Retail export". It now
+    reads "Upload today's inventory file (CSV or XLSX)."
+  - Weekly Digest's Generate button is now secondary, so New order is the
+    only primary action on the page.
+- **Clover integration**: there is space between the Connect row and the
+  API token form.
+
+**Review tools**: `e2e/screens/screens.mjs` now covers Data & usage, Item
+vendors, Store settings, the Clover store, Masters, Platform settings and
+the store drawer. The new `e2e/screens/flows.mjs` covers the drawer's five
+sections, the Archive confirm, Item vendors Edit and Import, Export all data
+and Connect with Clover. `audit.mjs` (the AA contrast check) now covers the
+Clover pages and takes `AUDIT_ONLY`.
+
+**Results**
+
+| Check | Result |
+|---|---|
+| `screens.mjs` | 336 shots: 0 pages with sideways scroll at 375, 0 without a heading, 0 crashes, 0 page errors |
+| `flows.mjs` | 72 shots, 0 problems |
+| `audit.mjs` | 0 AA contrast failures and 0 overflows after the fixes (4 found before) |
+| Website node tests | 372 of 372 (one run had a single flaky failure that passed on re-run) |
+| `e2e/platform` mock / real server | 133 / 148 checks, 0 failed |
+| Help, glossary and name-guard backend tests | 53 passed (the app-bundle test is deselected, as in Integrate) |
+| `vite build` | Largest chunk 434.7 kB (limit 500). First load is about 133 + 59 kB gzip JS and 48 kB gzip CSS |
+
+**Left as is**
+- The main chunk includes the help content on purpose, so help works when
+  logged out with no request and no flash.
+- The legacy pages still have their "More" boxes and intro text above the
+  list (Reorder, Placed Orders, Home's upload card). Moving each one behind
+  ⓘ is page-by-page work and wasn't safe to do on ship night.
+- The "Left as is" list from the final pass still applies.
+- Connect with Clover stays visible but disabled until the Clover app is
+  set up, as the platform e2e expects.
+
+Screenshots (outside git): `~/storeops/screenshots/ready/final/`, and
+`final/flows/` for the flows.
