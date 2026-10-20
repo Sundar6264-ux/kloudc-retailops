@@ -64,6 +64,15 @@ PUBLIC = {
     # tests/test_help_content.py): the public pages' info and the support
     # contact from content/help - no store data.
     ("GET", "/api/public/help"),
+    # Website ready (docs/WEBSITE_READY_CONTRACT.md): the data export's
+    # Download link - the signed, expiring, single-current token in the URL is
+    # the only credential (tests/platform/test_data_ownership.py); Clover's
+    # OAuth return, which trusts only the sealed, store-bound, 10-minute,
+    # one-use state (tests/platform/test_clover_connect.py); and Clover
+    # webhooks, off by default (404) and checked with X-Clover-Auth.
+    ("GET", "/api/settings/exports/{export_id}/download"),
+    ("GET", "/api/settings/integrations/clover/callback"),
+    ("POST", "/api/settings/integrations/clover/webhook"),
 }
 # Any logged-in user, no feature grant (small lookups, own account/devices,
 # team hub basics - see the notes in each router).
