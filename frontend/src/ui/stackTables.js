@@ -28,10 +28,20 @@ export function cellLabels(labels, spans) {
   return out;
 }
 
+// A header cell's own words: its data-label / aria-label, else its text
+// without buttons (an ⓘ, a sort arrow) and hidden decorations.
+export function headerText(cell) {
+  const own = cell.getAttribute("data-label") ?? cell.getAttribute("aria-label");
+  if (own !== null && own !== undefined) return own;
+  const copy = cell.cloneNode(true);
+  copy.querySelectorAll?.(".term-info, .kc-info-btn, [aria-hidden='true'], svg").forEach((el) => el.remove());
+  return (copy.textContent || "").trim() || cell.textContent || "";
+}
+
 export function labelTable(table) {
   const headRow = table.tHead?.rows?.[table.tHead.rows.length - 1];
   if (!headRow) return;
-  const labels = columnLabels([...headRow.cells].map((c) => [c.getAttribute("aria-label") || c.textContent, c.colSpan]));
+  const labels = columnLabels([...headRow.cells].map((c) => [headerText(c), c.colSpan]));
   for (const body of table.tBodies) {
     for (const row of body.rows) {
       const cells = [...row.cells];
