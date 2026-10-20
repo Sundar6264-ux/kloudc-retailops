@@ -15,12 +15,18 @@ _FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
 _PLAIN_NUMBER = re.compile(r"[+-]?\d+(\.\d+)?([eE][+-]?\d+)?")
 
 
+def neutralize_formula(text: str) -> str:
+    """``text`` with a leading apostrophe when a spreadsheet would run it as
+    a formula (plain numbers such as "-3" are left alone)."""
+    if text.startswith(_FORMULA_START) and not _PLAIN_NUMBER.fullmatch(text):
+        return "'" + text
+    return text
+
+
 def csv_cell(val) -> str:
     """One CSV cell: None -> "", formula-looking text neutralized, quoted
     when it holds a comma, quote or line break."""
-    text = "" if val is None else str(val)
-    if text.startswith(_FORMULA_START) and not _PLAIN_NUMBER.fullmatch(text):
-        text = "'" + text
+    text = neutralize_formula("" if val is None else str(val))
     if "," in text or '"' in text or "\n" in text or "\r" in text:
         text = '"' + text.replace('"', '""') + '"'
     return text

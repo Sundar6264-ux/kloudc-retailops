@@ -39,6 +39,7 @@ from sqlalchemy.exc import IntegrityError
 from app.platform.audit import audit
 from app.platform.errors import PlatformError
 from app.platform.models import utcnow
+from app.services.csv_util import neutralize_formula
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,8 @@ _SECRET_COLUMN = re.compile(
     re.IGNORECASE,
 )
 # Key/value tables: a row whose key looks secret has its value columns blanked.
-_SECRET_KEY = re.compile(r"(password|secret|token|api_?key|credential|private_?key|webhook)", re.IGNORECASE)
+_SECRET_KEY = re.compile(r"(password|passwd|(^|_)pass$|secret|token|api_?key|credential|private_?key|webhook|hmac|"
+                         r"auth_code|(^|_)dsn$)", re.IGNORECASE)
 _VALUE_COLUMNS = ("value", "previous_value", "old_value", "new_value")
 
 STATUSES = ("queued", "running", "ready", "failed", "expired")
@@ -323,7 +325,11 @@ def _cell(v: Any) -> Any:
     if isinstance(v, decimal.Decimal):
         return str(v)
     if isinstance(v, (dict, list)):
-        return json.dumps(v, default=str)
+        return neutralize_formula(json.dumps(v, default=str))
+    if isinstance(v, str):
+        # Text people typed (vendor names, notes, chat) must not run as a
+        # formula when the owner opens the CSV in a spreadsheet.
+        return neutralize_formula(v)
     return v
 
 
@@ -419,9 +425,16 @@ def build_zip(code: str, dest_path: str) -> Dict[str, Any]:
 
         storage = get_storage()
         manifest_files: List[Dict[str, Any]] = []
+        from app.storage import StorageError, check_key
+
         for obj in storage.list("", code=store.code):
             if obj.key.startswith(EXPORT_PREFIX):
                 continue  # earlier exports are not part of the data
+            try:
+                check_key(obj.key)  # never a "../" path inside the ZIP (docs/SECURITY_REVIEW.md SR-09)
+            except StorageError:
+                logger.warning("export %s: storage key %r left out", store.code, obj.key)
+                continue
             path = f"files/{obj.key}"
             with storage.open(obj.key, code=store.code) as src, zf.open(path, "w", force_zip64=True) as raw:
                 hw = _HashingWriter(raw)
@@ -465,6 +478,8 @@ def build_zip(code: str, dest_path: str) -> Dict[str, Any]:
                 "columns": excluded_columns,
                 "why": "Passwords, sessions, sign-in and push tokens and saved credentials are never exported.",
             },
+            "formula_guard": "A text cell starting with = + - @ tab or carriage return (other than a plain "
+                             "number) has a leading apostrophe, so spreadsheets show it as text.",
             "totals": {"tables": len(manifest_tables), "rows": total_rows, "files": len(manifest_files)},
         }
         zf.writestr("manifest.json", json.dumps(manifest, indent=2, sort_keys=True))
@@ -472,6 +487,8 @@ def build_zip(code: str, dest_path: str) -> Dict[str, Any]:
             "README.txt",
             "Data export of store {code}.\n\n"
             "tables/  one CSV file per table (UTF-8, first row = column names)\n"
+            "         a text cell that starts with = + - @ (not a plain number) has a\n"
+            "         leading ' so a spreadsheet shows it as text instead of running it\n"
             "files/   every file the store keeps (invoices, flyers, team media, ...)\n"
             "store.json     store profile and settings (no secrets)\n"
             "manifest.json  row counts and a SHA-256 checksum of every file\n".format(code=store.code),

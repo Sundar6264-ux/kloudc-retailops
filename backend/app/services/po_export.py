@@ -118,7 +118,9 @@ def export_simple_po_pdf(
     brand_block += [Paragraph(xml_escape(line), brand_detail_style) for line in (store_address, store_phone) if line]
     doc_block = [
         Paragraph("PURCHASE ORDER", title_style_right),
-        Paragraph(f"Supplier: <b>{supplier}</b>", subtitle_style_right),
+        # Escaped: a vendor name is text, never reportlab markup such as <img src=...>
+        # (which would read a file from this server; docs/SECURITY_REVIEW.md SR-10).
+        Paragraph(f"Supplier: <b>{xml_escape(str(supplier or ''))}</b>", subtitle_style_right),
         Paragraph(f"Prepared: {restaurant_today().isoformat()}", subtitle_style_right),
     ]
     icon_path = _icon_file()

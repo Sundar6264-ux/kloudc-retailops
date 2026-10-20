@@ -51,6 +51,9 @@ router = APIRouter(prefix="/api/platform", tags=["platform"])
 store_router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 
+STORE_EXPORT_ERROR = "The export could not be finished. Try again, or ask support if it fails again."
+
+
 def _usage_body(code: str) -> Dict[str, Any]:
     snap = usage.snapshot(code)
     return {"store_code": code, **snap, "plan": plans.plan_view(code, metrics=snap["metrics"])}
@@ -223,6 +226,10 @@ def own_exports(user: User = Depends(require_admin)):
     for row in rows:  # a store sees its own people; masters and jobs are "KloudC"
         if not str(row.get("requested_by") or "").startswith(f"store:{code}:"):
             row["requested_by"] = "KloudC"
+        if row.get("error"):
+            # The raw error can name servers, database users or file paths
+            # (docs/SECURITY_REVIEW.md SR-05): masters see it, the store does not.
+            row["error"] = STORE_EXPORT_ERROR
     return {"available": True, "store_code": code, "exports": rows,
             "link_hours": export.link_hours(), "keep_days": export.KEEP_DAYS}
 
