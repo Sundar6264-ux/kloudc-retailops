@@ -213,3 +213,4 @@ app/platform/platform_settings.py:_cache  # platform-wide console values (never 
 app/platform/platform_settings.py:_cache_lock  # guards _cache
 app/platform/routes_console.py:NO_STORE  # constant table (response headers)
 app/platform/routes_console.py:_EMPTY_DB  # constant template (copied per request)
+app/help_content.py:POS_LABELS  # constant table (POS id -> the name a 'Toast only' label shows)
