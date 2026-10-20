@@ -35,6 +35,7 @@
   "Area": {"anyOf": [{"type": "null"}, {"type": "string", "enum": ["home", "ordering", "stock", "sales", "team", "setup", "platform", "help"]}]},
   "Audience": {"type": "array", "minItems": 1, "items": {"type": "string", "enum": ["owner", "admin", "staff", "master"]}},
   "Text": {"type": "string", "minLength": 1},
+  "Pos": {"type": "array", "minItems": 1, "items": {"type": "string", "enum": ["toast", "clover", "csv"]}, "description": "Only for stores on these POS (website ready A8): other stores never see it; masters and signed-out readers see it labelled with the POS."},
   "Info": {
    "type": "object",
    "required": ["summary", "points"],
@@ -51,6 +52,7 @@
    "required": ["title", "summary"],
    "additionalProperties": false,
    "properties": {
+    "pos": {"$ref": "#/$defs/Pos"},
     "title": {"type": "string", "minLength": 1},
     "summary": {"type": "string", "minLength": 1, "maxLength": 200},
     "points": {"type": "array", "maxItems": 5, "items": {"type": "string", "minLength": 1, "maxLength": 160}}
@@ -61,6 +63,7 @@
    "required": ["id", "title", "area", "audience", "web", "app", "gating", "public", "info", "sections", "terms", "article", "new_until"],
    "additionalProperties": false,
    "properties": {
+    "pos": {"$ref": "#/$defs/Pos"},
     "id": {"$ref": "#/$defs/Id"},
     "title": {"type": "string", "minLength": 1},
     "subtitle": {"type": "string"},
@@ -91,6 +94,7 @@
    "required": ["type"],
    "additionalProperties": false,
    "properties": {
+    "pos": {"$ref": "#/$defs/Pos"},
     "type": {"type": "string", "enum": ["h", "p", "steps", "bullets", "tip", "note", "warning", "example"]},
     "id": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
     "text": {"type": "string", "minLength": 1},
@@ -103,6 +107,7 @@
    "required": ["id", "title", "area", "group", "audience", "summary", "pages", "related", "blocks"],
    "additionalProperties": false,
    "properties": {
+    "pos": {"$ref": "#/$defs/Pos"},
     "id": {"$ref": "#/$defs/ArticleId"},
     "title": {"type": "string", "minLength": 1},
     "area": {"$ref": "#/$defs/Area"},
@@ -145,6 +150,7 @@
    "required": ["id", "q", "a", "area", "audience", "pages"],
    "additionalProperties": false,
    "properties": {
+    "pos": {"$ref": "#/$defs/Pos"},
     "id": {"$ref": "#/$defs/ArticleId"},
     "q": {"type": "string", "minLength": 1},
     "a": {"$ref": "#/$defs/Blocks"},
@@ -158,6 +164,7 @@
    "required": ["id", "symptom", "causes", "fixes", "area", "audience", "pages"],
    "additionalProperties": false,
    "properties": {
+    "pos": {"$ref": "#/$defs/Pos"},
     "id": {"$ref": "#/$defs/ArticleId"},
     "symptom": {"type": "string", "minLength": 1},
     "causes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
@@ -172,6 +179,7 @@
    "required": ["key", "label", "category", "area", "definition", "aliases", "where", "pages", "related"],
    "additionalProperties": false,
    "properties": {
+    "pos": {"$ref": "#/$defs/Pos"},
     "key": {"type": "string", "pattern": "^concept_[a-z0-9_]+$"},
     "label": {"type": "string", "minLength": 1},
     "category": {"type": "string", "pattern": "^concept_[a-z_]+$"},

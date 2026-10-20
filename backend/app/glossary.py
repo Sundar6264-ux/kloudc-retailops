@@ -2504,12 +2504,13 @@ _TEXT_FIELDS = ("label", "definition", "rule", "where")
 
 def _store_words() -> dict:
     from app.config import get_settings
-    from app.pos.gating import pos_name
+    from app.help_content import pos_word
 
     s = get_settings()
     tz = getattr(s, "store_timezone", "") or getattr(s, "toast_timezone", "") or "America/New_York"
     city = tz.rsplit("/", 1)[-1].replace("_", " ")
-    return {"{pos}": pos_name() or "the POS", "{store_city}": city}
+    # A CSV-only store reads "your POS", never "CSV upload" (website ready A7).
+    return {"{pos}": pos_word(), "{store_city}": city}
 
 
 def _fill(text, words: dict):
@@ -2623,7 +2624,10 @@ def _concepts():
     from app import help_content
 
     terms = []
+    pos = help_content.store_pos()
     for t in help_content.concept_terms():
+        if isinstance(t.get("pos"), list) and pos is not None and pos not in t["pos"]:
+            continue  # a term about another POS (website ready A8)
         terms.append(
             {
                 "key": t["key"],
