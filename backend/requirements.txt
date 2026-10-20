@@ -33,3 +33,6 @@ firebase-admin==6.8.0
 # (brew install tesseract); without it pages are still normalized.
 pypdf==5.1.0
 pytesseract==0.3.13
+# Object storage on S3 / Cloudflare R2 (app/storage/s3.py, website-ready C1).
+# Imported only when STORAGE_BACKEND=s3.
+boto3==1.35.99
