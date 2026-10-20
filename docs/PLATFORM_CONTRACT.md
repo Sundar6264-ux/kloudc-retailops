@@ -3955,7 +3955,7 @@ installed in `backend/.venv`:
 | GitHub CI on `52d7892` | green, run 39375737125 |
 
 **Pilot.** `deploy/pilot-mac/run-backup.sh backup` ran at 02:02 (platform +
-`SPICETOWN`, both OK, 66 MB). `update.sh main` was then refused by the
+the pilot store, both OK, 66 MB). `update.sh main` was then refused by the
 session's permission policy as a production deploy, so the pilot stays on
 `9595a49`, unchanged and ready (`active_stores` 1, error log unchanged). The
 parity command was not run (the pilot did not change; the 07:30 job runs it).
