@@ -110,7 +110,7 @@ with a fixture in `backend/tests/fixtures/clover/`.
 
 - Clover webhooks (they carry ids only and need an installed app; scheduled
   pulls stay the main path).
-- Partial refunds by line (a partly refunded order keeps its lines as sold).
+- Amount-only refunds (a partial refund that names no line): lines stay as sold; a line Clover marks `refunded` is voided.
 - One Clover rate budget shared by several server processes (today: per
   process).
 - Clover App Market billing.
