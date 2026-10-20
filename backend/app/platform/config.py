@@ -73,6 +73,10 @@ DEFAULTS: Dict[str, Any] = {
     "clover_merchant_id": "",
     "clover_api_token": "",
     "clover_region": "us",  # "us" | "eu" | "la" | "sandbox"
+    # Clover webhooks (D6): off by default; the auth code Clover shows once
+    # the webhook URL is verified. Never returned by an API.
+    "clover_webhooks_enabled": False,
+    "clover_webhook_auth": "",
 }
 
 _TRUE = {"1", "true", "yes", "on"}

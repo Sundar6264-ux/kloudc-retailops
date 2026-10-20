@@ -106,10 +106,23 @@ with a fixture in `backend/tests/fixtures/clover/`.
   **Setup › Item vendors** by hand or with **Import CSV** (template on the
   page).
 
-## 5. Not built yet (deferred)
+## 5. Optional: webhooks (faster updates, needs the Clover app)
 
-- Clover webhooks (they carry ids only and need an installed app; scheduled
-  pulls stay the main path).
+Webhooks only make syncs sooner; the nightly pulls stay the main path. They
+reach only stores connected with **Connect with Clover** (an installed app).
+
+1. Set `CLOVER_WEBHOOKS_ENABLED=true` and restart.
+2. In the Clover app's Webhooks settings, enter
+   `https://app.kloudc.com/api/settings/integrations/clover/webhook`, tick
+   **Orders** and **Inventory**, and choose **Send verification code**.
+3. The server log shows `Clover webhook verification code ...`; paste the
+   code into Clover and verify.
+4. Clover then shows the **auth code**: set `CLOVER_WEBHOOK_AUTH=<code>` and
+   restart. From then on an order change re-syncs that store's day (at most
+   once a minute) and an item change refreshes its catalog.
+
+## 6. Not built yet (deferred)
+
 - Amount-only refunds (a partial refund that names no line): lines stay as sold; a line Clover marks `refunded` is voided.
 - One Clover rate budget shared by several server processes (today: per
   process).

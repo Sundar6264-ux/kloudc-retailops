@@ -217,3 +217,5 @@ app/pos/adapters/clover/auth.py:_used_lock  # guards _used_nonces
 app/pos/adapters/clover/auth.py:_used_nonces  # one-time OAuth state nonces; each sealed state already names its store, entries expire after 10 minutes
 app/pos/adapters/clover/auth.py:_refresh_locks_guard  # guards _refresh_locks
 app/pos/adapters/clover/auth.py:_refresh_locks  # one OAuth refresh at a time per store, keyed by store code
+app/pos/adapters/clover/webhooks.py:_last_lock  # guards _last_run
+app/pos/adapters/clover/webhooks.py:_last_run  # webhook sync debounce, keyed by (store code, what) - per store by key

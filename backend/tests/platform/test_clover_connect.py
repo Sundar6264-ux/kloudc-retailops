@@ -256,3 +256,49 @@ def test_staff_and_anonymous_are_refused(client, store_admin):
         assert c.get("/api/settings/integrations/clover/authorize-url").status_code == code
         assert c.post("/api/settings/integrations/clover/manual", json={}).status_code == code
         assert c.post("/api/settings/integrations/clover/disconnect").status_code == code
+
+
+# --- Webhooks (D6) ---------------------------------------------------------------------
+
+
+@pytest.fixture
+def webhook_on(monkeypatch):
+    from app.pos.adapters.clover import webhooks
+
+    monkeypatch.setenv("CLOVER_WEBHOOKS_ENABLED", "true")
+    monkeypatch.setenv("CLOVER_WEBHOOK_AUTH", "hook-auth-GGGG7777")
+    webhooks.reset()
+    queued = []
+    monkeypatch.setattr(webhooks, "enqueue", lambda kind, payload, code=None, dedupe_key=None: queued.append((kind, payload, code)))
+    return queued
+
+
+def _note(mid="TESTMERCH0001", objs=("O:ORD1",)):
+    return {"appId": "APPID123", "merchants": {mid: [{"objectId": o, "type": "UPDATE", "ts": 1} for o in objs]}}
+
+
+def test_webhook_off_by_default(client, monkeypatch):
+    monkeypatch.delenv("CLOVER_WEBHOOKS_ENABLED", raising=False)
+    assert client.post("/api/settings/integrations/clover/webhook", json=_note()).status_code == 404
+
+
+def test_webhook_verification_auth_and_routing(client, webhook_on, caplog):
+    provision("ALPHA")
+    _connect_oauth(expires_in=1200)
+    url = "/api/settings/integrations/clover/webhook"
+    with caplog.at_level("WARNING"):
+        v = client.post(url, json={"verificationCode": "abc123"})
+    assert v.status_code == 200 and "abc123" in caplog.text
+    assert client.post(url, json=_note()).status_code == 401
+    assert client.post(url, json=_note(), headers={"X-Clover-Auth": "wrong"}).status_code == 401
+    r = client.post(url, json=_note(objs=("O:ORD1", "I:ITEM1", "E:EMP1")), headers={"X-Clover-Auth": "hook-auth-GGGG7777"})
+    assert r.status_code == 200 and r.json()["queued"] == 2
+    assert sorted((k, p["what"], c) for k, p, c in webhook_on) == [
+        ("clover_webhook_sync", "items", "ALPHA"), ("clover_webhook_sync", "orders", "ALPHA")]
+    # Debounced: the same change again within a minute queues nothing.
+    again = client.post(url, json=_note(), headers={"X-Clover-Auth": "hook-auth-GGGG7777"})
+    assert again.json()["queued"] == 0
+    # An unknown merchant queues nothing and reveals nothing.
+    other = client.post(url, json=_note(mid="OTHERMERCH99"), headers={"X-Clover-Auth": "hook-auth-GGGG7777"})
+    assert other.status_code == 200 and other.json()["queued"] == 0
+    assert client.post(url, content=b"not json", headers={"X-Clover-Auth": "hook-auth-GGGG7777"}).status_code == 400

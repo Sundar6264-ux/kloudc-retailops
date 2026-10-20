@@ -37,6 +37,7 @@ from app.models import User
 from app.platform import credentials as creds
 from app.platform.audit import audit
 from app.platform.errors import PlatformError
+from app.pos.adapters.clover import webhooks as _webhooks  # noqa: F401 - registers the clover_webhook_sync job
 
 router = APIRouter(prefix="/api/settings/integrations/clover", tags=["settings"])
 
@@ -255,3 +256,40 @@ def clover_disconnect(request: Request, user: User = Depends(require_admin)):
               target="clover", details={"mode": public.get("mode"), "merchant_id": public.get("merchant_id")},
               client_ip=r._ip(request))
     return {**_status_dict(code), "disconnected": deleted}
+
+
+# --- Webhooks (D6, off by default) -------------------------------------------
+
+
+@router.post("/webhook")
+async def clover_webhook(request: Request):
+    """Clover's webhook. 404 unless CLOVER_WEBHOOKS_ENABLED; the one-time
+    verification POST is logged for the owner; every other POST needs the
+    X-Clover-Auth code. Never says which stores exist."""
+    import hmac
+    import json
+    import logging
+
+    from app.pos.adapters.clover import webhooks
+
+    if not webhooks.enabled():
+        raise PlatformError(404, "not_found")
+    raw = await request.body()
+    if len(raw) > 256 * 1024:
+        raise PlatformError(413, "too_large")
+    try:
+        payload = json.loads(raw or b"{}")
+    except ValueError:
+        raise PlatformError(400, "invalid") from None
+    if isinstance(payload, dict) and payload.get("verificationCode") and not payload.get("merchants"):
+        code = str(payload.get("verificationCode"))[:64]
+        logging.getLogger(__name__).warning("Clover webhook verification code (paste it into the Clover app): %s", code)
+        return {"ok": True}
+    expected = webhooks.auth_code()
+    given = request.headers.get("x-clover-auth") or ""
+    if not expected or not hmac.compare_digest(given.encode(), expected.encode()):
+        raise PlatformError(401, "unauthorized")
+    from starlette.concurrency import run_in_threadpool
+
+    result = await run_in_threadpool(webhooks.handle, payload if isinstance(payload, dict) else {})
+    return {"ok": True, "queued": len(result["queued"])}
