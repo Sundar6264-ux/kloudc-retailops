@@ -19,6 +19,8 @@ import {
   signupStatusChip,
   storeActions,
   storeStatusChip,
+  usageByStore,
+  usageChip,
 } from "./platformModel.js";
 
 test("tabs: Requests, Stores, Hosting, Audit, Masters, Platform settings, Help; the last one is remembered", () => {
@@ -123,4 +125,14 @@ test("errors: the dedicated flag, 403, network", () => {
   assert.equal(platformErrorMessage(err(400, { error: "bad", message: "Code taken." })), "Code taken.");
   assert.match(platformErrorMessage(new TypeError("x")), /Can't reach/);
   assert.ok(!isHostingDisabled(err(400, {})));
+});
+
+test("usage flag on the Stores list: near and over only", () => {
+  assert.deepEqual(usageChip({ state: "over" }), { label: "Over the limit", tone: "bad" });
+  assert.equal(usageChip({ state: "near" }).tone, "warn");
+  assert.equal(usageChip({ state: "ok" }), null);
+  assert.equal(usageChip(undefined), null);
+  const map = usageByStore([{ store_code: "A1", state: "over" }, null, { state: "near" }]);
+  assert.deepEqual(Object.keys(map), ["A1"]);
+  assert.deepEqual(usageByStore(null), {});
 });

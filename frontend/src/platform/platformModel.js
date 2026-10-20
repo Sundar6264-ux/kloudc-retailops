@@ -68,6 +68,21 @@ export const storeStatusChip = (s) => chip(STORE_STATUS, s);
 export const signupStatusChip = (s) => chip(SIGNUP_STATUS, s);
 export const hostingStatusChip = (s) => chip(HOSTING_STATUS, s);
 
+// Stores list: the plan-limit flag from GET /api/platform/usage/summary
+// (website ready B2). Only "near" and "over" show; a limit never blocks work.
+const USAGE_STATE = {
+  near: { label: "Near the limit", tone: "warn" },
+  over: { label: "Over the limit", tone: "bad" },
+};
+export function usageChip(row) {
+  return (row && USAGE_STATE[row.state]) || null;
+}
+export function usageByStore(rows) {
+  const out = {};
+  for (const r of Array.isArray(rows) ? rows : []) if (r && r.store_code) out[r.store_code] = r;
+  return out;
+}
+
 export const STORE_STATUS_FILTERS = ["", ...Object.keys(STORE_STATUS)];
 export const SIGNUP_STATUS_FILTERS = ["pending", "approved", "rejected", ""];
 

@@ -46,7 +46,10 @@ import {
   storeActions,
   storeStatusChip,
   totpSetupNeeded,
+  usageByStore,
+  usageChip,
 } from "../platform/platformModel.js";
+import { usageSummary } from "../clients/data.js";
 import { cleanTotp } from "../login/loginModel.js";
 import MastersTab from "../platform/MastersTab.jsx";
 import PasswordChangePanel from "../platform/PasswordChangePanel.jsx";
@@ -631,6 +634,17 @@ function StoresTab({ status, search }) {
   const [message, setMessage] = useState(null);
   const [detail, setDetail] = useState(null);
   const closeDetail = useCallback(() => setDetail(null), []);
+  // Plan-limit flags (near / over); best effort: the list works without them.
+  const [usage, setUsage] = useState({});
+  useEffect(() => {
+    let live = true;
+    usageSummary()
+      .then((r) => live && setUsage(usageByStore(r)))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [rows]);
   const shown = (rows || []).filter((r) => matchesSearch(r, search, STORE_SEARCH_FIELDS));
   return (
     <div>
@@ -646,6 +660,7 @@ function StoresTab({ status, search }) {
             <StoreRow
               key={s.code}
               store={s}
+              usage={usage[s.code]}
               onOpen={() => setDetail(s)}
               onDone={async (text, tone = "ok") => {
                 setMessage({ text, tone });
@@ -677,7 +692,7 @@ function StoresTab({ status, search }) {
   );
 }
 
-function StoreRow({ store, onDone, onOpen }) {
+function StoreRow({ store, usage, onDone, onOpen }) {
   const [mode, setMode] = useState(null); // suspend | archive | settings | hosting
   const [text, setText] = useState("");
   const [extra, setExtra] = useState("");
@@ -717,6 +732,11 @@ function StoreRow({ store, onDone, onOpen }) {
         <span className="pf-code">{store.code}</span>
         <Chip chip={storeStatusChip(store.status)} />
         {store.hosting === "dedicated" && <span className="pf-chip tone-info">Own server</span>}
+        {usageChip(usage) && (
+          <span title={usage.plan_label ? `Plan: ${usage.plan_label}` : undefined} data-testid={`store-usage-${store.code}`}>
+            <Chip chip={usageChip(usage)} />
+          </span>
+        )}
         {onOpen && (
           <button type="button" className="btn-secondary pf-row-open" onClick={onOpen} data-testid={`store-details-${store.code}`} style={{ marginLeft: "auto" }}>
             Details
