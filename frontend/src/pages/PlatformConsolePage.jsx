@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../AuthContext.jsx";
 import {
   approveSignup,
@@ -48,6 +48,11 @@ import {
   totpSetupNeeded,
 } from "../platform/platformModel.js";
 import { cleanTotp } from "../login/loginModel.js";
+import MastersTab from "../platform/MastersTab.jsx";
+import PasswordChangePanel from "../platform/PasswordChangePanel.jsx";
+import PlatformSettingsTab from "../platform/PlatformSettingsTab.jsx";
+import StoreDetail from "../platform/StoreDetail.jsx";
+import "../platform/console.css";
 import { timezoneOptions } from "../signup/signupModel.js";
 import "../platform/platform.css";
 import AreaChip from "../ui/AreaChip.jsx";
@@ -99,7 +104,7 @@ export default function PlatformConsolePage() {
   const [showTotp, setShowTotp] = useState(false);
   const [theme, setTheme] = useTheme();
 
-  useEffect(() => {
+  const loadConfig = useCallback(() => {
     let live = true;
     getPlatformConfig()
       .then((c) => {
@@ -112,6 +117,9 @@ export default function PlatformConsolePage() {
       live = false;
     };
   }, []);
+  useEffect(() => loadConfig(), [loadConfig]);
+  // A master added with a temporary password chooses their own first (A2).
+  const mustChangePassword = !!(config?.user?.must_change_password ?? user?.must_change_password);
 
   function choose(key) {
     setTab(key);
@@ -122,7 +130,7 @@ export default function PlatformConsolePage() {
     tab === "requests" ? SIGNUP_STATUS_FILTERS : tab === "stores" ? STORE_STATUS_FILTERS : tab === "hosting" ? ["", "requested", "approved", "migrating", "done", "rejected", "rolled_back"] : null;
 
   const current = PLATFORM_TABS.find((t) => t.key === tab) || PLATFORM_TABS[0];
-  const listTab = tab !== "help";
+  const listTab = tab !== "help" && tab !== "settings";
 
   return (
     <div className="pf-shell" data-area="platform">
@@ -216,6 +224,10 @@ export default function PlatformConsolePage() {
       </header>
 
       <div className="pf-body">
+        {mustChangePassword ? (
+          <PasswordChangePanel onChanged={loadConfig} />
+        ) : (
+        <>
         <div className="pf-head">
           {showTotp && (
             <TotpPanel
@@ -281,7 +293,7 @@ export default function PlatformConsolePage() {
                     </option>
                   ))}
                 </select>
-              ) : (
+              ) : tab === "audit" ? (
                 <input
                   type="text"
                   aria-label="Action"
@@ -290,7 +302,7 @@ export default function PlatformConsolePage() {
                   value={filter.audit}
                   onChange={(e) => setFilter((f) => ({ ...f, audit: e.target.value }))}
                 />
-              )}
+              ) : null}
               <button
                 type="button"
                 className="kc-icon-btn pf-icon"
@@ -319,6 +331,13 @@ export default function PlatformConsolePage() {
             <p>
               <strong>Audit</strong>: everything done on the platform, newest first.
             </p>
+            <p>
+              <strong>Masters</strong>: everyone who can sign in here. A new master gets a temporary password and
+              chooses their own at first sign-in.
+            </p>
+            <p>
+              Open a store's <strong>Details</strong> for its health, usage, settings, data and audit in one place.
+            </p>
           </div>
         )}
       </div>
@@ -327,7 +346,15 @@ export default function PlatformConsolePage() {
       {tab === "stores" && <StoresTab status={filter.stores} search={search} />}
       {tab === "hosting" && <HostingTab status={filter.hosting} search={search} />}
       {tab === "audit" && <AuditTab store={filter.auditStore || ""} action={filter.audit} />}
-      {tab === "help" && <MasterHelp />}
+      {tab === "masters" && <MastersTab search={search} />}
+      {tab === "settings" && <PlatformSettingsTab />}
+      {tab === "help" && (
+        <Suspense fallback={<p className="muted">Loading…</p>}>
+          <MasterHelp />
+        </Suspense>
+      )}
+        </>
+        )}
       </div>
     </div>
   );
@@ -602,6 +629,8 @@ function SignupRow({ req, packs, zones, onDone }) {
 function StoresTab({ status, search }) {
   const { rows, error, reload } = useList(async () => asList(await listPlatformStores(status), "stores"), [status]);
   const [message, setMessage] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const closeDetail = useCallback(() => setDetail(null), []);
   const shown = (rows || []).filter((r) => matchesSearch(r, search, STORE_SEARCH_FIELDS));
   return (
     <div>
@@ -617,6 +646,7 @@ function StoresTab({ status, search }) {
             <StoreRow
               key={s.code}
               store={s}
+              onOpen={() => setDetail(s)}
               onDone={async (text, tone = "ok") => {
                 setMessage({ text, tone });
                 await reload();
@@ -625,11 +655,29 @@ function StoresTab({ status, search }) {
           ))}
         </div>
       )}
+      {detail && (
+        <StoreDetail
+          store={detail}
+          onClose={closeDetail}
+          onChanged={reload}
+          renderSettings={(st) => (
+            <StoreSettingsForm
+              code={st.code}
+              onSaved={async () => {
+                setMessage({ text: `Settings of ${st.code} saved.`, tone: "ok" });
+                await reload();
+              }}
+              onCancel={closeDetail}
+            />
+          )}
+          renderAudit={(st) => <AuditTab store={st.code} action="" />}
+        />
+      )}
     </div>
   );
 }
 
-function StoreRow({ store, onDone }) {
+function StoreRow({ store, onDone, onOpen }) {
   const [mode, setMode] = useState(null); // suspend | archive | settings | hosting
   const [text, setText] = useState("");
   const [extra, setExtra] = useState("");
@@ -669,6 +717,11 @@ function StoreRow({ store, onDone }) {
         <span className="pf-code">{store.code}</span>
         <Chip chip={storeStatusChip(store.status)} />
         {store.hosting === "dedicated" && <span className="pf-chip tone-info">Own server</span>}
+        {onOpen && (
+          <button type="button" className="btn-secondary pf-row-open" onClick={onOpen} data-testid={`store-details-${store.code}`} style={{ marginLeft: "auto" }}>
+            Details
+          </button>
+        )}
       </div>
       <div className="pf-row-meta">
         {[
