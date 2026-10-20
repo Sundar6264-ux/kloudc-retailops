@@ -172,7 +172,11 @@ def test_help_for_a_signed_in_user(staff_client, raw):
     body = r.json()
     assert body["version"] == raw["manifest"]["version"]
     assert {p["id"] for p in body["pages"]} == {p["id"] for p in raw["pages"]}
-    assert len(body["articles"]) == len(raw["articles"])
+    # An article for another POS ("pos": [...], website ready A8) is left out.
+    pos = hc.store_pos()
+    shown = [a for a in raw["articles"] if not (a.get("pos") and pos is not None and pos not in a["pos"])]
+    assert pos is None or len(shown) < len(raw["articles"]), "expected a POS-only article to be hidden"
+    assert len(body["articles"]) == len(shown)
     assert set(body["getting_started"]) == {"owner", "staff", "master"}
     text = json.dumps(body)
     for ph in hc.ALLOWED_PLACEHOLDERS:
