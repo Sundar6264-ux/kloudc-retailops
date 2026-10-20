@@ -152,7 +152,9 @@ function AddMasterForm({ needCode = false, onDone, onClose }) {
         <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" autoFocus required aria-invalid={!!error} aria-describedby={error ? "add-master-error" : undefined} />
       </label>
       <label>
-        Name <span className="muted">(optional)</span>
+        <span>
+          Name <span className="muted">(optional)</span>
+        </span>
         <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} autoComplete="off" />
       </label>
       {needCode && <StepUpCode value={code} onChange={setCode} />}
