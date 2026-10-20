@@ -208,3 +208,12 @@ app/ops/pilot.py:_blocked  # counts of sends blocked by pilot mode, keyed "<STOR
 app/ops/pilot.py:_lock  # guards _blocked
 app/jobqueue/__init__.py:_HANDLERS  # job kind -> handler, filled once at import by @register (code, the same for every store)
 app/jobqueue/__init__.py:_PERIODIC  # job kind -> daily schedule, filled once at import by register_periodic (code, the same for every store)
+app/pos/adapters/clover/client.py:API_HOSTS  # constant table (never changed at run time)
+app/pos/adapters/clover/client.py:WEB_HOSTS  # constant table (never changed at run time)
+app/pos/adapters/clover/client.py:_limiters_lock  # guards the two limiter maps below
+app/pos/adapters/clover/client.py:_token_limiters  # Clover's rate limit is per token (16/s, 5 concurrent): one limiter per token hash, shared by every store in the process on purpose
+app/pos/adapters/clover/client.py:_app_limiter  # Clover's per-app limit (50/s, 10 concurrent) covers every store: one per process (cross-process budget deferred, contract 1 "Not in this job")
+app/pos/adapters/clover/auth.py:_used_lock  # guards _used_nonces
+app/pos/adapters/clover/auth.py:_used_nonces  # one-time OAuth state nonces; each sealed state already names its store, entries expire after 10 minutes
+app/pos/adapters/clover/auth.py:_refresh_locks_guard  # guards _refresh_locks
+app/pos/adapters/clover/auth.py:_refresh_locks  # one OAuth refresh at a time per store, keyed by store code

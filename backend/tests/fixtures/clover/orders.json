@@ -1,0 +1,28 @@
+{"elements": [
+  {"id": "ORD1", "state": "locked", "paymentState": "PAID", "total": 4061, "title": "12",
+   "createdTime": 1760427000000, "modifiedTime": 1760427300000,
+   "orderType": {"id": "OT1", "label": "Dine In"},
+   "employee": {"id": "EMP1"},
+   "payments": {"elements": [{"id": "PAY1", "amount": 4061, "createdTime": 1760427200000, "result": "SUCCESS"}]},
+   "lineItems": {"elements": [
+     {"id": "L1", "name": "Basmati Rice 10 lb", "price": 1899, "item": {"id": "ITEM_RICE"},
+      "taxRates": {"elements": [{"id": "T1", "name": "Sales tax", "rate": 635000}]},
+      "modifications": {"elements": [{"id": "M1", "name": "Gift wrap", "amount": 100, "modifier": {"id": "MOD1"}}]}},
+     {"id": "L2", "name": "Basmati Rice 10 lb", "price": 1899, "item": {"id": "ITEM_RICE"},
+      "discounts": {"elements": [{"id": "D1", "name": "10% off", "percentage": 10}]}},
+     {"id": "L3", "name": "Red Onions", "price": 149, "unitQty": 2500, "item": {"id": "ITEM_ONION"}}
+   ]}},
+  {"id": "ORD2", "state": "locked", "paymentState": "REFUNDED", "total": 1899,
+   "createdTime": 1760457900000, "modifiedTime": 1760460000000,
+   "orderType": {"id": "OT2", "label": "Pick Up"},
+   "refunds": {"elements": [{"id": "R1", "amount": 1899}]},
+   "lineItems": {"elements": [
+     {"id": "L4", "name": "Basmati Rice 10 lb", "price": 1899, "item": {"id": "ITEM_RICE"}, "refunded": true}
+   ]}},
+  {"id": "ORD3", "state": "open", "total": 499, "title": "Tab: Sam",
+   "createdTime": 1760459000000, "modifiedTime": 1760459000000,
+   "lineItems": {"elements": [
+     {"id": "L5", "name": "Chai", "price": 499, "item": {"id": "ITEM_TEA"},
+      "discounts": {"elements": [{"id": "D2", "name": "$1 off", "amount": -100}]}}
+   ]}}
+]}

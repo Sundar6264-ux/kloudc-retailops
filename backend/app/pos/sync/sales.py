@@ -190,6 +190,16 @@ def fetch_orders(
     return registry.get_connector().fetch_orders(business_date, max_retries=max_retries, sleep=sleep)
 
 
+def _meter_orders(lines: int) -> None:
+    """Usage metering (website-ready I3): order lines written. Never raises."""
+    try:
+        from app.platform import usage
+
+        usage.record(usage.ORDERS_SYNCED, int(lines or 0))
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def sync_sales_for_date(db: Session, business_date: dt.date, prune: bool = True) -> JobRun:
     job = JobRun(job_name=JOB_NAME, status="running", business_date=business_date)
     db.add(job)
@@ -205,6 +215,7 @@ def sync_sales_for_date(db: Session, business_date: dt.date, prune: bool = True)
         synced = _upsert_line_items(db, business_date, line_items, neutral_items)
         removed = _prune_missing(db, business_date, line_items, len(orders)) if prune else 0
         db.commit()
+        _meter_orders(synced)
 
         job.status = "success"
         job.detail = f"{synced} line items synced from {len(orders)} orders"

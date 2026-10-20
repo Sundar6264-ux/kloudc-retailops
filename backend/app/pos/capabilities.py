@@ -59,12 +59,21 @@ TOAST_CAPABILITIES: FrozenSet[Capability] = frozenset(
     }
 )
 
-# Clover (multi-store plan 4.5, Clover column; M2 contract section 7). There is
-# no Clover adapter until M3: this set is the fallback entry in
-# app.pos.gating.PROVIDERS, so a Clover store already hides every page and job
-# its POS can't support. Items the plan marks unverified are left out.
+# Clover (multi-store plan 4.5, Clover column), corrected for the adapter
+# (website-ready track D2, app/pos/adapters/clover):
+# - ORDERS_BY_BUSINESS_DATE: Clover has no business date, but the adapter
+#   derives it (merchant time zone + the store's cutoff hour) and answers
+#   fetch_orders(day) with the orders created in that window, so the nightly
+#   sales sync runs unchanged.
+# - Left out: CATALOG_CHANGE_STAMP (no cheap stamp - the nightly snapshot
+#   pulls the full catalog), DAY_TOTALS / ANALYTICS_REPORTS /
+#   CARD_FINGERPRINTS (no reporting API), RECEIVING_RECORDS, ITEM_VENDORS
+#   (vendors come from the Item vendors editor), CSV_CATALOG_IMPORT (the
+#   column map is unverified) and MODIFIER_PRICE_IN_PARENT (Clover's line
+#   price excludes modifiers: each modifier is its own priced row).
 CLOVER_CAPABILITIES: FrozenSet[Capability] = frozenset(
     {
+        Capability.ORDERS_BY_BUSINESS_DATE,
         Capability.ORDERS_INCREMENTAL,
         Capability.OPEN_ORDERS,
         Capability.LIVE_TODAY_SALES,

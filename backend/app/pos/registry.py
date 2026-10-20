@@ -24,15 +24,21 @@ def _toast() -> PosConnector:
     return ToastConnector()
 
 
+def _clover() -> PosConnector:
+    from app.pos.adapters.clover.connector import CloverConnector
+
+    return CloverConnector()
+
+
 def _csv() -> PosConnector:
     from app.pos.adapters.csv_only.connector import CsvOnlyConnector
 
     return CsvOnlyConnector()
 
 
-# provider name -> factory. Adapters register here (Clover arrives in M3;
-# "csv" = the CSV-only connector, M2 batch MT13).
-PROVIDERS: Dict[str, Callable[[], PosConnector]] = {"toast": _toast, "csv": _csv}
+# provider name -> factory. Adapters register here ("csv" = the CSV-only
+# connector, M2 batch MT13; "clover" = website-ready track D).
+PROVIDERS: Dict[str, Callable[[], PosConnector]] = {"toast": _toast, "clover": _clover, "csv": _csv}
 
 _cache: Dict[Tuple[Optional[str], str], PosConnector] = {}
 _lock = threading.Lock()  # global: guards the map (whose keys carry the store)

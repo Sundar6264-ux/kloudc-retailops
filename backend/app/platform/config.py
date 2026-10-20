@@ -65,6 +65,14 @@ DEFAULTS: Dict[str, Any] = {
     "clover_app_id": "",
     "clover_app_secret": "",
     "clover_environment": "sandbox",  # "sandbox" | "us" | "eu" | "la"
+    # Where Clover sends the merchant back (blank: PLATFORM_PUBLIC_URL +
+    # /api/settings/integrations/clover/callback). Must match the Clover app.
+    "clover_redirect_url": "",
+    # Single-store mode only (multi mode keeps these in the store's vault):
+    # a merchant API token for a one-merchant server. Never returned by an API.
+    "clover_merchant_id": "",
+    "clover_api_token": "",
+    "clover_region": "us",  # "us" | "eu" | "la" | "sandbox"
 }
 
 _TRUE = {"1", "true", "yes", "on"}

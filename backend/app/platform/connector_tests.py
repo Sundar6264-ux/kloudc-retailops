@@ -162,8 +162,41 @@ def test_ai(public: dict, secrets: dict) -> TestResult:
         return TestResult(False, "Could not reach the AI service. Try again later.")
 
 
+def _clover_transport():
+    """The HTTP transport for the Clover test (None = the real network;
+    tests replace this)."""
+    return None
+
+
 def test_clover(public: dict, secrets: dict) -> TestResult:
-    return TestResult(False, "Clover connection arrives with M3")
+    """Reads the merchant (name) and its properties (time zone) with the
+    token - the cheapest authenticated reads. Never writes to Clover."""
+    from app.pos.adapters.clover.client import CloverAuthError, CloverClient, CloverError
+
+    merchant = (public.get("merchant_id") or "").strip()
+    token = (secrets.get("access_token") or "").strip()
+    if not merchant or not token:
+        return TestResult(False, "Enter the Clover Merchant ID and API token first, or use Connect with Clover.")
+    client = CloverClient(
+        merchant, token, public.get("region") or "us", transport=_clover_transport(), max_tries=1, timeout=TIMEOUT
+    )
+    try:
+        info = client.merchant()
+        try:
+            tz = (client.properties() or {}).get("timezone")
+        except CloverError:
+            tz = None
+    except CloverAuthError as exc:
+        if (public.get("mode") or "") == "oauth":
+            return TestResult(False, "Clover refused the saved connection. Choose Connect with Clover again.")
+        return _http_status_message("Clover", exc.status or 401)
+    except CloverError as exc:
+        if exc.status:
+            return _http_status_message("Clover", exc.status)
+        return TestResult(False, "Could not reach Clover. Check the region and try again.")
+    name = str((info or {}).get("name") or "the merchant")[:80]
+    where = f" (time zone {str(tz)[:40]})" if tz else ""
+    return TestResult(True, f"Connected to Clover: {name}{where}.")
 
 
 TESTERS: Dict[str, Callable[[dict, dict], TestResult]] = {

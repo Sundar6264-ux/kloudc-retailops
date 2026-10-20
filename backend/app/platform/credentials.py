@@ -198,14 +198,25 @@ KINDS: Dict[str, CredentialSpec] = {
             ("toast_analytics_client_secret", "secret", "analytics_client_secret"),
         ),
     ),
+    # Website-ready track D: "token" = a merchant-generated API token (one
+    # merchant, manual mode); "oauth" = Connect with Clover (OAuth v2: a
+    # 30-minute access token + refresh token, the pair replaced atomically by
+    # refresh_token_pair). The connector reads these itself
+    # (app/pos/adapters/clover/auth.py), so there is no settings_map.
     "clover": CredentialSpec(
         kind="clover",
         label="Clover",
-        public=(FieldSpec("merchant_id"), FieldSpec("region", _choice("us", "eu"), "us")),
+        public=(
+            FieldSpec("merchant_id"),
+            FieldSpec("region", _choice("us", "eu", "la", "sandbox"), "us"),
+            FieldSpec("mode", _choice("token", "oauth"), "token"),
+            FieldSpec("token_expires_at"),
+            FieldSpec("merchant_name"),
+        ),
         secrets=("access_token", "refresh_token"),
         primary_secret="access_token",
-        settings_map=(),  # none until M3 (contract 9.3)
-        testable=False,
+        settings_map=(),
+        testable=True,
     ),
     "whatsapp": CredentialSpec(
         kind="whatsapp",
@@ -726,3 +737,51 @@ def rotate_all(*, actor: str = "system", dry_run: bool = False) -> Dict[str, int
             audit("keys.rotated", actor_type="system", actor_name=actor, details={**counts, "key_id": ring.active_id}, db=s)
             s.commit()
     return counts
+
+
+def refresh_token_pair(
+    code: str,
+    kind: str,
+    needs_refresh: Callable[[Dict[str, Any], Dict[str, str]], bool],
+    do_refresh: Callable[[Dict[str, Any], Dict[str, str]], Tuple[Dict[str, Any], Dict[str, str]]],
+) -> Tuple[Dict[str, Any], Dict[str, str]]:
+    """Replace an OAuth token pair atomically (website-ready track D3).
+
+    Locks the credential row (``SELECT ... FOR UPDATE`` on PostgreSQL), asks
+    ``needs_refresh(public, secrets)`` again under the lock - another process
+    may have refreshed meanwhile - and only then calls ``do_refresh``, which
+    returns (public changes, new secrets). Both secrets are written in one
+    encrypted value in the same transaction, so a crash never leaves a new
+    access token with an old (already used) refresh token. Not audited (it
+    runs every 30 minutes); no catch-up sync is triggered. Returns the
+    (public, secrets) now stored."""
+    from app.platform.db import platform_session
+
+    sp = spec(kind)
+    with platform_session() as s:
+        store = _store(s, code)
+        row = s.execute(
+            select(StoreCredential)
+            .where(StoreCredential.store_id == store.id, StoreCredential.kind == kind)
+            .with_for_update()
+        ).scalar_one_or_none()
+        if row is None:
+            raise StoreNotFound(f"{code}/{kind}")
+        try:
+            public = json.loads(row.public_fields or "{}")
+        except ValueError:
+            public = {}
+        secrets_now = _decrypt_or_none(code, row) or {}
+        if not needs_refresh(public, secrets_now):
+            s.rollback()
+            return public, secrets_now
+        public_changes, new_secrets = do_refresh(public, secrets_now)
+        merged_public = clean_public(kind, {**public, **(public_changes or {})}, public)
+        merged = {k: v for k, v in {**secrets_now, **clean_secrets(kind, new_secrets)}.items() if k in sp.secrets}
+        sealed = crypto.encrypt(json.dumps(merged, sort_keys=True).encode("utf-8"), crypto.aad_for(code, kind))
+        row.public_fields = json.dumps(merged_public, sort_keys=True)
+        row.ciphertext, row.nonce, row.key_id = sealed["ciphertext"], sealed["nonce"], sealed["key_id"]
+        row.last4 = _last4(merged.get(sp.primary_secret))
+        row.updated_at = utcnow()
+        s.commit()
+        return merged_public, merged
