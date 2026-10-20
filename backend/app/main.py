@@ -93,6 +93,16 @@ async def lifespan(app: FastAPI):
     # Production refuses an unsafe configuration before anything starts
     # (app/ops/prod_checks.py); other environments only log the findings.
     enforce_production_config()
+    # STORAGE_BACKEND=s3 without its endpoint, bucket and keys refuses to
+    # start (website-ready C1); the default local backend needs nothing.
+    from app.storage import check_storage_config
+
+    check_storage_config()
+    # Usage metering (website-ready I3, track B): the buffered counters'
+    # flush thread runs in both modes; never raises.
+    from app.platform import usage as _usage
+
+    _usage.start()
     if is_multi_tenant():
         # Platform milestone (docs/PLATFORM_CONTRACT.md 5, 6): the identity
         # check runs per store on its engine's first open; the schedulers run
@@ -103,7 +113,7 @@ async def lifespan(app: FastAPI):
         logger.info("started (multi-store)")
         yield
         logger.info("shutting down")
-        _stop_steps([("multi-store", stop_multi_tenant)])
+        _stop_steps([("multi-store", stop_multi_tenant), ("usage", _usage.stop)])
         return
     # KloudC RetailOps M2: refuse to start against another store's database or upload
     # folder (app/store/identity.py) - before any job can write anything.
@@ -123,6 +133,7 @@ async def lifespan(app: FastAPI):
             ("team scheduler", shutdown_team_scheduler),
             ("notification scheduler", shutdown_notification_scheduler),
             ("scheduler", shutdown_scheduler),
+            ("usage", _usage.stop),
         ]
     )
 

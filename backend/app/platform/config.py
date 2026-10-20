@@ -61,6 +61,15 @@ DEFAULTS: Dict[str, Any] = {
     "storage_backend": "local",  # "local" | "s3"
     "job_queue_mode": "inline",  # "inline" | "queue"
     "live_updates_mode": "local",  # "local" | "postgres" (LISTEN/NOTIFY)
+    "storage_s3_endpoint": "",  # e.g. https://<account>.r2.cloudflarestorage.com
+    "storage_s3_bucket": "",
+    "storage_s3_access_key_id": "",  # secret-ish: never logged or returned
+    "storage_s3_secret_access_key": "",  # secret: never logged or returned
+    "storage_s3_region": "auto",  # R2 uses "auto"
+    "storage_s3_prefix": "stores",  # keys are <prefix>/<STORE_CODE>/<key>
+    "storage_presign": True,  # S3: direct download links (False = the server streams)
+    "db_pool_mode": "direct",  # "direct" | "pgbouncer" (transaction pooling)
+    "platform_direct_url": "",  # session connection for LISTEN + the leader lock (PgBouncer)
     # --- website-ready track D (Clover) ---
     "clover_app_id": "",
     "clover_app_secret": "",
