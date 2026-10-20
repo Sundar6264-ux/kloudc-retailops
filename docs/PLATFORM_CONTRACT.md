@@ -3269,3 +3269,166 @@ Before this, it lived only in a scratch job folder. It validates with
   database.
 - No simulator was run. The app is unchanged since `d558be7`, which the
   visual review walked on iPhone 17 and iPad Pro 11.
+
+---
+
+## As built - Website ready: D (Clover connector, Connect with Clover, Item vendors)
+
+Track D of `docs/WEBSITE_READY_CONTRACT.md`, branch `ready/d`. Everything new
+is **off until a store connects Clover** (and Connect with Clover / webhooks
+until the owner sets the Clover app keys); a Toast store behaves exactly as
+before.
+
+**D1 Clover client** (`app/pos/adapters/clover/client.py`). Region hosts (`us`
+= US and Canada, `eu`, `la`, `sandbox`), bearer token (string, or a callable
+that refreshes OAuth tokens), `/v3/merchants/{mId}`, paging `limit=1000` +
+`offset` until a short page, order filters split into windows of at most 90
+days, an order with 100+ lines completed from `/orders/{id}/line_items`,
+process-wide limiters (16 req/s + 5 concurrent per token, keyed by a hash of
+the token; 50 req/s + 10 concurrent per app), 429 waits `Retry-After` through
+`pos/http.retry_wait_seconds`, one retry after a 401 through the OAuth
+refresh, `User-Agent`, every request metered as `pos_api_calls` (I3, never
+raises). Errors never contain the token.
+
+**D2 CloverConnector** (`connector.py`, `mapping.py`; `POS_PROVIDER=clover` in
+`pos/registry.py`). Business date = local creation time in the merchant's
+`/properties` time zone (cached 1 h; falls back to the store's) minus
+`BUSINESS_DAY_CUTOFF_HOUR`; `fetch_orders(day)` asks for that day's
+[start, end) window, so the nightly sales sync runs unchanged. Lines: each
+line item a row, each modification its own priced modifier row, `unitQty/1000`
+for weighed items, line discounts (amount or %), order-level discounts spread
+over sold lines by net, tax from the line's `taxRates`, refunded/exchanged
+lines voided, fully refunded orders voided, channel from `orderType`. Open
+orders (`state=open`), employees (deleted = inactive), catalog (UPC `code`,
+`sku` as PLU, FIXED / PER_UNIT / VARIABLE price, cost in cents, primary
+category = lowest `sortOrder`, every category a location, hidden = inactive),
+signed stock from `/item_stocks`. `CLOVER_CAPABILITIES` now includes the
+derived `orders_by_business_date` (committed branding fixtures updated); still
+off: day totals, analytics, card fingerprints, catalog change stamp, item
+vendors, receiving records, CSV catalog import, modifier-price-in-parent.
+`pos/gating.usable_capabilities`: a connector with `requires_connection`
+(Clover) gates like "no adapter" until `is_configured()` (cached 30 s), so an
+unconnected Clover store still registers/runs no POS job and its POS routes
+answer 409 "isn't connected". Sales sync records `orders_synced` (I3). Clover
+catalog snapshots (`pos/sync/catalog.build_inventory_rows(...,
+pos_is_catalog_source=True)`, chosen when the connector lacks
+`csv_catalog_import`): every active item kept without a CSV row, cost from the
+POS, vendor fields from `item_vendors`; an empty stock list is not a failed
+build. Toast's rules are untouched (default `False`).
+
+**D3 Connect with Clover** (`app/platform/routes_clover.py`, `adapters/clover/auth.py`,
+`credentials.py`). Clover spec: public `merchant_id`, `region`
+(us/eu/la/sandbox), `mode` (token/oauth), `token_expires_at`,
+`merchant_name`; secrets `access_token`, `refresh_token`; testable.
+Routes under `/api/settings/integrations/clover`: `GET /status` (never a
+secret; single mode reports the `CLOVER_*` env connection read-only),
+`GET /authorize-url` (409 `clover_app_not_configured` until `CLOVER_APP_ID` +
+`CLOVER_APP_SECRET`; state sealed with AES-GCM, names store + admin, 10 min,
+single use per process), `GET /callback` (no session needed - the state is the
+proof; code -> token pair, saved through `save_credential`, which re-runs the
+POS catch-up; 303 to `/#/settings/integrations?clover=connected|error&reason=`),
+`POST /manual` (Merchant ID + API token + region; blank token keeps the saved
+one for the same merchant/region), `POST /disconnect`, `POST /webhook` (D6).
+Test connection is the shared `/integrations/clover/test` (`test_clover`:
+merchant + properties). The old `POST .../clover/connect` answers like
+authorize-url; the generic `PUT /integrations/clover` stays 501 (frozen code).
+Refresh: `credentials.refresh_token_pair` locks the row (`FOR UPDATE`),
+re-checks expiry and writes both tokens in one encrypted value; plus a
+per-store in-process lock = single flight. Not audited (every 30 min); connect,
+manual save, disconnect, failed connects and tests are.
+
+**D4 Item vendors** (`/api/item-vendors`, `services/item_vendors.py`,
+`pages/ItemVendorsPage.jsx`). Admins only. List (newest snapshot's items,
+search name/id/barcode/vendor/code, all / without / with a vendor, counts,
+paging, known vendor names), `PUT /items/{id}` (rank = order, codes, max 10,
+no `;`, no repeats), `POST /import` (multipart CSV, preview by default,
+`?apply=1` writes only items whose rows are all valid; by Item ID, else unique
+barcode, else unique name; vendor-less rows skipped with a note; idempotent;
+5 MB / 20,000 rows), `GET /export.csv` and `/template.csv` (formula-safe;
+the export imports back unchanged). Writes go to `item_vendors` (manual) and
+into the newest snapshot rows' `supplier` / `supplier_item_id`, so
+`vendors_of(row)` - reorder, New order, PO sections, Fix Issues - sees them at
+once; after a CSV upload a non-Toast store's rows get the table's list for
+items the file names no vendor for. A Toast store: read-only (409 + note).
+Page: compact frozen header (search + chips with counts, remembered, ⓘ), rows
+that stack at 375, inline editor (datalist suggestions, rank arrows, 44 px
+targets on phones), import panel with checked preview, Export / Import in the
+page header. The route `/setup/item-vendors` and nav entry are track A's
+(A10); screenshots used a temporary local route that was not committed.
+
+**D5 Help + checklist.** `content/help`: page `item_vendors`, section
+`clover` on `integrations`, articles `setup-connect-clover` and
+`setup-item-vendors`, glossary `concept_item_vendor`,
+`concept_vendor_item_code`, `concept_connect_with_clover`,
+`concept_merchant_id`, `concept_api_token`; the Clover bullet of
+`setup-integrations` rewritten. `docs/CLOVER_OWNER_CHECKLIST.md`: developer
+app + permissions + redirect URI, sandbox merchant, the 17 Appendix A checks,
+webhooks, deferred list.
+
+**D6 Webhooks (P3, done, off by default).** `CLOVER_WEBHOOKS_ENABLED`,
+`CLOVER_WEBHOOK_AUTH`; verification code logged once; notifications matched to
+the connected store(s) by merchant ID; `clover_webhook_sync` (I6 kind) re-syncs
+today's sales or refreshes the catalog, debounced 60 s per store and kind.
+
+**Settings added** (D block of `platform/config.py`): `clover_redirect_url`,
+`clover_merchant_id`, `clover_api_token`, `clover_region` (single-store
+mode only), `clover_webhooks_enabled`, `clover_webhook_auth`.
+
+**Tests.**
+- New: `tests/test_clover_connector.py` 31, `tests/platform/test_clover_connect.py` 10,
+  `tests/test_item_vendors_editor.py` 14 (PostgreSQL, dev cluster, prefix `so_wrd_`).
+- Related + guards (PostgreSQL): gating, capabilities, M2 verify, branding,
+  item vendors, inventory API, CSV connector, demo guard, cache lint,
+  interfaces, help content - all pass except two not caused by D (below).
+- Website node tests: 319 of 319 (+11: `itemVendorsModel` 7, Clover view model 4).
+- `vite build` OK.
+- Playwright (`/Users/sundar/storeops/screenshots/ready/D/`, local preview on
+  8884, made-up items): 30 screenshots - Integrations Clover card not
+  connected / validation / connected / back-from-Clover banner, Item vendors
+  list / without a vendor / editor / import preview / after import, Toast
+  read-only; 1440 + 375, light + dark. 0 sideways scroll at 375, 0 page
+  errors; the token never appears in the page; editor save and import apply
+  work end to end.
+- Wider related run (PostgreSQL, 36 files incl. all of `tests/platform` and
+  `tests/tenancy`, every POS / sync / inventory / open checks / accuracy /
+  item vendors / help / guard file): 950 passed, 2 failed (the two below, not
+  D's). The full suites were left to Integrate (a full run here would have
+  held a shared heavy slot for over an hour).
+
+**Decisions.**
+- Clover gets `orders_by_business_date` (derived) instead of a new sync path:
+  the existing nightly sync, accuracy pruning and job names stay one code path.
+- An unconnected Clover store gates exactly like M2's "no adapter" state.
+- The OAuth callback trusts only the sealed state (store + admin), not the
+  browser session; the store DB is never touched by it.
+- Item vendors edit through the newest snapshot rows rather than changing the
+  8 `vendors_of` callers.
+- Webhooks only speed things up; scheduled pulls remain the source of truth.
+
+**Not caused by D, seen during Build.**
+- `tests/test_no_origin_names.py` fails on `docs/WEBSITE_READY_CONTRACT.md:43`
+  (the heavy-job script path) - from the contract commit on main.
+- `tests/test_ops_glossary.py::test_app_bundled_copy_is_current` fails as soon
+  as any track adds glossary terms: the app's bundled copy needs
+  `scripts/help/sync_help_to_app.sh` (app follow-up; the app repo is not
+  changed tonight).
+
+**For Integrate.** A routes `/setup/item-vendors` (lazy, no props) + Setup nav
+entry "Item vendors"; A8 may tag `setup-connect-clover` with `"pos":
+["clover"]`; C may move Clover's `_meter()` onto a shared `pos/http.py`
+helper (count once).
+
+**App follow-ups (handoff).** Connect with Clover screen states (disabled /
+token / OAuth connected), Item vendors editor (simple list + edit), names
+"Item vendors", "Connect with Clover", "Merchant ID", "API token"; run
+`scripts/help/sync_help_to_app.sh`.
+
+**Owner actions.** `docs/CLOVER_OWNER_CHECKLIST.md`: Clover developer app
+(`CLOVER_APP_ID`, `CLOVER_APP_SECRET`, `CLOVER_ENVIRONMENT`, redirect URI),
+sandbox merchant + the Appendix A checks, optional webhooks, Clover's answer on
+merchant-token use in production (P9).
+
+**Deferred.** Cross-process Clover per-app rate budget (per process today;
+contract "Not in this job"); amount-only partial refunds spread over lines;
+Clover App Market billing; using `summaryHour` as the cutoff (needs the sandbox
+check).
