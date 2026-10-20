@@ -5,6 +5,7 @@ import { storeView } from "./store/branding.js";
 import { featureAvailable, setCurrentPosName } from "./store/gating.js";
 import { isPlatformUser, normalizeMe } from "./login/loginModel.js";
 import { setSessionStore } from "./sessionStore.js";
+import { setStoreTimeZone } from "./format.js";
 
 // Tells StoreProvider which store's branding to show (a shared server
 // answers branding per store: docs/PLATFORM_CONTRACT.md 4.4). null = the
@@ -26,6 +27,8 @@ export function AuthProvider({ children }) {
     const view = storeView(branding, user);
     // Text built outside React (store/gating.js currentPosName) follows /me too.
     setCurrentPosName(view.posName);
+    // "Today" and every time follow the store's zone from /me (store_timezone).
+    setStoreTimeZone(view.timezone);
     return view;
   }, [branding, user]);
   const [loading, setLoading] = useState(true);

@@ -567,3 +567,48 @@ export function validateHelp(help, { glossaryKeys } = {}) {
   }
   return errors;
 }
+
+// ------------------------------------------------------------------ POS-only entries
+
+// Website ready A8: help entries marked `"pos": ["toast"]` (content/help/
+// schema.json) reach only stores on that POS. `pos` null (signed out, or
+// not told): every entry stays and a marked one gets `pos_label` ("Toast
+// only") so the reader sees which POS it is about. Same rule as the
+// server's help_content.only_for_pos.
+export const POS_LABELS = { toast: "Toast", clover: "Clover", csv: "inventory file" };
+
+export function onlyForPos(value, pos) {
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const v of value) {
+      if (v && typeof v === "object" && !Array.isArray(v) && Array.isArray(v.pos) && pos && !v.pos.includes(pos)) continue;
+      out.push(onlyForPos(v, pos));
+    }
+    return out;
+  }
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = onlyForPos(v, pos);
+    if (!pos && Array.isArray(value.pos) && value.pos.length) {
+      out.pos_label = `${value.pos.map((p) => POS_LABELS[p] || p).join(" / ")} only`;
+    }
+    return out;
+  }
+  return value;
+}
+
+// A built help (buildHelp) with only this POS's entries.
+export function contentForPos(content, pos) {
+  if (!content) return content;
+  return buildHelp({
+    manifest: content.manifest,
+    pages: onlyForPos(content.pageList, pos),
+    articles: onlyForPos(content.articleList, pos),
+    gettingStarted: onlyForPos(content.gettingStarted, pos),
+    faq: onlyForPos(content.faq, pos),
+    troubleshooting: onlyForPos(content.troubleshooting, pos),
+    glossary: onlyForPos(content.conceptList, pos),
+    glossaryCategories: content.glossaryCategories,
+    contact: content.contact,
+  });
+}

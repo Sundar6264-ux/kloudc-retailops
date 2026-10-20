@@ -114,6 +114,13 @@ export function storeTodayStr() {
   return storeDateStr(new Date());
 }
 
+// The one "today" helper (website ready A1): the STORE's calendar date as
+// "YYYY-MM-DD", in the zone /api/auth/me reports (store_timezone; branding's
+// timezone before sign-in). `now` is for tests. Never `new Date()` for a date.
+export function storeToday(now = new Date()) {
+  return storeDateStr(now);
+}
+
 // The store-local date `days` days from today (negative = in the past).
 export function storeDateOffsetStr(days) {
   const d = new Date(`${storeTodayStr()}T00:00:00Z`);
