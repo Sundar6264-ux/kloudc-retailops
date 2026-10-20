@@ -265,3 +265,5 @@ class OwnerSetupToken(PlatformBase):
 # Website-ready track C: the job queue tables (p0004) live with the platform
 # metadata. Imported last: app/jobqueue/models.py builds on PlatformBase.
 from app.jobqueue import models as _jobqueue_models  # noqa: E402,F401
+# Website-ready track B: the data-ownership tables share this metadata (p0002).
+from app.platform import data_models as _data_models  # noqa: E402,F401

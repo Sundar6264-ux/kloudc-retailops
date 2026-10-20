@@ -1,0 +1,60 @@
+{
+ "id": "master-data-offboarding",
+ "title": "Usage, plans, data exports and off-boarding",
+ "area": "platform",
+ "group": "master",
+ "order": 907,
+ "audience": [
+  "master"
+ ],
+ "summary": "Masters: set a store's plan, make data exports, and close a store safely with a grace period before its data is deleted.",
+ "pages": [
+  "platform_store_usage",
+  "platform_store_data"
+ ],
+ "related": [
+  "master-stores",
+  "master-audit"
+ ],
+ "blocks": [
+  {
+   "type": "h",
+   "text": "Usage & plan",
+   "id": "usage"
+  },
+  {
+   "type": "p",
+   "text": "Open a store and pick **Usage & plan**. Pick a plan and press **Save plan**; the change is audited. Stores that existed before plans are on **Custom** (no limits). **Measure now** refreshes users, items, storage and database size."
+  },
+  {
+   "type": "h",
+   "text": "Data exports",
+   "id": "exports"
+  },
+  {
+   "type": "p",
+   "text": "On the **Data** tab, **Export all data** makes the same ZIP file the store's owner can make. **Download** creates a fresh Download link."
+  },
+  {
+   "type": "h",
+   "text": "Off-boarding",
+   "id": "offboarding"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "**Archive and delete later**: type the Store ID. The store is archived (nobody can sign in), a final data export is made, and deletion is scheduled after the grace period.",
+    "During the grace period, **Cancel deletion** stops it. Tick **Bring the store back** to make it suspended, then Resume it on the Stores tab.",
+    "On the date, the daily job deletes the store's data. **Delete store data now** does it early: type the Store ID and your two-step code."
+   ]
+  },
+  {
+   "type": "warning",
+   "text": "Delete store data drops the store's database and deletes its files and saved keys for good. Download the final data export first."
+  },
+  {
+   "type": "note",
+   "text": "A store in pilot mode is never deleted automatically, and a store whose final export failed waits for a master."
+  }
+ ]
+}

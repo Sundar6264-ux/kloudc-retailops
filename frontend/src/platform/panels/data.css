@@ -1,0 +1,537 @@
+/* Data & usage (Setup) and the console's Usage & plan / Data tabs
+   (docs/WEBSITE_READY_CONTRACT.md B1-B5). Tokens only (styles/tokens.css);
+   the area colour comes from the nearest [data-area]. */
+
+.dt-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.dt-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-xs);
+  min-width: 0;
+}
+
+.dt-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.dt-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.dt-section-sub {
+  margin: 0.15rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* --- usage tiles --- */
+
+.dt-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (max-width: 900px) {
+  .dt-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dt-tile {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.dt-tile-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--area-soft, var(--surface-2));
+  color: var(--area, var(--primary));
+}
+
+.dt-tile-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dt-tile-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.dt-tile-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.dt-tile-hint {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+/* --- daily bars --- */
+
+.dt-chart {
+  margin-top: var(--space-4);
+}
+
+.dt-chart-label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.dt-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 64px;
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dt-bar {
+  flex: 1 1 0;
+  min-width: 2px;
+  background: var(--area, var(--primary));
+  border-radius: 2px 2px 0 0;
+  opacity: 0.85;
+}
+
+.dt-bar.is-empty {
+  background: var(--surface-3);
+  opacity: 1;
+}
+
+/* --- plan and limits --- */
+
+.dt-plan-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  flex-wrap: wrap;
+}
+
+.dt-plan-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.dt-plan-form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.dt-plan-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.dt-limits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.dt-limit-top {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.dt-limit-label {
+  font-weight: 600;
+}
+
+.dt-limit-text {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dt-meter {
+  position: relative;
+  height: 8px;
+  margin-top: 0.3rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.dt-meter > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--success-text);
+}
+
+.dt-meter.tone-warn > span {
+  background: var(--running-text);
+}
+
+.dt-meter.tone-bad > span {
+  background: var(--failed-text);
+}
+
+.dt-limit-state {
+  font-size: 0.74rem;
+  margin-top: 0.2rem;
+}
+
+.dt-limit-state.tone-warn {
+  color: var(--running-text);
+}
+
+.dt-limit-state.tone-bad {
+  color: var(--failed-text);
+}
+
+.dt-limit-state.tone-good {
+  color: var(--success-text);
+}
+
+/* --- notices --- */
+
+.dt-banner {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+.dt-banner.tone-warn {
+  background: var(--running-bg);
+  color: var(--running-text);
+}
+
+.dt-banner.tone-bad {
+  background: var(--failed-bg);
+  color: var(--failed-text);
+}
+
+.dt-banner.tone-good {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.dt-banner .kc-icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* --- exports --- */
+
+.dt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.dt-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.dt-row-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.dt-row-title {
+  font-weight: 650;
+}
+
+.dt-row-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.dt-row-error {
+  font-size: 0.8rem;
+  color: var(--failed-text);
+  overflow-wrap: anywhere;
+}
+
+.dt-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dt-actions button,
+.dt-plan-form button {
+  width: auto;
+  min-height: 40px;
+  padding: 0.45rem 0.9rem;
+}
+
+.dt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+.dt-chip.tone-good {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.dt-chip.tone-warn {
+  background: var(--running-bg);
+  color: var(--running-text);
+}
+
+.dt-chip.tone-bad {
+  background: var(--failed-bg);
+  color: var(--failed-text);
+}
+
+.dt-chip.tone-info {
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+.dt-spinner {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: dt-spin 0.9s linear infinite;
+}
+
+@keyframes dt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-spinner {
+    animation: none;
+  }
+}
+
+.dt-link-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* --- off-boarding --- */
+
+.dt-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.dt-state-text {
+  margin: 0 0 var(--space-3);
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+
+.dt-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  align-items: end;
+  padding: var(--space-3);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-3);
+}
+
+.dt-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-2);
+  min-width: 0;
+}
+
+.dt-form input[type="text"],
+.dt-form input:not([type]) {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+}
+
+.dt-form .dt-check {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+}
+
+.dt-form-wide {
+  grid-column: 1 / -1;
+}
+
+.dt-form-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.dt-stack button.dt-danger,
+.dt-stack button.dt-danger[aria-expanded="true"] {
+  background: var(--danger-fill);
+  color: var(--on-fill);
+  border: 1px solid transparent;
+}
+
+.dt-stack button.dt-danger:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.dt-stack button.dt-danger:disabled {
+  background: var(--surface-3);
+  color: var(--text-disabled);
+}
+
+.dt-timeline {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0 0 0 var(--space-4);
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dt-timeline li {
+  position: relative;
+  font-size: 0.85rem;
+}
+
+.dt-timeline li::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--space-4) - 6px);
+  top: 0.35rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--area, var(--primary));
+  border: 2px solid var(--surface);
+}
+
+.dt-timeline-when {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.dt-muted {
+  color: var(--text-muted);
+}
+
+@media (max-width: 480px) {
+  .dt-section {
+    padding: var(--space-3);
+  }
+  .dt-tiles {
+    gap: var(--space-2);
+  }
+  .dt-tile {
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+  .dt-tile-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .dt-actions button,
+  .dt-plan-form button {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+}
+
+.dt-plan-form select {
+  min-height: 40px;
+  min-width: 140px;
+}

@@ -215,3 +215,12 @@ app/livebus.py:_state  # the process's one LISTEN thread and one NOTIFY sender (
 app/livebus.py:_stats  # counters for the masters' System panel (process-wide, no store data)
 app/platform/routes_system.py:NO_STORE  # constant header
 app/storage/__init__.py:_backend_cache  # the one storage client of the process, keyed by its settings (keys are per store inside)
+# --- website-ready track B (usage metering, plans) ---
+app/platform/plans.py:PLAN_LABELS  # constant: plan id -> label (code, not data)
+app/platform/plans.py:_LIMITS  # constant: soft limits per plan (code, not data)
+app/platform/usage.py:_counts  # usage buffer keyed by store code; flushed to the platform DB every 60 s
+app/platform/usage.py:_activity  # newest activity per store code; flushed with the counters
+app/platform/usage.py:_activity_noted  # per store code: when activity was last noted (rate limit)
+app/platform/usage.py:_lock  # guards the usage buffers
+app/platform/usage.py:_stop  # stop event of the flush thread
+app/platform/usage.py:global _thread  # the process's one flush thread

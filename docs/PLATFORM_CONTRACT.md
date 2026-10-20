@@ -3364,3 +3364,129 @@ connection reconnects.
   Platform settings tab; until that merge `e2e/system/run.sh` builds a copy
   of the website with a System tab for the screens (the tree is not
   changed).
+## As built - Website ready: B (data ownership + plans)
+
+Track B of `docs/WEBSITE_READY_CONTRACT.md` (B1-B5), branch `ready/b`.
+Everything new is off or inert until used: no plan limit ever refuses a
+request, `BILLING_PROVIDER=none`, exports and deletion only run when a person
+asks (or, for deletion, when a master scheduled it).
+
+**Platform migration `p0002`** (additive; models in
+`app/platform/data_models.py`, registered on `PlatformBase` by one import line
+at the end of `app/platform/models.py`):
+`store_usage_daily (store_code, day, metric, value)`, `store_plans`
+(every store that exists when p0002 runs gets `custom`; later stores without
+a row get the `default_plan` platform setting), `store_exports` (partial
+unique index: one queued/running export per store), `store_offboarding`
+(one row per store, kept as the tombstone). Rows are keyed by store code, not
+a foreign key, so history outlives a deleted store.
+
+**B1 usage** (`app/platform/usage.py`, I3). `record()` / `touch_activity()`
+add to an in-memory buffer (never raise, never touch a database on the
+caller's thread, no-op without a platform database); `flush()` writes it in
+one transaction every 60 s from `start()`'s thread (counters add, last
+activity keeps the newest, a failed flush keeps the numbers). `app/auth.py`
+`get_current_user` calls `usage.touch_activity()` (one line; at most one note
+per store per minute). Gauges (users, items in the newest catalog snapshot,
+`get_storage().bytes_used(code=)`, `pg_database_size`) come from the
+`usage_gauges` job (`register_periodic`, 02:30 store time, per store) or
+`POST .../usage/measure`. `snapshot()` = counters summed over 30 days, newest
+gauges, days newest first.
+
+**B2 plans** (`app/platform/plans.py`, I4). `custom` (no limits), `trial`
+(5 users, 2,000 items, 1 GB), `starter` (15, 10,000, 10 GB), `pro` (60,
+50,000, 50 GB): placeholders (owner action 4). `state_of`: near from 80 % up
+to and including the limit, over above it. `set_plan` is audited
+(`store.plan_changed`, from/to) and tells the billing provider.
+
+**B3 billing** (`app/platform/billing/`). `BillingProvider` protocol,
+`NullBilling` (default), `StripeBilling` stub: form-encoded requests with
+idempotency keys through a transport (tests pass a fake one), prices from
+`STRIPE_PRICE_<PLAN>`, `Stripe-Signature` webhook check (5-minute tolerance).
+`billing.startup_check()` runs when the routes load: `BILLING_PROVIDER=stripe`
+without `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` refuses to start; an
+unknown provider too. No webhook route is mounted yet (Deferred).
+
+**B4 Export all data** (`app/platform/export.py`). Job `store_export`
+(platform-level payload `{export_id}`, dedupe key per store) builds
+`tables/<table>.csv` for every store-database table (server-side cursor,
+2,000 rows at a time), `files/<key>` for every storage object except earlier
+exports, `store.json` (profile, plan, settings without secret-looking keys,
+schema revision), `manifest.json` (rows, columns, bytes and sha256 per entry,
+what was left out) and `README.txt`; written to storage `exports/<id>.zip`.
+Left out: tables `alembic_version`, `user_sessions`, `device_tokens` and any
+table named like session/token/credential/secret; columns named like
+password/secret/token/api key/credential/totp/private key/ciphertext/nonce/
+`*_hash`/`*_enc`; values of key/value rows whose key looks secret
+(`setting_changes`). Kept 7 days (a final off-boarding export: until the
+deletion date). Download link: a presigned URL when the storage backend gives
+one, else `GET /api/settings/exports/{id}/download?token=` (random token,
+only its sha256 stored, `EXPORT_LINK_HOURS`, a new link ends the old one,
+404 `link_expired` for any bad link; query strings are never logged).
+Audited: `store.export_requested`, `_ready`, `_failed`, `_link_created`,
+`_downloaded`. Failed exports show their error and Try again (a new export).
+Daily clean-up deletes expired files and fails exports stuck for 6 hours.
+
+**B5 off-boarding** (`app/platform/offboarding.py`). Start = archive (when
+not archived; typed Store ID) + `scheduled` with `purge_after = now +
+OFFBOARD_GRACE_DAYS` + the final export. Cancel during the grace period
+(optionally "Bring the store back": archived -> suspended, so the existing
+Resume works). Delete store data = master + typed Store ID + the master's
+two-step code when the master has two-step sign-in; drops the database (shared
+hosting only), deletes every storage object and (local backend) the store's
+folder including hidden keys, deletes every credential through
+`credentials.delete_credential` (audited per kind) and the store settings,
+expires the exports, and keeps the `stores` row (archived) as the tombstone.
+Idempotent. Daily job `offboarding_daily` (`per_store=False`, 09:00 UTC)
+deletes due stores, never a pilot-mode store (`pilot_mode` store setting) and
+never without a ready final export (both stay scheduled for a master).
+Audited: `store.archived`, `store.offboarding_started`, `_cancelled`,
+`store.purge_started`, `credential.deleted`, `store.data_deleted`.
+
+**Routes** (`app/platform/routes_data.py`): masters `GET /usage/summary`,
+`GET /stores/{code}/usage`, `POST .../usage/measure`, `PUT .../plan`,
+`GET|POST .../exports`, `POST .../exports/{id}/link`,
+`GET|POST .../offboarding`, `POST .../offboarding/cancel`,
+`POST .../offboarding/purge` (all under `/api/platform`, master guards, write
+rate limit, audited); store owner/admin `GET /api/settings/usage`,
+`GET|POST /api/settings/exports`, `POST /api/settings/exports/{id}/link`
+(store from the session; demo refused; staff 403). Single-store servers
+answer `{"available": false}` (usage, exports list) and 409
+`platform_mode_required` (new export).
+
+**Website.** `pages/StoreDataPage.jsx` (Setup > Data & usage, pageId
+`store_data`), `platform/panels/StoreUsagePanel.jsx` (plan picker, Measure
+now) and `StoreDataPanel.jsx` (exports + off-boarding timeline), shared parts
+in `platform/panels/dataParts.jsx` + `data.css` (tokens only), logic in
+`settings/dataModel.js`, client `clients/data.js`. Help: pages `store_data`,
+`platform_store_usage`, `platform_store_data`; glossary Usage, Plan, Limit,
+Data export, Download link, Off-boarding, Grace period, Delete store data;
+guides `setup-data-usage`, `master-data-offboarding`.
+
+**Tests.**
+
+| Check | Result |
+|---|---|
+| `tests/platform/test_data_ownership.py` (scratch PostgreSQL, prefix `so_wrb`) | 27 passed |
+| + `test_platform_db` (p0002 parity, up/down/up), interfaces, cache lint, demo guard, help content, stores/integrations/platform auth | 39 + 51 + 18 + 22 passed |
+| Website node tests (all, incl. 9 new in `dataModel.test.mjs`) | 317 of 317 |
+| Screens (`e2e/data-harness`, 7 views x 1440/375 x light/dark) | 28 screenshots, no sideways scroll, no console errors (`/Users/sundar/storeops/screenshots/ready/B/`) |
+| Name guard | only the pre-existing hit in `docs/WEBSITE_READY_CONTRACT.md:43` (not this track) |
+
+**For Integrate.**
+- Track C: call `usage.start()` / `usage.stop()` in the lifespan (contract
+  2.1), run `periodic_jobs()` (`usage_gauges` per store, `offboarding_daily`
+  platform), and import `app.platform.export`, `offboarding` and `usage` in
+  the worker's kinds module so `store_export` / `usage_gauges` /
+  `offboarding_daily` are registered there. In inline mode exports run in a
+  thread of the web process.
+- Track A: route `/settings/data` (pageId `store_data`, admin), render the two
+  panels, and flag "over" on the Stores list from `GET
+  /api/platform/usage/summary` (`state`).
+- `ai_calls` and Toast `orders_synced` have no caller yet (C7 covers POS
+  calls, D Clover orders).
+
+**Deferred.** Stripe webhook route and customer creation on sign-up (until
+the owner opens Stripe); a purge of a dedicated store's database (done on its
+own server, refused here); usage history beyond 30 days in the UI (kept in
+the table).

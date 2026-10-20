@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.db import get_db
+from app.platform import usage
 from app.models import User, UserSession
 from app.tenancy.context import current_store_code
 from app.tenancy.mode import is_multi_tenant
@@ -148,6 +149,7 @@ def get_current_user(
     if user is None:
         raise HTTPException(status_code=401, detail="Session expired or invalid")
 
+    usage.touch_activity()  # in memory; never raises (website-ready B1)
     return user
 
 
