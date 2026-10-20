@@ -3895,3 +3895,46 @@ Clover pages and takes `AUDIT_ONLY`.
 
 Screenshots (outside git): `~/storeops/screenshots/ready/final/`, and
 `final/flows/` for the flows.
+
+## As built - Security review
+
+An internal pen test (OWASP ASVS L2 style) of the integrated `main`. Findings,
+fixes and what was checked and found sound are in `docs/SECURITY_REVIEW.md`
+(SR-01..SR-11). Summary:
+
+- **Fixed, each with a test.**
+  - **SR-10:** a vendor name went into the PO PDF as reportlab markup, so an
+    `<img>` tag read a file from the server. It is now escaped.
+  - **SR-07:** adding, removing or resetting a master, `POST /api/platform/users`
+    and support sessions need a fresh two-step code (body `totp_code` or
+    `X-Two-Step-Code`). Console > Masters shows "Your two-step code".
+  - **SR-08:** store-typed Toast, WhatsApp and SMTP addresses are checked after
+    DNS on every connection (`app/platform/egress.py`, shared service only).
+  - **SR-01:** Export all data neutralizes spreadsheet formulas.
+  - **SR-03:** each two-step code works once per master and purpose.
+  - **SR-04:** changing your password ends your other sessions and allows 5
+    tries a minute.
+  - **SR-02:** API docs are off in production.
+  - **SR-05:** a store sees a plain export error.
+  - **SR-06:** the Clover webhook log line is sanitized and unauthenticated
+    calls are rate limited.
+  - **SR-09:** ZIP entries stay under `files/`.
+- **Dependencies (SR-11).**
+  - Upgraded: python-multipart 0.0.32, FastAPI 0.116.2 with Starlette 0.47.3,
+    Pillow 12.3.0, pillow-heif 1.8.1, pypdf 6.21.1, python-dotenv 1.2.2 and
+    pytest 9.0.3.
+  - Deferred: Starlette 1.x, because FastAPI 0.150 fails 8 route tests.
+  - `npm audit --omit=dev`: 0.
+- **Tests.**
+  - New: 13 platform tests and 4 store tests.
+  - Full backend suites on the new pins: PostgreSQL 3211 passed and SQLite
+    3202 passed, 0 failed each.
+  - Website node tests: 372 (369 pass, 3 skipped).
+  - `vite build`: OK.
+  - `frontend/e2e/screens/security_stepup.mjs` on the real server: 6 shots,
+    0 problems.
+- **Ship.** `pip install -r backend/requirements.txt` on the pilot (new pins).
+- **App follow-ups.**
+  - Regenerate the help bundle: Masters has a new info point.
+  - Any app screen that changes a password should expect the other sessions to
+    end.
