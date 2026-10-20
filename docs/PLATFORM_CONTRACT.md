@@ -3269,3 +3269,77 @@ Before this, it lived only in a scratch job folder. It validates with
   database.
 - No simulator was run. The app is unchanged since `d558be7`, which the
   visual review walked on iPhone 17 and iPad Pro 11.
+
+## As built - Website ready: A (design + console + performance)
+
+Branch `ready/a` (worktree `wt-ready-a`), on top of `8b22a4e`. Scope as in
+`docs/WEBSITE_READY_CONTRACT.md` 1.A. Every new switch is off or unchanged
+by default: the pilot behaves as today.
+
+**Done**
+
+| ID | What shipped |
+|---|---|
+| A1 | All 17 `dt.date.today()` sites in `backend/app` (the 16 listed plus `ordering.py` cart context) read `restaurant_today()` (the current store's zone). Guard test fails on any new `date.today()` / `datetime.today()`. Website: `format.js` `storeToday()`; `/api/auth/me` adds `store_timezone` (and `pos_provider`), which set the website's zone after sign-in; a node guard fails on a browser-clock "today". |
+| A2 | Console tab **Masters**: list (two-step on/off, last sign-in, "Must change password"), **Add master** (server-made temporary password shown once, `must_change_password` until they choose their own; every other console call answers 403 `password_change_required`), **Remove** (never yourself, never the last; sessions end), **Reset two-step** (another master; sessions end). All audited. Re-enrolling an active two-step now needs a code from the current phone (`POST /masters/me/two-step/move`; the old set-up route answers 409 `two_step_on`). |
+| A3 | `platform_settings` table (p0003), I5 `get_platform_setting`: console > environment > default, 5 s per-process cache dropped on save. Console tab **Platform settings** (switch, plan picker, number/link/email, "Set here / Server value / Default", Reset), validated on both sides, audited old -> new. Sign-up open/closed is read per request (`signup.signup_open()`), no restart. Security switches stay environment-only. Renders `<SystemStatusPanel />` (C) under "System". |
+| A4 | `GET /api/platform/stores/{code}/health` (status, provisioning step, DB revision, newest run + result of every job, last activity, connection status; an unreachable store DB is reported, not raised). **Details** on every Stores row opens a drawer (full-screen on phones; Escape closes, focus returns) with remembered tile tabs Overview · Usage & plan (B) · Settings · Data (B) · Audit. |
+| A5 | Setup > **Store settings** (`/settings/store`): the 12 store-admin keys, grouped, checked as you type, only changes sent; own-server request when the platform offers it; a single-store server shows "Managed by KloudC support". |
+| A6 | One pattern: `table.kc-table--stack` + `ui/stackTables.js` (labels from the header, ⓘ skipped) -> cards under 768 px. Applied to Placed Orders, Invoices (2), Teams (2), Users, Reconciliation (4), Items Sold, Inventory Reports (2), Delivery Review (2), Open Checks, Category & vendor leads, Vendor contacts, Reported messages. B/D: add the class to new wide tables. |
+| A7 | `{pos}` is "your POS" for a CSV-only store on the server (help + glossary) and the website; "CSV upload" never shows. |
+| A8 | `content/help/schema.json`: optional `"pos": ["toast"|"clover"|"csv"]` on pages, sections, blocks, articles, FAQ, troubleshooting, concept terms. `/api/help`, the glossary and the website drop other POS's entries; public help / unknown POS keep them with a "Toast only" label. The Integrations guide's POS notes are marked per POS. |
+| A9 | Section 4 names on the website (Order placed, console tabs, store detail tabs, Setup pages); `names.test.mjs` fails on retired names. App list for the handoff: Purchase Order Cart / **Order placed** (was Mark placed), sentence-case Fix Issues lists, Item vendors, Data & usage, Store settings, Export all data, Two-step sign-in, Store ID, console tabs Masters / Platform settings, store detail tabs. |
+| A10 | Every page `React.lazy` with a skeleton (header-height, reduced-motion safe); Help Center, chat widget and public checklist lazy; React + router `vendor-react` chunk. Main chunk **1,429 kB -> 415 kB**, largest chunk 415 kB, no Vite size warning. `buildChunks.test.mjs` reads the build manifest (no chunk > 500 kB, entry imports no page). Routes `/settings/data` (B), `/setup/item-vendors` (D), `/settings/store` with menu entries (Setup > Store; Item vendors under Ordering setup) and help pages/guides. |
+| A11 | Checked by `e2e/screens/website_ready_a.mjs` on the real server: no sideways scroll, headings, 44 px targets for the new controls at 375, AA contrast of every visible text (shared `contrast.mjs`, also used by `audit.mjs`, which now covers the new pages and tabs): **0 findings**, 1440 + 375, light + dark. Manual checklist: landmarks (`main`, dialog `aria-modal` + labelled), every new input has a label and `aria-describedby` help/error, errors `role=alert`, focus returns from the drawer, global `prefers-reduced-motion`. Lighthouse is not installed locally (no new npm package allowed), so no scores. |
+| A12 | While signed in, `/me` is asked every minute and on tab return; a 403 `store_suspended` signs out and the sign-in page shows why once (the next sign-in shows the master's maintenance message). |
+
+**Tests**
+
+- Server (PostgreSQL 5433, `so_wra_`): `tests/platform` + `tests/tenancy` +
+  touched files: **410 passed**, 3 failed before the last fix -> cache lint
+  fixed; the 2 left are outside this track (below). New: `test_store_date.py`
+  (17), `test_console_masters_settings.py` (21), `test_help_pos.py` (12).
+  Date-sensitive suites pass with `TZ=UTC` and `TZ=America/New_York`
+  (408 + 5 skipped each); 14 older tests that used the server's date as
+  "today" now use the store's.
+- Website node tests: **337 of 337** (was 308).
+- `vite build`: OK, no warnings.
+- Playwright (real server, `run_website_ready_a.sh`, throwaway `so_wra_e2e`
+  databases, dropped): 36 screenshots in `/Users/sundar/storeops/screenshots/ready/A/`,
+  0 problems, 0 page errors.
+
+**Decisions**
+
+- `routes.py` (frozen) got two one-line changes: `_signup_enabled()` and
+  `/config`'s `signup_enabled` call `signup.signup_open()`, so the console
+  switch wins. The password-change route is untouched: a SQLAlchemy `set`
+  event on `PlatformUser.password_hash` clears `must_change_password`.
+- `platform_users.must_change_password` is added in p0003 (additive, default false).
+- A removed master is deactivated (`is_active=false`), not deleted; adding the
+  username again reactivates it with a new temporary password and no two-step.
+- Help pages `item_vendors` and `data_usage` (with short guides
+  `setup-item-vendors`, `setup-data-usage`) exist so routes have registry
+  pages; B and D extend these entries rather than adding new ids.
+- `/api/auth/me` adds `pos_provider` and `store_timezone` at the end (additive).
+
+**For Integrate**
+
+- `tests/test_no_origin_names.py` fails on main already:
+  `docs/WEBSITE_READY_CONTRACT.md:43` names the machine path
+  (`/Users/<owner>/.claude/...m1heavy.sh`); write "the shared heavy-job
+  wrapper (`m1heavy.sh`)" instead.
+- `tests/test_ops_glossary.py::test_app_bundled_copy_is_current` fails
+  because the glossary gained terms; it is fixed by regenerating the app's
+  bundle (`scripts/help/sync_help_to_app.sh`), which is an app change ->
+  app follow-up (no app change tonight).
+- B / D: put `className="kc-table--stack"` on new tables with more than 4
+  columns; give `StoreDataPage` / `ItemVendorsPage` a `PageHeader` with
+  pageId `data_usage` / `item_vendors`.
+
+**Deferred**
+
+- Lighthouse scores: the package is not installed and the contract allows no
+  new npm package for this; the manual checklist above stands in.
+- The in-session 403 message itself is the generic "This store is
+  suspended" (the server's `db.py`, owned by C); the master's maintenance
+  message shows on the next sign-in.
