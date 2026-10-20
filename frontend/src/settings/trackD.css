@@ -1,0 +1,381 @@
+/* Track D (docs/WEBSITE_READY_CONTRACT.md): Setup > Item vendors and the
+   Clover card on Settings > Integrations. Tokens only (styles/tokens.css),
+   so light and dark both follow the theme. Phone first: one column at 375,
+   rows widen into a three-part line from 768. */
+
+/* --- Clover card --- */
+.int-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+}
+.int-facts div {
+  min-width: 0;
+}
+.int-facts dt {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.int-facts dd {
+  margin: 2px 0 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.int-note {
+  font-size: var(--fs-small);
+}
+.int-field select {
+  width: 100%;
+  min-height: 40px;
+}
+
+/* --- Item vendors --- */
+.iv-page {
+  min-width: 0;
+}
+.iv-banner {
+  margin: 0 0 var(--space-3);
+}
+.iv-banner.neutral {
+  background: var(--neutral-soft);
+  color: var(--neutral-text);
+  border: 1px solid var(--neutral-border);
+}
+.iv-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+.iv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: none;
+}
+.iv-chip:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.iv-chip.is-on,
+.iv-chip.is-on:hover:not(:disabled) {
+  background: var(--brand-soft-strong);
+  border-color: var(--brand-text);
+  color: var(--brand-text);
+}
+.iv-chip-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: var(--fs-label);
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+.iv-chip.is-on .iv-chip-count {
+  background: var(--surface);
+  color: var(--brand-text);
+}
+
+.iv-list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.iv-row {
+  border-top: 1px solid var(--border);
+}
+.iv-row:first-child {
+  border-top: none;
+}
+.iv-row.is-editing {
+  background: var(--surface-2);
+}
+.iv-skeleton {
+  height: 64px;
+  background: linear-gradient(90deg, var(--surface-2), var(--surface-3), var(--surface-2));
+  background-size: 200% 100%;
+  animation: iv-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes iv-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iv-skeleton { animation: none; }
+}
+.iv-row-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "item edit" "vendors vendors";
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  min-height: 44px;
+}
+.iv-item {
+  grid-area: item;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.iv-item-name {
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.iv-item-meta {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.iv-vendors {
+  grid-area: vendors;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.iv-vendor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--area-setup-soft);
+  color: var(--text);
+  font-size: var(--fs-small);
+  border: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.iv-vendor.is-first {
+  border-color: var(--area-setup);
+  font-weight: 600;
+}
+.iv-code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+.iv-none {
+  font-size: var(--fs-small);
+  color: var(--warning-text);
+  font-weight: 600;
+}
+.iv-edit {
+  grid-area: edit;
+  width: auto;
+  min-height: 36px;
+}
+@media (min-width: 768px) {
+  .iv-row-main {
+    grid-template-columns: minmax(200px, 2fr) minmax(0, 3fr) auto;
+    grid-template-areas: "item vendors edit";
+  }
+}
+@media (max-width: 639px) {
+  .iv-edit { min-height: 44px; min-width: 64px; }
+  .iv-chip { min-height: 44px; }
+}
+
+.iv-more {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-4) 0;
+}
+.iv-more button {
+  width: auto;
+}
+
+/* Editor */
+.iv-editor {
+  padding: 0 var(--space-4) var(--space-4);
+}
+.iv-editor-hint {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.iv-editor-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.iv-editor-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-areas: "rank name" "rank code" "rank tools" "rank error";
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+@media (min-width: 768px) {
+  .iv-editor-row {
+    grid-template-columns: 28px minmax(0, 3fr) minmax(0, 2fr) auto;
+    grid-template-areas: "rank name code tools" ". error error error";
+    align-items: end;
+  }
+}
+.iv-rank {
+  grid-area: rank;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--area-setup-soft);
+  color: var(--area-setup);
+  font-weight: 700;
+  font-size: var(--fs-small);
+}
+.iv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.iv-field-name { grid-area: name; }
+.iv-field-code { grid-area: code; }
+.iv-label {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text-2);
+}
+.iv-field input,
+.iv-file input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+}
+.iv-field input[aria-invalid="true"] {
+  border-color: var(--danger-text);
+}
+.iv-row-tools {
+  grid-area: tools;
+  display: flex;
+  gap: 2px;
+}
+.iv-up svg {
+  transform: rotate(180deg);
+}
+.iv-remove:hover:not(:disabled) {
+  color: var(--danger-text);
+}
+.iv-row-error {
+  grid-area: error;
+}
+.iv-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.iv-editor-actions button {
+  width: auto;
+}
+.iv-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.iv-spacer {
+  flex: 1;
+}
+@media (max-width: 639px) {
+  .iv-row-tools .kc-icon-btn { width: 44px; height: 44px; }
+  .iv-editor-actions button[type="submit"] { flex: 1 1 100%; min-height: 44px; }
+}
+
+/* Import */
+.iv-import {
+  margin-bottom: var(--space-3);
+}
+.iv-import-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.iv-import-head h2 {
+  margin: 0;
+  font-size: var(--fs-h3);
+}
+.iv-import-text {
+  font-size: var(--fs-small);
+}
+.iv-file {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 420px;
+}
+.iv-preview {
+  margin-top: var(--space-3);
+}
+.iv-preview-summary {
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+.iv-preview-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  max-height: 320px;
+  overflow: auto;
+}
+.iv-preview-rows li {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 2px var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-small);
+}
+.iv-preview-rows li:first-child {
+  border-top: none;
+}
+.iv-line {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.iv-preview-msg {
+  grid-column: 2;
+}
+.iv-preview-rows li.is-error .iv-preview-msg {
+  color: var(--danger-text);
+}
+.iv-preview-rows li.is-note .iv-preview-msg {
+  color: var(--text-muted);
+}

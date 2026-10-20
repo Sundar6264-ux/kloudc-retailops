@@ -24,8 +24,9 @@ export const INTEGRATIONS = [
   {
     kind: "clover",
     label: "Clover",
-    blurb: "Connect your Clover merchant account.",
-    testable: false,
+    blurb: "Your Clover POS: sales, items, stock and employees.",
+    testable: true,
+    // Its own card (CloverCard): Connect with Clover, or a merchant API token.
     connect: true,
     fields: [],
   },
@@ -218,8 +219,89 @@ export function integrationErrorMessage(err) {
   if (code === "platform_mode_required") {
     return "On this server, connections are set in the server's settings file by whoever runs it.";
   }
-  if (code === "not_available") return message || "Clover connection arrives with M3.";
+  if (code === "not_available") return message || "This isn't available on this server.";
+  if (code === "clover_app_not_configured") {
+    return message || "Connect with Clover isn't set up on this service yet. Use an API token instead.";
+  }
   if (status === 429) return "Too many tests in a row. Wait a minute and try again.";
   if (status === 403) return message || "Only a store admin can change integrations.";
   return message || "Something went wrong. Please try again.";
+}
+
+// --- Clover (website-ready track D3) -------------------------------------------
+
+export const CLOVER_REGIONS = [
+  { value: "us", label: "US and Canada" },
+  { value: "eu", label: "Europe" },
+  { value: "la", label: "Latin America" },
+  { value: "sandbox", label: "Sandbox (testing)" },
+];
+
+const CLOVER_REGION_LABEL = Object.fromEntries(CLOVER_REGIONS.map((r) => [r.value, r.label]));
+
+// GET /api/settings/integrations/clover/status -> what the Clover card shows.
+export function cloverView(status) {
+  const s = status && typeof status === "object" ? status : {};
+  const connected = !!s.connected;
+  const statusKey = connected ? (STATUS[s.status] ? s.status : "untested") : "none";
+  const mode = s.mode === "oauth" ? "oauth" : s.mode === "token" ? "token" : null;
+  const lines = [];
+  if (connected && s.merchant_name) lines.push(["Merchant", s.merchant_name]);
+  if (connected && s.merchant_id) lines.push(["Merchant ID", s.merchant_id]);
+  if (connected && s.region) lines.push(["Region", CLOVER_REGION_LABEL[s.region] || s.region]);
+  if (connected && mode) lines.push(["Connected with", mode === "oauth" ? "Connect with Clover" : "API token"]);
+  return {
+    connected,
+    mode,
+    editable: s.editable !== false,
+    oauthEnabled: !!s.oauth_enabled,
+    environment: s.environment || null,
+    status: statusKey,
+    statusLabel: STATUS[statusKey].label,
+    tone: STATUS[statusKey].tone,
+    savedText: connected && s.last4 ? `saved •••• ${s.last4}` : connected ? "saved" : "",
+    lines,
+    merchantId: s.merchant_id || "",
+    region: s.region || "us",
+    lastTestedAt: s.last_tested_at || null,
+    lastTestMessage: s.last_test_message || null,
+  };
+}
+
+const RETURN_REASONS = {
+  expired: "The Clover sign-in took longer than 10 minutes. Choose Connect with Clover again.",
+  invalid: "That Clover sign-in link isn't valid any more. Choose Connect with Clover again.",
+  denied: "Clover didn't connect: the request was cancelled in Clover.",
+  refused: "Clover refused the connection. Try again, or use an API token.",
+  not_configured: "Connect with Clover isn't set up on this service yet. Use an API token instead.",
+};
+
+// Back from Clover: ?clover=connected | ?clover=error&reason=... -> a banner.
+export function cloverReturnMessage(search) {
+  let params;
+  try {
+    params = new URLSearchParams(search || "");
+  } catch {
+    return null;
+  }
+  const result = params.get("clover");
+  if (result === "connected") return { tone: "ok", text: "Clover is connected. Your sales and items start syncing now." };
+  if (result === "error") {
+    return { tone: "bad", text: RETURN_REASONS[params.get("reason")] || RETURN_REASONS.refused };
+  }
+  return null;
+}
+
+// The manual form -> {errors, body}. Merchant IDs are letters and digits
+// (Clover shows them as 13 capitals); a blank token keeps the saved one only
+// for the same merchant and region.
+export function validateCloverManual(form, view) {
+  const merchant = String(form?.merchant_id || "").trim().toUpperCase();
+  const token = String(form?.api_token || "").trim();
+  const region = CLOVER_REGION_LABEL[form?.region] ? form.region : "us";
+  const errors = {};
+  if (!/^[A-Z0-9]{6,32}$/.test(merchant)) errors.merchant_id = "Enter the Merchant ID from your Clover dashboard (letters and digits).";
+  const samePlace = !!view?.connected && view.mode === "token" && view.merchantId === merchant && view.region === region;
+  if (!token && !samePlace) errors.api_token = "Enter the API token.";
+  return { errors, body: { merchant_id: merchant, api_token: token, region } };
 }

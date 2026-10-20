@@ -1,0 +1,82 @@
+{
+ "id": "setup-connect-clover",
+ "title": "Connect Clover",
+ "area": "setup",
+ "group": "setup",
+ "order": 704,
+ "audience": [
+  "owner",
+  "admin"
+ ],
+ "summary": "Connect your Clover POS with one sign-in, or with a Merchant ID and API token. RetailOps only reads; it never changes anything in Clover.",
+ "pages": [
+  "integrations"
+ ],
+ "related": [
+  "setup-integrations",
+  "setup-item-vendors"
+ ],
+ "blocks": [
+  {
+   "type": "p",
+   "text": "Go to Setup › **Integrations** and pick the **Clover** tile."
+  },
+  {
+   "type": "h",
+   "text": "Connect with Clover",
+   "id": "oauth"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "Choose **Connect with Clover**. Clover's sign-in page opens.",
+    "Sign in with the Clover owner account and approve RetailOps.",
+    "Clover sends you back to Integrations. The chip shows **Saved - not tested**; choose **Test connection**."
+   ]
+  },
+  {
+   "type": "note",
+   "text": "The sign-in link works for 10 minutes. If it runs out, choose Connect with Clover again."
+  },
+  {
+   "type": "h",
+   "text": "Use an API token",
+   "id": "token"
+  },
+  {
+   "type": "steps",
+   "items": [
+    "In your Clover dashboard, open Account & Setup and copy the **Merchant ID** (13 letters and digits).",
+    "Under API Tokens, create a token with read permissions for inventory, orders, employees and merchant.",
+    "In RetailOps, enter the Merchant ID, paste the token, pick your region and choose **Save**, then **Test connection**."
+   ]
+  },
+  {
+   "type": "tip",
+   "text": "An API token is meant for one store. If you run several stores on Clover, use Connect with Clover."
+  },
+  {
+   "type": "h",
+   "text": "What RetailOps reads",
+   "id": "reads"
+  },
+  {
+   "type": "bullets",
+   "items": [
+    "Sales: every order, its items, modifiers, discounts, refunds and order type, each night and through the day.",
+    "Items: names, barcodes, prices, cost and categories, plus stock counts (Clover keeps counts below zero).",
+    "Employees: names for open checks and reports.",
+    "Clover has no vendor field, so add who supplies each item on [Item vendors](page:item_vendors)."
+   ]
+  },
+  {
+   "type": "h",
+   "text": "Disconnect",
+   "id": "disconnect"
+  },
+  {
+   "type": "p",
+   "text": "Choose **Disconnect** on the Clover card. Syncing stops and the saved token is deleted. Your past sales stay in RetailOps."
+  }
+ ]
+}

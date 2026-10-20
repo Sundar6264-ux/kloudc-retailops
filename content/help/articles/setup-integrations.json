@@ -31,7 +31,7 @@
    "type": "bullets",
    "items": [
     "**Toast**: your Toast API client ID and secret and the restaurant's GUID, from Toast's developer portal or your Toast contact. The analytics client is optional and turns on Insights.",
-    "**Clover**: the Connect button arrives with a later release. KloudC support can help connect a Clover store now.",
+    "**Clover**: choose **Connect with Clover** and approve RetailOps in Clover, or paste your Merchant ID and an API token from the Clover dashboard. See [Connect Clover](article:setup-connect-clover).",
     "Saving the POS starts a catch-up of recent sales."
    ]
   },

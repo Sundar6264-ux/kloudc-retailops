@@ -1839,5 +1839,100 @@
    "concept_audit_log",
    "concept_master"
   ]
+ },
+ {
+  "key": "concept_item_vendor",
+  "label": "Item vendor",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "A supplier you buy an item from. An item can have several, in order: the first is the first choice when ordering.",
+  "aliases": [
+   "supplier",
+   "item supplier"
+  ],
+  "where": "Item vendors, Reorder, New order, purchase orders",
+  "pages": [
+   "item_vendors",
+   "reorder"
+  ],
+  "related": [
+   "concept_vendor",
+   "concept_vendor_item_code"
+  ]
+ },
+ {
+  "key": "concept_vendor_item_code",
+  "label": "Vendor item code",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "The vendor's own number for an item, printed on purchase orders so the vendor can find it fast. Optional.",
+  "aliases": [
+   "supplier item code",
+   "vendor sku"
+  ],
+  "where": "Item vendors, purchase orders",
+  "pages": [
+   "item_vendors"
+  ],
+  "related": [
+   "concept_item_vendor"
+  ]
+ },
+ {
+  "key": "concept_connect_with_clover",
+  "label": "Connect with Clover",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "Signing in to Clover and approving RetailOps, so it can read your sales, items and stock. You can disconnect at any time.",
+  "aliases": [
+   "clover oauth",
+   "clover connect"
+  ],
+  "where": "Setup › Integrations",
+  "pages": [
+   "integrations"
+  ],
+  "related": [
+   "concept_merchant_id",
+   "concept_api_token"
+  ]
+ },
+ {
+  "key": "concept_merchant_id",
+  "label": "Merchant ID",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "Clover's ID for your store, 13 letters and digits. Find it in your Clover dashboard under Account & Setup.",
+  "aliases": [
+   "clover merchant id",
+   "mid"
+  ],
+  "where": "Setup › Integrations",
+  "pages": [
+   "integrations"
+  ],
+  "related": [
+   "concept_api_token",
+   "concept_connect_with_clover"
+  ]
+ },
+ {
+  "key": "concept_api_token",
+  "label": "API token",
+  "category": "concept_setup",
+  "area": "setup",
+  "definition": "A long secret key a POS gives you so another program can read your data. RetailOps saves it encrypted and only ever shows its last 4 characters.",
+  "aliases": [
+   "token",
+   "api key"
+  ],
+  "where": "Setup › Integrations",
+  "pages": [
+   "integrations"
+  ],
+  "related": [
+   "concept_merchant_id",
+   "concept_integration"
+  ]
  }
 ]
