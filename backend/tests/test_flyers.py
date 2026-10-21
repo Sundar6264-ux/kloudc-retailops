@@ -893,7 +893,7 @@ def test_partial_failure_then_retry(admin_client, db, whapi, marketing, pushes):
     by_key = {s["target_key"]: s for s in detail["sends"]}
     assert by_key[marketing["a"]]["status"] == "sent"
     failed = by_key[marketing["b"]]
-    assert failed["status"] == "failed" and "403" in failed["error"] and failed["sent_at"] is None
+    assert failed["status"] == "failed" and "still in the group" in failed["error"] and failed["sent_at"] is None
     assert detail["send_counts"] == {"sent": 1, "failed": 1, "pending": 0}
     assert [p.title for p in pushes] == ["Flyer: 1 sent, 1 failed"]
 
@@ -1049,7 +1049,7 @@ def test_retry_after_an_ambiguous_failure_sends_when_not_in_the_group(admin_clie
 @pytest.mark.parametrize("step, ambiguous, needle", [
     ("drop", False, "Couldn't reach WhatsApp"),
     (502, True, "may still have gone out"),
-    (401, False, "check the Whapi token"),
+    (401, False, "isn't signed in"),
     (429, False, "slow down"),
     ("unsent", True, "didn't confirm"),
 ])
@@ -1116,7 +1116,7 @@ def test_a_group_refusing_the_file_inline_too_keeps_the_media_id(admin_client, d
     assert len(whapi.uploads) == 1
     rows = db.query(FlyerSend).order_by(FlyerSend.id).all()
     assert [(r.target_key, r.status) for r in rows] == [(marketing["a"], "failed"), (marketing["b"], "sent")]
-    assert "404" in rows[0].error and not rows[0].ambiguous
+    assert "group not found" in rows[0].error and not rows[0].ambiguous
 
 
 def test_flyer_deleted_or_group_unticked_before_sending(admin_client, db, whapi, marketing, monkeypatch):

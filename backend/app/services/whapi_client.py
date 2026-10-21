@@ -48,6 +48,11 @@ import httpx
 from app.config import get_settings
 
 
+# What a store user reads when no WhatsApp token is saved (G29): no setting
+# names or file paths.
+NOT_CONNECTED_TEXT = "WhatsApp isn't set up for this store yet. An admin can connect it in Setup › Integrations."
+
+
 class WhapiNotConfigured(Exception):
     pass
 
@@ -107,7 +112,8 @@ def send_whatsapp_message(text: str, to: Optional[str] = None) -> None:
     target = to or settings.whapi_chat_id
     if not settings.whapi_api_token or not target:
         raise WhapiNotConfigured(
-            "WHAPI_API_TOKEN and/or a destination chat id aren't set in the backend's .env yet."
+            NOT_CONNECTED_TEXT if not settings.whapi_api_token
+            else "No WhatsApp group is set for this message yet. An admin can pick one in Setup › Integrations."
         )
     try:
         resp = httpx.post(
@@ -168,7 +174,7 @@ def list_groups() -> list:
     (services/whatsapp_groups.py)."""
     settings = get_settings()
     if not settings.whapi_api_token:
-        raise WhapiNotConfigured("WHAPI_API_TOKEN isn't set in the backend's .env.")
+        raise WhapiNotConfigured(NOT_CONNECTED_TEXT)
     out = []
     offset = 0
     for _ in range(GROUPS_MAX_PAGES):
@@ -239,33 +245,35 @@ class WhapiMediaError(Exception):
         self.maybe_sent = maybe_sent
 
 
+# What store users read (G29): plain sentences, no provider name, plan or
+# status code (the code stays on WhapiMediaError.status_code for the logs).
 _STATUS_TEXT = {
-    400: "WhatsApp refused the message (400)",
-    401: "WhatsApp login failed (401) - check the Whapi token",
-    402: "The Whapi plan's limit was reached (402)",
-    403: "WhatsApp refused the message (403) - is the store's number still in the group?",
-    404: "WhatsApp group not found (404)",
-    413: "The file is too large for WhatsApp (413)",
-    415: "WhatsApp doesn't accept this file type (415)",
-    429: "Too many messages - WhatsApp asked us to slow down (429)",
+    400: "WhatsApp refused the message.",
+    401: "WhatsApp isn't signed in for this store. An admin can check WhatsApp in Setup › Integrations.",
+    402: "WhatsApp couldn't reach this chat: the store's WhatsApp number can only message a few chats.",
+    403: "WhatsApp refused the message. Is the store's number still in the group?",
+    404: "WhatsApp group not found.",
+    413: "The file is too large for WhatsApp.",
+    415: "WhatsApp doesn't take this type of file.",
+    429: "Too many messages at once. WhatsApp asked us to slow down - try again in a few minutes.",
 }
 
 
 def _media_status_error(code: int) -> WhapiMediaError:
     if code >= 500 or code == 408:
         return WhapiMediaError(
-            f"WhatsApp's service didn't confirm the message ({code}) - it may still have gone out. "
+            "WhatsApp didn't confirm the message - it may still have gone out. "
             "Check the group before retrying.",
             status_code=code,
             maybe_sent=True,
         )
-    return WhapiMediaError(_STATUS_TEXT.get(code, f"WhatsApp refused the message ({code})"), status_code=code)
+    return WhapiMediaError(_STATUS_TEXT.get(code, "WhatsApp refused the message."), status_code=code)
 
 
 def _require_token() -> str:
     settings = get_settings()
     if not settings.whapi_api_token:
-        raise WhapiNotConfigured("WHAPI_API_TOKEN isn't set in the backend's .env.")
+        raise WhapiNotConfigured(NOT_CONNECTED_TEXT)
     return settings.whapi_api_token
 
 

@@ -156,7 +156,7 @@ def test_admin_manages_contacts_and_buyers_can_read(db, admin_client, buyer):
     assert [i["email"] for i in listed["items"]] == ["sales@raja.test"]
     assert listed["can_edit"] is False
     assert "Raja Foods" in listed["vendors"]
-    assert listed["whatsapp_enabled"] is False and "5 chats" in listed["whatsapp_off_reason"]
+    assert listed["whatsapp_enabled"] is False and "off for this store" in listed["whatsapp_off_reason"]
     assert buyer.get(CONTACTS, params={"vendor": "raja foods"}).json()["items"][0]["id"] == c["id"]
 
     assert buyer.post(CONTACTS, json={"vendor": VENDOR, "email": "a@b.test"}).status_code == 403
@@ -242,7 +242,7 @@ def test_preview_shows_recipients_subject_body_and_pdf(db, buyer, gmail):
     assert p["note_marker"] in p["body_template"]
     assert p["pdf_filename"].startswith("purchase-order-raja-foods-") and p["pdf_filename"].endswith(".pdf")
     assert p["email_configured"] is True and p["from_address"] == "orders@mainstore.test"
-    assert p["whatsapp"]["enabled"] is False and "402" in p["whatsapp"]["reason"]
+    assert p["whatsapp"]["enabled"] is False and "off for this store" in p["whatsapp"]["reason"]
     assert p["whatsapp"]["contacts"][0]["label"] == "Ravi - +18605550101"
     assert p["can_manage_contacts"] is False
     assert p["recent_sends"] == [] and p["uncertain_previous"] is None
@@ -479,7 +479,7 @@ def test_whatsapp_is_off_by_default(db, buyer, gmail):
     _cart(db)
     c = _contact(db, whatsapp="+18605550101")
     r = _send(buyer, channels=["email", "whatsapp"], whatsapp_contact_id=c.id)
-    assert r.status_code == 422 and r.json()["code"] == "whatsapp_off" and "5 chats" in r.json()["detail"]
+    assert r.status_code == 422 and r.json()["code"] == "whatsapp_off" and "off for this store" in r.json()["detail"]
     assert gmail.sent == [] and _cart_names(db) == ["Rice 20lb", "Toor Dal 4lb"]
 
 
@@ -517,7 +517,7 @@ def test_whatsapp_402_with_email_ok_is_partly_sent_and_placed(db, buyer, gmail, 
     r = _send(buyer, channels=["email", "whatsapp"], whatsapp_contact_id=c.id)
     assert r.status_code == 200, r.text
     s = r.json()["send"]
-    assert s["status"] == "partly_sent" and s["whatsapp_status"] == "failed" and "5 chats" in s["whatsapp_error"]
+    assert s["status"] == "partly_sent" and s["whatsapp_status"] == "failed" and "only message a few chats" in s["whatsapp_error"]
     assert len(_placed(db)) == 1 and _cart_names(db) == []
 
 
