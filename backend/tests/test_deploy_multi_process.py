@@ -26,17 +26,18 @@ def _env(tmp_path):
 def test_install_sh_jobs_do_not_include_the_worker():
     text = (PILOT / "install.sh").read_text()
     jobs = [l for l in text.splitlines() if l.startswith("JOBS=(")]
-    assert jobs == ["JOBS=(postgres server backup drill parity)"]
+    # The nightly DEMO reset (pre-production P) joins them; still no worker.
+    assert jobs == ["JOBS=(postgres server backup drill parity demo)"]
 
 
 @mac_only
-def test_install_dry_run_renders_the_same_five_plists(tmp_path):
+def test_install_dry_run_renders_the_same_six_plists(tmp_path):
     out = tmp_path / "rendered"
     r = subprocess.run([str(PILOT / "install.sh"), "--dry-run", str(out)], env=_env(tmp_path),
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stderr
     names = sorted(p.name for p in out.iterdir())
-    assert names == [f"com.kloudc.retailops.pilot.{j}.plist" for j in ("backup", "drill", "parity", "postgres", "server")]
+    assert names == [f"com.kloudc.retailops.pilot.{j}.plist" for j in ("backup", "demo", "drill", "parity", "postgres", "server")]
 
 
 @mac_only

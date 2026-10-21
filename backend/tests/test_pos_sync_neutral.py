@@ -357,7 +357,10 @@ def test_accuracy_resyncs_a_day_that_differs(db, pos):
 
 def test_accuracy_off_without_day_totals_and_report_failure_label(db, pos):
     pos.day_totals_on = False
-    assert accuracy.run_sales_repull(db, days=2, today=DAY) is None
+    # Without day totals (no Analytics keys) a POS with orders by date gets the
+    # re-check instead (pre-production P); the comparison stays off.
+    recheck = accuracy.run_sales_repull(db, days=2, today=DAY)
+    assert recheck is not None and recheck.job_name == accuracy.RECHECK_JOB
     assert accuracy.accuracy_report(db)["configured"] is False
     pos.day_totals_on = True
     pos.totals_error = DayTotalsUnavailable("Fake Reports", RuntimeError("busy"))
