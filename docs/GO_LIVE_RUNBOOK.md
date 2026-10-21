@@ -2,8 +2,8 @@
 
 Plain steps for the owner, **in this order (A to G)**. Each step says what
 to do, how to check it worked, and how to undo it. Commands are typed (or
-pasted) into **Terminal** on the Mac mini, as you - only the two lines that
-start with `sudo` ask for your Mac password. `<STORE>` is the store's ID
+pasted) into **Terminal** on the Mac mini, as you - only lines that start
+with `sudo` ask for your Mac password. `<STORE>` is the store's ID
 (store #1's ID is in the handoff file).
 
 Status: **checked in a dry run, 2026-10-21**. A copy of the release ran with
