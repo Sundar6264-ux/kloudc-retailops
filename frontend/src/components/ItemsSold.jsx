@@ -148,13 +148,13 @@ function ItemsSoldReport() {
         </p>
         <p style={{ marginBottom: 0 }}>
           {data?.source === "live" &&
-            `Today hasn't been through the nightly sync yet, so this was pulled live from ${pos} (Refresh pulls again).`}
+            `Today hasn't been copied from ${pos} yet (that happens each night), so this was read live from ${pos} (Refresh reads again).`}
           {data?.source === "mixed" &&
-            `Today's figures were pulled live from ${pos}; every earlier date in this range is from the already-synced sales data.`}
-          {(!data || data.source === "stored") && "From the already-synced sales data."}{" "}
+            `Today's figures were pulled live from ${pos}; every earlier date in this range is from the sales already copied each night.`}
+          {(!data || data.source === "stored") && "From the sales already copied each night."}{" "}
           {data?.source && data.source !== "stored" && <TermInfo k="sales_live_today" label={`Today (live from ${pos})`} />}
-          {" "}Once {pos} Analytics is set up, synced days are also compared with {pos} a few times a day
-          and re-synced when {pos} changed them afterwards (a late void, discount or payment).
+          {" "}Once {pos} Analytics is set up, copied days are also compared with {pos} a few times a day
+          and copied again when {pos} changed them afterwards (a late void, discount or payment).
         </p>
       </InfoBlock>
 

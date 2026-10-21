@@ -207,7 +207,7 @@ function SuggestedGroup({ group, isOpen, onToggle, onConfirmed, onDismiss, readO
             <p className="sugg-reason">{group.reason}</p>
             {!group.sales_complete && (
               <p className="sugg-warning">
-                Sales for a day in this window haven't synced from {currentPosName()} yet, so quantities may be a little low.
+                Sales for a day in this window haven't come in from {currentPosName()} yet, so quantities may be a little low.
               </p>
             )}
             <div className="table-wrap">

@@ -91,7 +91,7 @@ export default function JobStatusWidget({ refreshSignal, inline = false }) {
     };
     return (
       <div className="sync-line">
-        {error && <span className="sync-chip">Sync status unavailable</span>}
+        {error && <span className="sync-chip">Job status unavailable</span>}
         {jobs.map((job) => (
           <span
             key={job.job_name}

@@ -127,14 +127,14 @@ export default function SalesAccuracy() {
           </div>
         )}
       </div>
-      <InfoBlock brief={`Admins only. Each recent day's stored sales next to ${currentPosName()}'s own item totals; days that differ are re-synced from ${currentPosName()} automatically.`}>
+      <InfoBlock brief={`Admins only. Each recent day's stored sales next to ${currentPosName()}'s own item totals; days that differ are copied again from ${currentPosName()} automatically.`}>
         <p style={{ marginTop: 0 }}>
           {currentPosName()} keeps changing days after they close: a check voided or discounted the next
           morning, an item taken off an order, a late payment. A few times a day
           {data?.times?.length ? ` (${data.times.join(", ")})` : ""} the app asks {currentPosName()}'s Analytics
           for the last {data?.window_days ?? 14} days and compares each day's item sales (by
           {currentPosName()}'s business date, add-ons inside their item, discounts taken off) with what we have
-          stored. A day that differs, or that {currentPosName()} changed since the last check, is re-synced from
+          stored. A day that differs, or that {currentPosName()} changed since the last check, is copied again from
           {currentPosName()}'s orders; the rest are left alone.
         </p>
         <p style={{ marginBottom: 0 }}>
