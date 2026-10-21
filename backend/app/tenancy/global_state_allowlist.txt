@@ -243,3 +243,5 @@ app/platform/routes_console.py:_EMPTY_DB  # constant template (copied per reques
 app/help_content.py:POS_LABELS  # constant table (POS id -> the name a 'Toast only' label shows)
 app/platform/totp.py:_used_lock  # guards _used_steps
 app/platform/totp.py:_used_steps  # last two-step code step used per (master, purpose): masters are platform-level, not per store
+app/plain_errors.py:BARE_PHRASES  # constant table (never changed at run time)
+app/plain_errors.py:FIELD_LABELS  # constant table (never changed at run time)
