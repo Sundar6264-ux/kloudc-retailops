@@ -4293,3 +4293,38 @@ exceeds the database's `max_connections` refuses to start (the dev cluster
 has 200; the pilot cluster has 250, which fits the default 210). The
 fake front had to learn chunked request bodies (Dart's `HttpClient` sends
 them); Cloudflare handles them, so nothing changes in the server.
+
+## As built - Pre-production: Handoff (go-live steps)
+
+`docs/GO_LIVE_RUNBOOK.md` is now the owner's ordered list A-G (update the
+pilot, sales double-check and the go/no-go rule, DNS + tunnel + production
+settings, DEMO, Terms on kloudc.com, go-live day, TestFlight), every step
+with copy-paste commands, a check and an undo.
+
+- **`deploy/pilot-mac/retailops.sh platform|ops COMMAND ...`** (new): loads
+  `config/pilot.env` and `secrets/retailops.env` the way `lib.sh` does,
+  `cd`s into the release's backend and runs `python -m app.<group>` with
+  `SCHEDULER_ENABLED=false` and `PILOT_ROOT` passed on. Refuses root and any
+  other module. Found while writing the steps: the runbook's earlier
+  `cd <install>/app/backend && .venv/bin/python -m app.platform ...` lines
+  ran **without** the install's settings (the pilot has no `backend/.env`),
+  so `check-config`, `demo-provision` and `pilot-mode` would have looked at
+  the default database. Test:
+  `tests/test_ops_deploy_files.py::test_retailops_sh_runs_a_command_with_the_install_settings`.
+- **`install.sh --demo-job`** (new): installs and starts only
+  `com.kloudc.retailops.pilot.demo` (an install made before DEMO existed);
+  no prepare, no database or server restart. With `--dry-run DIR` renders
+  only that plist. Test: `test_install_demo_job_touches_only_the_demo_refresh`.
+- **`production.env.example` is appendable**: `cat` it onto `pilot.env`
+  (bash-loaded, later lines win). `CORS_ORIGINS` becomes
+  `"https://app.kloudc.com${CORS_ORIGINS:+,$CORS_ORIGINS}"` (keeps the
+  Tailscale address set earlier, no stray comma when none; safe under
+  `set -u`), `BACKUP_OFFSITE_DIR` uses `$HOME`, and the blank
+  `APPLE_TEAM_ID` / `FIREBASE_CREDENTIALS_FILE` lines are comments (an
+  append must not blank a value set later). Test:
+  `tests/test_ops_tunnel.py::test_production_env_example_appends_onto_the_pilot_settings`.
+
+**Not verified:** whether macOS lets the nightly backup LaunchDaemon write
+into iCloud Drive (privacy protection on `~/Library/Mobile Documents`). The
+runbook's C3 check lists the folder the next morning and says what to do
+when it is empty; the local nightly backups are unaffected either way.
