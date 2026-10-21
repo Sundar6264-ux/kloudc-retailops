@@ -91,6 +91,11 @@ def test_publish_reaches_another_processes_listener(pg_mode, platform_db_url, mo
         assert pg_mode.publish("probe2", "ALPHA", {"n": 1}) is True
         monkeypatch.setattr(pg_mode, "ORIGIN", "process-2")  # the listener's process
         assert got.wait(2)
+        # The publisher thread counts after pg_notify returns, so the listener
+        # can be woken a moment before the count moves (seen on slow CI).
+        deadline = time.monotonic() + 2
+        while pg_mode.status()["published"] < 1 and time.monotonic() < deadline:
+            time.sleep(0.01)
         assert pg_mode.status()["published"] >= 1
     finally:
         listener.stop()
