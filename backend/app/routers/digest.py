@@ -1,3 +1,5 @@
+import logging
+
 import anthropic
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -24,10 +26,10 @@ def generate(db: Session = Depends(get_db), user: User = Depends(get_current_use
     except AnthropicNotConfigured:
         raise HTTPException(
             status_code=500,
-            detail="ANTHROPIC_API_KEY isn't configured on the server - set it in backend/.env and "
-            "restart the service.",
+            detail="AI isn't set up for this store yet. An admin can add the AI key in Setup › Integrations.",
         )
     except anthropic.AuthenticationError:
-        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY was rejected by the Claude API.")
+        raise HTTPException(status_code=500, detail="The store's AI key was refused. An admin can check it in Setup › Integrations.")
     except anthropic.APIError as exc:
-        raise HTTPException(status_code=502, detail=f"Claude API error: {exc}")
+        logging.getLogger(__name__).warning("AI request failed: %s", exc)
+        raise HTTPException(status_code=502, detail="The AI service didn't answer. Try again in a minute.")

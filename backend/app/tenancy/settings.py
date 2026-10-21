@@ -275,6 +275,9 @@ def validate_store_setting(key: str, value: Any) -> Any:
     try:
         validated = Settings.model_validate(values)
     except ValidationError as exc:
-        msgs = "; ".join(e.get("msg", "invalid") for e in exc.errors())
-        raise ValueError(f"{key}: {msgs}") from None
+        # One plain sentence naming the field (G16), never validator text.
+        from app.plain_errors import setting_error_message
+
+        errors = [e for e in exc.errors() if key in [p for p in e.get("loc", ()) if isinstance(p, str)]] or exc.errors()
+        raise ValueError(setting_error_message(key, errors)) from None
     return getattr(validated, key)

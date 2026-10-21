@@ -91,7 +91,7 @@ def test_an_unhandled_error_is_logged_with_its_request_id_and_answered_as_json(c
         r = client.get("/boom", headers={"X-Request-ID": "trace-0001-abcd"})
     assert r.status_code == 500
     body = r.json()
-    assert body == {"detail": "Something went wrong on the server.", "error": "server_error",
+    assert body == {"detail": "Something went wrong on our side. Try again in a minute.", "error": "server_error",
                     "request_id": "trace-0001-abcd"}
     assert "secret internals" not in r.text
     errors = [rec for rec in caplog.records if rec.name == "retailops.error"]

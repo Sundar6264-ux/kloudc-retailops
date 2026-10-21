@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.plain_errors import field_label
 from app.platform import bridge
 from app.platform.audit import audit
 from app.platform.errors import PlatformError
@@ -189,7 +190,7 @@ def _https_setting(key: str, value: Any) -> str:
         or parts.password
         or any(c.isspace() or ord(c) < 32 for c in v)
     ):
-        raise PlatformError(400, "invalid", f"{key} must be an https:// address.", field=key)
+        raise PlatformError(400, "invalid", f"{field_label(key)}: must be a web address starting with https://.", field=key)
     return v
 
 
@@ -224,7 +225,7 @@ def put_settings(db: Session, code: str, updates: Dict[str, Any], *, actor: str,
     clean = _validate_settings(current, updates)
     for mirrored, column in _MIRRORED.items():
         if mirrored in clean and clean[mirrored] in (None, ""):
-            raise PlatformError(400, "invalid", f"{mirrored} cannot be blank.", field=mirrored)
+            raise PlatformError(400, "invalid", f"{field_label(mirrored)} can't be blank.", field=mirrored)
     if "pos_provider" in clean and clean["pos_provider"] not in ("toast", "clover", "csv"):
         raise PlatformError(400, "invalid", "pos_provider must be toast, clover or csv.", field="pos_provider")
     changed = {}

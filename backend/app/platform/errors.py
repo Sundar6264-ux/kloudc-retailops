@@ -24,7 +24,7 @@ MESSAGES: Dict[str, str] = {
     "dedicated_hosting_disabled": "Dedicated hosting is switched off on this platform.",
     "platform_mode_required": "Integrations are set in the server's settings on a single-store server.",
     "demo_read_only": "The demo account can look around but can't change the store's real data.",
-    "not_available": "Clover connection arrives with M3",
+    "not_available": "This isn't available yet.",
     "signup_disabled": "Sign-up is closed.",
     "invalid": "Some values are not valid.",
     "conflict": "That conflicts with the current state.",

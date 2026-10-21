@@ -409,5 +409,5 @@ def get_public_invoice_file(
         raise HTTPException(status_code=404, detail="Not found")
     path = resolve_file_path(entry)
     if not path.is_file():
-        raise HTTPException(status_code=404, detail="File missing on server")
+        raise HTTPException(status_code=404, detail="This file is missing. Ask an admin to upload it again.")
     return FileResponse(path, media_type=entry.content_type or "application/octet-stream")

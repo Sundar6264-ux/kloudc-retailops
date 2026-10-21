@@ -167,7 +167,10 @@ def sales_accuracy_run(days: Optional[int] = Query(None, ge=1, le=sales_accuracy
     builds each Analytics report on request). Poll GET /accuracy for the
     result."""
     if not toast_analytics.is_configured():
-        raise HTTPException(status_code=409, detail="Toast Analytics is not set up on this server.")
+        raise HTTPException(
+            status_code=409,
+            detail="Toast Analytics is not set up for this store yet. An admin can add its keys in Setup › Integrations.",
+        )
     if sales_accuracy.is_running():
         raise HTTPException(status_code=409, detail="A sales accuracy check is already running.")
     # spawn_in_store: the thread keeps this request's store (PLATFORM_CONTRACT 6.6).

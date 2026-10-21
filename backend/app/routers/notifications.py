@@ -172,5 +172,5 @@ def test_notification(user: User = Depends(get_current_user), db: Session = Depe
     try:
         sent = send_test(db, user)
     except push.PushNotConfigured:
-        raise HTTPException(status_code=503, detail="Notifications aren't set up on the server yet.")
+        raise HTTPException(status_code=503, detail="Notifications aren't available for this store yet.")
     return {"sent": sent}
