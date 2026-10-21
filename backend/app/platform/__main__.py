@@ -266,6 +266,38 @@ def cmd_load_pack(args) -> int:
     return 0
 
 
+def _demo(args, fn) -> int:
+    import datetime as _dt
+
+    from app.ops.demo_store import DemoStoreError
+    from app.ops.store_import import StoreImportError
+
+    try:
+        out = fn(workdir=args.workdir, password_file=args.review_password_file, seed=args.seed, days=args.days,
+                 items=args.items, end_date=_dt.date.fromisoformat(args.end_date) if args.end_date else None,
+                 log=lambda line: print(line, file=sys.stderr))
+    except (DemoStoreError, StoreImportError) as exc:
+        print(f"DEMO: refused: {exc}", file=sys.stderr)
+        return 1
+    _print(out)
+    return 0
+
+
+def cmd_demo_provision(args) -> int:
+    from app.ops.demo_store import provision
+
+    return _demo(args, provision)
+
+
+def cmd_demo_reset(args) -> int:
+    from app.ops.demo_store import _store, reset
+
+    if args.skip_if_missing and _store() is None:
+        print("DEMO: no DEMO store on this server (demo-provision makes one) - nothing to do", file=sys.stderr)
+        return 0
+    return _demo(args, reset)
+
+
 def cmd_parity(args) -> int:
     from app.ops.parity import ParityError, run_parity
 
@@ -354,6 +386,21 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--file", required=True)
     p.add_argument("--no-rows", action="store_true", help="only the pack, no checklists / roles / rules")
     p.set_defaults(func=cmd_load_pack)
+    for name, func, help_text in (
+        ("demo-provision", cmd_demo_provision, "create the DEMO store for App Review (made-up data, view only)"),
+        ("demo-reset", cmd_demo_reset, "rebuild the DEMO store's made-up data (nightly)"),
+    ):
+        p = sub.add_parser(name, help=help_text)
+        p.add_argument("--workdir", default=None, help="folder for the build (default: a temporary folder)")
+        p.add_argument("--review-password-file", default=None,
+                       help="the appreview password file (default <install>/secrets/demo_review_password)")
+        p.add_argument("--seed", type=int, default=None)
+        p.add_argument("--days", type=int, default=90)
+        p.add_argument("--items", type=int, default=400)
+        p.add_argument("--end-date", default=None)
+        if name == "demo-reset":
+            p.add_argument("--skip-if-missing", action="store_true", help="exit quietly when there is no DEMO store")
+        p.set_defaults(func=func)
     p = sub.add_parser("parity", help="compare the store's key numbers with a reference SQLite database")
     p.add_argument("code")
     p.add_argument("--reference", required=True, help="the reference database (opened read-only)")

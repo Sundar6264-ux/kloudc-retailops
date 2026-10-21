@@ -114,3 +114,9 @@ def test_production_env_example_names_real_settings_and_no_secrets():
     assert "https://app.kloudc.com" in pairs["CORS_ORIGINS"].split(",")
     for word in ("SECRET", "PASSWORD", "TOKEN", "KEYS"):
         assert not any(word in k for k in pairs), "secrets stay in <install>/secrets"
+
+
+def test_nightly_demo_reset_is_a_no_op_without_a_demo_store():
+    text = (PILOT / "run-demo-reset.sh").read_text()
+    assert "demo-reset --skip-if-missing" in text
+    assert "secrets/demo_review_password" in text
