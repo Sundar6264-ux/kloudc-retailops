@@ -36,7 +36,7 @@ else
   RUN_USER="${SUDO_USER:-}"
   [ -n "$RUN_USER" ] && [ "$RUN_USER" != root ] || { echo "Run it with sudo from your own account" >&2; exit 1; }
 fi
-RUN_HOME="$(dscl . -read "/Users/$RUN_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+RUN_HOME="$(dscl . -read "/Users/$RUN_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}' || true)"
 [ -n "$RUN_HOME" ] || RUN_HOME="$(eval echo "~$RUN_USER")"
 export HOME="$RUN_HOME"
 # shellcheck source=pilot.conf
