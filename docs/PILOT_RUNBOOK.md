@@ -74,33 +74,18 @@ To remove it: `sudo tailscale serve --https=10003 off`.
 
 ### Later: app.kloudc.com
 
-`kloudc.com`'s DNS is at Bluehost today. Two good ways to put the service at
-`https://app.kloudc.com`:
+The step-by-step is in `docs/GO_LIVE_RUNBOOK.md` (DNS move with every
+Bluehost record copied, the KloudC-only tunnel with
+`deploy/pilot-mac/install-tunnel.sh`, production settings from
+`deploy/pilot-mac/production.env.example`, off-site backup, DEMO store,
+switch-over). Two ways to put the service at `https://app.kloudc.com`:
 
-**A. Cloudflare Tunnel from this Mac (no open ports).** A tunnel's public
-name must be in a Cloudflare DNS zone, so kloudc.com's DNS moves to Cloudflare
-(free plan) - the website itself stays at Bluehost:
-1. Cloudflare dashboard -> Add a site -> `kloudc.com` -> Free. Cloudflare
-   copies the existing records; check that the website (A/CNAME for `@` and
-   `www`), email (MX, SPF/DKIM TXT) and any verification TXT records are all
-   there before going on.
-2. Bluehost -> Domains -> kloudc.com -> Name Servers -> Custom: the two
-   Cloudflare name servers. Wait until Cloudflare says the site is active
-   (minutes to a few hours). Check the website and email still work.
-3. On this Mac (as your user): `cloudflared tunnel login`, then
-   `cloudflared tunnel create kloudc-retailops` and
-   `cloudflared tunnel route dns kloudc-retailops app.kloudc.com`.
-4. A config file `~/kloudc-retailops/config/tunnel.yml` with
-   `tunnel: <id>`, `credentials-file: ~/.cloudflared/<id>.json` and
-   `ingress: [{hostname: app.kloudc.com, service: http://127.0.0.1:8900}, {service: http_status:404}]`.
-   Run it as its own LaunchDaemon (label `com.kloudc.retailops.pilot.tunnel`,
-   program `cloudflared tunnel --config <that file> run`). Do **not** use
-   `cloudflared service install`: this Mac already runs another tunnel as a
-   service and that command would replace it.
-5. In `config/pilot.env`: `PLATFORM_PUBLIC_URL='https://app.kloudc.com'`,
-   `CORS_ORIGINS='https://app.kloudc.com'`, `PLATFORM_DOMAIN='kloudc.com'`;
-   restart the server (section 7). The app build uses
-   `PLATFORM_API_URL=https://app.kloudc.com`.
+**A. Cloudflare Tunnel from this Mac (no open ports)** - the chosen way
+(pre-production 2026-10-21). Its own tunnel `kloudc-retailops`, started by
+its own LaunchDaemon `com.kloudc.retailops.pilot.tunnel` from a token file.
+Never `cloudflared service install` or `cloudflared tunnel login`, and
+nothing in `~/.cloudflared`: this Mac already runs another tunnel as a
+service and those would replace or disturb it.
 
 **B. A cloud VM (section 3).** Bluehost DNS keeps kloudc.com; add one record:
 `A  app  -> <the VM's public IP>`. Caddy on the VM gets the certificate by
