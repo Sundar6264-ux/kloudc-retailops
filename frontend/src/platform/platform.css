@@ -591,6 +591,15 @@ button.int-tile.active:hover:not(:disabled) {
   color: var(--warning-text);
 }
 
+.int-error {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: var(--failed-bg);
+  color: var(--failed-text);
+}
+
 .pf-banner.warn {
   background: var(--warning-soft);
   color: var(--warning-text);

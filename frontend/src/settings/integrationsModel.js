@@ -242,6 +242,13 @@ export function fieldGroups(spec) {
   });
 }
 
+// The group key a field belongs to (null for a spec without groups), so a
+// message about that field can sit inside the right group.
+export function groupOfField(spec, key) {
+  if (!Array.isArray(spec?.groups) || !spec.groups.length) return null;
+  return spec.fields.find((f) => f.key === key)?.group || null;
+}
+
 const trimmed = (v) => (typeof v === "string" ? v.trim() : v == null ? "" : String(v).trim());
 
 // Checks before Save / Test connection, in plain words:

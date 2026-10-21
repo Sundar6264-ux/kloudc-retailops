@@ -18,6 +18,7 @@ import {
   validateCloverManual,
   fieldGroups,
   formProblems,
+  groupOfField,
   testResultLines,
   TOAST_MAIN_KEYS_MISSING,
   TOAST_SAME_KEYS,
@@ -254,6 +255,14 @@ test("Toast: only the Analytics keys filled -> the plain main-keys sentence", ()
   assert.deepEqual(p.fields, ["client_id", "client_secret", "restaurant_guid"]);
   // One main field empty: the same sentence, naming that field.
   assert.deepEqual(formProblems(TOAST, NEW, toastForm({ restaurant_guid: "  " })).fields, ["restaurant_guid"]);
+});
+
+test("the stopping sentence sits in the group of the fields it is about", () => {
+  assert.equal(groupOfField(TOAST, "client_id"), "main");
+  assert.equal(groupOfField(TOAST, "api_base"), "main");
+  assert.equal(groupOfField(TOAST, "analytics_client_secret"), "analytics");
+  assert.equal(groupOfField(TOAST, "nope"), null);
+  assert.equal(groupOfField(INTEGRATIONS_BY_KIND.whatsapp, "api_token"), null);
 });
 
 test("Toast: a blank Client secret keeps the saved one, unless it is being removed", () => {

@@ -22,6 +22,7 @@ import {
   fieldGroups,
   formFromView,
   formProblems,
+  groupOfField,
   hasChanges,
   testResultLines,
   integrationErrorMessage,
@@ -169,11 +170,19 @@ function IntegrationCard({ view, onChanged, disabled }) {
   // about repeated keys shows right away, under the Analytics keys).
   const problems = formProblems(spec, view, form, clear);
 
-  // Stops Save / Test with a plain sentence before anything is sent.
+  // The sentence that stopped Save / Test, shown inside the group whose
+  // fields it is about (it goes away as soon as they are filled in).
+  const formError = tried ? problems.error : null;
+  const errorGroup = formError ? groupOfField(spec, problems.fields[0]) : null;
+
+  // Stops Save / Test with a plain sentence before anything is sent, and
+  // moves the cursor to the first box to fill in.
   function blocked() {
     setTried(true);
     if (!problems.error) return false;
-    setMessage({ tone: "bad", text: problems.error });
+    setMessage(null);
+    const first = problems.fields[0];
+    document.querySelector(`[data-testid="field-${first}"], [data-testid="secret-${first}"]`)?.focus();
     return true;
   }
 
@@ -260,6 +269,11 @@ function IntegrationCard({ view, onChanged, disabled }) {
                 </>
               )}
               <div className="int-form">{fields.map(field)}</div>
+              {formError && (group?.key || null) === errorGroup && (
+                <p className="int-error" role="alert" data-testid="int-form-error">
+                  {formError}
+                </p>
+              )}
               {advanced.length > 0 && (
                 <details className="int-advanced">
                   <summary>Advanced</summary>
