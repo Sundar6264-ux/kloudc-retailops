@@ -77,6 +77,9 @@ def test_user_lockout_and_ip_lockout(client, master, platform_env, monkeypatch, 
     # IP lockout across usernames.
     monkeypatch.setattr(platform_env, "login_ip_lockout_failures", 3)
     monkeypatch.setattr(platform_env, "directory_client_ip_header", "X-Test-IP")
+    # The header counts only from a trusted proxy (app/platform/client_ip.py);
+    # the TestClient's peer stands in for cloudflared here.
+    monkeypatch.setenv("FORWARDED_ALLOW_IPS", "*")
     for i in range(3):
         store_login_ip = client.post("/api/auth/login", json={"store_code": "ALPHA", "username": f"u{i}", "password": "bad-pass-1"},
                                      headers={"X-Test-IP": "10.9.9.9"})
