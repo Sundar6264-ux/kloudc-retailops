@@ -16,7 +16,7 @@ def test_terms_page_is_public_and_plain():
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
     body = r.text
     assert "<title>Terms of Service - KloudC RetailOps</title>" in body
-    for must in ("KloudC LLC", "Connecticut", "support@kloudc.com", "Delete account"):
+    for must in ("KloudC LLC", "Connecticut", "support@kloudc.com", "Delete my account"):
         assert must in body
     assert "<script" not in body
 
