@@ -4,9 +4,11 @@ Plain steps for the owner, in order. Each step says what to do, how to check
 it worked, and how to undo it. The install folder is `~/kloudc-retailops`
 (called `<install>` below); commands run in Terminal on the Mac mini.
 
-Status of this document: **skeleton, pre-production 2026-10-21** (track P).
-The parts marked *(owner)* need your accounts or a decision; everything else
-is already built and tested.
+Status of this document: **checked in a dry run, 2026-10-21**. A copy of
+the release ran with exactly these production settings behind a stand-in
+for Cloudflare, and every check below passed there (see "What the dry run
+checked" at the end). The parts marked *(owner)* need your accounts or a
+decision; everything else is already built and tested.
 
 | # | Step | Who | Blocks |
 |---|---|---|---|
@@ -74,7 +76,8 @@ running on this Mac is never touched: no `cloudflared service install`, no
    Loader **off**; Email Address Obfuscation **off** (both rewrite pages).
 6. Check: `https://app.kloudc.com/api/health` shows `{"status":"ok"}`;
    `install-tunnel.sh --status` shows it running; the Tailscale address
-   still works.
+   still works; the other tunnel's site still opens. Then, on a phone using
+   mobile data (Wi-Fi off), open https://app.kloudc.com and sign in.
 
 Undo: `sudo <install>/app/deploy/pilot-mac/install-tunnel.sh --uninstall`
 (app.kloudc.com stops; Tailscale keeps working). Delete the tunnel in
@@ -94,8 +97,12 @@ run in the background and uploads are far smaller.
 3. Check: `cd <install>/app/backend && .venv/bin/python -m app.ops check-config`
    shows 0 errors and none of these warnings: PLATFORM_DOMAIN, CORS_ORIGINS,
    PUBLIC_HOST, TERMS_URL, BACKUP_OFFSITE_DIR, TOAST_ANALYTICS.
-4. Sign in on https://app.kloudc.com as a master: two-step sign-in is
-   required (PLATFORM_REQUIRE_TOTP=true).
+4. Sign in on https://app.kloudc.com as a master. The first time, the
+   console asks you to set up two-step sign-in: scan the code with an
+   authenticator app (Google Authenticator, Microsoft Authenticator or
+   1Password) and type the 6-digit number. From then on every master
+   sign-in asks for that number. The console stays closed until it is set
+   up.
 
 Undo: restore the previous `pilot.env` lines and run update.sh again.
 
@@ -125,8 +132,10 @@ nothing ever sent. Its data is rebuilt every night at 03:45.
    nightly DEMO refresh job (`com.kloudc.retailops.pilot.demo`) is installed.
 3. App Store Connect > App Review Information: store ID `DEMO`, user
    `appreview`, password = the line in `<install>/secrets/demo_review_password`.
-4. Check: sign in to the app with those; try a change - it says the demo
-   account can't change things.
+4. Check: sign in to the app with those; try a change - it says "The demo
+   account can look around but can't change the store's real data." The
+   nightly refresh keeps the same password, so App Store Connect never
+   needs updating.
 
 Undo: `python -m app.platform suspend DEMO --reason "not needed"`.
 
@@ -174,3 +183,38 @@ is lost (both systems keep syncing sales from Toast).
   on the WordPress site.
 - The DEMO store lives on the same server (pack `demo`, upload-only POS,
   demo mode + pilot mode), rebuilt nightly at 03:45, after the backup.
+
+## What the dry run checked
+
+On 2026-10-21 a copy of the release (`git archive` of `main`) ran on this
+Mac's test database server with the settings of step 4, behind a small
+local stand-in for Cloudflare that adds the visitor's address
+(`CF-Connecting-IP`), the way the tunnel will. The live pilot was not
+touched. All of these passed:
+
+- Masters: sign-in without two-step set-up opens nothing but the set-up;
+  after it, sign-in needs the 6-digit code.
+- Lockout: 30 wrong passwords from one visitor lock that visitor only;
+  another visitor signs in normally. A visitor can't fake its address
+  (Cloudflare overwrites it). Lockouts, the audit log and now the server's
+  request log record the visitor's address, not the tunnel's.
+- Links: store sign-in links, owner set-up links and data export download
+  links all start with `https://app.kloudc.com`.
+- Export: progress goes 0 -> 100 and the file downloads.
+- DEMO: made in 16 seconds, the review login reads but every change is
+  refused with the plain demo line, the nightly refresh runs in 15 seconds
+  and keeps the review password.
+- Daily comparison: on a made-up store with the late Toast edits seen in
+  the pilot, the comparison showed the differences before the daily
+  re-check and 0 after it.
+- Terms page at `/terms`, the website with its security headers, the
+  Connect with Clover hand-back page, and an unknown address answering
+  "Not Found" (older app builds need those words).
+- Tunnel: `install-tunnel.sh --dry-run` renders its own LaunchDaemon and
+  config (token mode) and nothing else; the installed cloudflared
+  (2026.10.1) supports `--token-file`.
+- App (simulator, same server): see the app repo's `docs/APP_PHASE.md`,
+  "As built - Pre-production: Verify".
+
+Good to know: a person signed in to the DEMO store at 03:45 (Eastern) is
+signed out by the nightly refresh and simply signs in again.

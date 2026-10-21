@@ -4240,3 +4240,56 @@ it now sets `RETAILOPS_TEST_DB=sqlite` and the discard POS addresses. And
 `set -o pipefail`); it now falls back to `~user`. Final runs on `main`
 `16a37cd`: CI (PostgreSQL, SQLite, website, Docker) all green; Docs green.
 App repo `main` `89a77a9`: CI and Docs green.
+
+## As built - Pre-production: Verify (go-live dry run)
+
+A fake production install: `git archive` of `main` (`853d873`) with its own
+website build, the step-4 settings of `docs/GO_LIVE_RUNBOOK.md`
+(`APP_ENV=production`, multi mode, `PLATFORM_PUBLIC_URL` / `PUBLIC_HOST`
+`https://app.kloudc.com`, `PLATFORM_REQUIRE_TOTP=true`,
+`DIRECTORY_CLIENT_IP_HEADER=CF-Connecting-IP`, `FORWARDED_ALLOW_IPS=127.0.0.1`,
+`SECURITY_HEADERS=enforce`, `TERMS_URL`, `BACKUP_OFFSITE_DIR`), own databases
+`so_pp_verify_*` on the dev cluster, uvicorn on 127.0.0.1:8890 started as
+`start-server.sh` does, and a stand-in for Cloudflare on 8891 (a small proxy
+that overwrites `CF-Connecting-IP` with a test visitor address and sets
+`X-Forwarded-Proto: https`, `Host: app.kloudc.com`). Every outside address
+pointed at 127.0.0.1:9; made-up Clover app id/secret. `check-config`: 0
+errors, 1 warning (no Firebase file). The pilot was not touched; the
+servers were stopped and the databases dropped afterwards.
+
+| Check | Result |
+|---|---|
+| Master without two-step: sign-in answers `totp_setup_required: true`, console 403 `totp_setup_required`; after enable, sign-in without code 401 `totp_required`, with code 200 | pass |
+| Lockout per visitor: 30 failures from 203.0.113.5 -> 429 (also with the right password); 203.0.113.9 signs in; a visitor's own `CF-Connecting-IP` is overwritten; `login_attempts.client_ip` / `audit_log.client_ip` hold the visitor | pass |
+| Links: provision login / set-up links, master owner-setup link, export Download link all `https://app.kloudc.com/...` | pass |
+| Export: progress 0 -> 100, link 200 | pass |
+| `/me`: `pos_connected` false, `pos_word` "Toast" | pass |
+| DEMO: `demo-provision` 16 s; `appreview` reads (`/api/sales/items-sold`, branding 200); change-password, Toast keys, export, add user -> 403 `demo_read_only`; `demo-reset` 15 s, review password file unchanged, store active; sessions open during a reset are ended (`session_expired`) | pass |
+| Parity on a synthetic pair (store VTOAST synced nightly; reference SQLite with Toast's later edits, the 10-15 / 10-18 pattern): before the re-check `ok` false, 7 differences on 2 days, `line_counts` {10-15: 3 only_reference; 10-18: 2 only_reference, 11 changed}; `run_sales_repull` -> `sales_recheck` "+3 line(s), net +12.40" / "+2 line(s), net -142.66"; after: `ok` true, 0 differences, only the "keys are missing" warning | pass |
+| `/terms` 200; `/` with CSP; `/api/no-such-thing` 404 `detail` "Not Found"; Clover `app-return?clover=connected` opens `kloudcretailops://clover?clover=connected`, a bad `reason` is not echoed | pass |
+| `install-tunnel.sh --dry-run`: token-mode LaunchDaemon `com.kloudc.retailops.pilot.tunnel` + `tunnel-token.yml` only; installed cloudflared 2026.10.1 has `--token-file` | pass |
+| App on a simulator against the same server (app repo `docs/APP_PHASE.md`) | pass |
+
+**Fixed while verifying**
+
+- **Access log named the tunnel, not the visitor.** Behind cloudflared every
+  request's TCP peer is 127.0.0.1, so `retailops.access` logged
+  `"client": "127.0.0.1"` for everyone. `app/ops/http.py` `_client()` now
+  uses `client_ip.resolve` (the lockout's rule: the header only from a
+  trusted peer, else the peer; "-" without one). Test:
+  `tests/test_ops_http.py::test_access_log_client_is_the_visitor_behind_the_tunnel_only`.
+- **Terms menu paths** (`docs/legal/TERMS_DRAFT.html` and
+  `backend/app/assets/legal/terms.html`, still identical): "Store setup >
+  Data & usage > Export all data" and "More > Delete my account" (the real
+  labels; were "Store setup > Export" and "Account > Delete account").
+  `tests/test_terms_page.py` follows.
+- `docs/GO_LIVE_RUNBOOK.md`: plain steps for the first master two-step
+  set-up, the mobile-data check after the tunnel, the demo refusal line and
+  "the review password survives the nightly refresh", and "What the dry run
+  checked".
+
+**Notes.** A server whose `TENANT_MAX_ENGINES x (pool + overflow) + 10`
+exceeds the database's `max_connections` refuses to start (the dev cluster
+has 200; the pilot cluster has 250, which fits the default 210). The
+fake front had to learn chunked request bodies (Dart's `HttpClient` sends
+them); Cloudflare handles them, so nothing changes in the server.
