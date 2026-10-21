@@ -174,6 +174,7 @@ app.add_exception_handler(Exception, server_error_handler)
 
 app.include_router(auth.router)
 app.include_router(legal_router.router)
+app.include_router(legal_router.page_router)  # /terms (public, before the static mount)
 app.include_router(jobs.router)
 app.include_router(inventory.router)
 app.include_router(inventory_api_router.router)

@@ -26,6 +26,7 @@ PUBLIC = {
     ("POST", "/api/notifications/unregister"),
     ("GET", "/api/app/config"),
     ("GET", "/api/health"),
+    ("GET", "/terms"),  # Terms of Service draft page (pre-production 2026-10-21)
     # Readiness (app/ops/health.py): ok / fail per check, no store data, no
     # store codes, no addresses.
     ("GET", "/api/ready"),
