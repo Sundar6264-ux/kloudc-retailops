@@ -19,8 +19,11 @@ import {
   OPEN_CARD_KEY,
   buildPayload,
   containsSecret,
+  fieldGroups,
   formFromView,
+  formProblems,
   hasChanges,
+  testResultLines,
   integrationErrorMessage,
   integrationViews,
 } from "../settings/integrationsModel.js";
@@ -123,7 +126,8 @@ function IntegrationCard({ view, onChanged, disabled }) {
   const [form, setForm] = useState(() => formFromView(spec, view));
   const [clear, setClear] = useState([]);
   const [busy, setBusy] = useState(null); // "save" | "test" | "remove"
-  const [message, setMessage] = useState(null); // {tone, text}
+  const [message, setMessage] = useState(null); // {tone, text, lines?}
+  const [tried, setTried] = useState(false); // Save / Test pressed: mark empty required fields
 
   // A save, test or remove brings a new view: the form starts from it again
   // (secret boxes empty), the message above stays.
@@ -131,6 +135,7 @@ function IntegrationCard({ view, onChanged, disabled }) {
   useEffect(() => {
     setForm(formFromView(spec, view));
     setClear([]);
+    setTried(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewStamp]);
 
@@ -160,24 +165,48 @@ function IntegrationCard({ view, onChanged, disabled }) {
     }
   }
 
-  const save = () =>
-    run("save", async () => {
-      await saveIntegration(spec.kind, buildPayload(spec, form, { clear }));
-      setMessage({ tone: "ok", text: `${spec.label} saved.` });
+  // Checked as they type; shown once Save or Test is pressed (the warning
+  // about repeated keys shows right away, under the Analytics keys).
+  const problems = formProblems(spec, view, form, clear);
+
+  // Stops Save / Test with a plain sentence before anything is sent.
+  function blocked() {
+    setTried(true);
+    if (!problems.error) return false;
+    setMessage({ tone: "bad", text: problems.error });
+    return true;
+  }
+
+  const save = () => {
+    if (blocked()) return;
+    return run("save", async () => {
+      const r = await saveIntegration(spec.kind, buildPayload(spec, form, { clear }));
+      const warnings = Array.isArray(r?.warnings) ? r.warnings.filter((w) => typeof w === "string" && w) : [];
+      setMessage(
+        warnings.length
+          ? { tone: "warn", text: `${spec.label} saved, but check this:`, lines: warnings.map((w) => ({ text: safeText(w), ok: false })) }
+          : { tone: "ok", text: `${spec.label} saved.` },
+      );
       setClear([]);
       await onChanged();
     });
+  };
 
-  const test = () =>
-    run("test", async () => {
-      // Unsaved changes are tested as typed; otherwise what's saved.
+  const test = () => {
+    // Unsaved changes are tested as typed; otherwise what's saved.
+    if (changed && blocked()) return;
+    return run("test", async () => {
       const body = changed ? buildPayload(spec, form, { clear }) : undefined;
       const r = await testIntegration(spec.kind, body);
       const ok = r?.ok !== false && r?.status !== "failed";
-      const text = r?.message || r?.last_test_message || (ok ? "Connection works." : "Connection failed.");
-      setMessage({ tone: ok ? "ok" : "bad", text: safeText(text) });
+      const lines = testResultLines(r).map((l) => ({ ...l, text: safeText(l.text) }));
+      // Main keys working but the Analytics keys refused: amber, not green.
+      const partly = ok && lines.some((l) => !l.ok && l.state !== "not_added");
+      if (lines.length > 1) setMessage({ tone: !ok ? "bad" : partly ? "warn" : "ok", text: null, lines });
+      else setMessage({ tone: ok ? "ok" : "bad", text: lines[0].text });
       if (!changed) await onChanged();
     });
+  };
 
   const remove = () =>
     run("remove", async () => {
@@ -204,8 +233,8 @@ function IntegrationCard({ view, onChanged, disabled }) {
           if (changed) save();
         }}
       >
-        <div className="int-form">
-          {spec.fields.map((f) => (
+        {fieldGroups(spec).map(({ group, fields, advanced }) => {
+          const field = (f) => (
             <Field
               key={f.key}
               field={f}
@@ -213,11 +242,38 @@ function IntegrationCard({ view, onChanged, disabled }) {
               saved={f.secret && view.configured}
               primary={f.key === primarySecret}
               cleared={clear.includes(f.key)}
+              invalid={tried && problems.fields.includes(f.key)}
               onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))}
               onClear={() => setClear((c) => (c.includes(f.key) ? c.filter((k) => k !== f.key) : [...c, f.key]))}
             />
-          ))}
-        </div>
+          );
+          return (
+            <fieldset
+              key={group?.key || "all"}
+              className={group ? "int-group" : "int-group int-group-plain"}
+              data-testid={group ? `int-group-${group.key}` : undefined}
+            >
+              {group && (
+                <>
+                  <legend className="int-group-title">{group.title}</legend>
+                  <p className="muted int-group-hint">{group.hint}</p>
+                </>
+              )}
+              <div className="int-form">{fields.map(field)}</div>
+              {advanced.length > 0 && (
+                <details className="int-advanced">
+                  <summary>Advanced</summary>
+                  <div className="int-form">{advanced.map(field)}</div>
+                </details>
+              )}
+              {group?.key === "analytics" && problems.warning && (
+                <p className="int-warning" role="status" data-testid="int-same-keys">
+                  {problems.warning}
+                </p>
+              )}
+            </fieldset>
+          );
+        })}
         <div className="int-actions">
           <button type="submit" disabled={disabled || !changed || !!busy}>
             {busy === "save" ? "Saving…" : "Save"}
@@ -244,6 +300,15 @@ function IntegrationCard({ view, onChanged, disabled }) {
       {message && (
         <div className={`pf-banner ${message.tone}`} role="status" style={{ marginTop: "0.8rem" }} data-testid="int-message">
           {message.text}
+          {message.lines && (
+            <ul className="int-result-lines">
+              {message.lines.map((l, i) => (
+                <li key={i} className={l.ok ? "is-ok" : "is-off"}>
+                  {l.text}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
       {(view.lastTestedAt || view.updatedAt) && (
@@ -266,7 +331,7 @@ function IntegrationCard({ view, onChanged, disabled }) {
   );
 }
 
-function Field({ field, value, saved, primary, cleared, onChange, onClear }) {
+function Field({ field, value, saved, primary, cleared, invalid, onChange, onClear }) {
   if (field.type === "checkbox") {
     return (
       <label className="int-field int-field-check">
@@ -294,8 +359,10 @@ function Field({ field, value, saved, primary, cleared, onChange, onClear }) {
           autoComplete="new-password"
           placeholder={cleared ? "will be removed" : saved ? (primary ? "saved - type to replace" : "empty keeps what's saved") : ""}
           onChange={(e) => onChange(e.target.value)}
+          aria-invalid={invalid || undefined}
           data-testid={`secret-${field.key}`}
         />
+        {field.hint && <span className="muted field-hint">{field.hint}</span>}
         {saved && !value && (
           <button type="button" className="link-button" style={{ width: "auto", alignSelf: "flex-start", padding: 0 }} onClick={onClear}>
             {cleared ? "Keep the saved one" : primary ? "Remove the saved one" : "Clear this one"}
@@ -313,7 +380,10 @@ function Field({ field, value, saved, primary, cleared, onChange, onClear }) {
         placeholder={field.placeholder}
         onChange={(e) => onChange(e.target.value)}
         spellCheck={false}
+        aria-invalid={invalid || undefined}
+        data-testid={`field-${field.key}`}
       />
+      {field.hint && <span className="muted field-hint">{field.hint}</span>}
     </label>
   );
 }

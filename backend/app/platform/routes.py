@@ -516,6 +516,12 @@ class IntegrationBody(BaseModel):
     clear: List[str] = Field(default_factory=list)
 
 
+def _invalid(exc: "creds.CredentialError") -> PlatformError:
+    """A bad value on save or test -> {"error": "invalid", "message", "field"}."""
+    field = getattr(exc, "field", None)
+    return PlatformError(400, "invalid", str(exc), **({"field": field} if field else {}))
+
+
 def _kind(kind: str) -> str:
     if kind not in creds.KINDS:
         raise PlatformError(404, "not_found", "Unknown integration.")
@@ -551,8 +557,14 @@ def put_integration(kind: str, body: IntegrationBody, request: Request, user: Us
         view = creds.save_credential(code, kind, body.public, body.secrets, clear=body.clear,
                                      actor=_store_actor(code, user), client_ip=_ip(request))
     except creds.CredentialError as exc:
-        raise PlatformError(400, "invalid", str(exc)) from None
-    return view.as_dict()
+        raise _invalid(exc) from None
+    out = view.as_dict()
+    if kind == "toast":
+        # Plain warnings that don't stop the save (Analytics keys that repeat
+        # the main ones, or half a pair). Never a secret value.
+        public_now, secrets_now = creds.stored_values(code, kind)
+        out["warnings"] = creds.credential_warnings(kind, public_now, secrets_now)
+    return out
 
 
 @settings_router.post("/integrations/{kind}/test")
@@ -571,12 +583,13 @@ def test_integration(kind: str, request: Request, body: Optional[IntegrationBody
         public = creds.clean_public(kind, body.public, stored_public) if unsaved else stored_public
         new_secrets = creds.clean_secrets(kind, body.secrets) if unsaved else {}
     except creds.CredentialError as exc:
-        raise PlatformError(400, "invalid", str(exc)) from None
+        raise _invalid(exc) from None
     if unsaved and stored_secrets and creds.address_changed(kind, stored_public, public):
         # A new address: the saved secrets are never sent there.
         primary = creds.KINDS[kind].primary_secret
         if primary not in new_secrets:
-            raise PlatformError(400, "invalid", f"Enter the {primary.replace('_', ' ')} again to test a new address.",
+            raise PlatformError(400, "invalid",
+                                f"Enter the {creds.secret_label(kind, primary)} again to test a new address.",
                                 field=primary)
         secrets_now = dict(new_secrets)
     else:
@@ -584,7 +597,11 @@ def test_integration(kind: str, request: Request, body: Optional[IntegrationBody
     result = run_test(kind, public, secrets_now)
     creds.record_test_result(code, kind, result.ok, result.message, actor=_store_actor(code, user),
                              client_ip=_ip(request), saved=not unsaved)
-    return {"kind": kind, "ok": result.ok, "message": result.message, "tested": "unsaved" if unsaved else "saved"}
+    out = {"kind": kind, "ok": result.ok, "message": result.message, "tested": "unsaved" if unsaved else "saved"}
+    if result.parts:
+        # Toast: the main keys and the Analytics keys, each in plain words.
+        out["parts"] = [dict(p) for p in result.parts]
+    return out
 
 
 @settings_router.delete("/integrations/{kind}")

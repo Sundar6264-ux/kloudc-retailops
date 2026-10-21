@@ -2178,6 +2178,55 @@
   ]
  },
  {
+  "key": "concept_toast_keys",
+  "label": "Main Toast keys",
+  "category": "concept_setup",
+  "area": "setup",
+  "pos": [
+   "toast"
+  ],
+  "definition": "The Client ID and Client secret from Toast Web › Integrations › Toast API access, plus your Restaurant ID (Toast calls it the Restaurant GUID). Required: they bring in your sales, menu and stock.",
+  "aliases": [
+   "toast api keys",
+   "toast client id",
+   "toast client secret",
+   "restaurant guid",
+   "toast keys"
+  ],
+  "where": "Setup › Integrations › Toast",
+  "pages": [
+   "integrations"
+  ],
+  "related": [
+   "concept_toast_analytics_keys",
+   "concept_api_token"
+  ]
+ },
+ {
+  "key": "concept_toast_analytics_keys",
+  "label": "Toast Analytics keys",
+  "category": "concept_setup",
+  "area": "setup",
+  "pos": [
+   "toast"
+  ],
+  "definition": "A second, separate Client ID and secret from Toast with the Analytics scope. Recommended: they double-check each day's sales totals after closing. Don't reuse the main keys here.",
+  "aliases": [
+   "analytics client id",
+   "analytics client secret",
+   "toast analytics",
+   "analytics keys"
+  ],
+  "where": "Setup › Integrations › Toast",
+  "pages": [
+   "integrations"
+  ],
+  "related": [
+   "concept_toast_keys",
+   "concept_insights"
+  ]
+ },
+ {
   "key": "concept_temporary_password",
   "label": "Temporary password",
   "category": "concept_platform",

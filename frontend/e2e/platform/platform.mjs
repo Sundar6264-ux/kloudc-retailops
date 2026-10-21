@@ -180,7 +180,7 @@ async function run(browser, width) {
     const SECRET = "toast-secret-value-7781";
     await card.getByRole("textbox", { name: "Client ID", exact: true }).fill("client-abc");
     await card.locator('[data-testid="secret-client_secret"]').fill(SECRET);
-    await card.getByRole("textbox", { name: "Restaurant GUID", exact: true }).fill("guid-123");
+    await card.getByRole("textbox", { name: "Restaurant ID (GUID)", exact: true }).fill("guid-123");
     await card.locator('button[type="submit"]').click();
     await settle(page, 300);
     const card2 = page.locator('[data-testid="int-card-toast"]');

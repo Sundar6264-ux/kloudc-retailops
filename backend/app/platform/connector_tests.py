@@ -20,6 +20,8 @@ TIMEOUT = 10.0
 class TestResult(NamedTuple):
     ok: bool
     message: str
+    # Toast: one line per key pair, ({"name", "label", "ok", "state", "text"}, ...).
+    parts: tuple = ()
 
 
 TestResult.__test__ = False  # not a pytest test class
@@ -61,7 +63,102 @@ def _http_status_message(service: str, status: int) -> TestResult:
     return TestResult(False, f"{service} answered HTTP {status}. Try again later.")
 
 
+def _toast_transport():
+    """The HTTP transport for the Toast test (None = the real network;
+    tests replace this)."""
+    return None
+
+
+def _toast_login(client, base: str, client_id: str, secret: str):
+    """(access token or None, HTTP status). Never echoes the reply body."""
+    resp = client.post(
+        f"{base}/authentication/v1/authentication/login",
+        json={"clientId": client_id, "clientSecret": secret, "userAccessType": "TOAST_MACHINE_CLIENT"},
+    )
+    if resp.status_code != 200:
+        return None, resp.status_code
+    token_obj = (resp.json() or {}).get("token") or {}
+    return token_obj.get("accessToken") or None, 200
+
+
+def _part(name: str, label: str, state: str, text: str) -> dict:
+    return {"name": name, "label": label, "ok": state == "working", "state": state, "text": text}
+
+
+def _toast_main(client, base: str, client_id: str, secret: str, guid: str) -> dict:
+    import httpx
+
+    label = "Main keys"
+    if not client_id or not secret or not guid:
+        return _part("main", label, "missing",
+                     "not filled in. Add the Client ID, Client secret and Restaurant ID.")
+    try:
+        access, status = _toast_login(client, base, client_id, secret)
+        if access is None:
+            if status in (401, 403) or status == 200:
+                return _part("main", label, "refused",
+                             "not accepted by Toast. Check the Client ID and Client secret.")
+            return _part("main", label, "error", _status_text(status))
+        r2 = client.get(
+            f"{base}/restaurants/v1/restaurants/{guid}",
+            headers={"Authorization": f"Bearer {access}", "Toast-Restaurant-External-ID": guid},
+        )
+        if r2.status_code in (401, 403, 404):
+            return _part("main", label, "refused",
+                         "Toast could not find that restaurant with these keys. Check the Restaurant ID (GUID).")
+        if r2.status_code != 200:
+            return _part("main", label, "error", _status_text(r2.status_code))
+        name = ((r2.json() or {}).get("general") or {}).get("name") or "the restaurant"
+        return _part("main", label, "working", f"working. Connected to {str(name)[:80]}.")
+    except (httpx.HTTPError, OSError, ValueError) as exc:
+        return _part("main", label, "error", _unreachable(exc))
+
+
+def _toast_analytics(client, base: str, public: dict, secrets: dict) -> dict:
+    import httpx
+
+    from app.platform.credentials import SAME_KEYS_WARNING, _same
+
+    label = "Analytics keys"
+    a_id = (public.get("analytics_client_id") or "").strip()
+    a_secret = (secrets.get("analytics_client_secret") or "").strip()
+    if not a_id and not a_secret:
+        return _part("analytics", label, "not_added",
+                     "not added. Add them so each day's sales totals are double-checked after closing.")
+    if not a_id or not a_secret:
+        missing = "Analytics client secret" if a_id else "Analytics client ID"
+        return _part("analytics", label, "missing", f"only half added. Add the {missing} too.")
+    if _same(a_id, public.get("client_id")) or a_secret == (secrets.get("client_secret") or "").strip():
+        return _part("analytics", label, "same_keys", SAME_KEYS_WARNING)
+    try:
+        access, status = _toast_login(client, base, a_id, a_secret)
+    except (httpx.HTTPError, OSError, ValueError) as exc:
+        return _part("analytics", label, "error", _unreachable(exc))
+    if access is None:
+        if status in (401, 403) or status == 200:
+            return _part("analytics", label, "refused",
+                         "not accepted by Toast. Check the Analytics client ID and secret.")
+        return _part("analytics", label, "error", _status_text(status))
+    return _part("analytics", label, "working", "working.")
+
+
+def _status_text(status: int) -> str:
+    if status == 429:
+        return "Toast is busy right now (too many requests). Try again in a minute."
+    return f"Toast answered with an error (HTTP {status}). Try again later."
+
+
+def _unreachable(exc: Exception) -> str:
+    if isinstance(exc, ValueError):
+        return "Toast sent an answer we couldn't read. Try again later."
+    return "could not reach Toast. Check the API address and try again."
+
+
 def test_toast(public: dict, secrets: dict) -> TestResult:
+    """Logs in with the main keys and reads the restaurant; logs in with the
+    Analytics keys when they are added. Each pair is reported on its own
+    line ("Main keys: working", "Analytics keys: not added"). The test
+    passes when the main keys work: they bring in sales, menu and stock."""
     import httpx
 
     client_id = (public.get("client_id") or "").strip()
@@ -69,31 +166,21 @@ def test_toast(public: dict, secrets: dict) -> TestResult:
     secret = (secrets.get("client_secret") or "").strip()
     base = (public.get("api_base") or "https://ws-api.toasttab.com").rstrip("/")
     if not client_id or not secret or not guid:
-        return TestResult(False, "Enter the Toast client ID, client secret and restaurant GUID first.")
+        from app.platform.credentials import TOAST_MAIN_KEYS_MISSING
+
+        return TestResult(False, TOAST_MAIN_KEYS_MISSING)
     if _url_private(base):
         return TestResult(False, NOT_ALLOWED)
+    kw = {"transport": _toast_transport()} if _toast_transport() is not None else {}
     try:
-        with httpx.Client(timeout=TIMEOUT) as client:
-            resp = client.post(
-                f"{base}/authentication/v1/authentication/login",
-                json={"clientId": client_id, "clientSecret": secret, "userAccessType": "TOAST_MACHINE_CLIENT"},
-            )
-            if resp.status_code != 200:
-                return _http_status_message("Toast", resp.status_code)
-            token_obj = (resp.json() or {}).get("token") or {}
-            access = token_obj.get("accessToken")
-            if not access:
-                return TestResult(False, "Toast answered without a token. Check the client ID and secret.")
-            r2 = client.get(
-                f"{base}/restaurants/v1/restaurants/{guid}",
-                headers={"Authorization": f"Bearer {access}", "Toast-Restaurant-External-ID": guid},
-            )
-            if r2.status_code != 200:
-                return _http_status_message("Toast", r2.status_code)
-            name = ((r2.json() or {}).get("general") or {}).get("name") or "the restaurant"
-            return TestResult(True, f"Connected to Toast: {str(name)[:80]}.")
-    except (httpx.HTTPError, OSError, ValueError):
+        with httpx.Client(timeout=TIMEOUT, **kw) as client:
+            main = _toast_main(client, base, client_id, secret, guid)
+            analytics = _toast_analytics(client, base, public, secrets)
+    except httpx.HTTPError:
         return TestResult(False, "Could not reach Toast. Check the API address and try again.")
+    parts = (main, analytics)
+    message = " ".join(f"{p['label']}: {p['text']}" for p in parts)
+    return TestResult(main["ok"], message, parts)
 
 
 def test_whatsapp(public: dict, secrets: dict) -> TestResult:
@@ -214,9 +301,17 @@ def run_test(kind: str, public: dict, secrets: dict) -> TestResult:
         result = fn(public, secrets)
     except Exception:  # noqa: BLE001 - a tester bug must not 500 or leak
         return TestResult(False, "The connection test failed unexpectedly. Try again later.")
-    message = str(result.message or "")[:300]
+    message = str(result.message or "")[:400]
+    parts = tuple(
+        {"name": str(p.get("name") or ""), "label": str(p.get("label") or "")[:40], "ok": bool(p.get("ok")),
+         "state": str(p.get("state") or ""), "text": str(p.get("text") or "")[:200]}
+        for p in (getattr(result, "parts", ()) or ()) if isinstance(p, dict)
+    )
     # Last guard: never echo a secret back, whatever a tester wrote.
     for value in secrets.values():
-        if value and len(str(value)) >= 4 and str(value) in message:
+        if value and len(str(value)) >= 4 and (
+            str(value) in message or any(str(value) in p["text"] for p in parts)
+        ):
             message = "The connection test failed. Check the values and try again."
-    return TestResult(bool(result.ok), message)
+            parts = ()
+    return TestResult(bool(result.ok), message, parts)

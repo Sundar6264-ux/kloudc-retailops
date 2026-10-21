@@ -1016,6 +1016,16 @@ rate limits and cache headers as the directory.
 mode -> 409 `{"error":"platform_mode_required"}` (credentials come from
 `.env` there). Responses are scanned in tests: no secret value ever appears.
 
+Toast's two key pairs (additive): a bad value answers
+`400 {"error":"invalid","message","field"}` with a plain sentence (the main
+keys missing -> "Fill in the main Toast keys first (Client ID, Client secret
+and Restaurant ID). The Analytics keys are an extra."). PUT `/toast` adds
+`"warnings": [sentence...]` (Analytics keys the same as the main ones, or half
+a pair; never blocks the save). POST `/toast/test` adds `"parts": [{"name":
+"main"|"analytics", "label", "ok", "state", "text"}]`, `state` one of
+`working`, `not_added`, `missing`, `same_keys`, `refused`, `error`; `ok`
+follows the main keys only.
+
 Optional (C "should"): `GET/PATCH /api/settings/store` for the whitelisted
 non-secret store settings (name, address, phone, colours, AI switch,
 labels URL), and `POST /api/settings/hosting/request` (store admin asks for a

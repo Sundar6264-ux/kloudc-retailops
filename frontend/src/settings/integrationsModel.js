@@ -12,18 +12,42 @@ export const INTEGRATIONS = [
     label: "Toast",
     blurb: "Your Toast POS: sales, menu, checks and inventory.",
     testable: true,
-    fields: [
-      { key: "client_id", label: "Client ID", type: "text" },
-      { key: "client_secret", label: "Client secret", type: "password", secret: true },
-      { key: "restaurant_guid", label: "Restaurant GUID", type: "text" },
-      { key: "api_base", label: "API address", type: "text", placeholder: "https://ws-api.toasttab.com" },
+    // Toast gives a store two key pairs; the form shows them as two groups.
+    groups: [
       {
-        key: "analytics_client_id",
-        label: "Analytics client ID (optional)",
-        type: "text",
-        hint: "Add your Toast Analytics keys so late edits are caught: sales changed in Toast after the day closed.",
+        key: "main",
+        title: "Main Toast keys (required)",
+        hint:
+          "In Toast Web, go to Integrations › Toast API access. These keys bring in your sales, menu and stock.",
       },
-      { key: "analytics_client_secret", label: "Analytics client secret (optional)", type: "password", secret: true },
+      {
+        key: "analytics",
+        title: "Toast Analytics keys (recommended)",
+        hint:
+          "A separate key pair in Toast Web (Integrations › Toast API access) with the Analytics scope. They double-check each day's sales totals after closing.",
+      },
+    ],
+    fields: [
+      { key: "client_id", label: "Client ID", type: "text", group: "main" },
+      { key: "client_secret", label: "Client secret", type: "password", secret: true, group: "main" },
+      { key: "restaurant_guid", label: "Restaurant ID (GUID)", type: "text", group: "main" },
+      {
+        key: "api_base",
+        label: "API address",
+        type: "text",
+        placeholder: "https://ws-api.toasttab.com",
+        group: "main",
+        advanced: true,
+        hint: "Leave as is unless Toast gave you a different address.",
+      },
+      { key: "analytics_client_id", label: "Analytics client ID", type: "text", group: "analytics" },
+      {
+        key: "analytics_client_secret",
+        label: "Analytics client secret",
+        type: "password",
+        secret: true,
+        group: "analytics",
+      },
     ],
   },
   {
@@ -197,6 +221,81 @@ function fieldError(field, message) {
   const e = new Error(`${field.label}: ${message}`);
   e.field = field.key;
   return e;
+}
+
+// --- Toast's two key pairs ----------------------------------------------------
+
+export const TOAST_MAIN_KEYS_MISSING =
+  "Fill in the main Toast keys first (Client ID, Client secret and Restaurant ID). The Analytics keys are an extra.";
+export const TOAST_SAME_KEYS =
+  "These look like the same keys as the main ones. Toast gives Analytics its own Client ID and secret.";
+
+// A spec's fields in its groups: [{group, fields, advanced}] (one unnamed
+// group when the spec has none). `advanced` fields go under "Advanced".
+export function fieldGroups(spec) {
+  if (!Array.isArray(spec.groups) || !spec.groups.length) {
+    return [{ group: null, fields: spec.fields.filter((f) => !f.advanced), advanced: spec.fields.filter((f) => f.advanced) }];
+  }
+  return spec.groups.map((g) => {
+    const mine = spec.fields.filter((f) => f.group === g.key);
+    return { group: g, fields: mine.filter((f) => !f.advanced), advanced: mine.filter((f) => f.advanced) };
+  });
+}
+
+const trimmed = (v) => (typeof v === "string" ? v.trim() : v == null ? "" : String(v).trim());
+
+// Checks before Save / Test connection, in plain words:
+// {error, fields, warning}. `error` stops the save (the main Toast keys
+// missing, or a new Analytics pair with only one half); `warning` is shown
+// but doesn't stop it (Analytics keys that repeat the main ones). Secrets
+// are compared only with each other, never shown. A blank secret box means
+// "keep the saved one", so a saved Client secret counts as filled in.
+export function formProblems(spec, view, form, clear = []) {
+  const none = { error: null, fields: [], warning: null };
+  if (!spec || spec.kind !== "toast") return none;
+  const f = form || {};
+  const configured = !!view?.configured;
+  const missing = [];
+  if (!trimmed(f.client_id)) missing.push("client_id");
+  if (!trimmed(f.client_secret) && (!configured || clear.includes("client_secret"))) missing.push("client_secret");
+  if (!trimmed(f.restaurant_guid)) missing.push("restaurant_guid");
+
+  const aId = trimmed(f.analytics_client_id);
+  const aSecret = trimmed(f.analytics_client_secret);
+  const sameId = !!aId && aId.toLowerCase() === trimmed(f.client_id).toLowerCase();
+  const sameSecret = !!aSecret && aSecret === trimmed(f.client_secret);
+  const warning = sameId || sameSecret ? TOAST_SAME_KEYS : null;
+
+  if (missing.length) return { error: TOAST_MAIN_KEYS_MISSING, fields: missing, warning };
+  // Nothing saved yet: an Analytics pair needs both halves.
+  if (!configured && aId && !aSecret) {
+    return {
+      error: "Add the Analytics client secret too. The Analytics keys only work as a pair.",
+      fields: ["analytics_client_secret"],
+      warning,
+    };
+  }
+  if (aSecret && !aId) {
+    return {
+      error: "Add the Analytics client ID too. The Analytics keys only work as a pair.",
+      fields: ["analytics_client_id"],
+      warning,
+    };
+  }
+  return { error: null, fields: [], warning };
+}
+
+// A Test connection reply -> the lines to show: Toast answers one line per
+// key pair ("Main keys: working", "Analytics keys: not added"); others one.
+export function testResultLines(reply) {
+  const r = reply && typeof reply === "object" ? reply : {};
+  const parts = Array.isArray(r.parts) ? r.parts.filter((p) => p && typeof p === "object" && p.label && p.text) : [];
+  if (parts.length) {
+    return parts.map((p) => ({ text: `${p.label}: ${p.text}`, ok: !!p.ok, state: String(p.state || "") }));
+  }
+  const ok = r.ok !== false && r.status !== "failed";
+  const text = r.message || r.last_test_message || (ok ? "Connection works." : "Connection failed.");
+  return [{ text, ok, state: ok ? "working" : "failed" }];
 }
 
 // Nothing to save yet: no public value differs and no secret was typed.

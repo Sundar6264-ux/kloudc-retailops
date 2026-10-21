@@ -546,6 +546,69 @@ button.int-tile.active:hover:not(:disabled) {
   margin-top: 0.6rem;
 }
 
+/* Toast: "Main Toast keys" and "Toast Analytics keys" as two groups. */
+.int-group {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem 0.9rem;
+  margin: 0 0 0.8rem;
+  min-width: 0;
+}
+
+.int-group-plain {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.int-group-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0 0.3rem;
+}
+
+.int-group-hint {
+  font-size: 0.8rem;
+  margin: 0 0 0.6rem;
+}
+
+.int-advanced {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.int-advanced summary {
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.int-warning {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.pf-banner.warn {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.int-result-lines {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.int-result-lines li + li {
+  margin-top: 0.2rem;
+}
+
+.int-field input[aria-invalid="true"] {
+  border-color: var(--failed-text);
+}
+
 @media (max-width: 600px) {
   .int-form {
     grid-template-columns: 1fr;

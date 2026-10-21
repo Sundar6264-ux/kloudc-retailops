@@ -30,7 +30,11 @@ logger = logging.getLogger(__name__)
 
 
 class CredentialError(ValueError):
-    """A bad value on save (400)."""
+    """A bad value on save (400). ``field``: the form field it is about."""
+
+    def __init__(self, message: str, field: Optional[str] = None):
+        super().__init__(message)
+        self.field = field
 
 
 class UnknownKind(KeyError):
@@ -162,6 +166,7 @@ class FieldSpec:
     check: Callable[[Any, str], Any] = _text
     default: Any = ""
     required: bool = False
+    label: str = ""  # as the Integrations form labels it (plain messages)
 
 
 @dataclass(frozen=True)
@@ -175,20 +180,38 @@ class CredentialSpec:
     settings_map: Tuple[Tuple[str, str, str], ...] = ()
     testable: bool = True
     extra: Mapping[str, Any] = field(default_factory=dict)
+    # Field name -> the form's label, for secrets (plain messages).
+    secret_labels: Mapping[str, str] = field(default_factory=dict)
+    # One plain sentence when a required field or the primary secret is
+    # missing (else "Fill in the <label> for <kind>.").
+    required_message: str = ""
 
+
+# Toast gives a store two key pairs (Toast Web > Integrations > Toast API
+# access): the main pair (orders, menus, stock) and a separate Analytics pair
+# (enterprise-metrics scope) that re-checks each day's sales totals.
+TOAST_MAIN_KEYS_MISSING = (
+    "Fill in the main Toast keys first (Client ID, Client secret and Restaurant ID). "
+    "The Analytics keys are an extra."
+)
+SAME_KEYS_WARNING = (
+    "These look like the same keys as the main ones. Toast gives Analytics its own Client ID and secret."
+)
 
 KINDS: Dict[str, CredentialSpec] = {
     "toast": CredentialSpec(
         kind="toast",
         label="Toast",
         public=(
-            FieldSpec("client_id", required=True),
-            FieldSpec("restaurant_guid", required=True),
-            FieldSpec("api_base", _https_url, "https://ws-api.toasttab.com"),
-            FieldSpec("analytics_client_id"),
+            FieldSpec("client_id", required=True, label="Client ID"),
+            FieldSpec("restaurant_guid", required=True, label="Restaurant ID (GUID)"),
+            FieldSpec("api_base", _https_url, "https://ws-api.toasttab.com", label="API address"),
+            FieldSpec("analytics_client_id", label="Analytics client ID"),
         ),
         secrets=("client_secret", "analytics_client_secret"),
         primary_secret="client_secret",
+        secret_labels={"client_secret": "Client secret", "analytics_client_secret": "Analytics client secret"},
+        required_message=TOAST_MAIN_KEYS_MISSING,
         settings_map=(
             ("toast_client_id", "public", "client_id"),
             ("toast_restaurant_guid", "public", "restaurant_guid"),
@@ -237,14 +260,15 @@ KINDS: Dict[str, CredentialSpec] = {
         kind="smtp",
         label="Email (SMTP)",
         public=(
-            FieldSpec("host", _mail_host, required=True),
+            FieldSpec("host", _mail_host, required=True, label="Server"),
             FieldSpec("port", _port, 465),
             FieldSpec("ssl", _bool, True),
-            FieldSpec("username", required=True),
+            FieldSpec("username", required=True, label="Username"),
             FieldSpec("from_name"),
         ),
         secrets=("password",),
         primary_secret="password",
+        secret_labels={"password": "Password / app password"},
         settings_map=(
             ("smtp_host", "public", "host"),
             ("smtp_port", "public", "port"),
@@ -357,12 +381,51 @@ def clean_public(kind: str, public: Mapping[str, Any], existing: Optional[Mappin
             raw = None
         if raw is None:
             if f.required:
-                raise CredentialError(f"{f.name} is required for {sp.label}")
+                raise _missing(sp, f.name, f.label)
             raw = f.default
-        value = f.check(raw, f.name) if raw not in (None, "") else ""
+        value = f.check(raw, f.label or f.name) if raw not in (None, "") else ""
         if f.required and value in ("", None):
-            raise CredentialError(f"{f.name} is required for {sp.label}")
+            raise _missing(sp, f.name, f.label)
         out[f.name] = value
+    return out
+
+
+def _missing(sp: CredentialSpec, name: str, label: str = "") -> CredentialError:
+    """A required field or the primary secret is empty: one plain sentence."""
+    if sp.required_message:
+        return CredentialError(sp.required_message, field=name)
+    label = label or sp.secret_labels.get(name) or name.replace("_", " ").capitalize()
+    return CredentialError(f"Fill in the {label} for {sp.label}.", field=name)
+
+
+def secret_label(kind: str, name: str) -> str:
+    """A secret's name as the form shows it ("Client secret")."""
+    sp = spec(kind)
+    return (sp.secret_labels.get(name) or name.replace("_", " ")).lower() if name else ""
+
+
+def _same(a: Any, b: Any) -> bool:
+    a, b = str(a or "").strip(), str(b or "").strip()
+    return bool(a) and a.lower() == b.lower()
+
+
+def credential_warnings(kind: str, public: Mapping[str, Any], secrets: Mapping[str, Any]) -> List[str]:
+    """Plain warnings that don't stop a save (contract 13.5 "warnings"):
+    for Toast, Analytics keys that repeat the main ones or are half a pair.
+    Compares secrets only to each other; never returns a value."""
+    if kind != "toast":
+        return []
+    public = public or {}
+    secrets = secrets or {}
+    a_id = str(public.get("analytics_client_id") or "").strip()
+    a_secret = str(secrets.get("analytics_client_secret") or "").strip()
+    out: List[str] = []
+    if _same(a_id, public.get("client_id")) or (a_secret and a_secret == str(secrets.get("client_secret") or "").strip()):
+        out.append(SAME_KEYS_WARNING)
+    if a_id and not a_secret:
+        out.append("Add the Analytics client secret too. The Analytics keys only work as a pair.")
+    elif a_secret and not a_id:
+        out.append("Add the Analytics client ID too. The Analytics keys only work as a pair.")
     return out
 
 
@@ -503,10 +566,11 @@ def save_credential(
         if sp.primary_secret not in merged and kind != "clover":
             if moved:
                 raise CredentialError(
-                    f"Enter the {sp.primary_secret.replace('_', ' ')} again: the address changed, "
-                    "so the saved one is not sent there."
+                    f"Enter the {secret_label(kind, sp.primary_secret)} again: the address changed, "
+                    "so the saved one is not sent there.",
+                    field=sp.primary_secret,
                 )
-            raise CredentialError(f"{sp.primary_secret} is required for {sp.label}")
+            raise _missing(sp, sp.primary_secret)
         sealed = crypto.encrypt(
             json.dumps(merged, sort_keys=True).encode("utf-8"), crypto.aad_for(code, kind)
         )

@@ -164,7 +164,7 @@ async function saveToast(page, code, T) {
   const secret = `secret-${code}-${Date.now()}`;
   await card.getByRole("textbox", { name: "Client ID", exact: true }).fill(`cid-${code}`);
   await card.locator('[data-testid="secret-client_secret"]').fill(secret);
-  await card.getByRole("textbox", { name: "Restaurant GUID", exact: true }).fill(`guid-${code}`);
+  await card.getByRole("textbox", { name: "Restaurant ID (GUID)", exact: true }).fill(`guid-${code}`);
   await card.locator('button[type="submit"]').click();
   await settle(page, 300);
   check((await card.innerText()).includes(`saved •••• ${secret.slice(-4)}`), T("Toast keys saved (last 4 only)"));

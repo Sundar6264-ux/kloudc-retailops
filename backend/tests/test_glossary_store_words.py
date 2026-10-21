@@ -33,6 +33,9 @@ def test_no_placeholder_left_and_toast_wording_kept(monkeypatch):
 
 def test_clover_store_never_says_toast(monkeypatch):
     monkeypatch.setattr("app.pos.gating.pos_name", lambda: "Clover")
+    # A Clover store's provider too: terms marked "pos": ["toast"] (Toast's
+    # two key pairs) are left out for it, like on a real Clover server.
+    monkeypatch.setattr("app.pos.gating.pos_provider", lambda: "clover")
     monkeypatch.setattr("app.config.get_settings", lambda: _settings("America/Los_Angeles"))
     body = _body()
     assert "Toast" not in body

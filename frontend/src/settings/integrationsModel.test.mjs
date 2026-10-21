@@ -16,6 +16,11 @@ import {
   cloverReturnMessage,
   cloverView,
   validateCloverManual,
+  fieldGroups,
+  formProblems,
+  testResultLines,
+  TOAST_MAIN_KEYS_MISSING,
+  TOAST_SAME_KEYS,
 } from "./integrationsModel.js";
 
 const TOAST = INTEGRATIONS_BY_KIND.toast;
@@ -208,4 +213,97 @@ test("Clover manual form validation", () => {
 test("Clover 409 when the Clover app isn't set up", () => {
   const e = Object.assign(new Error("x"), { status: 409, body: { error: "clover_app_not_configured", message: "Use a token" } });
   assert.equal(integrationErrorMessage(e), "Use a token");
+});
+
+// --- Toast's two key pairs ---------------------------------------------------
+
+const toastForm = (over = {}) => ({
+  client_id: "main-id",
+  client_secret: "main-secret-1111",
+  restaurant_guid: "guid-1",
+  api_base: "",
+  analytics_client_id: "",
+  analytics_client_secret: "",
+  ...over,
+});
+const NEW = integrationView(TOAST, null);
+const SAVED = integrationView(TOAST, { configured: true, status: "ok", last4: "1111", public: { client_id: "main-id" } });
+
+test("Toast form: two labelled groups, API address under Advanced", () => {
+  const groups = fieldGroups(TOAST);
+  assert.deepEqual(groups.map((g) => g.group.title), ["Main Toast keys (required)", "Toast Analytics keys (recommended)"]);
+  assert.deepEqual(groups[0].fields.map((f) => f.label), ["Client ID", "Client secret", "Restaurant ID (GUID)"]);
+  assert.deepEqual(groups[0].advanced.map((f) => f.key), ["api_base"]);
+  assert.deepEqual(groups[1].fields.map((f) => f.label), ["Analytics client ID", "Analytics client secret"]);
+  assert.match(groups[0].group.hint, /Integrations › Toast API access/);
+  assert.match(groups[0].group.hint, /sales, menu and stock/);
+  assert.match(groups[1].group.hint, /Analytics scope/);
+  assert.match(groups[1].group.hint, /double-check each day's sales totals/);
+  for (const f of TOAST.fields) assert.ok(!/optional/i.test(f.label), f.label);
+  // Other kinds: one unnamed group with every field.
+  assert.deepEqual(fieldGroups(SMTP).map((g) => [g.group, g.fields.length]), [[null, SMTP.fields.length]]);
+});
+
+test("Toast: only the Analytics keys filled -> the plain main-keys sentence", () => {
+  const form = toastForm({ client_id: "", client_secret: "", restaurant_guid: "", analytics_client_id: "an-id",
+                            analytics_client_secret: "an-secret-2222" });
+  const p = formProblems(TOAST, NEW, form);
+  assert.equal(p.error, TOAST_MAIN_KEYS_MISSING);
+  assert.equal(p.error,
+    "Fill in the main Toast keys first (Client ID, Client secret and Restaurant ID). The Analytics keys are an extra.");
+  assert.deepEqual(p.fields, ["client_id", "client_secret", "restaurant_guid"]);
+  // One main field empty: the same sentence, naming that field.
+  assert.deepEqual(formProblems(TOAST, NEW, toastForm({ restaurant_guid: "  " })).fields, ["restaurant_guid"]);
+});
+
+test("Toast: a blank Client secret keeps the saved one, unless it is being removed", () => {
+  assert.equal(formProblems(TOAST, SAVED, toastForm({ client_secret: "" })).error, null);
+  assert.equal(formProblems(TOAST, NEW, toastForm({ client_secret: "" })).error, TOAST_MAIN_KEYS_MISSING);
+  assert.equal(formProblems(TOAST, SAVED, toastForm({ client_secret: "" }), ["client_secret"]).error, TOAST_MAIN_KEYS_MISSING);
+});
+
+test("Toast: main keys only is fine; a new Analytics pair needs both halves", () => {
+  assert.deepEqual(formProblems(TOAST, NEW, toastForm()), { error: null, fields: [], warning: null });
+  const half = formProblems(TOAST, NEW, toastForm({ analytics_client_id: "an-id" }));
+  assert.match(half.error, /Add the Analytics client secret too/);
+  assert.deepEqual(half.fields, ["analytics_client_secret"]);
+  // Saved before: a blank Analytics secret may be the saved one (the server warns if not).
+  assert.equal(formProblems(TOAST, SAVED, toastForm({ analytics_client_id: "an-id" })).error, null);
+  assert.match(formProblems(TOAST, SAVED, toastForm({ analytics_client_secret: "an-secret-2222" })).error,
+    /Add the Analytics client ID too/);
+});
+
+test("Toast: the same keys in both groups -> a plain warning, not a block", () => {
+  const same = formProblems(TOAST, NEW, toastForm({ analytics_client_id: " MAIN-ID ", analytics_client_secret: "main-secret-1111" }));
+  assert.equal(same.error, null);
+  assert.equal(same.warning,
+    "These look like the same keys as the main ones. Toast gives Analytics its own Client ID and secret.");
+  assert.equal(same.warning, TOAST_SAME_KEYS);
+  assert.equal(formProblems(TOAST, NEW, toastForm({ analytics_client_id: "other", analytics_client_secret: "main-secret-1111" })).warning,
+    TOAST_SAME_KEYS, "same secret, different ID");
+  assert.equal(formProblems(TOAST, NEW, toastForm({ analytics_client_id: "an-id", analytics_client_secret: "an-secret" })).warning, null);
+  assert.ok(!JSON.stringify(same).includes("main-secret-1111"), "never echoes a secret");
+  assert.deepEqual(formProblems(SMTP, NEW, {}), { error: null, fields: [], warning: null });
+});
+
+test("Test connection lines: one per Toast key pair, else the message", () => {
+  const lines = testResultLines({
+    ok: true,
+    message: "Main keys: working. Analytics keys: not added.",
+    parts: [
+      { name: "main", label: "Main keys", ok: true, state: "working", text: "working. Connected to Alpha Grill." },
+      { name: "analytics", label: "Analytics keys", ok: false, state: "not_added", text: "not added." },
+    ],
+  });
+  assert.deepEqual(lines.map((l) => [l.text, l.ok]), [
+    ["Main keys: working. Connected to Alpha Grill.", true],
+    ["Analytics keys: not added.", false],
+  ]);
+  assert.deepEqual(testResultLines({ ok: false, message: "WhatsApp refused" }), [{ text: "WhatsApp refused", ok: false, state: "failed" }]);
+  assert.equal(testResultLines({ ok: true })[0].text, "Connection works.");
+});
+
+test("a 400 from the server shows its plain sentence", () => {
+  const e = Object.assign(new Error("x"), { status: 400, body: { error: "invalid", message: TOAST_MAIN_KEYS_MISSING, field: "client_id" } });
+  assert.equal(integrationErrorMessage(e), TOAST_MAIN_KEYS_MISSING);
 });

@@ -33,7 +33,11 @@
     "toast"
    ],
    "items": [
-    "**Toast**: your Toast API client ID and secret and the restaurant ID (Toast calls it the Restaurant GUID), from Toast's developer portal or your Toast contact. The analytics client is optional and turns on Insights."
+    "**Toast** uses two sets of keys. Make both in Toast Web under **Integrations › Toast API access**, then type them into the two groups on the Toast form.",
+    "**Main Toast keys (required)**: the Toast API client ID and client secret, and your Restaurant ID (Toast calls it the Restaurant GUID). They bring in your sales, menu and stock. Leave the API address under **Advanced** as it is unless Toast gave you a different one.",
+    "**Toast Analytics keys (recommended)**: a separate client ID and secret that Toast gives you for the Analytics scope. Don't copy the main keys here. They double-check each day's sales totals after closing and turn on Insights.",
+    "Fill in the main keys first: the Analytics keys are an extra and can't be saved on their own.",
+    "**Test connection** checks each set on its own, for example *Main keys: working* and *Analytics keys: not added*. *Not accepted by Toast* means Toast refused those keys: check them in Toast Web and save again."
    ]
   },
   {
