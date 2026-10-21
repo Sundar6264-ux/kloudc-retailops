@@ -4191,3 +4191,44 @@ the app already shows "Not in the catalog yet".
 **Integrate step.** The app's bundled copy must be refreshed after merge:
 `scripts/help/sync_help_to_app.sh <app checkout>` (checked in a scratch copy:
 the bundled glossary then equals `/api/glossary`).
+
+## As built - Pre-production: Integrate
+
+`pp/prod` (P), `pp/gaps-api` (S1) and `pp/gaps-text` (S2) merged into `main`
+with `--no-ff`, in that order. The only text conflict was the three
+"As built" sections above (all kept). Fixes made while integrating:
+
+- **"Not Found" under the website mount (G27).** With `frontend/dist`
+  present (production), the StaticFiles mount at "/" is the scope's
+  `endpoint` for every unknown address, so `/api/no-such-thing` lost the
+  bare "Not Found" older app builds read as "not on this server yet".
+  `app/main.py` `_route_matched()` now ignores a StaticFiles endpoint.
+  S2's own run had no `dist`, so it did not show there.
+- **Tests that P's changes made stale:** `install.sh` now has six jobs
+  (the nightly `demo` reset; still no worker), and a POS without day totals
+  now gets the re-check (`sales_recheck`) instead of nothing.
+- **Website branding fixtures** (`src/test/fixtures/branding.js`,
+  `e2e/fixtures/branding-*.json`) carry S1's `pos_provider` / `pos_word`.
+  The web Clover fixture stays a connected store; only field names are
+  compared with the server's bodies.
+- **Store e2e (`e2e/store/serve.py`):** since G20 an unconnected Clover
+  store advertises no capabilities, so the harness advertises the fake
+  Clover store's set as a connected store (server gates unchanged).
+- **App repo:** `pp/app` and P's CI branch `pp/prod-ci` merged; the app's
+  bundled help and glossary re-synced (`scripts/help/sync_help_to_app.sh`),
+  and its branding fixtures refreshed (Clover expected with no
+  capabilities, `pos_provider` / `pos_word` known keys).
+
+Results on the merged `main`:
+
+| Suite | Result |
+|---|---|
+| Backend, PostgreSQL 16 (full) | 3336 passed, 18 skipped, 4 failed; the 4 were the stale checks above and pass after the fixes |
+| Backend, SQLite (full, rerun after the fixes) | 3332 passed, 27 skipped, 0 failed. The first run also failed `platform/test_ops_onboarding.py::test_backup_all_dumps_platform_and_every_store_then_drills` once while the PostgreSQL suite ran beside it; it passed alone and in the rerun |
+| Website node tests / `vite build` | 377 of 377 / OK |
+| `e2e/store/run.sh` (Toast, Clover, DEMO; 1280 + 375) | 760 checks, 0 failures |
+| `e2e/platform/run.sh` (mock) | 133 checks, 0 failed |
+| `e2e/platform/run_real.sh` (real server, PostgreSQL) | 148 checks, 0 failed |
+| `e2e/platform/run_flows.sh` (real server, PostgreSQL) | 114 checks, 0 failed; 152 fake-Toast calls |
+| `e2e/system/run.sh` | 47 of 47 |
+| App `flutter analyze` / full `flutter test` | no issues / 6202 passed, 100 skipped |
