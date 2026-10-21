@@ -91,7 +91,7 @@
   },
   {
    "type": "tip",
-   "text": "Every product search also finds an item by its SKU, barcode or {pos} item ID, or part of one."
+   "text": "Every product search also finds an item by its vendor code, barcode or {pos} item ID, or part of one."
   }
  ]
 }

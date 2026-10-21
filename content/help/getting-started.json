@@ -21,7 +21,7 @@
    },
    {
     "title": "Connect your POS",
-    "text": "On Setup › Integrations, add your {pos} details, Save, then Test connection. Sales start syncing that night.",
+    "text": "On Setup › Integrations, add your {pos} details, Save, then Test connection. Sales start coming in that night.",
     "page": "integrations",
     "article": "setup-integrations"
    },

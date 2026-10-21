@@ -1216,7 +1216,7 @@ TERMS = [
         "An open invoice whose vendor was received in {pos} after the upload, so it is probably closed there. One "
         "tap marks it Closed in {pos}; Not closed yet hides the suggestion. Nothing is closed automatically.",
         f"A {{pos}} receiving of that vendor no earlier than {_hours(_ICS.UPLOAD_GRACE)} hours before the upload (or, "
-        "on a nightly-snapshot day, a delivery-like stock rise after it). With several open invoices for one vendor, "
+        "on a day with only the nightly {pos} stock list, a delivery-like stock rise after it). With several open invoices for one vendor, "
         "the oldest gets the first receiving. Invoices only (not returns).",
         "info",
         ["looks closed", "suggested close"],
@@ -1418,7 +1418,7 @@ TERMS = [
         "someone checks it and presses Confirm, which logs it exactly like a manual review.",
         "Mostly from {pos}'s own receiving: items whose receive time and receiving number (like IN378) are new since "
         "the previous upload, grouped under the vendor most of them list. On a day with only the nightly {pos} "
-        f"snapshot: {_n(_DS.RISE_MIN_ITEMS)} or more of one vendor's items rising by at least {_n(_DS.RISE_MIN_UNITS)} "
+        f"stock list: {_n(_DS.RISE_MIN_ITEMS)} or more of one vendor's items rising by at least {_n(_DS.RISE_MIN_UNITS)} "
         "more than sales explain (or one, if the vendor uploaded an invoice then); a shelf rise matched by its "
         f"Container row dropping by {_pct(_DS.TRANSFER_MATCH_SHARE)} of it is a move, and a weighed item must rise by "
         f"{_pct(_DS.WEIGHED_RISE_SHARE)} of its weight. Quantity = count now - count before + units sold in between.",
@@ -1525,9 +1525,9 @@ TERMS = [
     ),
     _t(
         "job_status",
-        "Sync status",
+        "Job status",
         "other",
-        "The last run of a background job (sales sync, inventory upload): green = worked, red = failed, "
+        "The last run of a background job (the nightly sales copy, inventory upload): green = worked, red = failed, "
         "amber = running.",
     ),
     _t("on_sale", "On sale", "other", "The item has a sale price in {pos}.", None, "success"),
@@ -1794,7 +1794,7 @@ TERMS = [
         "store's marketing WhatsApp groups.",
         f"A photo is saved as one JPEG (at most {_flyers.MAX_SIDE} px on its longest side, about "
         f"{_flyers.TARGET_MAX_BYTES // _flyers.MB} MB) and a PDF as uploaded (up to {_flyers.MAX_PDF_MB} MB). The files "
-        "are kept on the store's server in its flyers folder, one folder per category. A deleted flyer moves to "
+        "are kept in the store's flyers folder, one folder per category. A deleted flyer moves to "
         "the _Deleted folder; it is never removed.",
         None,
         ["flyers", "marketing flyer", "promotion"],
@@ -1885,11 +1885,11 @@ TERMS = [
         "sales_accuracy_fixed",
         "Fixed",
         "sales",
-        "The day differed from {pos} (an edit made after it was synced), so it was re-synced from {pos}'s orders "
+        "The day differed from {pos} (an edit made after it was copied), so it was copied again from {pos}'s orders "
         "and now matches.",
-        "A day is re-synced when its item sales or quantity differ from {pos}'s, {pos}'s numbers for it changed "
-        f"since the last check, it still has unpaid items and was last synced over {_n(_SA.UNPAID_RESYNC_HOURS)} "
-        "hours ago, or it was never synced.",
+        "A day is copied again when its item sales or quantity differ from {pos}'s, {pos}'s numbers for it changed "
+        f"since the last check, it still has unpaid items and was last copied over {_n(_SA.UNPAID_RESYNC_HOURS)} "
+        "hours ago, or it was never copied.",
         "success",
         ["re-synced", "corrected"],
     ),
@@ -1897,7 +1897,7 @@ TERMS = [
         "sales_accuracy_differs",
         "Differs",
         "sales",
-        "Still different from {pos} after a re-sync. Usually {pos}'s Analytics haven't caught up with a recent "
+        "Still different from {pos} after copying it again. Usually {pos}'s Analytics haven't caught up with a recent "
         "edit yet ({pos} says 2 to 4 hours); a later check corrects it. Worth a look only if it stays for days.",
         None,
         "warning",
@@ -1907,7 +1907,7 @@ TERMS = [
         "sales_accuracy_waiting",
         "Waiting for {pos}",
         "sales",
-        "This day was already re-synced against the same {pos} numbers, so it isn't fetched again until {pos}'s "
+        "This day was already copied again against the same {pos} numbers, so it isn't fetched again until {pos}'s "
         "numbers for it change. This keeps the check from asking {pos} for the same day over and over.",
         None,
         "neutral",
@@ -1919,23 +1919,23 @@ TERMS = [
         "projection",
         "With Inventory from {pos} turned on by an admin, on hand on Reorder Candidates, New order, "
         "Negative inventory and Refill from container is {pos}'s current count, not the count from the last "
-        "inventory snapshot.",
+        "saved stock list.",
         f"{{pos}}'s stock list is read at most once every {_n(_default('live_stock_cache_seconds') / 60)} minutes. "
         "Out of stock in {pos} shows 0, except that an item the last upload counted below zero keeps that count. "
-        "When {pos} doesn't answer, the latest snapshot's counts are used and the page says so.",
+        "When {pos} doesn't answer, the latest saved counts are used and the page says so.",
         "info",
         ["live", "live count", "on hand live"],
     ),
     _t(
         "inventory_api_snapshot",
-        "Nightly {pos} snapshot",
+        "Nightly {pos} stock list",
         "reports",
         "With Inventory from {pos} turned on, the app builds each day's inventory early in the morning from {pos} "
         "itself, so the daily file upload is no longer needed. An uploaded file for the same day always replaces it.",
         f"Built at {_ampm(dt.time(_default('inventory_api_snapshot_hour'), _default('inventory_api_snapshot_minute')))}: "
         "counts, names, prices, barcodes and categories from {pos}'s stock and menu; 7, 30 and 90-day sales from "
         "our own sales through yesterday; cost, vendor, vendor code and last received carried from each item's "
-        "latest uploaded file ({pos}'s API doesn't have them). It isn't saved if {pos}'s stock list is empty or "
+        "latest uploaded file ({pos} doesn't share them). It isn't saved if {pos}'s stock list is empty or "
         f"has under {_pct(_INV.MIN_BUILD_SHARE)} of the items of the latest upload.",
         "info",
         ["api snapshot", "from toast", "inventory from toast"],
@@ -1944,7 +1944,7 @@ TERMS = [
         "inventory_upload_due",
         "Inventory upload due",
         "reports",
-        "A reminder to upload {pos}'s inventory file. Even with the nightly {pos} snapshot the app needs a file "
+        "A reminder to upload {pos}'s inventory file. Even with the nightly {pos} stock list the app needs a file "
         "now and then for cost, vendor codes and last-received dates.",
         f"Sent at 9 AM while the latest uploaded file is {_n(_default('inventory_csv_max_age_days'))} or more days "
         "old. You can switch it off in your alert settings.",
@@ -1967,11 +1967,11 @@ TERMS = [
         "send_po",
         "Send PO",
         "placed_orders",
-        "Emails the vendor's PO PDF (the same file as Download PDF) from the store's Gmail to the vendor's saved "
+        "Emails the vendor's PO PDF (the same file as Download PDF) from the store's email to the vendor's saved "
         "contacts. Once it goes out, the order is recorded as placed and those lines leave the cart.",
         f"Only to emails saved under Vendor contacts (at most {_PO.MAX_RECIPIENTS}); a note of up to "
         f"{_PO.MAX_NOTE} characters. Pressing Send twice never emails twice. WhatsApp is off: the store's "
-        "WhatsApp plan allows only 5 chats.",
+        "WhatsApp sending of POs is off for this store.",
         None,
         ["send po", "email po", "email the vendor"],
     ),
@@ -2012,11 +2012,12 @@ TERMS = [
         "po_send_uncertain",
         "Not confirmed",
         "placed_orders",
-        "The connection broke after the email was handed to Gmail, so it may have gone out. Look in Gmail's Sent "
+        "The connection broke after the email was handed over for sending, so it may have gone out. Look in the store "
+        "mailbox's Sent "
         "folder before sending again; if it went, record the order as placed instead.",
         f"The next send to that vendor within {_hours(_PO.UNCERTAIN_LOOKBACK)} hours asks you to check first.",
         "warning",
-        ["uncertain", "check gmail"],
+        ["uncertain", "check gmail", "check sent folder"],
     ),
     _t(
         "po_send_sending",
@@ -2388,7 +2389,7 @@ TERMS += [
         "Card customers",
         "insights",
         "Different cards that paid in the week. Cash payments aren't counted.",
-        f"Cards are recognised only by a scrambled code made on our server; no card number, name or other card "
+        f"Cards are recognised only by a scrambled code made by RetailOps; no card number, name or other card "
         f"detail is ever saved, and the codes are deleted after {_n(_INSD.GUEST_RETENTION_DAYS)} days.",
         None,
         ["customers", "privacy"],
@@ -2485,7 +2486,7 @@ TERMS += [
         "Returning customers",
         "insights",
         "How many card customers each week had paid here before, and how often they come.",
-        f"Counts only. Cards are recognised by a scrambled code made on our server and deleted after "
+        f"Counts only. Cards are recognised by a scrambled code made by RetailOps and deleted after "
         f"{_n(_INSD.GUEST_RETENTION_DAYS)} days; no card or name is ever saved or shown.",
         None,
     ),

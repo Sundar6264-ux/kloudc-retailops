@@ -29,7 +29,7 @@
    "type": "bullets",
    "items": [
     "**Users**, **Items** and **File storage** are measured each night.",
-    "**Sales synced**, **POS requests** and **AI requests** add up over the last 30 days.",
+    "**Sales brought in**, **Checks with the POS** and **AI questions** add up over the last 30 days.",
     "**Last activity** is the last time someone at the store used RetailOps."
    ]
   },

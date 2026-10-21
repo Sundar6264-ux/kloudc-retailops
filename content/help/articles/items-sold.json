@@ -46,7 +46,7 @@
   },
   {
    "type": "p",
-   "text": "Today is read live from {pos} when you open the page (a read under a minute old is reused; Refresh reads again). Past days come from the nightly sync. A few times a day the last 14 days are compared with {pos}'s own totals and any day that changed (a void the next morning, a late payment) is synced again."
+   "text": "Today is read live from {pos} when you open the page (a read under a minute old is reused; Refresh reads again). Past days are copied from {pos} each night. A few times a day the last 14 days are compared with {pos}'s own totals and any day that changed (a void the next morning, a late payment) is copied again."
   },
   {
    "type": "h",

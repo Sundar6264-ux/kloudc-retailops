@@ -9,7 +9,7 @@
   "admin",
   "staff"
  ],
- "summary": "Which numbers come straight from {pos} when you open a page, which are synced each night, and why.",
+ "summary": "Which numbers come straight from {pos} when you open a page, which are copied each night, and why.",
  "pages": [
   "home",
   "items_sold",
@@ -51,9 +51,9 @@
   {
    "type": "bullets",
    "items": [
-    "Past days of sales: synced each night, then compared with {pos} and corrected several times a day.",
+    "Past days of sales: copied each night, then compared with {pos} and corrected several times a day.",
     "Barcode re-check against {pos}'s menu: every hour.",
-    "The nightly inventory snapshot from {pos}: 4:05 AM, when turned on.",
+    "The nightly stock list from {pos}: 4:05 AM, when turned on.",
     "The full Open Checks history sweep: once a day.",
     "Phone alerts: at their set times, never between 10 PM and 7 AM."
    ]

@@ -388,14 +388,15 @@
  },
  {
   "key": "concept_sku",
-  "label": "SKU (vendor item code)",
+  "label": "Vendor code (SKU)",
   "category": "concept_data",
   "area": "home",
-  "definition": "The vendor's own code for an item. It prints on the PO so the vendor knows exactly what you mean. Every product search also finds items by SKU.",
+  "definition": "The vendor's own code for an item. It prints on the PO so the vendor knows exactly what you mean. Every product search also finds items by vendor code.",
   "aliases": [
    "supplier code",
    "item code",
-   "vendor code"
+   "vendor code",
+   "sku"
   ],
   "where": "PO PDF, cart, search",
   "pages": [
@@ -713,7 +714,7 @@
   "label": "Purchase order (PO)",
   "category": "concept_ordering",
   "area": "ordering",
-  "definition": "The order document for one vendor: your store's letterhead, then each item's SKU, name and quantity, grouped by PO section. It is a PDF.",
+  "definition": "The order document for one vendor: your store's letterhead, then each item's vendor code, name and quantity, grouped by PO section. It is a PDF.",
   "aliases": [
    "po",
    "order",
@@ -1921,7 +1922,7 @@
   "label": "Usage",
   "category": "concept_setup",
   "area": "setup",
-  "definition": "How much of RetailOps a store uses: users, items, file storage, database size, sales syncs, POS requests and AI requests. Sizes and counts are measured each night; until the first measurement they read \"Not measured yet\".",
+  "definition": "How much of RetailOps a store uses: users, items, files, records, sales brought in, checks with the POS and AI questions. Sizes and counts are measured each night; until the first measurement they read \"Not measured yet\".",
   "aliases": [
    "usage",
    "metering",

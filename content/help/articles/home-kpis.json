@@ -41,7 +41,7 @@
   },
   {
    "type": "p",
-   "text": "Admins also see **Sales accuracy** at the bottom: each of the last 14 days compared with {pos}'s own totals. A day that differs is synced again by itself."
+   "text": "Admins also see **Sales accuracy** at the bottom: each of the last 14 days compared with {pos}'s own totals. A day that differs is copied again by itself."
   }
  ]
 }

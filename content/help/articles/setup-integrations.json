@@ -33,7 +33,7 @@
     "toast"
    ],
    "items": [
-    "**Toast**: your Toast API client ID and secret and the restaurant's GUID, from Toast's developer portal or your Toast contact. The analytics client is optional and turns on Insights."
+    "**Toast**: your Toast API client ID and secret and the restaurant ID (Toast calls it the Restaurant GUID), from Toast's developer portal or your Toast contact. The analytics client is optional and turns on Insights."
    ]
   },
   {
@@ -76,7 +76,7 @@
   },
   {
    "type": "p",
-   "text": "The mailbox that sends POs and invoice emails: the mail server (host and port), the username and an app password. Many providers need an app password rather than your normal one."
+   "text": "The mailbox that sends POs and invoice emails: your mail provider's sending address (host and port), the username and an app password. Many providers need an app password rather than your normal one."
   },
   {
    "type": "h",

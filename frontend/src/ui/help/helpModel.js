@@ -588,7 +588,11 @@ export function onlyForPos(value, pos) {
   }
   if (value && typeof value === "object") {
     const out = {};
-    for (const [k, v] of Object.entries(value)) out[k] = onlyForPos(v, pos);
+    for (const [k, v] of Object.entries(value)) {
+      // A map of entries (a page's `sections`) is filtered like a list (G11).
+      if (v && typeof v === "object" && !Array.isArray(v) && Array.isArray(v.pos) && pos && !v.pos.includes(pos)) continue;
+      out[k] = onlyForPos(v, pos);
+    }
     if (!pos && Array.isArray(value.pos) && value.pos.length) {
       out.pos_label = `${value.pos.map((p) => POS_LABELS[p] || p).join(" / ")} only`;
     }

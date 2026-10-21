@@ -79,7 +79,7 @@
   },
   {
    "type": "p",
-   "text": "Choose **Disconnect** on the Clover card. Syncing stops and the saved token is deleted. Your past sales stay in RetailOps."
+   "text": "Choose **Disconnect** on the Clover card. RetailOps stops reading from Clover and the saved token is deleted. Your past sales stay in RetailOps."
   }
  ]
 }

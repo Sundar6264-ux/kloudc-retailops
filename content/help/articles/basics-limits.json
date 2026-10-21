@@ -24,7 +24,7 @@
     "**RetailOps never changes your POS.** It reads sales, menus and stock from {pos}. Prices, counts and items are changed in {pos} itself.",
     "**No vendor cost or lead time from {pos}.** Lead time comes from the Vendor Calendar schedule, or the number you set.",
     "**Forecasts use your own sales history.** They don't know about holidays, promotions, weather or events ahead.",
-    "**Stock is as fresh as the latest snapshot**: your last upload, or {pos}'s nightly snapshot once Inventory from {pos} is on.",
+    "**Stock is as fresh as the latest stock list**: your last upload, or {pos}'s nightly list once Inventory from {pos} is on.",
     "**Some pages need data your POS doesn't give.** Those pages show as not available for your store."
    ]
   },
