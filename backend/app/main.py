@@ -270,12 +270,21 @@ async def _public_invoice_auth_redirect(request: Request, exc: StarletteHTTPExce
         return RedirectResponse(login_url, status_code=302)
     # A bare "Not Found" / "Internal Server Error" (G27): a sentence too
     # (app/plain_errors.py; "Not Found" stays in detail when no route matched).
-    plain = bare_phrase_body(exc.status_code, exc.detail, route_matched=request.scope.get("endpoint") is not None)
+    plain = bare_phrase_body(exc.status_code, exc.detail, route_matched=_route_matched(request.scope))
     if plain is not None:
         from fastapi.responses import JSONResponse
 
         return JSONResponse(status_code=exc.status_code, content=plain, headers=getattr(exc, "headers", None))
     return await http_exception_handler(request, exc)
+
+
+def _route_matched(scope) -> bool:
+    """True when a real route answered. The website's StaticFiles mount at "/"
+    also sets an endpoint for every unknown path (/api/no-such-thing too, once
+    frontend/dist exists), and older app builds read its bare "Not Found" as
+    "this server doesn't have that feature yet", so it counts as no match."""
+    endpoint = scope.get("endpoint")
+    return endpoint is not None and not isinstance(endpoint, StaticFiles)
 
 
 @app.exception_handler(RequestValidationError)

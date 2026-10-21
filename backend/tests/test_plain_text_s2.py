@@ -418,3 +418,15 @@ def test_store_route_errors_name_no_settings_files_or_vendors():
             if "detail=" in line and bad.search(line):
                 found.append(f"{path.name}:{n}: {line.strip()[:100]}")
     assert not found, found
+
+
+def test_an_unknown_route_under_the_website_mount_keeps_not_found(tmp_path):
+    # With frontend/dist present (production), the StaticFiles mount at "/"
+    # is the scope's endpoint for every unknown path; it is not a real route.
+    from fastapi.staticfiles import StaticFiles
+
+    from app.main import _route_matched
+
+    assert _route_matched({"endpoint": StaticFiles(directory=str(tmp_path))}) is False
+    assert _route_matched({}) is False
+    assert _route_matched({"endpoint": lambda: None}) is True
