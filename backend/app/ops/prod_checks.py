@@ -21,6 +21,11 @@ never switches these checks off.
 Warnings (logged, never fatal): unknown APP_ENV, SECURITY_HEADERS=off, placeholder domain, no Firebase file, no
 client-IP header behind a proxy, no website build, no STORE_CODE (single mode),
 DEDICATED_HOSTING_ENABLED, no LOG_DIR.
+Going public (pre-production 2026-10-21, docs/GO_LIVE_RUNBOOK.md), warnings:
+PLATFORM_DOMAIN still the placeholder; PLATFORM_PUBLIC_URL not https or its
+origin missing from CORS_ORIGINS; PUBLIC_BASE_URL blank; TERMS_URL blank; a
+Toast store without Analytics keys (late Toast edits caught only by the daily
+re-check); no off-site backup (BACKUP_OFFSITE_DIR).
 """
 
 import logging
@@ -104,6 +109,74 @@ def _masters_exist() -> Optional[bool]:
         return None
 
 
+def _toast_stores_without_analytics() -> Optional[List[str]]:
+    """Codes of active stores whose saved Toast connection has no Analytics
+    client ID, or None when the platform database can't be asked."""
+    try:
+        import json
+
+        from sqlalchemy import text
+
+        from app.platform.db import platform_engine
+
+        with platform_engine().connect() as conn:
+            rows = conn.execute(text(
+                "SELECT s.code, c.public_fields FROM store_credentials c JOIN stores s ON s.id = c.store_id "
+                "WHERE c.kind = 'toast' AND s.status = 'active' ORDER BY s.code"
+            )).all()
+    except Exception:  # noqa: BLE001
+        return None
+    out = []
+    for code, public in rows:
+        try:
+            fields = json.loads(public or "{}")
+        except ValueError:
+            fields = {}
+        if not str(fields.get("analytics_client_id") or "").strip():
+            out.append(code)
+    return out
+
+
+def _origin(url: str) -> str:
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(url.strip())
+    return f"{parts.scheme}://{parts.netloc}".lower() if parts.scheme and parts.netloc else ""
+
+
+def go_public_findings(s, *, multi: bool, check_database: bool = True) -> List[Finding]:
+    """Warnings for a server with a public address (never fatal: the pilot
+    runs on its private address until the owner switches)."""
+    out: List[Finding] = []
+    public = str(getattr(s, "platform_public_url", "") or "").strip()
+    domain = str(getattr(s, "platform_domain", "") or "").strip()
+    origins = [o.strip().rstrip("/").lower() for o in str(getattr(s, "cors_origins", "") or "").split(",") if o.strip()]
+    if multi and public and (not domain or domain.endswith(".invalid")):
+        out.append(Finding("warning", "PLATFORM_DOMAIN",
+                           f"still the placeholder {domain or 'retailops.invalid'!r}: set kloudc.com (email "
+                           "Message-IDs and app links use it)"))
+    if public:
+        if not public.lower().startswith("https://"):
+            out.append(Finding("warning", "PLATFORM_PUBLIC_URL", "not an https:// address"))
+        elif _origin(public) and _origin(public) not in origins:
+            out.append(Finding("warning", "CORS_ORIGINS",
+                               f"does not list the public address {_origin(public)} (the website there can't sign in)"))
+        if not str(getattr(s, "public_base_url", "") or "").strip():
+            out.append(Finding("warning", "PUBLIC_BASE_URL", "blank: file links in WhatsApp messages have no address"))
+        if not str(getattr(s, "terms_url", "") or "").strip():
+            out.append(Finding("warning", "TERMS_URL", "blank: sign-in and About show no Terms of Service link"))
+    if not os.environ.get("BACKUP_OFFSITE_DIR", "").strip():
+        out.append(Finding("warning", "BACKUP_OFFSITE_DIR",
+                           "no off-site backup: backups stay on this machine only (docs/GO_LIVE_RUNBOOK.md)"))
+    if multi and check_database:
+        missing = _toast_stores_without_analytics()
+        if missing:
+            out.append(Finding("warning", "TOAST_ANALYTICS",
+                               f"store(s) {', '.join(missing)} have no Toast Analytics keys: late Toast edits are "
+                               "caught only by the daily re-check (Store setup > Integrations > Toast)"))
+    return out
+
+
 def check_config(settings=None, *, check_database: bool = True) -> List[Finding]:
     """Every finding for these settings (production rules applied whatever
     APP_ENV is; ``enforce`` decides what is fatal)."""
@@ -177,6 +250,7 @@ def check_config(settings=None, *, check_database: bool = True) -> List[Finding]
         pass
     if not str(getattr(s, "log_dir", "") or "").strip():
         out.append(Finding("warning", "LOG_DIR", "blank: logs go to stdout/stderr only (no error.log)"))
+    out.extend(go_public_findings(s, multi=multi, check_database=check_database))
     return out
 
 
