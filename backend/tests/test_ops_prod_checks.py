@@ -156,21 +156,23 @@ def test_go_public_warnings_name_each_missing_setting(multi_env, monkeypatch):
     monkeypatch.delenv("BACKUP_OFFSITE_DIR", raising=False)
     monkeypatch.setattr(multi_env, "platform_public_url", "https://app.kloudc.com")
     monkeypatch.setattr(multi_env, "platform_domain", "retailops.invalid")
-    monkeypatch.setattr(multi_env, "public_base_url", "")
+    monkeypatch.setattr(multi_env, "public_host", "")
     monkeypatch.setattr(multi_env, "terms_url", "")
     w = _warn(prod_checks.check_config(multi_env, check_database=False))
     assert "kloudc.com" in w["PLATFORM_DOMAIN"]
     assert "https://app.kloudc.com" in w["CORS_ORIGINS"]
-    assert {"PUBLIC_BASE_URL", "TERMS_URL", "BACKUP_OFFSITE_DIR"} <= set(w)
+    assert {"PUBLIC_HOST", "TERMS_URL", "BACKUP_OFFSITE_DIR"} <= set(w)
+    assert "https://<store>.retailops.invalid" in w["PUBLIC_HOST"] and "https://app.kloudc.com" in w["PUBLIC_HOST"]
     # All set: none of these warnings, and never an error.
     monkeypatch.setenv("BACKUP_OFFSITE_DIR", "/Volumes/offsite")
     monkeypatch.setattr(multi_env, "platform_domain", "kloudc.com")
     monkeypatch.setattr(multi_env, "cors_origins", "https://app.kloudc.com/, https://pilot.example")
-    monkeypatch.setattr(multi_env, "public_base_url", "https://app.kloudc.com")
+    monkeypatch.setattr(multi_env, "public_host", "https://app.kloudc.com")
     monkeypatch.setattr(multi_env, "terms_url", "https://app.kloudc.com/terms")
     findings = prod_checks.check_config(multi_env, check_database=False)
     w = _warn(findings)
-    assert not {"PLATFORM_DOMAIN", "CORS_ORIGINS", "PUBLIC_BASE_URL", "TERMS_URL", "BACKUP_OFFSITE_DIR"} & set(w)
+    assert not {"PLATFORM_DOMAIN", "CORS_ORIGINS", "PUBLIC_HOST", "PUBLIC_BASE_URL", "TERMS_URL",
+                "BACKUP_OFFSITE_DIR"} & set(w)
     assert _keys(findings) == []
 
 
@@ -185,3 +187,13 @@ def test_toast_stores_without_analytics_keys_are_named(multi_env, monkeypatch):
     assert "ALPHA" in w["TOAST_ANALYTICS"] and "Integrations" in w["TOAST_ANALYTICS"]
     monkeypatch.setattr(prod_checks, "_toast_stores_without_analytics", lambda: [])
     assert "TOAST_ANALYTICS" not in _warn(prod_checks.check_config(multi_env, check_database=True))
+
+
+def test_public_host_sends_every_store_link_to_app_kloudc_com():
+    from app.store import settings_view as sv
+
+    s = _settings(store_code="ALPHA_ONE", platform_domain="kloudc.com", public_host="https://app.kloudc.com")
+    assert sv.effective_public_base_url(s) == "https://app.kloudc.com"
+    assert sv.absolute_url("/c/abc", s) == "https://app.kloudc.com/c/abc"
+    blank = _settings(store_code="ALPHA_ONE", platform_domain="kloudc.com")
+    assert sv.effective_public_base_url(blank) == "https://alpha-one.kloudc.com", "what the warning is about"

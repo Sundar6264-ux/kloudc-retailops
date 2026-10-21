@@ -23,7 +23,8 @@ client-IP header behind a proxy, no website build, no STORE_CODE (single mode),
 DEDICATED_HOSTING_ENABLED, no LOG_DIR.
 Going public (pre-production 2026-10-21, docs/GO_LIVE_RUNBOOK.md), warnings:
 PLATFORM_DOMAIN still the placeholder; PLATFORM_PUBLIC_URL not https or its
-origin missing from CORS_ORIGINS; PUBLIC_BASE_URL blank; TERMS_URL blank; a
+origin missing from CORS_ORIGINS; PUBLIC_HOST blank (multi mode; PUBLIC_BASE_URL in single
+mode); TERMS_URL blank; a
 Toast store without Analytics keys (late Toast edits caught only by the daily
 re-check); no off-site backup (BACKUP_OFFSITE_DIR).
 """
@@ -161,7 +162,14 @@ def go_public_findings(s, *, multi: bool, check_database: bool = True) -> List[F
         elif _origin(public) and _origin(public) not in origins:
             out.append(Finding("warning", "CORS_ORIGINS",
                                f"does not list the public address {_origin(public)} (the website there can't sign in)"))
-        if not str(getattr(s, "public_base_url", "") or "").strip():
+        if multi and not str(getattr(s, "public_host", "") or "").strip():
+            # PUBLIC_BASE_URL is a per-store setting in multi mode; every
+            # store's links fall back to PUBLIC_HOST, else to
+            # https://<store>.<PLATFORM_DOMAIN>, which the tunnel doesn't serve.
+            out.append(Finding("warning", "PUBLIC_HOST",
+                               f"blank: store links (WhatsApp files, checklist and invoice links) would point at "
+                               f"https://<store>.{domain or 'retailops.invalid'}; set it to {_origin(public) or public}"))
+        elif not multi and not str(getattr(s, "public_base_url", "") or "").strip():
             out.append(Finding("warning", "PUBLIC_BASE_URL", "blank: file links in WhatsApp messages have no address"))
         if not str(getattr(s, "terms_url", "") or "").strip():
             out.append(Finding("warning", "TERMS_URL", "blank: sign-in and About show no Terms of Service link"))

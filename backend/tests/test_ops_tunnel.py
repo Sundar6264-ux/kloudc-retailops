@@ -108,6 +108,7 @@ def test_production_env_example_names_real_settings_and_no_secrets():
         assert key.lower() in fields, key
     assert pairs["PLATFORM_PUBLIC_URL"] == "https://app.kloudc.com"
     assert pairs["PLATFORM_DOMAIN"] == "kloudc.com"
+    assert pairs["PUBLIC_HOST"] == "https://app.kloudc.com" and "PUBLIC_BASE_URL" not in pairs
     assert pairs["DIRECTORY_CLIENT_IP_HEADER"] == "CF-Connecting-IP"
     assert pairs["PLATFORM_REQUIRE_TOTP"] == "true" and pairs["SIGNUP_ENABLED"] == "false"
     assert pairs["SESSION_COOKIE_SECURE"] == "true" and pairs["SESSION_COOKIE_DOMAIN"] == ""
