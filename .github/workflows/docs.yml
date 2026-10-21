@@ -28,6 +28,12 @@ jobs:
     name: Docs name guard
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      # No database server in this job: the tests that need one use SQLite.
+      RETAILOPS_TEST_DB: sqlite
+      TOAST_API_BASE: http://127.0.0.1:9
+      TOAST_ANALYTICS_BASE: http://127.0.0.1:9
+      WHAPI_BASE_URL: http://127.0.0.1:9
     defaults:
       run:
         working-directory: backend
