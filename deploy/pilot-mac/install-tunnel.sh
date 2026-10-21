@@ -72,8 +72,13 @@ fi
 if [ -f "$TOKEN_FILE" ]; then
   MODE=token
   if [ -z "$DRY_RUN" ]; then
-    "$CLOUDFLARED" tunnel run --help 2>/dev/null | grep -q -- "--token-file" \
-      || { echo "This cloudflared is too old for --token-file: brew upgrade cloudflared" >&2; exit 1; }
+    # Read the whole help text first: with pipefail, "| grep -q" stops reading
+    # early and cloudflared's SIGPIPE made a new cloudflared look too old.
+    run_help="$("$CLOUDFLARED" tunnel run --help 2>&1 || true)"
+    case "$run_help" in
+      *--token-file*) ;;
+      *) echo "This cloudflared is too old for --token-file: brew upgrade cloudflared" >&2; exit 1 ;;
+    esac
     chown "$RUN_USER" "$TOKEN_FILE"; chmod 600 "$TOKEN_FILE"
   fi
   # Its own (nearly empty) config file, so cloudflared never falls back to a
