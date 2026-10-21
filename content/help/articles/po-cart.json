@@ -59,7 +59,7 @@
   },
   {
    "type": "p",
-   "text": "**Download PDF** makes the PO for one vendor: your store's letterhead, then a serial number, the vendor's SKU, the item name and the quantity, grouped by PO section. Lines at 0 are skipped. It is not a {pos} purchase order; nothing is sent to {pos}."
+   "text": "**Download PDF** makes the PO for one vendor: your store's letterhead, then a serial number, the vendor code, the item name and the quantity, grouped by PO section. Lines at 0 are skipped. It is not a {pos} purchase order; nothing is sent to {pos}."
   },
   {
    "type": "h",

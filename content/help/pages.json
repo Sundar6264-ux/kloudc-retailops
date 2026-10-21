@@ -239,7 +239,7 @@
     "Upload today's inventory file from the Upload inventory card."
    ],
    "source": "{pos} sales, your latest inventory upload and the vendor calendar.",
-   "freshness": "Today's sales: live, shared for 1 minute. Past days: synced each night."
+   "freshness": "Today's sales: live, shared for 1 minute. Past days: copied from {pos} each night."
   },
   "sections": {
    "today": {
@@ -289,7 +289,7 @@
    },
    "job_status": {
     "title": "Job status",
-    "summary": "When sales last synced from {pos} and when inventory was last uploaded.",
+    "summary": "When sales were last copied from {pos} and when inventory was last uploaded.",
     "points": [
      "Green finished, amber running, red failed. Open the detail to see why."
     ]
@@ -298,7 +298,7 @@
     "title": "Sales accuracy",
     "summary": "Admins only. Each of the last 14 days compared with {pos}'s own totals.",
     "points": [
-     "A day that differs is synced again by itself."
+     "A day that differs is copied again by itself."
     ]
    }
   },
@@ -876,7 +876,7 @@
   "info": {
    "summary": "Upload vendor invoices, returns and transfers. Each one is shared on WhatsApp and emailed to {pos}.",
    "points": [
-    "Submit is instant. WhatsApp and the {pos} email follow in the background.",
+    "**Submit invoice** is instant. WhatsApp and the {pos} email follow in the background.",
     "A failed send gets a **Resend** button. Your upload is always saved.",
     "**Transfer** is for stock moved between the store and the Container. It goes to WhatsApp only.",
     "**Looks closed in {pos}** suggests invoices that seem to be entered in {pos} already."
@@ -1131,12 +1131,12 @@
    "summary": "Units and revenue per item for the dates you pick, counted by when each item was paid for.",
    "points": [
     "Revenue is each item's own price after item discounts, before tax.",
-    "Today is read live from {pos}. Past days come from the nightly sync.",
+    "Today is read live from {pos}. Past days are copied from {pos} each night.",
     "Totals can differ a little from {pos}'s dashboard, which counts by business day.",
     "Download sales data under the table gives the raw line items."
    ],
    "source": "{pos} orders.",
-   "freshness": "Today: live, reused for 1 minute. Past days: synced each night and re-checked during the day."
+   "freshness": "Today: live, reused for 1 minute. Past days: copied each night and checked again during the day."
   },
   "sections": {},
   "terms": [
@@ -2106,7 +2106,7 @@
    "points": [
     "Off until an admin turns it on. It applies at once.",
     "Seven good nights in a row marks it ready.",
-    "A file uploaded for a day always replaces {pos}'s snapshot.",
+    "A file uploaded for a day always replaces {pos}'s stock list for that day.",
     "Cost and vendor codes still only come from a file. Upload one now and then."
    ],
    "source": null,
@@ -2132,7 +2132,9 @@
   "web": {
    "route": "/settings/integrations"
   },
-  "app": null,
+  "app": {
+   "location": "More › Setup › Integrations"
+  },
   "gating": {
    "feature": null,
    "admin": true,
@@ -2176,7 +2178,7 @@
     "points": [
      "**Connect with Clover**: sign in to Clover and approve RetailOps. Shown when this service has a Clover app.",
      "**API token**: paste the Merchant ID and a token made in your Clover dashboard. Fine for a single store.",
-     "Choose **Test connection** after saving. **Disconnect** stops syncing until you connect again."
+     "Choose **Test connection** after saving. **Disconnect** stops reading from your POS until you connect again."
     ]
    }
   },
@@ -2365,7 +2367,7 @@
    "summary": "Change your own password. You need your current one.",
    "points": [
     "Use at least 8 characters. Longer is safer.",
-    "Your other signed-in devices stay signed in.",
+    "Your other devices are signed out. This one stays signed in.",
     "Forgot it? An admin resets it on Users, which signs you out everywhere."
    ],
    "source": null,
@@ -2596,7 +2598,7 @@
   },
   "public": false,
   "info": {
-   "summary": "Type a name, SKU or barcode to find an item.",
+   "summary": "Type a name, vendor code or barcode to find an item.",
    "points": [],
    "source": null,
    "freshness": null
@@ -2961,7 +2963,9 @@
   "web": {
    "route": "/settings/data"
   },
-  "app": null,
+  "app": {
+   "location": "More › Setup › Data & usage"
+  },
   "gating": {
    "feature": null,
    "admin": true,
@@ -2981,7 +2985,7 @@
   "sections": {
    "usage": {
     "title": "Usage",
-    "summary": "Users, items, file storage and the last 30 days of sales syncs, POS requests and AI requests.",
+    "summary": "Users, items, file storage and the last 30 days of sales brought in, checks with your POS and AI questions.",
     "points": []
    },
    "plan": {
@@ -3102,7 +3106,9 @@
   "web": {
    "route": "/setup/item-vendors"
   },
-  "app": null,
+  "app": {
+   "location": "More › Setup › Item vendors"
+  },
   "gating": {
    "feature": null,
    "admin": true,
@@ -3220,7 +3226,9 @@
   "web": {
    "route": "/settings/store"
   },
-  "app": null,
+  "app": {
+   "location": "More › Setup › Store settings"
+  },
   "gating": {
    "feature": null,
    "admin": true,
@@ -3228,7 +3236,7 @@
   },
   "public": false,
   "info": {
-   "summary": "Your store's name, address, phone, time zone and logo, as they appear on POs, emails and the app.",
+   "summary": "Your store's name, address, phone and logo, as they appear on POs, emails and the app.",
    "points": [
     "Changes show on the next page load.",
     "Your Store ID can't change.",

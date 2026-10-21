@@ -65,3 +65,21 @@ test("Clover sees no Toast-only entry; Toast sees its own", () => {
   assert.ok(rendered("toast", "Toast").includes("Toast API client ID"));
   assert.ok(!rendered("toast", "Toast").includes("No POS connection"));
 });
+
+// G11: a page's `sections` is a map; a tagged section is filtered by its key.
+test("a tagged entry inside a sections map is dropped for another POS", () => {
+  const page = {
+    id: "p",
+    sections: {
+      all: { title: "For all", summary: "x" },
+      toast_keys: { pos: ["toast"], title: "Toast keys", summary: "Toast API client ID" },
+      pos: { title: "Point of sale", summary: "a section whose key is pos" },
+    },
+  };
+  for (const other of ["clover", "csv"]) {
+    const out = onlyForPos(page, other);
+    assert.deepEqual(Object.keys(out.sections), ["all", "pos"], other);
+  }
+  assert.deepEqual(Object.keys(onlyForPos(page, "toast").sections), ["all", "toast_keys", "pos"]);
+  assert.equal(onlyForPos(page, null).sections.toast_keys.pos_label, "Toast only");
+});

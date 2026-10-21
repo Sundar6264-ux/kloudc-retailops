@@ -4120,3 +4120,74 @@ all passing after the updates above. One order-dependent flake seen once in
 that run and passing on rerun: `tests/platform/test_isolation_attacks.py::
 test_6_public_routes` (a 429 from the public checklist link limit, which
 this track does not touch).
+
+## As built - Pre-production: S2 (words and help)
+
+Track S2 of `docs/PREPROD_PLAN.md` (branch `pp/gaps-text`): plain words in
+help, glossary, server messages and the website pages that show the same
+text. Every reply change is additive; older app builds keep working.
+
+**Help content** (`content/help`, manifest version 2):
+
+- G5: `store_settings`, `store_data`, `item_vendors` and `integrations`
+  carry `app.location` "More › Setup › <screen>" (the app's search entries
+  for these ids already exist, so its reachability test holds).
+- G11: `only_for_pos` (server `app/help_content.py` and website
+  `ui/help/helpModel.js`) now also filters a map of entries (a page's
+  `sections`): a section tagged `"pos": [...]` is left out for another POS
+  and labelled for masters. A section whose key is `pos` is not a tag.
+- G12: password help says other devices are signed out (routers/auth.py
+  `change_password` ends every other session).
+- G17: Store settings help no longer offers the time zone (it is set at
+  sign-up; support changes it).
+- G22: store-facing help and glossary avoid "sync", "server", "snapshot",
+  "database", "GUID" and "SKU" ("copied each night", "stock list", "vendor
+  code"). Kept on purpose: the UI label "Sales sync", "own server" (the
+  hosting offer), and "Toast calls it the Restaurant GUID" (the field name
+  in Toast). Master pages keep technical words. Guard:
+  `tests/test_plain_text_s2.py`.
+- G23: "Select **Submit invoice**". G24: glossary title "Vendor code (SKU)"
+  (alias "sku" kept for search).
+
+**WhatsApp and email wording (G29).** `po_send.WHATSAPP_OFF_REASON` reads
+"WhatsApp sending of POs is off for this store..."; a 402 from the sender is
+`WHATSAPP_CHAT_LIMIT_MESSAGE`; `whapi_client._STATUS_TEXT` has sentences
+without status codes or the provider's name (the code stays on
+`WhapiMediaError.status_code` for logs); a missing token reads
+`NOT_CONNECTED_TEXT` (no setting names). Glossary: "the store's email", the
+store mailbox's Sent folder. Website PO pages match.
+
+**Plain error replies** (`app/plain_errors.py`, wired in `app/main.py`):
+
+- G25 form errors (422): `detail` stays a list with `loc` and `type`; each
+  `msg` is a short sentence without the field name ("Must be a whole
+  number."), the typed `input` and `ctx` are no longer echoed, and the body
+  adds `error: "invalid_input"`, `message` ("Quantity: must be a whole
+  number.", "+ (N more to fix)") and `fields` {field: sentence}.
+- G27 bare phrases: a 4xx/5xx whose detail is only the HTTP phrase adds
+  `error` + `message`. `detail` keeps "Not Found" when no route matched, and
+  "Method Not Allowed" always, because older app builds read exactly those as
+  "this server doesn't have the feature"; a route's own 404 without a
+  sentence gets the sentence in `detail` too. The last-resort 500 reads
+  "Something went wrong on our side. Try again in a minute."
+- G16 store settings: `validate_store_setting` and the platform settings
+  checks answer "<Label>: <sentence>" ("Main colour: ...", "Logo link: must
+  be a web address starting with https://.").
+- Other store-route messages without env names or vendor internals: AI not
+  set up / key refused / AI service didn't answer (ask, digest), Toast
+  Analytics not set up (sales accuracy run), notifications not available,
+  invoice file missing; `MESSAGES["not_available"]` drops the milestone name.
+- Website: `src/errorText.js` picks the server's `message` over a list or a
+  bare phrase (used by `api.js` request and the upload helpers).
+
+**Website wording.** Inventory from {pos} confirm dialog matches the app
+("the day's stock list", "uploaded file"); Data & usage tiles match the app
+("Sales brought in", "Checks with the POS", "AI questions"); Items Sold,
+Sales accuracy, Suggested deliveries and the job status chip drop "sync".
+
+**Not in this repo.** G28 ("UPC not in catalog") is the store's labels site;
+the app already shows "Not in the catalog yet".
+
+**Integrate step.** The app's bundled copy must be refreshed after merge:
+`scripts/help/sync_help_to_app.sh <app checkout>` (checked in a scratch copy:
+the bundled glossary then equals `/api/glossary`).

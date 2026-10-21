@@ -37,7 +37,7 @@
   },
   {
    "type": "p",
-   "text": "On [Users](page:users) an admin ticks the pages each person may open, such as Invoices or Reorder Candidates. Pages they can't open are not in their menu, and the server refuses them too. Some pages are for admins only, such as Users, Integrations and Loss watch."
+   "text": "On [Users](page:users) an admin ticks the pages each person may open, such as Invoices or Reorder Candidates. Pages they can't open are not in their menu, and RetailOps refuses them too. Some pages are for admins only, such as Users, Integrations and Loss watch."
   },
   {
    "type": "h",
@@ -45,7 +45,7 @@
   },
   {
    "type": "p",
-   "text": "An admin can tick [Hide sales numbers](term:hide_sales) for a staff member. That person no longer sees dollar amounts: today's and yesterday's sales, Items Sold, open check totals, weekly dollar columns and the digest's sales section. They still see everything needed for ordering and stock, such as units per week and suggested quantities. The server enforces this, so it can't be worked around."
+   "text": "An admin can tick [Hide sales numbers](term:hide_sales) for a staff member. That person no longer sees dollar amounts: today's and yesterday's sales, Items Sold, open check totals, weekly dollar columns and the digest's sales section. They still see everything needed for ordering and stock, such as units per week and suggested quantities. RetailOps enforces this, so it can't be worked around."
   },
   {
    "type": "h",

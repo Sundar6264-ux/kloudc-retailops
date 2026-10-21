@@ -64,7 +64,7 @@
   "a": [
    {
     "type": "p",
-    "text": "Today's sales are read live from {pos} when you open Home or Items Sold, shared for 1 minute. Past days are synced every night and checked against {pos} several times a day. See [What's live and what's on a schedule](article:basics-data-freshness)."
+    "text": "Today's sales are read live from {pos} when you open Home or Items Sold, shared for 1 minute. Past days are copied every night and checked against {pos} several times a day. See [What's live and what's on a schedule](article:basics-data-freshness)."
    }
   ],
   "area": "sales",
@@ -550,7 +550,7 @@
   "a": [
    {
     "type": "p",
-    "text": "Each store's data sits in its own separate database. Passwords are stored scrambled, and connection keys are encrypted. Read the [privacy policy](https://kloudc.com/kloudc-privacy-policy/) and [Privacy and your data](article:account-privacy)."
+    "text": "Each store's data is kept on its own, apart from every other store's. Passwords are stored scrambled, and connection keys are encrypted. Read the [privacy policy](https://kloudc.com/kloudc-privacy-policy/) and [Privacy and your data](article:account-privacy)."
    }
   ],
   "area": "help",
@@ -569,7 +569,7 @@
   "a": [
    {
     "type": "p",
-    "text": "An admin opens Setup › [Integrations](page:integrations), picks the POS tile, fills in the details, saves and selects Test connection. Sales start syncing that night. Need a hand? Email {support_email}."
+    "text": "An admin opens Setup › [Integrations](page:integrations), picks the POS tile, fills in the details, saves and selects Test connection. Sales start coming in that night. Need a hand? Email {support_email}."
    }
   ],
   "area": "setup",
@@ -602,7 +602,7 @@
  },
  {
   "id": "faq-dedicated",
-  "q": "How do I ask for a dedicated server?",
+  "q": "How do I ask for my store's own server?",
   "a": [
    {
     "type": "p",

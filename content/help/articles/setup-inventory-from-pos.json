@@ -20,7 +20,7 @@
  "blocks": [
   {
    "type": "p",
-   "text": "Instead of uploading a file every day, RetailOps can build an inventory snapshot from {pos} each night at 4:05 AM: counts, prices, barcodes and categories from {pos}, and 7, 30 and 90-day sales counted from your synced sales."
+   "text": "Instead of uploading a file every day, RetailOps can make the day's stock list from {pos} each night at 4:05 AM: counts, prices, barcodes and categories from {pos}, and 7, 30 and 90-day sales counted from the sales RetailOps has copied."
   },
   {
    "type": "h",
@@ -49,7 +49,7 @@
   {
    "type": "bullets",
    "items": [
-    "A file uploaded for a day always replaces {pos}'s snapshot of that day.",
+    "A file uploaded for a day always replaces {pos}'s stock list for that day.",
     "{pos} has no cost, vendor code or last-received date, so those come from the latest file. Upload one now and then; the **Inventory upload due** alert reminds you after 7 days.",
     "{pos} only says out of stock for anything at 0 or below, so those show 0, except on Negative inventory."
    ]

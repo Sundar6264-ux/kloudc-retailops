@@ -1,5 +1,6 @@
 import { isNative, getCachedToken, setToken, clearToken } from "./mobileAuth";
 import { saveOrShareBlob } from "./downloadOrShare";
+import { errorText } from "./errorText";
 import { isStoreMismatch, setStoreHeadersOn, storeHeaders } from "./sessionStore";
 
 export { restoreToken } from "./mobileAuth";
@@ -41,7 +42,8 @@ async function request(path, options = {}) {
       // A structured detail (e.g. a list of validation errors) is kept whole
       // on error.body; the message gets readable text instead of
       // "[object Object]".
-      detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail ?? body);
+      // The server's plain sentence (errorText.js; G25/G27) when it sent one.
+      detail = errorText(body, typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail ?? body));
     } catch {
       // response wasn't JSON; fall back to statusText
     }
@@ -485,7 +487,7 @@ export function uploadInventoryWithProgress(file, onProgress) {
       if (xhr.status === 401) {
         window.dispatchEvent(new Event("auth:unauthorized"));
       }
-      const detail = (body && (body.detail || JSON.stringify(body))) || xhr.statusText;
+      const detail = errorText(body, (body && JSON.stringify(body)) || xhr.statusText);
       const error = new Error(detail);
       error.status = xhr.status;
       reject(error);
@@ -534,7 +536,7 @@ export function submitInvoiceWithProgress(fields, file, onProgress) {
       if (xhr.status === 401) {
         window.dispatchEvent(new Event("auth:unauthorized"));
       }
-      const detail = (body && (body.detail || JSON.stringify(body))) || xhr.statusText;
+      const detail = errorText(body, (body && JSON.stringify(body)) || xhr.statusText);
       const error = new Error(detail);
       error.status = xhr.status;
       reject(error);
@@ -1057,7 +1059,7 @@ export function uploadPurchaseLogWithProgress(file, defaultReceivedDate, onProgr
       if (xhr.status === 401) {
         window.dispatchEvent(new Event("auth:unauthorized"));
       }
-      const detail = (body && (body.detail || JSON.stringify(body))) || xhr.statusText;
+      const detail = errorText(body, (body && JSON.stringify(body)) || xhr.statusText);
       const error = new Error(detail);
       error.status = xhr.status;
       reject(error);
@@ -1828,10 +1830,7 @@ export async function getFlyer(flyerId) {
 
 // Readable text for a failed upload: FastAPI's 422 detail is a list.
 function uploadErrorText(body, fallback) {
-  const detail = body?.detail;
-  if (typeof detail === "string") return detail;
-  if (Array.isArray(detail)) return detail.map((d) => d?.msg || JSON.stringify(d)).join(" ");
-  return fallback;
+  return errorText(body, fallback);
 }
 
 // POST /api/flyers (multipart: file, title, category, caption?) -> the new

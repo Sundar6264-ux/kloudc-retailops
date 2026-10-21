@@ -58,7 +58,7 @@
   },
   {
    "type": "p",
-   "text": "Every flyer, newest first, with type filters and search. Open one to see it big, download it, edit it, send it again or see every send. Deleting moves its file to a _Deleted folder on the store's server; it is never erased."
+   "text": "Every flyer, newest first, with type filters and search. Open one to see it big, download it, edit it, send it again or see every send. Deleting moves its file to a _Deleted folder in the store's files; it is never erased."
   },
   {
    "type": "note",

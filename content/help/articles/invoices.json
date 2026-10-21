@@ -30,12 +30,12 @@
     "Pick the **vendor** and the type: Invoice, Return, Something else or Transfer.",
     "Add the total if you like.",
     "Attach the file: a PDF or a photo.",
-    "Select **Submit**."
+    "Select **Submit invoice**."
    ]
   },
   {
    "type": "p",
-   "text": "Submit is instant: it only saves the record and the file. Right after, in the background, two things happen for every type except a transfer: a WhatsApp message goes to the staff group with a link to the file, and an email goes to {pos}'s invoicing inbox with the file as a PDF (a photo is turned into a PDF). {pos} turns that email into a draft bill."
+   "text": "**Submit invoice** is instant: it only saves the record and the file. Right after, in the background, two things happen for every type except a transfer: a WhatsApp message goes to the staff group with a link to the file, and an email goes to {pos}'s invoicing inbox with the file as a PDF (a photo is turned into a PDF). {pos} turns that email into a draft bill."
   },
   {
    "type": "bullets",

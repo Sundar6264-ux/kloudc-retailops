@@ -39,18 +39,18 @@ function TurnOnDialog({ status, readiness, saving, error, onConfirm, onClose }) 
           <p style={{ marginTop: 0 }}>It takes effect right away - no restart. What changes:</p>
           <ul className="invapi-list">
             <li>
-              Each night at {time} the inventory snapshot is built from {currentPosName()}'s stock and menu and saved, on any day
-              without a CSV upload. A CSV uploaded for a day still replaces it.
+              Each night at {time} the day's stock list is made from {currentPosName()}'s stock and menu and saved, on any
+              day without an uploaded file. A file uploaded for a day still replaces it.
             </li>
             <li>
-              These read {currentPosName()}'s current count (at most 5 minutes old) instead of the last snapshot:
+              These read {currentPosName()}'s current count (at most 5 minutes old) instead of the last saved list:
               <ul className="invapi-list">
                 {screens.map((s) => (
                   <li key={s}>{s}</li>
                 ))}
               </ul>
             </li>
-            <li>Costs, vendor codes and last received dates still come from the latest CSV - upload one now and then.</li>
+            <li>Costs, vendor codes and last received dates still come from the latest uploaded file - upload one now and then.</li>
             <li>You can turn it off here at any time; that is immediate too.</li>
           </ul>
           {notReady && (
@@ -104,8 +104,8 @@ export function SwitchCard({ sw, status, readiness, when, onChange }) {
       setConfirming(false);
       setMessage(
         on
-          ? `Turned on. Live counts show on the next page load; tonight's run saves the snapshot from ${currentPosName()}.`
-          : "Turned off. Pages use the snapshot counts again, and the nightly run only compares.",
+          ? `Turned on. Live counts show on the next page load; tonight the day's stock list is saved from ${currentPosName()}.`
+          : "Turned off. Pages use the uploaded file's counts again; each night the POS is only compared with it.",
       );
     } catch (err) {
       setError(err.message);

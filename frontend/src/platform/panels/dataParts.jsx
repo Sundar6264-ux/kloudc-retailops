@@ -64,7 +64,7 @@ export function UsageTiles({ snapshot }) {
   );
 }
 
-export function DailyChart({ days, metric = "orders_synced", label = "Sales synced per day" }) {
+export function DailyChart({ days, metric = "orders_synced", label = "Sales brought in per day" }) {
   const bars = dailyBars(days, metric);
   if (!bars.length) return null;
   const total = bars.reduce((s, b) => s + b.value, 0);

@@ -20,7 +20,7 @@
   {
    "type": "bullets",
    "items": [
-    "Each store's data is kept in its own separate database, apart from every other store.",
+    "Each store's data is kept on its own, apart from every other store's.",
     "Passwords are stored scrambled (hashed). Nobody, including KloudC, can read them.",
     "Connection keys (POS, WhatsApp, email, AI) are encrypted and never shown again after saving.",
     "Returning customers keeps only a scrambled code of each card, never a card number or a name.",

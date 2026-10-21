@@ -8,7 +8,7 @@
   "owner",
   "admin"
  ],
- "summary": "Your store's name, address, phone, time zone and logo, as POs, emails and the app show them.",
+ "summary": "Your store's name, address, phone and logo, as POs, emails and the app show them.",
  "pages": [
   "store_settings"
  ],
@@ -23,7 +23,7 @@
   {
    "type": "bullets",
    "items": [
-    "**Time zone** decides \"today\" everywhere: dates, reports and the daily jobs follow your store's clock, wherever you are.",
+    "Your store's **time zone** is set when the store is created and isn't changed here. It decides \"today\" everywhere. Need it changed? Email {support_email}.",
     "Your **Store ID** never changes. KloudC support can help if it must.",
     "When KloudC offers it, you can ask for your store to move to its own server here."
    ]

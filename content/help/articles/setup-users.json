@@ -45,7 +45,7 @@
   },
   {
    "type": "p",
-   "text": "Hides today's and yesterday's sales, Items Sold and its download, open check totals, weekly dollar columns and the digest's sales part from that person. Units, suggested quantities and everything for ordering stay. It takes effect on their next page load, and the server enforces it."
+   "text": "Hides today's and yesterday's sales, Items Sold and its download, open check totals, weekly dollar columns and the digest's sales part from that person. Units, suggested quantities and everything for ordering stay. It takes effect on their next page load, and RetailOps enforces it."
   },
   {
    "type": "h",

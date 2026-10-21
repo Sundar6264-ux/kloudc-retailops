@@ -272,7 +272,7 @@ export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSen
                   </p>
                   {lastSend.email_message_id && (
                     <p className="pos-muted-small">
-                      Check Gmail's Sent folder - search for <code>{gmailSearch(lastSend.email_message_id)}</code>
+                      Check the Sent folder of the store's mailbox - search for <code>{gmailSearch(lastSend.email_message_id)}</code>
                     </p>
                   )}
                   <div className="pos-callout-actions">
@@ -291,7 +291,7 @@ export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSen
                         onChange={(e) => setCheckedSent(e.target.checked)}
                         disabled={sending || marking}
                       />
-                      I checked: it isn't in Gmail's Sent folder, send it again
+                      I checked: it isn't in the Sent folder, send it again
                     </label>
                   </div>
                 </div>

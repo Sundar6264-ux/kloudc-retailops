@@ -5,7 +5,8 @@ from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.exception_handlers import http_exception_handler
-from fastapi.exceptions import HTTPException
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -16,6 +17,8 @@ from app.ops.health import router as ops_health_router
 from app.ops.http import RequestContextMiddleware, server_error_handler
 from app.ops.logs import configure_logging
 from app.ops.prod_checks import enforce as enforce_production_config
+from app.plain_errors import bare_phrase_body, validation_body
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.routers import (
     ask,
     auth,
@@ -248,8 +251,8 @@ app.include_router(ops_health_router)
 # the frontend uses to bounce straight back to the real file once logged in)
 # rather than leaving them staring at an API error. Every other route keeps
 # FastAPI's normal JSON error behavior unchanged.
-@app.exception_handler(HTTPException)
-async def _public_invoice_auth_redirect(request: Request, exc: HTTPException):
+@app.exception_handler(StarletteHTTPException)
+async def _public_invoice_auth_redirect(request: Request, exc: StarletteHTTPException):
     code = getattr(exc, "error_code", None)
     if code and not request.url.path.startswith("/public/invoices/"):
         # Store access refused (app/db.py, PLATFORM_CONTRACT 4.3): the old
@@ -265,7 +268,23 @@ async def _public_invoice_auth_redirect(request: Request, exc: HTTPException):
         next_param = quote(request.url.path, safe="")
         login_url = f"{effective_public_base_url()}/#/login?next={next_param}"
         return RedirectResponse(login_url, status_code=302)
+    # A bare "Not Found" / "Internal Server Error" (G27): a sentence too
+    # (app/plain_errors.py; "Not Found" stays in detail when no route matched).
+    plain = bare_phrase_body(exc.status_code, exc.detail, route_matched=request.scope.get("endpoint") is not None)
+    if plain is not None:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=exc.status_code, content=plain, headers=getattr(exc, "headers", None))
     return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(RequestValidationError)
+async def _plain_form_errors(request: Request, exc: RequestValidationError):
+    """A form the server can't accept (422): a plain sentence per field
+    (G25, app/plain_errors.py), the old detail list kept."""
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=422, content=jsonable_encoder(validation_body(exc.errors())))
 
 
 # Bounds how long a browser (especially a phone that rarely hard-refreshes a

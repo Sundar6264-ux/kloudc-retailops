@@ -122,7 +122,7 @@ export function sendBlocker(preview, recipients, note, { demo = false, cc = [] }
   if (demo) return "The demo account can't send purchase orders.";
   if (!preview) return "Loading…";
   if (!preview.item_count) return "Every line is at 0 - there's nothing to put on the PO.";
-  if (!preview.email_configured) return "Email isn't set up on the server yet, so the PO can't be emailed.";
+  if (!preview.email_configured) return "Email isn't set up for this store yet, so the PO can't be emailed. An admin can set it up in Setup › Integrations.";
   if (!emailOptions(preview).length) return `No email on file for ${preview.supplier}.`;
   if (!recipients.length) return "Tick at least one email to send to.";
   if (noteTooLong(note, preview.max_note)) return `The note is too long (at most ${preview.max_note} characters).`;

@@ -77,9 +77,9 @@ export function usageTiles(snapshot, now = Date.now()) {
     { key: "items", label: "Items", value: formatCount(m.items), hint: "In the latest catalog", icon: "package" },
     { key: "storage_bytes", label: "File storage", value: formatBytes(m.storage_bytes), hint: "Invoices, flyers, photos", icon: "layers" },
     { key: "database_bytes", label: "Database", value: formatBytes(m.database_bytes), hint: "The store's records", icon: "database" },
-    { key: "orders_synced", label: "Sales synced", value: formatCount(m.orders_synced ?? 0), hint: `Order lines, last ${days} days`, icon: "receipt" },
-    { key: "pos_api_calls", label: "POS requests", value: formatCount(m.pos_api_calls ?? 0), hint: `Last ${days} days`, icon: "plug" },
-    { key: "ai_calls", label: "AI requests", value: formatCount(m.ai_calls ?? 0), hint: `Last ${days} days`, icon: "lightbulb" },
+    { key: "orders_synced", label: "Sales brought in", value: formatCount(m.orders_synced ?? 0), hint: `Order lines, last ${days} days`, icon: "receipt" },
+    { key: "pos_api_calls", label: "Checks with the POS", value: formatCount(m.pos_api_calls ?? 0), hint: `Last ${days} days`, icon: "plug" },
+    { key: "ai_calls", label: "AI questions", value: formatCount(m.ai_calls ?? 0), hint: `Last ${days} days`, icon: "lightbulb" },
     { key: "last_activity_at", label: "Last activity", value: timeAgo(m.last_activity_at, now), hint: "Someone used the store", icon: "clock" },
   ];
 }

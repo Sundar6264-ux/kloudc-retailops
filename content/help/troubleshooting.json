@@ -63,10 +63,10 @@
  },
  {
   "id": "ts-sales-sync",
-  "symptom": "Sales sync failed or looks late",
+  "symptom": "Nightly sales copy failed or looks late",
   "causes": [
    "The {pos} connection stopped working (a changed or expired key).",
-   "{pos} was down when the nightly sync ran."
+   "{pos} was down when the nightly sales copy ran."
   ],
   "fixes": [
    {
@@ -122,14 +122,14 @@
   "symptom": "Numbers look old",
   "causes": [
    "No inventory upload for a few days.",
-   "Past sales are from last night's sync; only today is live.",
+   "Past sales are copied from {pos} each night; only today is live.",
    "{pos}'s analytics run 2 to 4 hours behind (Insights)."
   ],
   "fixes": [
    {
     "type": "bullets",
     "items": [
-     "Check the job status card on Home for the last upload and sync.",
+     "Check the job status card on Home for the last upload and the last sales copy.",
      "Upload today's inventory, or ask an admin about Inventory from {pos}.",
      "Each page's ⓘ says where its numbers come from and how fresh they are."
     ]
@@ -369,7 +369,7 @@
     "items": [
      "Allow the camera for RetailOps in your phone's settings.",
      "Hold the phone steady, a little further away, with good light.",
-     "Search by name or SKU instead."
+     "Search by name or vendor code instead."
     ]
    }
   ],

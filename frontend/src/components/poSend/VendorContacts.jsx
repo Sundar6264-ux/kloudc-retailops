@@ -170,7 +170,7 @@ export default function VendorContacts({ isAdmin }) {
 
         {data && (
           <p className="pos-muted-small vc-status">
-            Email: {data.email_configured ? "set up" : "not set up on the server yet - Send PO can't email until it is"}.{" "}
+            Email: {data.email_configured ? "set up" : "not set up for this store yet - Send PO can't email until it is"}.{" "}
             WhatsApp: {data.whatsapp_enabled ? "on" : "off"}
             {!data.whatsapp_enabled && data.whatsapp_off_reason ? ` - ${data.whatsapp_off_reason}` : "."}
           </p>

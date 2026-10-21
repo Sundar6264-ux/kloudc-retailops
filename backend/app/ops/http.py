@@ -207,6 +207,6 @@ async def server_error_handler(request, exc):
     rid = rid or request_id_var.get()
     return JSONResponse(
         status_code=500,
-        content={"detail": "Something went wrong on the server.", "error": "server_error", "request_id": rid},
+        content={"detail": "Something went wrong on our side. Try again in a minute.", "error": "server_error", "request_id": rid},
         headers={REQUEST_ID_HEADER: rid},
     )

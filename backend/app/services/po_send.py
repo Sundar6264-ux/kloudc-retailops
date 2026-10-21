@@ -77,10 +77,16 @@ STATUS_FAILED = "failed"
 STATUS_UNCERTAIN = "uncertain"
 CHANNELS = ("email", "whatsapp")
 
+# What store users read (G29): no provider name, plan or status code. The
+# reason it is off (the WhatsApp sender's plan reaches only a few chats) is
+# for the operator, in config.py next to po_whatsapp_enabled.
 WHATSAPP_OFF_REASON = (
-    "Sending POs on WhatsApp is turned off. The store's WhatsApp sender (Whapi) is on the sandbox plan, which "
-    "can only message 5 chats, so a PO to a new vendor chat would fail (402). Email the PO, or download the PDF "
-    "and share it on WhatsApp yourself."
+    "WhatsApp sending of POs is off for this store. Email the PO, or download the PDF and share it on "
+    "WhatsApp yourself."
+)
+WHATSAPP_CHAT_LIMIT_MESSAGE = (
+    "WhatsApp couldn't reach this chat: the store's WhatsApp number can only message a few chats. Email the PO, "
+    "or download the PDF and share it on WhatsApp yourself."
 )
 
 _send_lock = tenant_lock("po_send._send_lock")
@@ -490,7 +496,8 @@ def send_whatsapp(to: str, caption: str, pdf_bytes: bytes, filename: str) -> Opt
             media = whapi_client.media_data_url(pdf_bytes, "application/pdf", filename)
         answer = whapi_client.send_media_message("document", chat, media, caption=caption, filename=filename)
     except whapi_client.WhapiNotConfigured as exc:
-        raise _ChannelError(f"WhatsApp isn't set up on the server ({exc}).")
+        logger.info("PO WhatsApp not configured: %s", exc)
+        raise _ChannelError("WhatsApp isn't set up for this store yet. An admin can connect it in Setup › Integrations.")
     except whapi_client.WhapiAmbiguousTimeout:
         raise _ChannelError(
             "WhatsApp didn't answer in time - the PO may still have gone out. Check the chat before sending again.",
@@ -499,7 +506,7 @@ def send_whatsapp(to: str, caption: str, pdf_bytes: bytes, filename: str) -> Opt
     except whapi_client.WhapiMediaError as exc:
         message = str(exc)
         if exc.status_code == 402:
-            message = "The Whapi plan's chat limit was reached (402) - the sandbox plan can only message 5 chats."
+            message = WHATSAPP_CHAT_LIMIT_MESSAGE
         message = message.replace("the flyer", "the PO")
         raise _ChannelError(message, maybe_sent=exc.maybe_sent)
     if isinstance(answer, dict) and answer.get("sent") is False:

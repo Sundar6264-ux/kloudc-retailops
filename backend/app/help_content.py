@@ -264,7 +264,13 @@ def only_for_pos(value, pos: Optional[str]):
             out.append(only_for_pos(v, pos))
         return out
     if isinstance(value, dict):
-        out = {k: only_for_pos(v, pos) for k, v in value.items()}
+        # A map of entries (a page's ``sections``) is filtered like a list
+        # (G11): a tagged entry for another POS is left out by its key.
+        out = {
+            k: only_for_pos(v, pos)
+            for k, v in value.items()
+            if not (isinstance(v, dict) and isinstance(v.get("pos"), list) and pos is not None and pos not in v["pos"])
+        }
         if pos is None and isinstance(value.get("pos"), list) and value["pos"]:
             out["pos_label"] = " / ".join(POS_LABELS.get(p, p.title()) for p in value["pos"]) + " only"
         return out
