@@ -150,8 +150,9 @@ export default function SalesAccuracy() {
       {message && <p className="muted">{message}</p>}
       {data && !data.configured && (
         <p className="muted">
-          {currentPosName()} Analytics isn't set up on this server (TOAST_ANALYTICS_CLIENT_ID / SECRET), so
-          stored sales aren't being re-checked. Everything else works as before.
+          {data.warning || `${currentPosName()} Analytics keys are missing.`} Add them in Store setup &gt;
+          Integrations so late edits are caught. Until then the app re-checks the last 7 days once a day.
+          {data.last_recheck?.detail ? ` Last re-check: ${data.last_recheck.detail}` : ""}
         </p>
       )}
       {lastRun && (

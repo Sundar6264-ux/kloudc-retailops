@@ -237,6 +237,47 @@ def test_parity_is_clean_after_import_and_finds_a_changed_day(tmp_path, pdb, cap
     assert len(audits) == 2 and "12.99" not in json.dumps(_details(audits[1])), "no amounts in the audit log"
 
 
+def test_parity_counts_lines_per_day_and_warns_when_the_double_check_is_off(tmp_path, pdb):
+    """Pre-production 2026-10-21 (docs/PARITY_INVESTIGATION.md): a late Toast
+    edit only the reference picked up shows as line counts, and the report
+    says plainly when the store's sales double-check runs without Analytics."""
+    from app.ops.parity import NO_KEYS_WARNING, NOT_RUNNING_WARNING, run_parity
+    from app.ops.store_import import import_sqlite
+
+    provision(CODE)
+    src = _source_db(tmp_path)
+    import_sqlite(CODE, src, log=lambda *a: None)
+    today = dt.date(2026, 10, 12)
+    con = sqlite3.connect(src)
+    # Late edits the reference re-pulled: a line added to the closed check,
+    # and a line re-priced.
+    con.execute("UPDATE orders SET net_price = 2.5 WHERE id = 1")
+    con.execute(
+        "INSERT INTO orders (id, toast_order_guid, toast_check_guid, toast_selection_guid, business_date, item_guid,"
+        " item_name, quantity, unit_price, net_price, tax_amount, voided, created_at, updated_at, source, is_modifier)"
+        " VALUES (9, 'o1', 'c1', 's9', '2026-10-10', 'i9', 'Late', 1, 4.0, 4.0, 0, 0,"
+        " '2026-10-12 06:30:00.000000', '2026-10-12 06:30:00.000000', 'toast', 0)"
+    )
+    con.commit()
+    con.close()
+    report = run_parity(CODE, src, days=5, today=today, audit_run=False)
+    assert report["line_counts"] == {"2026-10-10": {"only_store": 0, "only_reference": 1, "changed": 1}}
+    assert report["warnings"] == [NOT_RUNNING_WARNING]
+
+    url = _store_url()
+    eng = create_engine(url, poolclass=pool.NullPool)
+    try:
+        with eng.begin() as conn:
+            conn.execute(text(
+                "INSERT INTO job_runs (job_name, status, business_date, started_at, finished_at, detail) VALUES "
+                "('sales_recheck', 'success', '2026-10-12', '2026-10-12 10:30:00', '2026-10-12 10:31:00', 'x')"))
+    finally:
+        eng.dispose()
+    report = run_parity(CODE, src, days=5, today=today, audit_run=False)
+    assert report["warnings"] == [NO_KEYS_WARNING] and "Analytics keys are missing" in NO_KEYS_WARNING
+    assert report["ok"] is False  # the numbers still differ; warnings never make it ok or not ok
+
+
 # --- readiness (multi mode) ---------------------------------------------------------
 
 

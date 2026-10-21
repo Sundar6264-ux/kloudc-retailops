@@ -17,7 +17,12 @@ export const INTEGRATIONS = [
       { key: "client_secret", label: "Client secret", type: "password", secret: true },
       { key: "restaurant_guid", label: "Restaurant GUID", type: "text" },
       { key: "api_base", label: "API address", type: "text", placeholder: "https://ws-api.toasttab.com" },
-      { key: "analytics_client_id", label: "Analytics client ID (optional)", type: "text" },
+      {
+        key: "analytics_client_id",
+        label: "Analytics client ID (optional)",
+        type: "text",
+        hint: "Add your Toast Analytics keys so late edits are caught: sales changed in Toast after the day closed.",
+      },
       { key: "analytics_client_secret", label: "Analytics client secret (optional)", type: "password", secret: true },
     ],
   },
