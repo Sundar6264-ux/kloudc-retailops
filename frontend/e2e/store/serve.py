@@ -132,6 +132,13 @@ from app.pos.capabilities import Capability  # noqa: E402
 if PROVIDER not in gating.PROVIDERS:
     gating.PROVIDERS[PROVIDER] = (FIXTURE["pos_name"], frozenset(Capability(c) for c in FIXTURE["capabilities"]))
     used.append(f"provider '{PROVIDER}' from the fixture")
+# G20 (pre-production S1): a Clover store advertises its capabilities only
+# once it is connected. These checks cover a connected Clover store's screens
+# with every outside call blocked, so the store's set is advertised as before;
+# the server's own gates still treat it as not connected.
+if PROVIDER == "clover" and gating.capability_values() != FIXTURE["capabilities"]:
+    gating.advertised_capabilities = gating.store_capabilities
+    used.append("Clover advertised as connected (G20)")
 assert gating.pos_name() == FIXTURE["pos_name"], gating.pos_name()
 assert gating.capability_values() == FIXTURE["capabilities"], gating.capability_values()
 
