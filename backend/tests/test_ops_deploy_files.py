@@ -3,6 +3,7 @@ image's start script: valid, safe, and wired to the ops commands. Nothing
 here installs or starts anything."""
 
 import getpass
+import os
 import pathlib
 import plistlib
 import re
@@ -159,6 +160,9 @@ def test_retailops_sh_runs_a_command_with_the_install_settings(tmp_path):
     script = str(PILOT / "retailops.sh")
     done = subprocess.run(["bash", script, "platform", "pilot-mode", "DEMO", "off"], env=env,
                           capture_output=True, text=True)
+    if os.geteuid() == 0:  # e.g. the suite inside the Docker image
+        assert done.returncode != 0 and "no sudo" in done.stderr
+        return
     assert done.returncode == 0, done.stderr
     cwd, sched, domain, conf, secret, pilot_root, args = done.stdout.strip().split("|")
     assert pilot_root == str(root), "the DEMO password file and other <install> paths follow the install"
