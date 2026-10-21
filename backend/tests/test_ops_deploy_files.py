@@ -15,7 +15,7 @@ import pytest
 REPO = pathlib.Path(__file__).resolve().parents[2]
 PILOT = REPO / "deploy" / "pilot-mac"
 LABEL_PREFIX = "com.kloudc.retailops.pilot"
-JOBS = ("postgres", "server", "backup", "drill", "parity")
+JOBS = ("postgres", "server", "backup", "drill", "parity", "demo")
 
 
 def _conf() -> dict:
@@ -45,7 +45,9 @@ def test_the_pilot_has_its_own_cluster_port_and_app_port():
 def test_only_install_sh_uses_root_and_only_the_pilot_labels():
     for script in PILOT.glob("*.sh"):
         text = script.read_text()
-        if script.name != "install.sh":
+        # install-tunnel.sh: its own sudo-once installer, checked in
+        # tests/test_ops_tunnel.py (only the tunnel label).
+        if script.name not in ("install.sh", "install-tunnel.sh"):
             assert "sudo " not in re.sub(r"#.*", "", text), script.name
             assert "launchctl" not in text, script.name
     install = (PILOT / "install.sh").read_text()
@@ -81,6 +83,9 @@ def test_install_dry_run_renders_valid_launch_daemons(tmp_path):
     backup = plistlib.loads((out / f"{LABEL_PREFIX}.backup.plist").read_bytes())
     assert backup["StartCalendarInterval"] == {"Hour": 3, "Minute": 15}
     assert backup["ProgramArguments"][-1] == "backup"
+    demo = plistlib.loads((out / f"{LABEL_PREFIX}.demo.plist").read_bytes())
+    assert demo["StartCalendarInterval"] == {"Hour": 3, "Minute": 45}, "after the 03:15 backup"
+    assert demo["ProgramArguments"][-1].endswith("/run-demo-reset.sh")
     drill = plistlib.loads((out / f"{LABEL_PREFIX}.drill.plist").read_bytes())
     assert drill["StartCalendarInterval"]["Day"] == 1 and drill["ProgramArguments"][-1] == "drill"
 

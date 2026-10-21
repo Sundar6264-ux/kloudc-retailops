@@ -1,9 +1,17 @@
 name: CI
 
+# Docs-only changes skip this suite (pre-production 2026-10-21: faster CI);
+# docs.yml runs the name guard on them instead.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   workflow_dispatch:
 
 permissions:

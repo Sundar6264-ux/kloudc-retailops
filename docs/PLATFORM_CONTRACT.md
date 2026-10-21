@@ -3968,3 +3968,111 @@ databases stay at 0062); going back to `9595a49` needs
 new, how to try it in the preview and the pilot, decisions, owner actions
 (Clover developer app + sandbox, R2, Stripe, plans, `app.kloudc.com`, Terms
 page, console API two-step header) and the app follow-up list.
+
+## As built - Pre-production: P (parity, production config, tunnel, DEMO, Terms)
+
+Branch `pp/prod` (2026-10-21). Owner steps: `docs/GO_LIVE_RUNBOOK.md`.
+
+- **Sales re-check without Toast Analytics** (`app/pos/sync/accuracy.py`).
+  Root cause of the parity gaps (`docs/PARITY_INVESTIGATION.md`): with no
+  Analytics keys the re-pull did nothing. Now, without keys and when the POS
+  can fetch orders by business date, `run_sales_repull` runs `_recheck`:
+  once per closed business day (first run, normally 06:30) it re-syncs the
+  last 7 business dates that had a successful sync; at every run it
+  re-syncs dates with unpaid lines synced more than 6 h ago. One
+  `job_runs` row `sales_recheck` per pass (business_date = the run's closed
+  "today"; detail "Daily re-check without Toast Analytics keys, a..b: N
+  day(s) re-synced, M changed - <date> +3 line(s), net +12.40; ..."; kept
+  120 days). Never-synced dates stay the nightly sync's job. With keys the
+  Analytics comparison runs exactly as before. `recheck_status(db)`;
+  `GET /api/sales/accuracy` adds `warning` (plain line, null with keys) and
+  `last_recheck` (additive). The manual "run now" still needs the keys.
+- **Parity report** (`app/ops/parity.py`, additive JSON fields):
+  `line_counts` per differing day `{only_store, only_reference, changed}` by
+  POS line id; `warnings` (never change `ok`): "Sales double-check is
+  limited: Toast Analytics keys are missing ..." when the store's latest
+  double-check in the last 2 days is a `sales_recheck`, "Sales double-check
+  has not run in the last 2 days" when neither job ran.
+- **Website**: Integrations > Toast hint under the Analytics client ID;
+  the Sales accuracy card shows the plain warning and the last re-check.
+- **One client-IP rule** (`app/platform/client_ip.py`). The client-IP header
+  (`DIRECTORY_CLIENT_IP_HEADER`, default `CF-Connecting-IP`; last entry,
+  must parse as an IP) counts only when the TCP peer is in
+  `FORWARDED_ALLOW_IPS` (default `127.0.0.1`; `::1` with it; CIDRs; `*` =
+  all). IPv6 keys are the /64, IPv4-mapped become IPv4. Used by
+  `platform/throttle.client_ip` (login lockout, store lookup, support
+  login, platform routes, audit) and `services/checklist_public.client_ip`
+  (which used to trust `CF-Connecting-IP` from anyone). With uvicorn
+  `--proxy-headers`, a request whose peer was rewritten from
+  `X-Forwarded-For` keeps that rewritten (real) address. The stand-alone
+  directory service (`app/directory`) is unchanged (its own deployment).
+- **check-config** (`app/ops/prod_checks.go_public_findings`, warnings
+  only): `PLATFORM_DOMAIN` placeholder while a public URL is set;
+  `PLATFORM_PUBLIC_URL` not https or its origin missing from `CORS_ORIGINS`;
+  `PUBLIC_HOST` blank in multi mode (`PUBLIC_BASE_URL` in single mode);
+  `TERMS_URL` blank; `BACKUP_OFFSITE_DIR` unset; `TOAST_ANALYTICS` names
+  active stores whose saved Toast connection has no Analytics client ID.
+  Existing errors already cover TOTP for masters (`PLATFORM_REQUIRE_TOTP`)
+  and sign-ups needing a master's approval.
+- **Store links in production**: `PUBLIC_BASE_URL` is a per-store private
+  setting in multi mode, so every store's links fall back to `PUBLIC_HOST`
+  (platform-only) and otherwise to `https://<store>.<PLATFORM_DOMAIN>`.
+  Production sets `PUBLIC_HOST=https://app.kloudc.com`.
+- **Off-site backup** (`scripts/backup/offsite_copy.py`): after a nightly
+  backup, with `BACKUP_OFFSITE_DIR` set, the newest dump of every folder
+  plus `<install>/uploads` go into one tar, AES-256-GCM in 4 MiB chunks
+  (random nonce per chunk; index + last-chunk flag in the AAD), written as
+  `.part` then renamed `retailops-<stamp>.krbak`, newest
+  `BACKUP_OFFSITE_KEEP` (14) kept. Key: `<install>/secrets/offsite-backup.key`
+  (32 bytes base64, mode 600, made on first run). `open` decrypts into an
+  empty folder. Temp files on local disk, never the whole backup in memory.
+  `run-backup.sh` exits non-zero when either step fails.
+- **Tunnel kit** (`deploy/pilot-mac/install-tunnel.sh`,
+  `launchd/tunnel.plist`, `tunnel/config.yml.template`): LaunchDaemon
+  `com.kloudc.retailops.pilot.tunnel` as the Mac user, HOME =
+  `<install>/run/tunnel-home`. Token mode (default):
+  `cloudflared tunnel --no-autoupdate --config <install>/config/tunnel-token.yml
+  run --token-file <install>/secrets/tunnel.token` (own nearly empty config so
+  no default config is picked up; needs a cloudflared with `--token-file`).
+  Config mode when `secrets/tunnel-credentials.json` exists: rendered
+  `config/tunnel.yml`, ingress `app.kloudc.com -> http://127.0.0.1:8900`,
+  then 404. Options `--dry-run DIR`, `--status`, `--uninstall`. Never
+  `cloudflared service install`, never `~/.cloudflared`, refuses a label
+  outside `com.kloudc.retailops.*`; `install.sh` never installs or removes
+  it. `deploy/pilot-mac/production.env.example`: the settings for
+  app.kloudc.com (not read by anything; copied by the owner).
+- **DEMO store on the shared service** (`app/ops/demo_store.py`;
+  `python -m app.platform demo-provision | demo-reset [--skip-if-missing]`):
+  store `DEMO` (pack `demo`, POS `csv`, tz America/New_York, owner
+  `demoowner` with a random unknown password and dropped by the import),
+  settings `demo_mode` + `pilot_mode` on. Reset = the MT13 generator
+  (subprocess, single mode, its own SQLite) -> suspend DEMO (message "being
+  refreshed") -> terminate other sessions on the DEMO database only ->
+  `import_sqlite(replace=True, keep_owner=False, uploads)` -> always resume
+  -> demo settings re-applied. Seed = the UTC date (data moves daily).
+  Refuses: no DEMO store; DEMO with another POS or without demo mode
+  (nothing changed). Review login `appreview`, password file
+  `<install>/secrets/demo_review_password` (kept across resets;
+  `DEMO_REVIEW_PASSWORD` overrides). Nightly: `run-demo-reset.sh` via
+  LaunchDaemon `...pilot.demo` at 03:45 (`PILOT_DEMO_HOUR/MINUTE`), added to
+  `install.sh` JOBS (a re-run of install.sh installs it).
+- **Terms** (`docs/legal/TERMS_DRAFT.html`, identical copy
+  `backend/app/assets/legal/terms.html`): plain-English draft, KloudC LLC,
+  Connecticut law and courts, support@kloudc.com; lawyer note is an HTML
+  comment. `GET /terms` (public, `legal_router.page_router`, before the
+  static mount): the same text in a minimal page (inline style, no script,
+  light/dark), `Cache-Control: public, max-age=3600`; listed in
+  `tests/test_review_route_gates.py` PUBLIC.
+- **CI**: `ci.yml` in both repos ignores `docs/**` and `**/*.md`; a new
+  `docs.yml` runs only the name guard (server: plus the deploy/tunnel/terms
+  tests) for those changes. App repo change on branch `pp/prod-ci`.
+- **Tests added**: `test_sales_recheck_no_analytics.py` (the 10-15 / 10-18
+  pattern on a synthetic store), `test_client_ip_rule.py`,
+  `test_backup_offsite.py`, `test_ops_tunnel.py`, `test_terms_page.py`,
+  `test_ci_workflows.py`, `platform/test_demo_store.py`,
+  `platform/test_go_public_checks.py`, plus cases in
+  `test_ops_prod_checks.py`, `platform/test_ops_onboarding.py`; updated
+  `test_sales_accuracy_job.py` (no keys -> re-check),
+  `test_public_checklist_link.py` / `platform/test_platform_auth.py` (the
+  TestClient peer is trusted explicitly), `test_ops_deploy_files.py`
+  (JOBS + demo).

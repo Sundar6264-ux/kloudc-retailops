@@ -53,6 +53,14 @@ PUBLIC = "/api/public/checklists"
 # --- Fixtures and helpers ---------------------------------------------------------------
 
 
+
+@pytest.fixture(autouse=True)
+def _trust_the_test_peer(monkeypatch):
+    # The TestClient's peer is "testclient", not a proxy address: trust every
+    # peer here so CF-Connecting-IP keys the limits as it does behind the
+    # tunnel. The trusted-proxy rule itself: tests/test_client_ip_rule.py.
+    monkeypatch.setenv("FORWARDED_ALLOW_IPS", "*")
+
 @pytest.fixture(autouse=True)
 def _limits(monkeypatch):
     """Generous limits by default (one TestClient = one IP); the rate-limit

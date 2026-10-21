@@ -42,8 +42,22 @@ Each run (SALES_REPULL_TIMES, default 06:30 / 12:30 / 17:30 / 22:30 store time):
    "Sales accuracy" card on Items Sold reads them (GET /api/sales/accuracy).
 
 No Analytics credentials (TOAST_ANALYTICS_CLIENT_ID/SECRET unset; in general:
-the connector's ``has_day_totals()`` is False) -> the job does nothing and the
-app behaves exactly as before.
+the connector's ``has_day_totals()`` is False) -> the **re-check without
+Analytics** runs instead (pre-production 2026-10-21, docs/PARITY_INVESTIGATION.md:
+a store without the keys silently kept every late Toast edit out):
+
+- once per closed business day (the first run of the day, normally 06:30), it
+  re-syncs the last RECHECK_DAYS (7) business dates that were synced before -
+  late items on a closed check, late comps / discounts / re-prices, late
+  payments all come in;
+- at every run it re-syncs any date that still holds unpaid lines and was
+  last synced more than UNPAID_RESYNC_HOURS ago (a payment may have landed).
+
+About 7-10 small Orders API calls a day. Every pass is one ``sales_recheck``
+job_runs row (business_date = the closed business "today" it ran for) whose
+detail says, in plain words, what changed. The parity report and
+``check-config`` read these to say the Analytics keys are missing. A POS
+that can't fetch orders by business date gets neither job.
 """
 
 import datetime as dt
@@ -60,6 +74,7 @@ from app.dbcompat import fsum, group_order
 from app.models import JobRun, Order
 from app.pos import registry
 from app.pos.base import DayTotalsUnavailable
+from app.pos.capabilities import Capability
 from app.pos.models import SalesDay
 from app.pos.sync.sales import JOB_NAME as SALES_SYNC_JOB, sync_sales_for_date
 from app.store import settings_view as sv
@@ -71,6 +86,10 @@ logger = logging.getLogger("app.services.sales_accuracy")
 
 RUN_JOB = "sales_repull"
 CHECK_JOB = "sales_accuracy"
+RECHECK_JOB = "sales_recheck"  # the re-check without Analytics (one row per pass)
+RECHECK_DAYS = 7
+DAILY_PREFIX = "Daily re-check"
+NO_KEYS_WARNING = "Sales double-check is limited: Toast Analytics keys are missing"
 
 # Real line items start at the store's FIRST_SALES_DATE (earlier dates are
 # onboarding tests); no floor when it is blank. Read at call time:
@@ -249,18 +268,138 @@ def run_sales_repull(
     resync: Callable[[Session, dt.date], JobRun] = sync_sales_for_date,
 ) -> Optional[JobRun]:
     """One accuracy pass (see the module docstring). Returns the summary
-    JobRun, or None when Analytics isn't configured or a run is already in
-    progress. Never raises: a failure is recorded on the summary row."""
-    if not registry.get_connector().has_day_totals():
-        logger.info("Sales accuracy re-pull skipped: Toast Analytics is not configured")
+    JobRun (``sales_repull``, or ``sales_recheck`` without Analytics keys),
+    or None when the POS can do neither or a run is already in progress.
+    Never raises: a failure is recorded on the summary row."""
+    connector = registry.get_connector()
+    analytics = connector.has_day_totals()
+    if not analytics and not connector.supports(Capability.ORDERS_BY_BUSINESS_DATE):
+        logger.info("Sales accuracy re-pull skipped: the POS has neither day totals nor orders by date")
         return None
     if not _RUN_LOCK.acquire(blocking=False):
         logger.info("Sales accuracy re-pull already running - skipped")
         return None
     try:
+        if not analytics:
+            logger.info("Sales accuracy: Toast Analytics is not configured - re-check without it")
+            return _recheck(db, today or closed_business_today(), resync)
         return _run(db, days, today or closed_business_today(), resync)
     finally:
         _RUN_LOCK.release()
+
+
+def _daily_recheck_done(db: Session, today: dt.date) -> bool:
+    return (
+        db.execute(
+            select(JobRun.id)
+            .where(
+                JobRun.job_name == RECHECK_JOB,
+                JobRun.business_date == today,
+                JobRun.detail.like(DAILY_PREFIX + "%"),
+            )
+            .limit(1)
+        ).first()
+        is not None
+    )
+
+
+def _change_text(before: dict, after: dict) -> str:
+    parts = []
+    lines = after["lines"] - before["lines"]
+    if lines:
+        parts.append(f"{lines:+d} line(s)")
+    net = _r2(after["net"] - before["net"])
+    if abs(net) > MONEY_TOLERANCE:
+        parts.append(f"net {net:+.2f}")
+    paid = before["unpaid_lines"] - after["unpaid_lines"]
+    if paid > 0:
+        parts.append(f"{paid} line(s) now paid")
+    return ", ".join(parts) or "amounts changed"
+
+
+def _recheck(db: Session, today: dt.date, resync) -> JobRun:
+    """The re-check without Analytics (module docstring)."""
+    start, end = _window(RECHECK_DAYS, today)
+    daily = not _daily_recheck_done(db, today)
+    summary = JobRun(job_name=RECHECK_JOB, status="running", business_date=today)
+    db.add(summary)
+    db.commit()
+    db.refresh(summary)
+    resynced, changed, failed = [], [], []
+    try:
+        if end < start:
+            summary.status = "success"
+            summary.detail = (DAILY_PREFIX if daily else "Re-check") + ": nothing to check yet"
+            return summary
+        before_all = stored_day_totals(db, start, end)
+        last_sync = _last_successful_sync(db, start, end)
+        now = utcnow()
+        d = start
+        while d <= end:
+            day = d
+            d += dt.timedelta(days=1)
+            synced_at = last_sync.get(day)
+            if synced_at is None:
+                continue  # never synced: the nightly sync's job, not ours
+            stored = before_all.get(day, _empty_totals())
+            unpaid_due = bool(
+                stored["unpaid_lines"] and (now - synced_at).total_seconds() > UNPAID_RESYNC_HOURS * 3600
+            )
+            if not (daily or unpaid_due):
+                continue
+            job = resync(db, day)
+            resynced.append(day)
+            if job.status != "success":
+                failed.append(day)
+            else:
+                after = stored_day_totals(db, day, day).get(day, _empty_totals())
+                if after != stored:
+                    changed.append(f"{day.isoformat()} {_change_text(stored, after)}")
+            _sleep(RESYNC_PAUSE_SECONDS)
+        cutoff = utcnow() - dt.timedelta(days=KEEP_CHECK_DAYS)
+        db.execute(delete(JobRun).where(JobRun.job_name == RECHECK_JOB, JobRun.started_at < cutoff))
+        label = DAILY_PREFIX if daily else "Re-check"
+        text = (
+            f"{label} without Toast Analytics keys, {start}..{end}: {len(resynced)} day(s) re-synced, "
+            f"{len(changed)} changed, {len(failed)} failed"
+        )
+        if changed:
+            text += " - " + "; ".join(changed)
+        summary.status = "failed" if failed else "success"
+        summary.detail = text[:2000]
+    except Exception as exc:  # noqa: BLE001 - recorded, never crashes the scheduler
+        db.rollback()
+        logger.exception("Sales re-check failed")
+        summary.status = "failed"
+        summary.detail = ((DAILY_PREFIX if daily else "Re-check") + f" failed: {exc}")[:500]
+    finally:
+        summary.finished_at = utcnow()
+        db.add(summary)
+        db.commit()
+        db.refresh(summary)
+    return summary
+
+
+def recheck_status(db: Session) -> dict:
+    """What the sales double-check is doing, for warnings (parity report,
+    accuracy card): {analytics: bool, warning: str|None, last_recheck: ...}."""
+    analytics = registry.get_connector().has_day_totals()
+    last = db.execute(
+        select(JobRun).where(JobRun.job_name == RECHECK_JOB).order_by(JobRun.id.desc()).limit(1)
+    ).scalar_one_or_none()
+    return {
+        "analytics": bool(analytics),
+        "warning": None if analytics else NO_KEYS_WARNING,
+        "last_recheck": (
+            {
+                "started_at": last.started_at.isoformat() if last.started_at else None,
+                "status": last.status,
+                "detail": last.detail,
+            }
+            if last is not None
+            else None
+        ),
+    }
 
 
 def _run(db: Session, days: Optional[int], today: dt.date, resync) -> JobRun:
@@ -435,8 +574,13 @@ def accuracy_report(db: Session, days: int = 30) -> dict:
         .all()
     )
     settings = get_settings()
+    status = recheck_status(db)
     return {
         "configured": registry.get_connector().has_day_totals(),
+        # Additive (pre-production): without the keys the re-check runs and
+        # this plain line says so; None when the keys are there.
+        "warning": status["warning"],
+        "last_recheck": status["last_recheck"],
         "enabled": settings.sales_repull_enabled and settings.scheduler_enabled,
         "running": is_running(),
         "window_days": settings.sales_repull_days,

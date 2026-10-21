@@ -9,7 +9,8 @@
 #     (port 5434, its own data folder - not the dev cluster), config + key ring;
 #  2. installs and starts the database LaunchDaemon, then as you: setup-db.sh
 #     (platform database, migrations, the first master - asks for a password);
-#  3. installs and starts the server (127.0.0.1:8900), the nightly backup,
+#  3. installs and starts the server (127.0.0.1:8900), the nightly backup and
+#     DEMO refresh (a no-op until the DEMO store exists),
 #     the monthly restore drill and the daily parity check;
 #  4. waits for /api/ready, then `tailscale serve` on the tailnet only
 #     (https://<this Mac>.ts.net:10003).
@@ -53,13 +54,14 @@ export HOME="$RUN_HOME"
 # shellcheck source=pilot.conf
 . "$HERE/pilot.conf"
 export PILOT_ROOT
-JOBS=(postgres server backup drill parity)
+JOBS=(postgres server backup drill parity demo)
 
 render() {  # render <job> <out file>
   sed -e "s#__LABEL_PREFIX__#$PILOT_LABEL_PREFIX#g" -e "s#__ROOT__#$PILOT_ROOT#g" -e "s#__USER__#$RUN_USER#g" \
       -e "s#__HOME__#$RUN_HOME#g" -e "s#__PG_BIN__#$PILOT_PG_BIN#g" -e "s#__APP_PORT__#$PILOT_APP_PORT#g" \
       -e "s#__BACKUP_HOUR__#$PILOT_BACKUP_HOUR#g" -e "s#__BACKUP_MINUTE__#$PILOT_BACKUP_MINUTE#g" \
       -e "s#__PARITY_HOUR__#$PILOT_PARITY_HOUR#g" -e "s#__PARITY_MINUTE__#$PILOT_PARITY_MINUTE#g" \
+      -e "s#__DEMO_HOUR__#$PILOT_DEMO_HOUR#g" -e "s#__DEMO_MINUTE__#$PILOT_DEMO_MINUTE#g" \
       -e "s#__KEEP_DAYS__#$PILOT_KEEP_DAYS#g" "$HERE/launchd/$1.plist" > "$2"
   plutil -lint -s "$2"
 }
@@ -102,7 +104,7 @@ if [ "$WORKER" = install ]; then
 fi
 
 if [ "$UNINSTALL" = 1 ]; then
-  for j in worker parity drill backup server postgres; do stop_job "$j"; rm -f "$(daemon_path "$j")"; done
+  for j in worker demo parity drill backup server postgres; do stop_job "$j"; rm -f "$(daemon_path "$j")"; done
   echo "Removed the pilot's launchd jobs. Data, backups and secrets are still in $PILOT_ROOT."
   exit 0
 fi
@@ -116,7 +118,7 @@ start_job postgres
 as_user /bin/bash "$HERE/setup-db.sh"
 
 echo "== 3. server and scheduled jobs"
-for j in server backup drill parity; do start_job "$j"; done
+for j in server backup drill parity demo; do start_job "$j"; done
 
 echo "== 4. waiting for http://127.0.0.1:$PILOT_APP_PORT/api/ready"
 ready=0

@@ -1,0 +1,20 @@
+# KloudC RetailOps - Cloudflare Tunnel 'kloudc-retailops' (locally managed
+# option; the default is a dashboard-managed tunnel started from a token,
+# docs/GO_LIVE_RUNBOOK.md). install-tunnel.sh renders this into
+# __ROOT__/config/tunnel.yml when __ROOT__/secrets/tunnel-credentials.json
+# exists. Never copy it to ~/.cloudflared: that folder belongs to another
+# tunnel on this Mac.
+tunnel: kloudc-retailops
+credentials-file: __ROOT__/secrets/tunnel-credentials.json
+no-autoupdate: true
+ingress:
+  # Plain HTTP to the server on this Mac; Cloudflare does HTTPS for visitors.
+  # The server reads the visitor's address from CF-Connecting-IP (only from
+  # 127.0.0.1, app/platform/client_ip.py).
+  - hostname: app.kloudc.com
+    service: http://127.0.0.1:__APP_PORT__
+    originRequest:
+      connectTimeout: 10s
+      # No WebSockets or streaming in the app: plain requests only.
+      noHappyEyeballs: true
+  - service: http_status:404

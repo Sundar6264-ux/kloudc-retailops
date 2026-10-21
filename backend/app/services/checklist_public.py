@@ -200,16 +200,13 @@ def _limit_key(ip: str) -> str:
 
 
 def client_ip(headers, peer: Optional[str]) -> str:
-    """Cloudflare's CF-Connecting-IP when present and valid, else the TCP
-    peer - as a rate-limit key (an IPv6 address becomes its /64, see
-    _limit_key)."""
-    raw = (headers.get("cf-connecting-ip") or "").strip()
-    if raw:
-        try:
-            return _limit_key(str(ipaddress.ip_address(raw)))
-        except ValueError:
-            pass
-    return _limit_key(peer) if peer else "unknown"
+    """The client's IP as a rate-limit key (an IPv6 address becomes its /64,
+    see _limit_key): the one platform rule (app/platform/client_ip.py) -
+    CF-Connecting-IP only when the peer is a trusted proxy, else the peer."""
+    from app.platform.client_ip import resolve
+
+    ip = resolve(headers, peer)
+    return _limit_key(ip) if ip != "unknown" else "unknown"
 
 
 def check_ip(ip: str, page: bool = False) -> None:

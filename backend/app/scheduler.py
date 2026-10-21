@@ -101,7 +101,8 @@ def run_daily_sales_sync() -> None:
 def run_sales_repull_job() -> None:
     """Sales accuracy re-pull (services/sales_accuracy.py): compare the last
     SALES_REPULL_DAYS business dates with Toast Analytics and re-sync only the
-    dates that changed. A no-op without Analytics credentials."""
+    dates that changed. Without Analytics credentials: the daily re-check
+    (accuracy._recheck)."""
     from app.services.sales_accuracy import run_sales_repull
 
     db = SessionLocal()

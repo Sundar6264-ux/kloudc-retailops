@@ -1,0 +1,44 @@
+name: Docs
+
+# Docs-only changes skip the full CI (ci.yml paths-ignore); they still get the
+# name guard (no origin-store names, no absolute home paths in docs) and the
+# tests that read the deploy docs and runbooks. A few seconds of setup, no
+# PostgreSQL.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "**/*.md"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: Docs name guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q tests/test_no_origin_names.py tests/test_ops_deploy_files.py tests/test_ops_tunnel.py tests/test_terms_page.py

@@ -23,13 +23,12 @@ from app.platform.models import LoginAttempt, utcnow
 
 
 def client_ip(request: Request) -> str:
-    """``DIRECTORY_CLIENT_IP_HEADER`` (last entry) when set, else the peer."""
-    header = str(pget("directory_client_ip_header") or "").strip()
-    if header:
-        last = (request.headers.get(header, "") or "").split(",")[-1].strip()
-        if last:
-            return last[:64]
-    return (request.client.host if request.client else "unknown")[:64]
+    """The client's IP as a rate-limit key: one rule for every limit
+    (app/platform/client_ip.py - the client-IP header only from a trusted
+    proxy, IPv6 grouped by /64)."""
+    from app.platform.client_ip import client_ip as _client_ip
+
+    return _client_ip(request)
 
 
 # --- login lockout (platform DB) --------------------------------------------

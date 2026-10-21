@@ -164,6 +164,64 @@ def info_numbers(side: _Side, first: dt.date, last: dt.date) -> Dict[str, Any]:
     }
 
 
+_LINES_SQL = (
+    "SELECT toast_selection_guid, quantity, net_price, tax_amount, voided FROM orders "
+    "WHERE {top_level} AND business_date = {p}"
+)
+
+
+def _line_map(side: _Side, day: str) -> Dict[str, tuple]:
+    out = {}
+    for guid, qty, net, tax, voided in side.rows(_LINES_SQL, (dt.date.fromisoformat(day),)):
+        out[str(guid)] = (round(float(qty or 0), 4), round(float(net or 0), 2), round(float(tax or 0), 2),
+                          bool(voided))
+    return out
+
+
+def line_counts(store: _Side, reference: _Side, day: str) -> Dict[str, int]:
+    """Per differing day, by POS line id: how many lines only one side has,
+    and how many both have with other quantity / amount / tax / void."""
+    mine, ref = _line_map(store, day), _line_map(reference, day)
+    both = mine.keys() & ref.keys()
+    return {
+        "only_store": len(mine.keys() - ref.keys()),
+        "only_reference": len(ref.keys() - mine.keys()),
+        "changed": sum(1 for g in both if mine[g] != ref[g]),
+    }
+
+
+# job_runs names of the store's sales double-check (app/pos/sync/accuracy.py).
+_REPULL_JOB, _RECHECK_JOB = "sales_repull", "sales_recheck"
+NO_KEYS_WARNING = ("Sales double-check is limited: Toast Analytics keys are missing (Store setup > "
+                   "Integrations > Toast), so late Toast edits are caught only by the daily re-check")
+NOT_RUNNING_WARNING = "Sales double-check has not run in the last 2 days"
+
+
+def double_check_warnings(side: _Side, today: dt.date) -> List[str]:
+    """Plain warnings about the store's sales double-check, from its job_runs
+    (read-only): which job ran last in the last 2 days."""
+    since = dt.datetime.combine(today - dt.timedelta(days=2), dt.time.min)
+    since_p = since.isoformat(sep=" ") if side.kind == "sqlite" else since
+    try:
+        rows = side.rows(
+            "SELECT job_name, max(started_at) FROM job_runs WHERE job_name IN ('" + _REPULL_JOB + "', '"
+            + _RECHECK_JOB + "') AND started_at >= {p} GROUP BY job_name",
+            (since_p,),
+        )
+    except Exception:  # noqa: BLE001 - no job_runs table: say nothing
+        if side.kind != "sqlite":
+            side.conn.rollback()
+        return []
+    latest = {name: at for name, at in rows}
+    if not latest:
+        return [NOT_RUNNING_WARNING]
+    if _REPULL_JOB not in latest or (
+        _RECHECK_JOB in latest and str(latest[_RECHECK_JOB]) > str(latest[_REPULL_JOB])
+    ):
+        return [NO_KEYS_WARNING]
+    return []
+
+
 def _close(a, b, metric: str) -> bool:
     if isinstance(a, int) and isinstance(b, int):
         return a == b
@@ -222,10 +280,12 @@ def run_parity(
     try:
         ref_days, pilot_days = day_numbers(ref, first, last), day_numbers(pilot, first, last)
         ref_info, pilot_info = info_numbers(ref, first, last), info_numbers(pilot, first, last)
+        differences = compare(pilot_days, ref_days, window)
+        lines = {day: line_counts(pilot, ref, day) for day in sorted({d["date"] for d in differences})}
+        warnings = double_check_warnings(pilot, today)
     finally:
         ref.conn.close()
         pilot.conn.close()
-    differences = compare(pilot_days, ref_days, window)
     problems: List[str] = []
     if not any(v["lines"] or v["voided_lines"] for v in ref_days.values()):
         # Nothing to compare is not a clean comparison: a wrong --reference
@@ -248,6 +308,10 @@ def run_parity(
             "reference_lines": sum(v["lines"] for v in ref_days.values()),
         },
         "problems": problems,
+        # Additive (pre-production): per differing day, lines only on one
+        # side / changed (counts only); plain warnings that don't change "ok".
+        "line_counts": lines,
+        "warnings": warnings,
         "ok": not differences and not problems,
         "seconds": round(time.monotonic() - started, 2),
     }
@@ -256,6 +320,8 @@ def run_parity(
         logger.warning("Parity %s: %d difference(s) on %s", code, len(differences), ", ".join(report["days_with_differences"]))
     if problems:
         logger.warning("Parity %s: not comparable: %s", code, "; ".join(problems))
+    for warning in warnings:
+        logger.warning("Parity %s: %s", code, warning)
     if report["ok"]:
         logger.info("Parity %s: OK, %d days compared (%s..%s)", code, len(window), first, last)
     if audit_run:

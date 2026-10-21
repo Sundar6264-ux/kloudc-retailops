@@ -311,10 +311,14 @@ def _checks(db, day):
     return [json.loads(r.detail) for r in db.query(JobRun).filter_by(job_name="sales_accuracy", business_date=day).order_by(JobRun.id)]
 
 
-def test_repull_does_nothing_without_analytics(db, monkeypatch):
+def test_repull_without_analytics_runs_the_recheck_not_the_comparison(db, monkeypatch):
+    # Pre-production 2026-10-21: no Analytics keys no longer means "do
+    # nothing" (tests/test_sales_recheck_no_analytics.py has the details).
     monkeypatch.setattr(get_settings(), "toast_analytics_client_id", "")
-    assert sales_accuracy.run_sales_repull(db, days=3, today=TODAY) is None
-    assert db.query(JobRun).count() == 0
+    monkeypatch.setattr(sales_sync, "fetch_orders_for_business_date", lambda d: [])
+    job = sales_accuracy.run_sales_repull(db, days=3, today=TODAY)
+    assert job is not None and job.job_name == "sales_recheck"
+    assert db.query(JobRun).filter_by(job_name="sales_accuracy").count() == 0
 
 
 def test_repull_resyncs_only_the_changed_day(db, repull):
