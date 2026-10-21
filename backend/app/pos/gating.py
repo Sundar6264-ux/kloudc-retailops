@@ -26,7 +26,7 @@ fallback for a provider with no registered adapter.
 """
 
 import logging
-from typing import Dict, FrozenSet, Iterable, List, Tuple
+from typing import Dict, FrozenSet, Iterable, List, Optional, Tuple
 
 from fastapi import HTTPException
 
@@ -166,6 +166,37 @@ def usable_capabilities() -> FrozenSet[Capability]:
     return have & OFFLINE_CAPABILITIES
 
 
+def advertised_capabilities() -> FrozenSet[Capability]:
+    """What the website and app are told this store has (``/me`` and
+    branding ``capabilities``): the store's set, except that a POS the store
+    connects itself (Clover) advertises only OFFLINE_CAPABILITIES until it is
+    connected - so no client shows Open Checks, stock or catalog pages that
+    would only answer 409 (pre-production gap G20). Toast and CSV stores are
+    unchanged."""
+    have = store_capabilities()
+    conn = _connector(pos_provider())
+    if conn is not None and getattr(conn, "requires_connection", False) and not conn.is_configured():
+        return have & OFFLINE_CAPABILITIES
+    return have
+
+
+def pos_connected() -> Optional[bool]:
+    """``/me`` ``pos_connected`` (pre-production gap G6): True when the
+    store's POS is connected (its credentials are saved), False when not
+    (yet), None for a store without a POS link (CSV-only: nothing to
+    connect)."""
+    provider = pos_provider()
+    if provider == "csv":
+        return None
+    conn = _connector(provider)
+    if conn is None:
+        return False
+    try:
+        return bool(conn.is_configured())
+    except Exception:  # noqa: BLE001 - can't tell: not connected
+        return False
+
+
 def has_capability(*caps: Capability) -> bool:
     have = usable_capabilities()
     return all(c in have for c in caps)
@@ -174,7 +205,7 @@ def has_capability(*caps: Capability) -> bool:
 def capability_values() -> List[str]:
     """The store's capabilities as their string values, in the enum's own
     (stable) order - what the website and app read."""
-    have = store_capabilities()
+    have = advertised_capabilities()
     return [c.value for c in Capability if c in have]
 
 
@@ -215,7 +246,7 @@ def features_for_store(keys: List[str]) -> List[str]:
     whose store feature is off (e.g. the Ask bot without AI), order kept."""
     from app.store.settings_view import store_features
 
-    have = store_capabilities()
+    have = advertised_capabilities()
     on = set(store_features())
     return [
         k

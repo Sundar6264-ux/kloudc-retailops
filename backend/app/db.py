@@ -122,6 +122,27 @@ def _store_access_error(status: int, error: str, message: str):
     return exc
 
 
+STORE_SUSPENDED = "This store is suspended. Contact support."
+STORE_ARCHIVED = "This store is no longer available. Contact the store owner."
+
+
+def _blocked_store_message() -> Optional[str]:
+    """The master's maintenance message of the paused store this request's
+    token points at, or None (none written, or the platform can't say)."""
+    from app.tenancy.context import current_store_block_code
+
+    code = current_store_block_code()
+    if not code:
+        return None
+    try:
+        from app.platform.login import _maintenance_message
+
+        msg = (_maintenance_message(code) or "").strip()
+    except Exception:  # noqa: BLE001 - the generic line is always safe
+        return None
+    return msg[:500] or None
+
+
 def _store_session_or_http_error() -> Session:
     """SessionLocal() for a request; multi mode without a store -> 401 (or
     403 for an inactive store / a master's session), a store whose database
@@ -133,7 +154,11 @@ def _store_session_or_http_error() -> Session:
     if current_store() is None:
         block = current_store_block()
         if block == "suspended":
-            raise _store_access_error(403, "store_suspended", "This store is suspended. Contact support.")
+            # The master's pause message when there is one, as the sign-in
+            # answers (pre-production G3).
+            raise _store_access_error(403, "store_suspended", _blocked_store_message() or STORE_SUSPENDED)
+        if block == "archived":
+            raise _store_access_error(403, "store_archived", STORE_ARCHIVED)
         if block:
             raise _store_access_error(403, "store_not_ready", "This store is not ready yet.")
         if current_scope() == "platform":

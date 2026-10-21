@@ -585,7 +585,7 @@ def test_permissions(db, admin_client, anon_client, staff_r, report, clock):
     # The demo login can look, never change (not in the demo guard's allowlist).
     assert demo.get(API).status_code == 200
     for r in (demo.post(API, json=body), demo.delete(f"{API}/{created['id']}")):
-        assert r.status_code == 403 and r.json() == {"detail": DEMO_READ_ONLY}
+        assert r.status_code == 403 and r.json() == {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}
     assert ("POST", API) not in ALLOWLIST
     assert ("DELETE", API + "/{dismissal_id}") not in ALLOWLIST
     assert [i["id"] for i in admin_client.get(API).json()["items"]] == [created["id"]]

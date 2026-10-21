@@ -95,7 +95,7 @@ def test_every_mutating_route_not_allowlisted_is_refused_for_demo(demo_client):
             continue
         r = demo_client.request(method, concrete(path), json={})
         assert r.status_code == 403, (method, path, r.status_code, r.text)
-        assert r.json() == {"detail": DEMO_READ_ONLY}, (method, path)
+        assert r.json() == {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}, (method, path)
         checked += 1
     assert checked > 50
 
@@ -143,7 +143,7 @@ def test_guard_never_touches_a_real_user(db):
 )
 def test_named_store_writes_are_refused(demo_client, method, path):
     r = demo_client.request(method, path, json={})
-    assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY})
+    assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY})
 
 
 def test_reads_are_unaffected(demo_client, db):
@@ -172,7 +172,7 @@ def test_invoice_actions_only_on_its_own(db, demo_client, no_real_sends):
     for action in ("resend", "mark-toast-closed", "request-delete"):
         body = {"channels": ["whatsapp"]} if action == "resend" else {}
         r = demo_client.post(f"/api/invoices/{real_id}/{action}", json=body)
-        assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY}), action
+        assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}), action
     no_real_sends.clear()
     assert demo_client.post(f"/api/invoices/{own_id}/resend", json={"channels": ["whatsapp"]}).status_code == 200
     assert demo_client.post(f"/api/invoices/{own_id}/request-delete").status_code == 200
@@ -200,7 +200,7 @@ def test_task_actions_only_on_tasks_assigned_to_it_or_its_team(db, demo, demo_cl
     assert demo_client.post(f"/api/team/tasks/{mine}/comments", json={"body": "on it"}).status_code == 200
     assert demo_client.post(f"/api/team/tasks/{team}/complete").status_code == 200
     r = demo_client.post(f"/api/team/tasks/{other}/complete")
-    assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY})
+    assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY})
     assert demo_client.post(f"/api/team/tasks/{other}/cant-do", json={"reason": "x"}).status_code == 403
 
 
@@ -235,7 +235,7 @@ def pushes(monkeypatch):
 
 
 def _refused(r):
-    return (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY})
+    return (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY})
 
 
 def _created(r):
@@ -416,7 +416,7 @@ def test_chat_delete_only_its_own_message(db, demo, demo_client, staff):
     own = send(demo_client, channel["id"], "hello").json()["id"]
     theirs = send(staff_client, channel["id"], "hi back").json()["id"]
     r = demo_client.delete(f"/api/team/messages/{theirs}")
-    assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY})
+    assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY})
     assert db.get(Message, theirs).deleted_at is None
     assert demo_client.delete(f"/api/team/messages/{own}").status_code == 200
 

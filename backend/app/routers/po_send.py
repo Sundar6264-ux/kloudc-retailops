@@ -33,7 +33,9 @@ DEMO_REFUSED = "The demo account can't see vendor contacts or send purchase orde
 
 def require_po_sender(user: User = Depends(get_current_user)) -> User:
     if is_demo_user(user):
-        raise HTTPException(status_code=403, detail=DEMO_REFUSED)
+        from app.demo_guard import demo_read_only_error
+
+        raise demo_read_only_error(DEMO_REFUSED)
     if not user_has_feature(user, FEATURE):
         raise HTTPException(status_code=403, detail="You don't have access to this feature")
     return user

@@ -214,7 +214,7 @@ def test_demo_can_switch_its_own_alerts_but_not_reset_or_set_store_defaults(db):
         ("POST", "/api/notifications/defaults/reset", None),
     ]:
         r = c.request(method, path, json=body)
-        assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY}), path
+        assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}), path
     assert db.query(SettingChange).count() == 0
 
 

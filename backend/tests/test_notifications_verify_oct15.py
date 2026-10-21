@@ -291,7 +291,7 @@ def test_demo_cannot_reset_or_touch_store_defaults_even_with_explicit_rows(db):
     demo = make_user(db, "app_store_review", features=PROD_STAFF_FEATURES)
     c = client_for(db, demo)
     assert c.put("/api/notifications/prefs", json={"key": "chat_message", "enabled": False}).status_code == 200
-    assert c.post("/api/notifications/prefs/reset").json() == {"detail": DEMO_READ_ONLY}
+    assert c.post("/api/notifications/prefs/reset").json() == {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}
     assert db.query(NotificationPref).filter_by(user_id=demo.id, key="chat_message").one().enabled is False
     for path in ("/api/notifications/defaults", "/api/notifications/volume"):
         assert c.get(path).status_code == 403

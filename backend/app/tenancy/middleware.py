@@ -137,7 +137,12 @@ class TenantMiddleware:
                 )
                 return
             if ref is not None and ref.status == "archived":
-                ref = None  # an archived store answers like an unknown one (401)
+                # An archived store: no store context, like an unknown one,
+                # but the auth dependency answers 403 store_archived (with a
+                # plain message) instead of a bare 401 (pre-production G2).
+                with blocked_store("archived", ref.code):
+                    await self.app(scope, receive, send)
+                return
             if ref is None:
                 with no_store():
                     await self.app(scope, receive, send)
@@ -151,7 +156,7 @@ class TenantMiddleware:
                 return
             if ref.status != "active":
                 state["store_block"] = ref.status
-                with blocked_store(ref.status):
+                with blocked_store(ref.status, ref.code):
                     await self.app(scope, receive, send)
                 return
             with _use_store(ref):

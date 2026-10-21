@@ -15,6 +15,7 @@ KEYS = [
     "schema", "store_code", "name", "short_name", "product", "logo_url", "icon_url", "primary_color",
     "secondary_color", "timezone", "currency", "locale", "address", "phone", "pos_name", "capabilities",
     "store_features", "labels_url", "public_host", "legal", "min_build", "store_url", "demo",
+    "pos_provider", "pos_word",
 ]
 
 
@@ -123,10 +124,10 @@ def test_me_without_ai_drops_the_ask_bot(db, monkeypatch):
     me = client.get("/api/auth/me").json()
     assert me["store_code"] == "RETAILOPS_TEST_CLOVER" and me["store_features"] == []
     # ask_bot needs the "ai" store feature; sales_insights needs analytics
-    # (Clover has none); open_orders is a Clover capability.
-    assert me["allowed_features"] == ["open_orders", "invoice_submission"] or set(me["allowed_features"]) == {
-        "open_orders", "invoice_submission"
-    }
+    # (Clover has none); open_orders is a Clover capability, but this store
+    # has not connected Clover yet, so it stays hidden (pre-production G20).
+    assert me["allowed_features"] == ["invoice_submission"]
+    assert me["pos_connected"] is False and me["capabilities"] == []
     r = client.post("/api/ask", json={"question": "hello"})
     assert r.status_code == 409
 

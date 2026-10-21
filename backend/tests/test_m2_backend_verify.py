@@ -62,12 +62,16 @@ def test_clover_store_pos_routes_answer_409_not_500(db, monkeypatch, path):
     assert "Clover" in r.json()["detail"]
 
 
-def test_clover_store_still_advertises_its_capabilities(monkeypatch):
-    """Branding / /me keep the contract's Clover set (section 7) - only the
-    server's own gates need a connected POS."""
+def test_clover_store_advertises_its_capabilities_once_connected(monkeypatch):
+    """The contract's Clover set (section 7) is kept, but branding / /me list
+    it only once Clover is connected (pre-production G20: no page that would
+    only answer 409); the server's own gates need a connected POS too."""
     use_store(monkeypatch, "RETAILOPS_TEST_CLOVER")
-    assert "open_orders" in gating.capability_values()
+    assert "open_orders" not in gating.capability_values()
+    assert gating.Capability.OPEN_ORDERS in gating.store_capabilities()
     assert not gating.has_capability(gating.Capability.OPEN_ORDERS)
+    monkeypatch.setattr(gating._connector("clover"), "is_configured", lambda: True)
+    assert "open_orders" in gating.capability_values()
 
 
 def test_csv_upload_needs_no_pos_connection(db, monkeypatch):
