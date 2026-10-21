@@ -54,5 +54,7 @@
     "ios": null,
     "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
   },
-  "demo": false
+  "demo": false,
+  "pos_provider": "toast",
+  "pos_word": "Toast"
 }

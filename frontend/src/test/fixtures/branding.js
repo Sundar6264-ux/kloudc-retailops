@@ -1,7 +1,9 @@
 // The three fake stores' GET /api/app/branding bodies (docs/M2_CONTRACT.md
 // section 7). Copies of backend/tests/fixtures/stores/<code>.branding.json
 // (MT7 generates those; store/branding.test.mjs compares the field names).
-// Made-up values only: 555 numbers, .invalid hosts.
+// Made-up values only: 555 numbers, .invalid hosts. The Clover store here
+// is a connected one (the server's fake Clover store is not, so it
+// advertises no capabilities: G20); only field names are compared.
 export const BRANDING = {
   "RETAILOPS_TEST_TOAST": {
     "schema": 1,
@@ -59,7 +61,9 @@ export const BRANDING = {
       "ios": null,
       "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
     },
-    "demo": false
+    "demo": false,
+    "pos_provider": "toast",
+    "pos_word": "Toast"
   },
   "RETAILOPS_TEST_CLOVER": {
     "schema": 1,
@@ -108,7 +112,9 @@ export const BRANDING = {
       "ios": null,
       "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
     },
-    "demo": false
+    "demo": false,
+    "pos_provider": "clover",
+    "pos_word": "Clover"
   },
   "DEMO": {
     "schema": 1,
@@ -149,6 +155,8 @@ export const BRANDING = {
       "ios": null,
       "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
     },
-    "demo": true
+    "demo": true,
+    "pos_provider": "csv",
+    "pos_word": "your POS"
   }
 };

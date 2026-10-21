@@ -37,5 +37,7 @@
     "ios": null,
     "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
   },
-  "demo": true
+  "demo": true,
+  "pos_provider": "csv",
+  "pos_word": "your POS"
 }
