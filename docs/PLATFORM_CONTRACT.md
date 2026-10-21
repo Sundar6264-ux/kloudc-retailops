@@ -4232,3 +4232,11 @@ Results on the merged `main`:
 | `e2e/platform/run_flows.sh` (real server, PostgreSQL) | 114 checks, 0 failed; 152 fake-Toast calls |
 | `e2e/system/run.sh` | 47 of 47 |
 | App `flutter analyze` / full `flutter test` | no issues / 6202 passed, 100 skipped |
+
+**GitHub CI after the push.** Two fixes were needed: `docs.yml` (P) ran its
+tests without a database setting, so they looked for the local PostgreSQL;
+it now sets `RETAILOPS_TEST_DB=sqlite` and the discard POS addresses. And
+`deploy/pilot-mac/install-tunnel.sh` exited 127 on Linux (no `dscl` under
+`set -o pipefail`); it now falls back to `~user`. Final runs on `main`
+`16a37cd`: CI (PostgreSQL, SQLite, website, Docker) all green; Docs green.
+App repo `main` `89a77a9`: CI and Docs green.
