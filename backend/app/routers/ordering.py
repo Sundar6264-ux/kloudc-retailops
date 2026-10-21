@@ -45,6 +45,7 @@ from app.services.order_suggestion import attach_to_projection, cart_projection_
 from app.services.reorder import (
     cached_report,
     compute_reorder_candidates,
+    data_presence,
     group_candidates_by_vendor,
     latest_inventory_by_item,
 )
@@ -135,6 +136,9 @@ def get_reorder_candidates(
         # Additive: on-hand counts are live from Toast (with
         # INVENTORY_API_SNAPSHOTS on) - {"live", "as_of"}; null = snapshot.
         "live_stock": live_stock_meta(),
+        # Additive (G31): has_sales_data / has_stock_data - an empty list on a
+        # new store ("no sales yet") vs. one where everything is stocked.
+        **data_presence(db),
     }
 
 

@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { getReorderCandidates, showCriticalVendorAgain } from "../api";
+import { reorderEmptyText } from "./reorderEmpty.js";
 import { useAuth } from "../AuthContext.jsx";
 import InfoBlock from "./InfoBlock.jsx";
 import {
@@ -544,7 +545,7 @@ export default function ReorderCandidates() {
               </details>
             ))}
             {visibleVendors.length === 0 && (
-              <p className="muted">No items match "{search}".</p>
+              <p className="muted">{reorderEmptyText(data, search)}</p>
             )}
           </div>
         </>

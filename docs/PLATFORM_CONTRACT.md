@@ -4328,3 +4328,14 @@ with copy-paste commands, a check and an undo.
 into iCloud Drive (privacy protection on `~/Library/Mobile Documents`). The
 runbook's C3 check lists the folder the next morning and says what to do
 when it is empty; the local nightly backups are unaffected either way.
+
+## As built - G31 (reorder report: new store vs. everything stocked)
+
+`GET /api/ordering/reorder-candidates` adds two booleans (additive; also on
+`critical_only=1`): `has_sales_data` (any non-voided sales line, any date)
+and `has_stock_data` (any inventory snapshot row, any date). Worked out per
+request with two `LIMIT 1` lookups (`services/reorder.data_presence`), not
+part of the cached report. Clients: an empty list with `has_sales_data`
+false reads "No sales have come in yet..."; with it true, "Nothing needs
+reordering right now."; a missing flag (older server) keeps the old text.
+Tests: `tests/test_g31_reorder_data_flags.py`.

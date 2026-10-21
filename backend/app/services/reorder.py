@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.dbcompat import group_order
 from app.demo import hide_demo_clause
-from app.models import InventorySnapshot, InvoiceSubmission, PlacedOrder, PurchaseLogEntry
+from app.models import InventorySnapshot, InvoiceSubmission, Order, PlacedOrder, PurchaseLogEntry
 from app.services.category_overrides import apply_overrides
 from app.services.forecast import forecast_daily_demand
 from app.services.inventory_api import overlay_live_stock
@@ -463,6 +463,18 @@ def compute_reorder_candidates(
         except Exception:
             logger.exception("Availability-adjusted reorder failed; using the legacy average")
     return _legacy_candidates(db, lookback_days, lead_time_days, as_of_date)
+
+
+def data_presence(db: Session) -> dict[str, bool]:
+    """G31: whether the store has any sales or stock data at all, so an empty
+    reorder list can say "no sales have come in yet" (a new store) instead of
+    "nothing needs reordering". Two LIMIT 1 lookups - cheap, not cached.
+
+    has_sales_data: any non-voided sales line (any date, modifiers included).
+    has_stock_data: any inventory snapshot row (any date)."""
+    has_sales = db.execute(select(Order.id).where(Order.voided.is_(False)).limit(1)).first() is not None
+    has_stock = db.execute(select(InventorySnapshot.id).limit(1)).first() is not None
+    return {"has_sales_data": has_sales, "has_stock_data": has_stock}
 
 
 def report_key(lookback_days: int, lead_time_days: int, as_of_date: dt.date, method: Optional[str]) -> tuple:
