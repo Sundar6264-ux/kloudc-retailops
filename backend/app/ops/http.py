@@ -124,8 +124,20 @@ def security_headers(path: str, content_type: str) -> List[Tuple[str, str]]:
 
 
 def _client(scope) -> str:
+    """The visitor's address for the access log: the same rule as the login
+    lockout (app/platform/client_ip.py - CF-Connecting-IP only from a
+    trusted proxy such as the tunnel), else the TCP peer."""
     client = scope.get("client")
-    return client[0] if client else "-"
+    peer = client[0] if client else None
+    try:
+        from starlette.datastructures import Headers
+
+        from app.platform.client_ip import resolve
+
+        ip = resolve(Headers(scope=scope), peer)
+    except Exception:  # noqa: BLE001 - logging must never fail a request
+        ip = peer
+    return ip if ip and ip != "unknown" else "-"
 
 
 class RequestContextMiddleware:
@@ -182,15 +194,16 @@ class RequestContextMiddleware:
             raise
         finally:
             ms = (time.monotonic() - started) * 1000.0
+            client_ip = _client(scope)
             access_logger.info(
                 "%s %s %s %.0fms %s",
                 scope.get("method"),
                 path,
                 status_holder["status"],
                 ms,
-                _client(scope),
+                client_ip,
                 extra={"fields": {"method": scope.get("method"), "path": path, "status": status_holder["status"],
-                                  "ms": round(ms, 1), "client": _client(scope)}},
+                                  "ms": round(ms, 1), "client": client_ip}},
             )
             request_id_var.reset(token)
 

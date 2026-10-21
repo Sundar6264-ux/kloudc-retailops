@@ -107,6 +107,24 @@ def test_access_log_never_has_the_query_string(anon_client, caplog):
     assert lines and all("sekrit" not in line for line in lines)
 
 
+def test_access_log_client_is_the_visitor_behind_the_tunnel_only(monkeypatch):
+    """Pre-production Verify: behind Cloudflare every request comes from
+    127.0.0.1 (cloudflared), so the access log names the visitor from
+    CF-Connecting-IP - the same rule as the login lockout (trusted peer
+    only); anyone else's header is ignored."""
+    monkeypatch.setenv("FORWARDED_ALLOW_IPS", "127.0.0.1")
+
+    def scope(peer, header=None):
+        headers = [(b"cf-connecting-ip", header.encode())] if header else []
+        return {"type": "http", "client": (peer, 5000), "headers": headers}
+
+    assert ops_http._client(scope("127.0.0.1", "203.0.113.7")) == "203.0.113.7"
+    assert ops_http._client(scope("198.51.100.4", "203.0.113.7")) == "198.51.100.4"
+    assert ops_http._client(scope("127.0.0.1", "not-an-ip")) == "127.0.0.1"
+    assert ops_http._client(scope("127.0.0.1")) == "127.0.0.1"
+    assert ops_http._client({"type": "http", "headers": []}) == "-"
+
+
 def test_json_log_lines_carry_request_id_and_store(tmp_path):
     logs._install_record_factory()
     token = logs.request_id_var.set("rid-xyz-0001")
