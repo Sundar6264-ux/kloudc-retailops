@@ -108,11 +108,19 @@ _used_lock = threading.Lock()
 _used_nonces: Dict[str, float] = {}  # global-state: one-time OAuth state nonces (process-wide, expire in 10 min)
 
 
-def make_state(store_code: str, username: str, now: Optional[float] = None) -> str:
+# Where the callback sends the browser back (pre-production gap G4): a fixed
+# list, never a URL from the request. "web" = the website's Integrations page
+# (the default, as before); "app" = the hand-back page that opens the app.
+RETURN_TARGETS = ("web", "app")
+
+
+def make_state(store_code: str, username: str, now: Optional[float] = None, return_to: str = "web") -> str:
     from app.platform import crypto
 
     now = time.time() if now is None else now
     body = {"c": store_code, "u": username, "n": pysecrets.token_urlsafe(12), "x": int(now) + STATE_TTL_SECONDS}
+    if return_to in RETURN_TARGETS and return_to != "web":
+        body["r"] = return_to  # sealed with the rest: the browser can't change it
     return crypto.seal_text(json.dumps(body, sort_keys=True), STATE_AAD)
 
 

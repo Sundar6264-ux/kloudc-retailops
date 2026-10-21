@@ -73,6 +73,10 @@ PUBLIC = {
     ("GET", "/api/settings/exports/{export_id}/download"),
     ("GET", "/api/settings/integrations/clover/callback"),
     ("POST", "/api/settings/integrations/clover/webhook"),
+    # Pre-production G4: the page after Connect with Clover started in the
+    # app - it only repeats an allowlisted result and opens the app's URL
+    # scheme; no session, no store data (tests/test_preprod_gaps_api.py).
+    ("GET", "/api/settings/integrations/clover/app-return"),
 }
 # Any logged-in user, no feature grant (small lookups, own account/devices,
 # team hub basics - see the notes in each router).

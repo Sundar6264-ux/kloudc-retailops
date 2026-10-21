@@ -31,7 +31,7 @@ import re
 import secrets
 import tempfile
 import zipfile
-from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Tuple
+from typing import Any, BinaryIO, Callable, Dict, Iterator, List, Optional, Tuple
 
 from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import IntegrityError
@@ -127,7 +127,44 @@ def export_view(row) -> Dict[str, Any]:
         "finished_at": _iso(row.finished_at),
         "expires_at": _iso(row.expires_at),
         "filename": filename_of(row),
+        # Additive (pre-production gap G7): 0-100 while the file is made,
+        # 100 when ready, None when failed / expired.
+        "progress": progress_of(row, status),
     }
+
+
+# While an export is queued or running, its ``tables`` column counts the
+# steps done and ``files`` the steps in all (one per table, plus one for the
+# stored files); _finish writes the real totals over them. No extra columns,
+# so no migration.
+def progress_of(row, status: Optional[str] = None) -> Optional[int]:
+    status = status or row.status
+    if status == "ready":
+        return 100
+    if status == "queued":
+        return 0
+    if status != "running":
+        return None
+    done, total = row.tables or 0, row.files or 0
+    if total <= 0:
+        return 0
+    return max(0, min(99, int(done * 100 / total)))
+
+
+def _record_progress(export_id: int, done: int, total: int) -> None:
+    """Saves the steps done of a running export (best effort: progress is
+    only shown, never needed)."""
+    from app.platform.data_models import StoreExport
+    from app.platform.db import platform_session
+
+    try:
+        with platform_session() as db:
+            row = db.get(StoreExport, int(export_id))
+            if row is not None and row.status == "running":
+                row.tables, row.files = int(done), int(total)
+                db.commit()
+    except Exception:  # noqa: BLE001
+        logger.debug("export %s: progress not saved", export_id, exc_info=True)
 
 
 def filename_of(row) -> str:
@@ -221,6 +258,7 @@ def _finish(export_id: int, *, error: Optional[str] = None, result: Optional[Dic
         row.finished_at = utcnow()
         if error is not None:
             row.status, row.error = "failed", error[:2000]
+            row.tables = row.files = None  # progress steps, not totals (progress_of)
             audit("store.export_failed", actor_type="system", store_code=row.store_code, target=str(row.id),
                   details={"error": error[:500]}, db=db)
         else:
@@ -262,7 +300,7 @@ def run_export(export_id: int) -> Dict[str, Any]:
     try:
         fd, tmp = tempfile.mkstemp(prefix=f"export-{code}-", suffix=".zip")
         os.close(fd)
-        summary = build_zip(code, tmp)
+        summary = build_zip(code, tmp, on_progress=lambda done, total: _record_progress(export_id, done, total))
         from app.storage import get_storage
 
         key = f"{EXPORT_PREFIX}{export_id}.zip"
@@ -365,9 +403,11 @@ def _clean_settings(values: Dict[str, Any]) -> Dict[str, Any]:
     return {k: v for k, v in values.items() if not _SECRET_KEY.search(k) and not column_excluded(k)}
 
 
-def build_zip(code: str, dest_path: str) -> Dict[str, Any]:
+def build_zip(code: str, dest_path: str, on_progress: Optional[Callable[[int, int], None]] = None) -> Dict[str, Any]:
     """Write the export ZIP of store ``code`` to ``dest_path``; returns
-    {size_bytes, sha256, tables, rows, files}."""
+    {size_bytes, sha256, tables, rows, files}. ``on_progress(done, total)``
+    hears the steps: one per table, then one for the stored files."""
+    progress = on_progress or (lambda done, total: None)
     from app.platform.db import make_engine
     from app.platform.plans import plan_of
     from app.storage import get_storage
@@ -379,6 +419,7 @@ def build_zip(code: str, dest_path: str) -> Dict[str, Any]:
     excluded_tables: List[str] = []
     excluded_columns: Dict[str, List[str]] = {}
     total_rows = 0
+    total_steps = 1
     schema_revision = None
     with zipfile.ZipFile(dest_path, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as zf:
         try:
@@ -387,7 +428,11 @@ def build_zip(code: str, dest_path: str) -> Dict[str, Any]:
                 names = sorted(insp.get_table_names())
                 if "alembic_version" in names:
                     schema_revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
-                for table in names:
+                total_steps = len(names) + 1
+                progress(0, total_steps)
+                for step, table in enumerate(names, start=1):
+                    if step > 1 and (step - 1) % 5 == 0:
+                        progress(step - 1, total_steps)
                     if table_excluded(table):
                         excluded_tables.append(table)
                         continue
@@ -423,6 +468,7 @@ def build_zip(code: str, dest_path: str) -> Dict[str, Any]:
         finally:
             eng.dispose()
 
+        progress(total_steps - 1, total_steps)
         storage = get_storage()
         manifest_files: List[Dict[str, Any]] = []
         from app.storage import StorageError, check_key

@@ -54,6 +54,16 @@ store_router = APIRouter(prefix="/api/settings", tags=["settings"])
 STORE_EXPORT_ERROR = "The export could not be finished. Try again, or ask support if it fails again."
 
 
+def link_base(request: Request) -> str:
+    """Where a server Download link points (pre-production gap G8): the
+    public address (``PLATFORM_PUBLIC_URL``) when set, else the address this
+    request came in on - always a full https://... link, never a bare path."""
+    from app.platform.config import pget
+
+    configured = str(pget("platform_public_url") or "").strip().rstrip("/")
+    return configured or str(request.base_url).rstrip("/")
+
+
 def _usage_body(code: str) -> Dict[str, Any]:
     snap = usage.snapshot(code)
     return {"store_code": code, **snap, "plan": plans.plan_view(code, metrics=snap["metrics"])}
@@ -132,7 +142,7 @@ def master_export(code: str, request: Request, user: PlatformUser = Depends(plat
 @router.post("/stores/{code}/exports/{export_id}/link")
 def master_export_link(code: str, export_id: int, request: Request, user: PlatformUser = Depends(platform_write)):
     return export.create_link(code.strip().upper(), export_id, actor=masters.actor_name(user),
-                              actor_type="platform_user", client_ip=_ip(request))
+                              actor_type="platform_user", base_url=link_base(request), client_ip=_ip(request))
 
 
 @router.get("/stores/{code}/offboarding")
@@ -248,7 +258,7 @@ def own_export_link(export_id: int, request: Request, user: User = Depends(requi
     _refuse_demo(user, code)
     _rate("store_export_link", code, per_minute=20)
     return export.create_link(code, export_id, actor=_store_actor(code, user), actor_type="store_user",
-                              client_ip=_ip(request))
+                              base_url=link_base(request), client_ip=_ip(request))
 
 
 @store_router.get("/exports/{export_id}/download")

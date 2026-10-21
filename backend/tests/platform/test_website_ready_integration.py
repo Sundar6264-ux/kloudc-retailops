@@ -121,7 +121,8 @@ def test_export_all_data_runs_as_a_queued_job_onto_object_storage(client, platfo
     link = admin.post(f"/api/settings/exports/{export_id}/link")
     assert link.status_code == 200, link.text
     url = link.json()["url"]
-    assert url.startswith(f"/api/settings/exports/{export_id}/download?token=")
+    # Pre-production G8: a full address.
+    assert url.startswith(f"https://app.retailops.test/api/settings/exports/{export_id}/download?token=")
     got = client.__class__(client.app).get(url)
     assert got.status_code == 200, got.text
     assert hashlib.sha256(got.content).hexdigest() == done["sha256"]

@@ -3968,3 +3968,47 @@ databases stay at 0062); going back to `9595a49` needs
 new, how to try it in the preview and the pilot, decisions, owner actions
 (Clover developer app + sandbox, R2, Stripe, plans, `app.kloudc.com`, Terms
 page, console API two-step header) and the app follow-up list.
+
+## As built - Pre-production: S1 (auth, Clover and API gaps)
+
+Branch `pp/gaps-api` (worktree `wt-pp-s1`), from `main` `8c1ef61`. Gaps from
+`docs/PREPROD_PLAN.md` section 1. Every change is additive: old keys keep
+their values, so installed app builds work unchanged.
+
+| Gap | What changed |
+|---|---|
+| G1 | A session ended by a password change answers 401 `{"detail", "error": "password_changed", "message"}` ("Your password was changed, so you were signed out. ..."). Other ended sessions (expired, signed out, unknown) answer `error: "session_expired"` with the old `detail` "Session expired or invalid". How: change-password, the admin's set-password and the owner set-up link no longer delete the other sessions; they set their `expires_at` to 2000-01-01 (`app.auth.REVOKED_BY_PASSWORD_AT`), which `lookup_session` already refuses, and the 401 path looks the row up to say why. Delete-account still deletes. No migration. No token: still `{"detail": "Not logged in"}`. |
+| G2 | A token of an archived store answers 403 `store_archived` ("This store is no longer available. Contact the store owner.") instead of a bare 401. The middleware selects no store (`blocked_store("archived", code)`), so nothing can be read. |
+| G3 | The in-session 403 `store_suspended` carries the master's pause message (the store's `maintenance_message`, as the sign-in does); without one, the old line. `tenancy.context.current_store_block_code()` is new. |
+| G4 | `GET /api/settings/integrations/clover/authorize-url?return_to=app` seals `"r": "app"` in the state (only `web` (default) and `app`; anything else is 400). The callback then redirects to `GET /api/settings/integrations/clover/app-return?clover=connected` (or `error&reason=<expired, invalid, denied, not_configured, refused>`): a no-session page that repeats only those allowlisted values, opens `<APP_URL_SCHEME>://clover?clover=...` at once (meta refresh) and has an "Open the app" button. `APP_URL_SCHEME` defaults to `kloudcretailops`; a malformed value falls back to it. Own CSP (`default-src 'none'`, the style by hash), `no-store`, `no-referrer`. The answer also has `return_to`. Listed in `tests/test_review_route_gates.py` PUBLIC. **App follow-up:** register the `kloudcretailops` URL scheme and ask with `return_to=app` (e.g. through `ASWebAuthenticationSession` with that callback scheme). |
+| G6 | `/api/auth/me` adds `pos_connected`: true (POS credentials saved), false (not yet), null (CSV-only store: nothing to connect). |
+| G7 | Each export row adds `progress`: 0 queued, 0-99 while running, 100 ready, null failed / expired. While running, the row's `tables` / `files` columns hold steps done / steps in all (one per table, one for the stored files; saved every 5 tables); the finished export writes the real totals over them, a failed one clears them. No migration. `build_zip(..., on_progress=)` is new. |
+| G8 | `POST .../exports/{id}/link` (store and master) returns a full address: `PLATFORM_PUBLIC_URL` + path, or the request's own address when that setting is blank. |
+| G9 / G19 | `/me`, `/api/app/branding` (after the M2 keys) and `GET /api/item-vendors` add `pos_word` ("Toast", "Clover", "your POS"; never "CSV upload"); branding adds `pos_provider`. `pos_name` is unchanged. The committed fake-store branding bodies (`tests/fixtures/stores/*.branding.json`) have the two new keys; the app's copies can be refreshed at the app's next sync. |
+| G10 | The generic `PUT /api/settings/integrations/clover` is the API-token save: `public {merchant_id, region}`, `secrets {api_token}` (or `access_token`), same checks and answer as `POST .../clover/manual` (was 501). |
+| G13 | Store lookup (`GET /api/public/stores/{code}`): the same Store ID from the same address has its own limit, `DIRECTORY_STORE_RATE_PER_MINUTE` / `_PER_HOUR` (60 / 1000); only a Store ID that address has not asked for in the last hour counts against `DIRECTORY_RATE_PER_MINUTE` / `_PER_HOUR` (10 / 100), so codes still can't be listed quickly. `throttle.check_lookup_rate`; `SlidingWindowLimiter.recent()` is new (read only). The client address still comes from `throttle.client_ip` (track P makes it trust `CF-Connecting-IP` only from the tunnel). The separate directory service keeps its own per-address limit. |
+| G15 / G21 | Every demo refusal is 403 `{"detail", "error": "demo_read_only", "message"}`: the app-wide demo guard (`demo_guard.demo_read_only_error`), flyers, renaming a task step, the team summary, Send PO's contacts, and the platform routes' `PlatformError` (which now also has `detail`). |
+| G18 | `PUT /api/item-vendors/items/{item_id:path}`: an item ID with "/" (as `%2F` or as is) can be edited. |
+| G20 | `/me` and branding `capabilities` (and `/me` `allowed_features`) leave out a Clover store's POS capabilities until Clover is connected (`gating.advertised_capabilities`); Toast and CSV stores are unchanged. The server's own gates were already `usable_capabilities`. |
+| G14 | `GET /api/item-vendors` reads only the five columns it shows (`catalog_rows`) and all vendor rows in one query instead of `IN` batches over the whole catalog; `PUT` looks up one item (`catalog_item`). |
+
+Tests: `tests/test_preprod_gaps_api.py` (single store) and
+`tests/platform/test_preprod_gaps_platform.py` (shared service, scratch
+PostgreSQL). Updated, not deleted: the demo-guard body checks in 8 files
+(now with `error` / `message`), the archived-store check
+(`tests/tenancy/test_isolation.py`), the Clover PUT check
+(`tests/platform/test_integrations_api.py`), the export link prefix
+(`tests/platform/test_data_ownership.py`), the lookup / code-check limit
+(`tests/platform/test_signup.py`, also `test_website_ready_integration.py`),
+the `/me` key order and Clover gating (`tests/test_pos_gating.py`,
+`tests/test_branding.py`, `tests/test_clover_connector.py`,
+`tests/test_m2_backend_verify.py`, whose "Clover still advertises its set"
+check now says "once connected").
+
+Related run (every test file touching sessions, demo, POS fields, branding,
+item vendors, Clover or the lookup, plus `tests/platform` and
+`tests/tenancy`; PostgreSQL, `so_pp_s1_*` databases dropped): 1575 tests,
+all passing after the updates above. One order-dependent flake seen once in
+that run and passing on rerun: `tests/platform/test_isolation_attacks.py::
+test_6_public_routes` (a 429 from the public checklist link limit, which
+this track does not touch).

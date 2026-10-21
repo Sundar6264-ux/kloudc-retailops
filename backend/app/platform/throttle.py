@@ -137,6 +137,30 @@ def reset_limiters() -> None:
         _limiters.clear()
 
 
+def check_lookup_rate(ip: str, code: str) -> Optional[int]:
+    """The public store lookup's limit (pre-production gap G13). None =
+    allowed (and counted), else seconds to wait.
+
+    - The same Store ID from the same address: ``DIRECTORY_STORE_RATE_*``
+      (60 a minute, 1000 an hour) - a store's shared Wi-Fi, or every user
+      behind one tunnel address, signing in after an outage.
+    - A Store ID this address has not asked for in the last hour also counts
+      against ``DIRECTORY_RATE_*`` (10 a minute, 100 an hour): how many
+      different codes one address may try, so codes still can't be listed
+      quickly.
+    """
+    norm = (code or "").strip().upper()[:32] or "-"
+    store_lim = limiter("lookup_store", int(pget("directory_store_rate_per_minute") or 60),
+                        int(pget("directory_store_rate_per_hour") or 1000))
+    key = f"{ip}|{norm}"
+    if store_lim.recent(key) == 0:
+        wait = check_rate("lookup", ip, int(pget("directory_rate_per_minute") or 10),
+                          int(pget("directory_rate_per_hour") or 100))
+        if wait is not None:
+            return wait
+    return store_lim.check(key)
+
+
 def check_rate(name: str, key: str, per_minute: int = 0, per_hour: int = 0) -> Optional[int]:
     """None = allowed (and counted), else seconds to wait."""
     return limiter(name, per_minute, per_hour).check(key)

@@ -43,6 +43,12 @@ def _pos_name() -> str:
     return pos_name()
 
 
+def _pos_word() -> str:
+    from app.help_content import pos_word
+
+    return pos_word()
+
+
 def _require_editable() -> None:
     if not svc.editor_editable():
         raise HTTPException(status_code=409, detail=READ_ONLY)
@@ -60,6 +66,7 @@ def list_item_vendors(
     out = svc.list_editor_items(db, q=q, show=show, limit=limit, offset=offset)
     out["editable"] = svc.editor_editable()
     out["pos"] = _pos_name()
+    out["pos_word"] = _pos_word()  # "your POS" for a CSV store, never "CSV upload" (G19)
     out["read_only_reason"] = None if out["editable"] else READ_ONLY
     return out
 
@@ -73,7 +80,9 @@ class VendorsBody(BaseModel):
     vendors: List[VendorIn] = Field(default_factory=list, max_length=50)
 
 
-@router.put("/items/{item_id}")
+# ``{item_id:path}``: an item ID may contain "/" (sent as %2F or as is;
+# pre-production gap G18). Nothing else lives under /items/.
+@router.put("/items/{item_id:path}")
 def put_item_vendors(
     item_id: str,
     body: VendorsBody,
@@ -81,10 +90,9 @@ def put_item_vendors(
     db: Session = Depends(get_db),
 ):
     _require_editable()
-    if len(item_id) > 200:
+    if not item_id or len(item_id) > 200:
         raise HTTPException(status_code=404, detail="No such item.")
-    items = svc.catalog_items(db)
-    row = items.get(item_id)
+    row = svc.catalog_item(db, item_id)
     if row is None:
         raise HTTPException(status_code=404, detail="No such item in the current inventory.")
     try:

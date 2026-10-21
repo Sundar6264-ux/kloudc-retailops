@@ -97,5 +97,8 @@ def test_lookup_and_code_check_share_the_lookup_rate_limit(client, platform_env,
     monkeypatch.setattr(platform_env, "directory_rate_per_minute", 3)
     got = [client.get("/api/signup/code-available", params={"code": "abc"}).status_code for _ in range(2)]
     got.append(client.get("/api/public/stores/abc").status_code)
+    # Pre-production G13: the same Store ID again from this address has its
+    # own, higher limit (a store's shared Wi-Fi); a new one is refused.
     got.append(client.get("/api/public/stores/abc").status_code)
-    assert got == [200, 200, 404, 429]
+    got.append(client.get("/api/public/stores/xyz").status_code)
+    assert got == [200, 200, 404, 404, 429]
