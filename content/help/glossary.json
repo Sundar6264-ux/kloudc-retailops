@@ -2185,7 +2185,7 @@
   "pos": [
    "toast"
   ],
-  "definition": "The Client ID and Client secret from Toast Web › Integrations › Toast API access, plus your Restaurant ID (Toast calls it the Restaurant GUID). Required: they bring in your sales, menu and stock.",
+  "definition": "The Client ID and Client secret from Toast Web › Integrations › Toast API access, plus your Toast restaurant ID. Required: they bring in your sales, menu and stock.",
   "aliases": [
    "toast api keys",
    "toast client id",
