@@ -45,7 +45,9 @@ def test_the_pilot_has_its_own_cluster_port_and_app_port():
 def test_only_install_sh_uses_root_and_only_the_pilot_labels():
     for script in PILOT.glob("*.sh"):
         text = script.read_text()
-        if script.name != "install.sh":
+        # install-tunnel.sh: its own sudo-once installer, checked in
+        # tests/test_ops_tunnel.py (only the tunnel label).
+        if script.name not in ("install.sh", "install-tunnel.sh"):
             assert "sudo " not in re.sub(r"#.*", "", text), script.name
             assert "launchctl" not in text, script.name
     install = (PILOT / "install.sh").read_text()
