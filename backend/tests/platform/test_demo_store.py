@@ -117,3 +117,4 @@ def test_nightly_command_is_quiet_without_a_demo_store(capsys):
     assert "nothing to do" in capsys.readouterr().err
     assert main(["demo-reset"]) == 1
     assert "no DEMO store" in capsys.readouterr().err
+
