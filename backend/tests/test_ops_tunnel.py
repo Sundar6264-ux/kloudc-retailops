@@ -101,7 +101,7 @@ def test_production_env_example_names_real_settings_and_no_secrets():
     from app.config import Settings
 
     text = (PILOT / "production.env.example").read_text()
-    pairs = dict(re.findall(r"^([A-Z_]+)='([^']*)'$", text, re.M))
+    pairs = {k: a or b for k, a, b in re.findall(r"""^([A-Z_]+)=(?:'([^']*)'|"([^"]*)")$""", text, re.M)}
     shell_only = {"FORWARDED_ALLOW_IPS", "BACKUP_OFFSITE_DIR", "BACKUP_OFFSITE_KEEP"}
     fields = set(Settings.model_fields)
     for key in set(pairs) - shell_only:
@@ -112,9 +112,31 @@ def test_production_env_example_names_real_settings_and_no_secrets():
     assert pairs["DIRECTORY_CLIENT_IP_HEADER"] == "CF-Connecting-IP"
     assert pairs["PLATFORM_REQUIRE_TOTP"] == "true" and pairs["SIGNUP_ENABLED"] == "false"
     assert pairs["SESSION_COOKIE_SECURE"] == "true" and pairs["SESSION_COOKIE_DOMAIN"] == ""
-    assert "https://app.kloudc.com" in pairs["CORS_ORIGINS"].split(",")
+    assert pairs["CORS_ORIGINS"].startswith("https://app.kloudc.com")
     for word in ("SECRET", "PASSWORD", "TOKEN", "KEYS"):
         assert not any(word in k for k in pairs), "secrets stay in <install>/secrets"
+
+
+def test_production_env_example_appends_onto_the_pilot_settings(tmp_path):
+    """Runbook C3 appends the file to pilot.env, which lib.sh loads with bash
+    under `set -euo pipefail`: the later lines win, the Tailscale address set
+    earlier stays in CORS_ORIGINS, and $HOME expands."""
+    env_file = tmp_path / "pilot.env"
+    example = (PILOT / "production.env.example").read_text()
+    script = 'set -euo pipefail; set -a; . "$1"; set +a; printf "%s|%s|%s|%s" "$CORS_ORIGINS" "$PLATFORM_PUBLIC_URL" "$BACKUP_OFFSITE_DIR" "$SIGNUP_ENABLED"'
+    run = lambda: subprocess.run(["bash", "-c", script, "x", str(env_file)], capture_output=True, text=True,
+                                 env={"PATH": "/usr/bin:/bin", "HOME": "/home/owner"})
+    env_file.write_text("SIGNUP_ENABLED='true'\nCORS_ORIGINS='https://mac.example.ts.net:10003'" + example)
+    done = run()
+    assert done.returncode == 0, done.stderr
+    cors, public, offsite, signup = done.stdout.split("|")
+    assert cors == "https://app.kloudc.com,https://mac.example.ts.net:10003"
+    assert public == "https://app.kloudc.com" and signup == "false"
+    assert offsite == "/home/owner/Library/Mobile Documents/com~apple~CloudDocs/KloudC RetailOps backups"
+    env_file.write_text("SIGNUP_ENABLED='false'\n" + example)  # no earlier CORS_ORIGINS: no stray comma
+    done = run()
+    assert done.returncode == 0, done.stderr
+    assert done.stdout.split("|")[0] == "https://app.kloudc.com"
 
 
 def test_nightly_demo_reset_is_a_no_op_without_a_demo_store():

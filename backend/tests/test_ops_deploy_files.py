@@ -139,3 +139,46 @@ def test_runbook_names_the_one_sudo_command():
     for topic in ("Tailscale", "app.kloudc.com", "Cloudflare", "pilot-mode", "import-sqlite", "load-pack", "parity",
                   "/api/ready", "Restore"):
         assert topic in runbook, topic
+
+
+def test_retailops_sh_runs_a_command_with_the_install_settings(tmp_path):
+    """The runbook's one-line commands: pilot.env + the secrets file are
+    loaded, the scheduler is off, it runs in the backend folder, and only the
+    platform / ops command groups are allowed."""
+    root = tmp_path / "install"
+    (root / "config").mkdir(parents=True)
+    (root / "secrets").mkdir()
+    (root / "config" / "pilot.env").write_text("PLATFORM_DOMAIN='example.test'\nFROM_CONFIG='old'\nFROM_CONFIG='new'\n")
+    (root / "secrets" / "retailops.env").write_text("FROM_SECRETS='yes'\n")
+    venv = root / "app" / "backend" / ".venv" / "bin"
+    venv.mkdir(parents=True)
+    fake = venv / "python"
+    fake.write_text('#!/bin/bash\necho "$PWD|$SCHEDULER_ENABLED|$PLATFORM_DOMAIN|$FROM_CONFIG|$FROM_SECRETS|$PILOT_ROOT|$*"\n')
+    fake.chmod(0o755)
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "PILOT_ROOT": str(root)}
+    script = str(PILOT / "retailops.sh")
+    done = subprocess.run(["bash", script, "platform", "pilot-mode", "DEMO", "off"], env=env,
+                          capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    cwd, sched, domain, conf, secret, pilot_root, args = done.stdout.strip().split("|")
+    assert pilot_root == str(root), "the DEMO password file and other <install> paths follow the install"
+    assert pathlib.Path(cwd).resolve() == (root / "app" / "backend").resolve()
+    assert (sched, domain, conf, secret) == ("false", "example.test", "new", "yes")
+    assert args == "-m app.platform pilot-mode DEMO off"
+    bad = subprocess.run(["bash", script, "os", "system"], env=env, capture_output=True, text=True)
+    assert bad.returncode != 0 and "usage" in bad.stderr
+
+
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("plutil"), reason="macOS only (plutil, dscl)")
+def test_install_demo_job_touches_only_the_demo_refresh(tmp_path):
+    """--demo-job (go-live runbook, DEMO step): only the nightly DEMO refresh
+    job - no prepare, no database or server restart."""
+    out = tmp_path / "plists"
+    done = subprocess.run(["bash", str(PILOT / "install.sh"), "--demo-job", "--dry-run", str(out)],
+                          capture_output=True, text=True,
+                          env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "PILOT_ROOT": str(tmp_path / "root")})
+    assert done.returncode == 0, done.stderr
+    assert sorted(p.name for p in out.iterdir()) == [f"{LABEL_PREFIX}.demo.plist"]
+    install = (PILOT / "install.sh").read_text()
+    block = install.split('if [ "$WORKER" = demo ]; then\n  start_job demo')[1].split("exit 0")[0]
+    assert "prepare" not in block and "postgres" not in block and "server" not in block

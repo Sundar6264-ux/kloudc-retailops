@@ -1,6 +1,6 @@
 #!/bin/bash
 # KloudC RetailOps - the public address app.kloudc.com through its OWN
-# Cloudflare Tunnel 'kloudc-retailops' (docs/GO_LIVE_RUNBOOK.md, step 3).
+# Cloudflare Tunnel 'kloudc-retailops' (docs/GO_LIVE_RUNBOOK.md, step C2).
 #
 #   1. In the Cloudflare dashboard (Zero Trust > Networks > Tunnels): create
 #      tunnel "kloudc-retailops", public hostname app.kloudc.com ->

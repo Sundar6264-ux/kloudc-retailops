@@ -24,6 +24,9 @@
 #                    (needs JOB_QUEUE_MODE=queue in config/pilot.env);
 #                    with --dry-run, also render its plist
 #   --remove-worker  stop and remove only the worker
+#   --demo-job       install + start only the nightly DEMO refresh job (an
+#                    install made before the DEMO store existed); with
+#                    --dry-run, render only its plist
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -36,6 +39,7 @@ while [ $# -gt 0 ]; do
     --uninstall) UNINSTALL=1 ;;
     --worker) WORKER=install ;;
     --remove-worker) WORKER=remove ;;
+    --demo-job) WORKER=demo ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
   shift
@@ -73,6 +77,11 @@ if [ -n "$DRY_RUN" ]; then
     echo "rendered the worker plist into $DRY_RUN (nothing installed)"
     exit 0
   fi
+  if [ "$WORKER" = demo ]; then
+    render demo "$DRY_RUN/$PILOT_LABEL_PREFIX.demo.plist"
+    echo "rendered the DEMO refresh plist into $DRY_RUN (nothing installed)"
+    exit 0
+  fi
   for j in "${JOBS[@]}"; do render "$j" "$DRY_RUN/$PILOT_LABEL_PREFIX.$j.plist"; done
   echo "rendered ${#JOBS[@]} plists into $DRY_RUN (nothing installed)"
   exit 0
@@ -100,6 +109,12 @@ if [ "$WORKER" = install ]; then
     || { echo "JOB_QUEUE_MODE=queue is not set in $PILOT_ROOT/config/pilot.env: no worker needed (jobs run in the server)." >&2; exit 1; }
   start_job worker
   echo "Worker installed. Check it in the master console: Platform settings > System > Workers."
+  exit 0
+fi
+
+if [ "$WORKER" = demo ]; then
+  start_job demo
+  echo "Nightly DEMO refresh installed (runs at $PILOT_DEMO_HOUR:$PILOT_DEMO_MINUTE; does nothing until the DEMO store exists)."
   exit 0
 fi
 
