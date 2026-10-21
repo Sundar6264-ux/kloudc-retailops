@@ -117,8 +117,10 @@ def test_clover_placeholder_and_delete(store_admin):
     # /clover/authorize-url - off until the owner sets the Clover app keys.
     r = store_admin.post("/api/settings/integrations/clover/connect")
     assert r.status_code == 409 and r.json()["error"] == "clover_app_not_configured"
-    # Clover is saved through /clover/manual or the OAuth callback, never the generic PUT.
-    assert store_admin.put("/api/settings/integrations/clover", json={}).status_code == 501
+    # The generic PUT is the API-token save (pre-production G10): an empty
+    # body is refused with the same plain sentence as /clover/manual.
+    r = store_admin.put("/api/settings/integrations/clover", json={})
+    assert r.status_code == 400 and r.json()["field"] == "merchant_id"
     store_admin.put("/api/settings/integrations/ai", json={"secrets": SECRETS["ai"]})
     assert store_admin.delete("/api/settings/integrations/ai").json() == {"kind": "ai", "deleted": True}
     assert store_admin.get("/api/settings/integrations/ai").json()["configured"] is False

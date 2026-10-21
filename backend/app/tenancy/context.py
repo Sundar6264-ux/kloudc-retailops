@@ -29,6 +29,9 @@ _scope_var: contextvars.ContextVar[str] = contextvars.ContextVar("retailops_scop
 # The status of a store a request's token points at, when that store is not
 # active (the auth dependency answers 403 store_suspended / store_not_ready).
 _block_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("retailops_store_block", default=None)
+# ...and that store's code (the in-session 403 store_suspended carries the
+# master's pause message, pre-production gap G3).
+_block_code_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("retailops_store_block_code", default=None)
 
 
 def current_store() -> Optional[StoreRef]:
@@ -62,6 +65,11 @@ def current_scope() -> str:
 def current_store_block() -> Optional[str]:
     """Status of the inactive store this request's token points at, or None."""
     return _block_var.get()
+
+
+def current_store_block_code() -> Optional[str]:
+    """Code of the inactive store this request's token points at, or None."""
+    return _block_code_var.get() if _block_var.get() else None
 
 
 def _check_servable(ref: StoreRef, allow_inactive: bool, allow_remote: bool) -> None:
@@ -111,14 +119,17 @@ def platform_scope() -> Iterator[None]:
 
 
 @contextmanager
-def blocked_store(status: str) -> Iterator[None]:
+def blocked_store(status: str, code: Optional[str] = None) -> Iterator[None]:
     """The request's token points at a store that is not active: no store
-    context, the status kept for the auth dependency (contract 4.3)."""
+    context, the status (and the store's code) kept for the auth dependency
+    (contract 4.3)."""
     tok_store = _store_var.set(None)
     tok_block = _block_var.set(status)
+    tok_code = _block_code_var.set(code)
     try:
         yield
     finally:
+        _block_code_var.reset(tok_code)
         _block_var.reset(tok_block)
         _store_var.reset(tok_store)
 

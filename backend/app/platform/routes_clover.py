@@ -125,28 +125,110 @@ def clover_status(user: User = Depends(require_admin)):
     return _status_dict(code)
 
 
-def authorize_link(user: User) -> dict:
+def authorize_link(user: User, return_to: str = "web") -> dict:
     r = _routes()
     code = r._store_admin_context(user)
     r._refuse_demo(user, code)
     auth = _auth_mod()
+    if return_to not in auth.RETURN_TARGETS:
+        raise PlatformError(400, "invalid", "Unknown return target.", field="return_to")
     if not auth.oauth_enabled():
         raise PlatformError(409, "clover_app_not_configured", NOT_CONFIGURED)
     r._rate("clover_authorize", code, per_minute=10)
-    state = auth.make_state(code, user.username)
-    return {"url": auth.authorize_url(state), "expires_in": auth.STATE_TTL_SECONDS}
+    state = auth.make_state(code, user.username, return_to=return_to)
+    return {"url": auth.authorize_url(state), "expires_in": auth.STATE_TTL_SECONDS, "return_to": return_to}
 
 
 @router.get("/authorize-url")
-def clover_authorize_url(user: User = Depends(require_admin)):
-    return authorize_link(user)
+def clover_authorize_url(
+    return_to: str = Query(default="web", max_length=8),
+    user: User = Depends(require_admin),
+):
+    """``?return_to=app`` (additive, G4): after Clover, the browser lands on
+    the hand-back page (``/app-return``) that opens the app, instead of the
+    website. Only "web" (default) and "app" are accepted."""
+    return authorize_link(user, return_to=(return_to or "web").strip().lower())
 
 
-def _back(result: str, reason: Optional[str] = None) -> RedirectResponse:
-    url = f"{RETURN_PATH}?clover={result}"
+# Results and reasons the callback reports (the hand-back page shows only these).
+RESULTS = ("connected", "error")
+REASONS = ("expired", "invalid", "denied", "not_configured", "refused")
+APP_RETURN_PATH = "/api/settings/integrations/clover/app-return"
+DEFAULT_APP_SCHEME = "kloudcretailops"
+_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]{2,31}$")
+
+
+def _back(result: str, reason: Optional[str] = None, return_to: Optional[str] = None) -> RedirectResponse:
+    base = APP_RETURN_PATH if return_to == "app" else RETURN_PATH
+    url = f"{base}?clover={result}"
     if reason:
         url += f"&reason={reason}"
     return RedirectResponse(url, status_code=303)
+
+
+def app_url_scheme() -> str:
+    """The app's URL scheme for the hand-back link (``APP_URL_SCHEME``,
+    default "kloudcretailops"); a malformed value falls back to the default."""
+    from app.platform.config import pget
+
+    raw = str(pget("app_url_scheme") or "").strip().lower()
+    return raw if _SCHEME_RE.match(raw) else DEFAULT_APP_SCHEME
+
+
+_APP_RETURN_STYLE = (
+    "body{margin:0;font:17px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
+    "background:#f8fafc;color:#0f172a}"
+    "main{max-width:28rem;margin:0 auto;padding:3rem 1rem}"
+    "h1{font-size:1.4rem;margin:0 0 1rem}"
+    "a.btn{display:block;text-align:center;padding:.85rem;border-radius:.5rem;background:#004bad;"
+    "color:#fff;text-decoration:none;font-weight:600;margin-top:1.5rem}"
+    "@media (prefers-color-scheme:dark){body{background:#0f172a;color:#e2e8f0}}"
+)
+
+
+def _app_return_csp() -> str:
+    import base64
+    import hashlib
+
+    digest = base64.b64encode(hashlib.sha256(_APP_RETURN_STYLE.encode("utf-8")).digest()).decode("ascii")
+    return (f"default-src 'none'; style-src 'sha256-{digest}'; base-uri 'none'; form-action 'none'; "
+            "frame-ancestors 'none'")
+
+
+@router.get("/app-return", include_in_schema=False)
+def clover_app_return(
+    clover: str = Query(default="", max_length=16),
+    reason: str = Query(default="", max_length=32),
+):
+    """The hand-back page after Connect with Clover started in the app
+    (G4). No session, no store data: it only repeats an allowlisted result,
+    then opens ``<APP_URL_SCHEME>://clover?clover=...`` (automatically, and
+    with a button). Anything else in the query is ignored."""
+    from fastapi.responses import HTMLResponse
+
+    result = clover if clover in RESULTS else "error"
+    why = reason if (result == "error" and reason in REASONS) else ""
+    target = f"{app_url_scheme()}://clover?clover={result}" + (f"&reason={why}" if why else "")
+    if result == "connected":
+        title = "Clover is connected"
+        line = "Going back to the app. If it doesn't open, tap the button below."
+    else:
+        title = "Clover was not connected"
+        line = "Go back to the app and try again. If it keeps failing, use an API token instead."
+    body = (
+        "<!doctype html>\n"
+        '<html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<meta name="robots" content="noindex">'
+        f'<meta http-equiv="refresh" content="0;url={target}">'
+        f"<title>{title}</title><style>{_APP_RETURN_STYLE}</style></head>"
+        f"<body><main><h1>{title}</h1><p>{line}</p>"
+        f'<a class="btn" href="{target}">Open the app</a>'
+        "<p>You can close this page.</p></main></body></html>\n"
+    )
+    headers = {"Cache-Control": "no-store", "Content-Security-Policy": _app_return_csp(),
+               "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff"}
+    return HTMLResponse(body, headers=headers)
 
 
 @router.get("/callback")
@@ -163,20 +245,21 @@ def clover_callback(
         body = auth.read_state(state)
     except auth.StateError as exc:
         return _back("error", "expired" if str(exc) == "expired" else "invalid")
+    ret = body.get("r") if body.get("r") in auth.RETURN_TARGETS else None
     store_code = str(body["c"])
     actor = f"store:{store_code}:{body.get('u') or 'admin'}"
     if not code or not MERCHANT_ID_RE.match(merchant_id or ""):
         audit("clover.connect_failed", actor_type="store_user", actor_name=actor, store_code=store_code,
               target="clover", details={"reason": "missing_code"}, client_ip=r._ip(request))
-        return _back("error", "denied")
+        return _back("error", "denied", ret)
     try:
         access, refresh, expires = auth.exchange_code(code)
     except auth.OAuthNotConfigured:
-        return _back("error", "not_configured")
+        return _back("error", "not_configured", ret)
     except Exception as exc:  # noqa: BLE001 - CloverError / network: shown as "refused"
         audit("clover.connect_failed", actor_type="store_user", actor_name=actor, store_code=store_code,
               target="clover", details={"reason": type(exc).__name__}, client_ip=r._ip(request))
-        return _back("error", "refused")
+        return _back("error", "refused", ret)
     try:
         creds.save_credential(
             store_code,
@@ -188,12 +271,12 @@ def clover_callback(
             client_ip=r._ip(request),
         )
     except (creds.CredentialError, creds.StoreNotFound):
-        return _back("error", "invalid")
+        return _back("error", "invalid", ret)
     _forget_connector(store_code)
     audit("clover.connected", actor_type="store_user", actor_name=actor, store_code=store_code, target="clover",
           details={"mode": "oauth", "merchant_id": merchant_id.upper(), "environment": auth.environment()},
           client_ip=r._ip(request))
-    return _back("connected")
+    return _back("connected", None, ret)
 
 
 class ManualBody(BaseModel):

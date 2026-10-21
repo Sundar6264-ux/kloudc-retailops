@@ -75,7 +75,11 @@ def test_inactive_store_tokens_are_refused_with_403(multi):
     r = _client(a["alice"][1]).get("/api/auth/me")
     assert r.status_code == 403 and r.json()["error"] == "store_not_ready"
     update_test_store("ALPHA", status="archived")
-    assert _client(a["alice"][1]).get("/api/auth/me").status_code == 401
+    # Pre-production G2: an archived store says so (403 store_archived), so
+    # the app can tell "gone" from a normal sign-out.
+    r = _client(a["alice"][1]).get("/api/auth/me")
+    assert r.status_code == 403 and r.json()["error"] == "store_archived"
+    assert r.json()["message"] == "This store is no longer available. Contact the store owner."
 
 
 def test_public_store_route_takes_store_query(multi):

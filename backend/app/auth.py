@@ -84,6 +84,57 @@ def lookup_session(db: Session, token: Optional[str]) -> Optional[UserSession]:
     return session
 
 
+# Sessions ended by a password change are kept with this expiry instead of
+# deleted, so the next request with one can be told why (401
+# "password_changed", pre-production gap G1). Already in the past, so
+# lookup_session refuses them like any expired session.
+REVOKED_BY_PASSWORD_AT = dt.datetime(2000, 1, 1, tzinfo=dt.timezone.utc)
+
+SESSION_EXPIRED = "Session expired or invalid"
+PASSWORD_CHANGED = "Your password was changed, so you were signed out. Sign in with the new password."
+
+
+def session_error(code: str = "session_expired") -> HTTPException:
+    """The 401 for a session that no longer works: the old ``detail`` plus
+    ``{"error", "message"}`` - "password_changed" (ended by a password
+    change) or "session_expired" (expired, signed out or unknown)."""
+    if code == "password_changed":
+        exc = HTTPException(status_code=401, detail=PASSWORD_CHANGED)
+    else:
+        exc = HTTPException(status_code=401, detail=SESSION_EXPIRED)
+        code = "session_expired"
+    exc.error_code = code  # type: ignore[attr-defined]
+    return exc
+
+
+def ended_session_reason(db: Session, token: Optional[str]) -> str:
+    """Why `token` no longer works: "password_changed" when its row was
+    ended by a password change, else "session_expired"."""
+    if not token:
+        return "session_expired"
+    try:
+        row = db.get(UserSession, token_hash(token))
+    except Exception:  # noqa: BLE001 - never turn a 401 into a 500
+        return "session_expired"
+    if row is not None and row.expires_at is not None:
+        expires = row.expires_at if row.expires_at.tzinfo else row.expires_at.replace(tzinfo=dt.timezone.utc)
+        if expires <= REVOKED_BY_PASSWORD_AT:
+            return "password_changed"
+    return "session_expired"
+
+
+def end_sessions_for_password_change(db: Session, user_id: int, keep_token: Optional[str] = None) -> None:
+    """Ends every session of `user_id` (except `keep_token`'s) because its
+    password changed. The rows are kept, marked, so those devices hear
+    "password_changed"; nothing commits here."""
+    from sqlalchemy import update
+
+    stmt = update(UserSession).where(UserSession.user_id == user_id)
+    if keep_token:
+        stmt = stmt.where(UserSession.token != token_hash(keep_token))
+    db.execute(stmt.values(expires_at=REVOKED_BY_PASSWORD_AT))
+
+
 def delete_session(db: Session, token: str) -> None:
     db.execute(delete(UserSession).where(UserSession.token == token_hash(token)))
     db.commit()
@@ -143,11 +194,11 @@ def get_current_user(
 
     session = lookup_session(db, token)
     if session is None:
-        raise HTTPException(status_code=401, detail="Session expired or invalid")
+        raise session_error(ended_session_reason(db, token))
 
     user = db.get(User, session.user_id)
     if user is None:
-        raise HTTPException(status_code=401, detail="Session expired or invalid")
+        raise session_error()
 
     usage.touch_activity()  # in memory; never raises (website-ready B1)
     return user

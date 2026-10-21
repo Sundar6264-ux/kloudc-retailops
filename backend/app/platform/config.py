@@ -49,6 +49,12 @@ DEFAULTS: Dict[str, Any] = {
     "directory_client_ip_header": "",
     "directory_rate_per_minute": 10,
     "directory_rate_per_hour": 100,
+    # Store lookup (/api/public/stores/{code}) of a Store ID this address
+    # already asked for: many phones on one store Wi-Fi (or behind the
+    # tunnel) share an address. directory_rate_* above then limit how many
+    # different Store IDs one address may try (pre-production gap G13).
+    "directory_store_rate_per_minute": 60,
+    "directory_store_rate_per_hour": 1000,
     "directory_extra_api_hosts": "",
     "uploads_root": "uploads",
     "session_lifetime_days": 14,
@@ -88,6 +94,9 @@ DEFAULTS: Dict[str, Any] = {
     # the webhook URL is verified. Never returned by an API.
     "clover_webhooks_enabled": False,
     "clover_webhook_auth": "",
+    # Pre-production G4: the app's URL scheme for the Connect with Clover
+    # hand-back page (/api/settings/integrations/clover/app-return).
+    "app_url_scheme": "kloudcretailops",
 }
 
 _TRUE = {"1", "true", "yes", "on"}

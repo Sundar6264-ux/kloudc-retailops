@@ -32,6 +32,17 @@ from app.demo import is_demo_user
 from app.models import InvoiceSubmission, User
 
 DEMO_READ_ONLY = "The demo account can look around but can't change the store's real data."
+DEMO_READ_ONLY_CODE = "demo_read_only"
+
+
+def demo_read_only_error(detail: str = DEMO_READ_ONLY) -> HTTPException:
+    """The 403 every demo refusal answers: the old ``detail`` plus
+    ``{"error": "demo_read_only", "message"}`` (app/main.py renders it), so
+    a client can tell a demo refusal from a missing permission without
+    matching words (pre-production gaps G15 / G21)."""
+    exc = HTTPException(status_code=403, detail=detail)
+    exc.error_code = DEMO_READ_ONLY_CODE  # type: ignore[attr-defined]
+    return exc
 
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
@@ -283,4 +294,4 @@ async def demo_write_guard(request: Request, db: Optional[Session] = Depends(get
             body = None
         if await run_in_threadpool(check, request, db, user, body):
             return
-    raise HTTPException(status_code=403, detail=DEMO_READ_ONLY)
+    raise demo_read_only_error()

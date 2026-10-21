@@ -664,7 +664,7 @@ def test_demo_is_refused_on_the_new_write_routes(db, admin_client):
     ):
         kw = {"json": body} if body is not None else {}
         r = getattr(demo_client, method)(path, **kw)
-        assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY}), path
+        assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}), path
     # Reads it may use: its own task (and the summary is refused politely).
     assert demo_client.get(f"/api/team/updates?since=0&include=tasks").status_code == 200
     assert demo_client.get("/api/team/task-summary").status_code == 403

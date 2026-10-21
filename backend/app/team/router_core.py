@@ -82,7 +82,9 @@ async def updates(
         out = await run_in_threadpool(_updates_fresh, user_id, since, with_tasks)
         remaining = deadline - loop.time()
         if out is None:
-            raise HTTPException(status_code=401, detail="Session expired or invalid")
+            from app.auth import session_error
+
+            raise session_error()
         if out.get("resync_required") or out.get("changes") or remaining <= 0:
             return out
         await changes_svc.wait_for_change(version, remaining)

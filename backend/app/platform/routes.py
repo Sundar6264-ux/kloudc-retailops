@@ -459,8 +459,7 @@ def store_lookup(code: str, request: Request) -> Response:
     from app.directory.stores import error_body, etag_for
     from app.platform.lookup import lookup_body
 
-    wait = throttle.check_rate("lookup", _ip(request), int(pget("directory_rate_per_minute") or 10),
-                               int(pget("directory_rate_per_hour") or 100))
+    wait = throttle.check_lookup_rate(_ip(request), code)
     if wait is not None:
         return _json(429, error_body("rate_limited", retry_after=wait), DIR_NO_STORE, **{"Retry-After": str(wait)})
     status, body = lookup_body(code)
@@ -494,7 +493,11 @@ def _refuse_demo(user: User, code: str) -> None:
     from app.store.settings_view import demo_mode
 
     if code == "DEMO" or is_demo_user(user) or demo_mode():
-        raise PlatformError(403, "demo_read_only")
+        # "detail" too: the same three keys as the app-wide demo guard's 403
+        # (app/demo_guard.demo_read_only_error), so a client reads one shape.
+        from app.platform.errors import MESSAGES
+
+        raise PlatformError(403, "demo_read_only", detail=MESSAGES["demo_read_only"])
 
 
 def _store_actor(code: str, user: User) -> str:
@@ -531,7 +534,18 @@ def put_integration(kind: str, body: IntegrationBody, request: Request, user: Us
     _refuse_demo(user, code)
     kind = _kind(kind)
     if kind == "clover":
-        raise PlatformError(501, "not_available")
+        # The generic save, routed to the Clover API-token save (pre-production
+        # G10): public {merchant_id, region}, secrets {api_token} (or
+        # access_token). Answers Clover's status, like POST .../clover/manual.
+        from app.platform.routes_clover import ManualBody, clover_manual
+
+        token = body.secrets.get("api_token") or body.secrets.get("access_token") or ""
+        manual = ManualBody(
+            merchant_id=str(body.public.get("merchant_id") or "")[:64],
+            api_token=str(token)[:4096],
+            region=str(body.public.get("region") or "us")[:16],
+        )
+        return clover_manual(manual, request, user)
     _rate("integrations_write", code, per_minute=30)
     try:
         view = creds.save_credential(code, kind, body.public, body.secrets, clear=body.clear,

@@ -17,7 +17,7 @@ from starlette.concurrency import run_in_threadpool
 from app.auth import get_current_user
 from app.db import get_db
 from app.demo import is_demo_user
-from app.demo_guard import DEMO_READ_ONLY
+from app.demo_guard import demo_read_only_error
 from app.features import user_has_feature
 from app.models import User
 from app.services import flyer_sender
@@ -26,7 +26,7 @@ from app.services import flyers as svc
 
 def require_flyers(user: User = Depends(get_current_user)) -> User:
     if is_demo_user(user):
-        raise HTTPException(status_code=403, detail=DEMO_READ_ONLY)
+        raise demo_read_only_error()
     if not user_has_feature(user, svc.FEATURE):
         raise HTTPException(status_code=403, detail="You don't have access to this feature")
     return user

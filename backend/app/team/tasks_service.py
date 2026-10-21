@@ -1114,9 +1114,9 @@ def set_item(
         raise HTTPException(status_code=403, detail="Only whoever created this task (or an admin) can change its steps")
     if text is not None and is_demo_user(user):
         # Renaming is new (Oct 15) and the demo stays view-only for it.
-        from app.demo_guard import DEMO_READ_ONLY
+        from app.demo_guard import demo_read_only_error
 
-        raise HTTPException(status_code=403, detail=DEMO_READ_ONLY)
+        raise demo_read_only_error()
     _require_open(task)
     item = _item_of(db, task, item_id)
     new_text = _item_text(text) if text is not None else None

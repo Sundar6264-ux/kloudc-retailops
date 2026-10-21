@@ -62,7 +62,24 @@ def branding_payload(request_base: Optional[str] = None, s=None) -> dict:
         },
         "store_url": {"ios": sv.app_store_url(s), "android": sv.play_store_url(s)},
         "demo": sv.demo_mode(s),
+        # Pre-production (additive, G9; after the M2 keys): the POS id
+        # ("toast" / "clover" / "csv") and the word to show before sign-in
+        # ("your POS" for a CSV-only store, never "CSV upload").
+        "pos_provider": _pos_provider(),
+        "pos_word": _pos_word(),
     }
+
+
+def _pos_provider() -> Optional[str]:
+    from app.help_content import store_pos
+
+    return store_pos()
+
+
+def _pos_word() -> str:
+    from app.help_content import pos_word
+
+    return pos_word()
 
 
 def compact_json(payload: dict) -> bytes:

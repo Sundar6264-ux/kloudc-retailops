@@ -191,7 +191,9 @@ def task_summary(user: User = Depends(tasks_user), db: Session = Depends(get_db)
     from app.demo import is_demo_user
 
     if is_demo_user(user):
-        raise HTTPException(status_code=403, detail="Not available for the demo account.")
+        from app.demo_guard import demo_read_only_error
+
+        raise demo_read_only_error("Not available for the demo account.")
     return svc.team_today(db, user)
 
 
@@ -209,7 +211,9 @@ def task_stats(days: int = Query(30), user: User = Depends(tasks_admin), db: Ses
     from app.demo import is_demo_user
 
     if is_demo_user(user):
-        raise HTTPException(status_code=403, detail="Not available for the demo account.")
+        from app.demo_guard import demo_read_only_error
+
+        raise demo_read_only_error("Not available for the demo account.")
     return svc.task_stats(db, days)
 
 

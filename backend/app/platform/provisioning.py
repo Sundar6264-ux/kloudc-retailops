@@ -128,7 +128,7 @@ def issue_setup_link(db: Session, store: Store, username: str, *, actor: str) ->
 
 def redeem_setup_link(code: str, token: str, password: str, client_ip: Optional[str] = None) -> str:
     """Set the owner's password from a setup link. Returns the username."""
-    from app.auth import delete_all_sessions_for_user, hash_password
+    from app.auth import end_sessions_for_password_change, hash_password
     from app.models import User
 
     if not isinstance(password, str) or len(password) < 10 or len(password) > 256:
@@ -152,8 +152,8 @@ def redeem_setup_link(code: str, token: str, password: str, client_ip: Optional[
             if user is None:
                 raise PlatformError(404, "not_found", "This link is not valid any more. Ask for a new one.")
             user.password_hash = hash_password(password)
+            end_sessions_for_password_change(sdb, user.id)  # their devices hear "password_changed"
             sdb.commit()
-            delete_all_sessions_for_user(sdb, user.id)
         row.used_at = utcnow()
         audit("store.owner_password_set", actor_type="store_user", actor_name=f"store:{store.code}:{username}",
               store_code=store.code, target=username, client_ip=client_ip, db=pdb)

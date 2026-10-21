@@ -42,6 +42,13 @@ class SlidingWindowLimiter:
         # limit leaves the window.
         return recent[len(recent) - limit] + window - now
 
+    def recent(self, key: str) -> int:
+        """How many counted requests `key` has inside the hour (read only)."""
+        now = self._clock()
+        with self._lock:
+            hits = self._hits.get(key)
+            return sum(1 for t in hits if t > now - HOUR) if hits else 0
+
     def check(self, key: str) -> Optional[int]:
         """None = allowed (and counted); otherwise the whole seconds to wait."""
         if self.per_minute <= 0 and self.per_hour <= 0:

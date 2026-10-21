@@ -524,6 +524,42 @@ def set_item_vendors(db: Session, item_id: str, vendors: Iterable[Mapping[str, A
     return load_vendor_table(db, [item_id]).get(item_id, []), True
 
 
+# The columns the editor shows (item_view): a page reads only these, not
+# whole snapshot rows (pre-production gap G14).
+_EDITOR_COLUMNS = (
+    InventorySnapshot.item_id,
+    InventorySnapshot.name,
+    InventorySnapshot.barcode,
+    InventorySnapshot.category_group,
+    InventorySnapshot.category,
+)
+
+
+def catalog_rows(db: Session) -> Dict[str, Any]:
+    """item_id -> (item_id, name, barcode, category_group, category) on the
+    newest snapshot date: catalog_items without loading whole rows."""
+    day = _latest_date(db)
+    if day is None:
+        return {}
+    out: Dict[str, Any] = {}
+    for r in db.execute(select(*_EDITOR_COLUMNS).where(InventorySnapshot.snapshot_date == day)):
+        out.setdefault(r.item_id, r)
+    return out
+
+
+def catalog_item(db: Session, item_id: str) -> Optional[InventorySnapshot]:
+    """One item's row on the newest snapshot date, or None."""
+    day = _latest_date(db)
+    if day is None:
+        return None
+    return db.execute(
+        select(InventorySnapshot)
+        .where(InventorySnapshot.snapshot_date == day, InventorySnapshot.item_id == item_id)
+        .order_by(InventorySnapshot.id)
+        .limit(1)
+    ).scalar_one_or_none()
+
+
 def vendor_view(rows: Iterable[ItemVendor]) -> List[dict]:
     return [{"name": r.vendor_name, "item_code": r.vendor_item_code, "rank": r.rank, "source": r.source} for r in rows]
 
@@ -541,8 +577,10 @@ def item_view(row: InventorySnapshot, vendors: Iterable[ItemVendor]) -> dict:
 def list_editor_items(db: Session, q: str = "", show: str = "all", limit: int = 50, offset: int = 0) -> dict:
     """The editor's page: items (newest snapshot) matching `q` (name, id,
     barcode or vendor), `show` = all | missing (no vendor) | with."""
-    items = catalog_items(db)
-    table = load_vendor_table(db, list(items))
+    items = catalog_rows(db)
+    # One query for every vendor row (no IN batches over the whole catalog);
+    # rows of items no longer in the catalog are simply not looked at.
+    table = load_vendor_table(db) if items else {}
     needle = (q or "").strip().lower()
     out = []
     missing = 0
@@ -562,7 +600,7 @@ def list_editor_items(db: Session, q: str = "", show: str = "all", limit: int = 
                 continue
         out.append((row, vendors))
     out.sort(key=lambda p: ((p[0].name or "").lower(), p[0].item_id))
-    names = sorted({r.vendor_name for rows in table.values() for r in rows}, key=str.lower)
+    names = sorted({r.vendor_name for item_id, rows in table.items() if item_id in items for r in rows}, key=str.lower)
     page = out[max(0, offset): max(0, offset) + max(1, min(limit, 200))]
     return {
         "items": [item_view(r, v) for r, v in page],

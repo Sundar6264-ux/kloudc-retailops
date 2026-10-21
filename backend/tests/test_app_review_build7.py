@@ -215,7 +215,8 @@ def test_demo_resend_of_a_real_invoice_changes_nothing_and_sends_nothing(db, dem
     r = demo_client.post(f"/api/invoices/{real['id']}/resend", json={"channels": ["whatsapp"]})
     # Demo read-only guard (app/demo_guard.py): someone else's invoice is refused outright.
     assert r.status_code == 403
-    assert r.json() == {"detail": "The demo account can look around but can't change the store's real data."}
+    demo_line = "The demo account can look around but can't change the store's real data."
+    assert r.json() == {"detail": demo_line, "error": "demo_read_only", "message": demo_line}
     assert demo_client.get(f"/api/invoices/{real['id']}").json() == before
     assert no_real_sends == []
 

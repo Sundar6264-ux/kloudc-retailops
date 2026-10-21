@@ -109,7 +109,13 @@ def test_clover_and_csv_fallback_entries(monkeypatch):
     fake = types.SimpleNamespace(pos_provider="Clover")
     monkeypatch.setattr(gating, "get_settings", lambda: fake)
     assert gating.pos_name() == "Clover" and gating.store_capabilities() == CLOVER_CAPABILITIES
+    # Not connected yet: its POS features are not advertised (pre-production G20).
+    assert gating.features_for_store(["overview", "open_orders", "sales_insights"]) == ["overview"]
+    assert gating.capability_values() == [] and gating.pos_connected() is False
+    conn = gating._connector("clover")
+    monkeypatch.setattr(conn, "is_configured", lambda: True)
     assert gating.features_for_store(["overview", "open_orders", "sales_insights"]) == ["overview", "open_orders"]
+    assert "open_orders" in gating.capability_values() and gating.pos_connected() is True
     fake.pos_provider = "csv"
     assert gating.pos_name() == "CSV upload" and gating.store_capabilities() == CSV_CAPABILITIES
     assert gating.capability_values() == ["csv_catalog_import"]
@@ -132,7 +138,8 @@ def test_me_adds_pos_fields_and_keeps_allowed_features(db, admin_client):
     staff = make_user(db, "clerk", features=["open_orders", "sales_insights", "overview"])
     me = client_for(db, staff).get("/api/auth/me").json()
     assert me["allowed_features"] == ["open_orders", "sales_insights", "overview"]
-    assert list(me)[-6:] == ["pos_name", "capabilities", "store_code", "store_features", "pos_provider", "store_timezone"]
+    assert list(me)[-8:] == ["pos_name", "capabilities", "store_code", "store_features", "pos_provider",
+                             "store_timezone", "pos_word", "pos_connected"]
     assert me["pos_provider"] == "toast" and me["store_timezone"]
     assert me["pos_name"] == "Toast" and me["capabilities"] == gating.capability_values()
     admin_me = admin_client.get("/api/auth/me").json()
@@ -375,7 +382,7 @@ def test_demo_guard_treats_the_alias_like_the_old_route(db):
     own = _invoice(db, user=demo)
     for path in ("mark-ap-closed", "unmark-ap-closed", "mark-toast-closed"):
         r = demo_client.post(f"/api/invoices/{real.id}/{path}")
-        assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY}), path
+        assert (r.status_code, r.json()) == (403, {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}), path
     assert demo_client.post(f"/api/invoices/{own.id}/mark-ap-closed").status_code == 200
     db.refresh(real)
     assert real.toast_closed_at is None

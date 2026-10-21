@@ -364,7 +364,8 @@ def test_export_zip_contents_exclusions_link_and_audit(client, alpha, alpha_admi
     link = alpha_admin.post(f"/api/settings/exports/{export_id}/link")
     assert link.status_code == 200, link.text
     url = link.json()["url"]
-    assert url.startswith(f"/api/settings/exports/{export_id}/download?token=")
+    # Pre-production G8: a full address (PLATFORM_PUBLIC_URL), never a bare path.
+    assert url.startswith(f"https://app.retailops.test/api/settings/exports/{export_id}/download?token=")
     anon = client.__class__(client.app)
     got = anon.get(url)
     assert got.status_code == 200 and got.headers["content-type"] == "application/zip"
@@ -450,7 +451,7 @@ def test_one_export_at_a_time_and_a_failed_export_can_be_retried(alpha, alpha_ad
     assert export.list_exports("ALPHA")[0]["status"] == "ready"
 
     real_build = export.build_zip
-    monkeypatch.setattr(export, "build_zip", lambda code, dest: (_ for _ in ()).throw(RuntimeError("disk full")))
+    monkeypatch.setattr(export, "build_zip", lambda code, dest, **kw: (_ for _ in ()).throw(RuntimeError("disk full")))
     r = master_client.post("/api/platform/stores/ALPHA/exports")
     assert r.status_code == 202
     failed = _wait_export("ALPHA", r.json()["id"])

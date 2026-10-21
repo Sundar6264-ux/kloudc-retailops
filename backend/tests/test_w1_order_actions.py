@@ -315,6 +315,6 @@ def test_permissions(db, admin_client, anon_client, scheduled):
         demo.delete(f"{API}/placed/1"),
         demo.delete(f"{API}/skip", params={"vendor": "Chetak", "delivery_date": "2026-10-01"}),
     ):
-        assert r.status_code == 403 and r.json() == {"detail": DEMO_READ_ONLY}
+        assert r.status_code == 403 and r.json() == {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}
     assert ("POST", API) not in ALLOWLIST
     assert db.query(VendorOrderSkip).count() == 0

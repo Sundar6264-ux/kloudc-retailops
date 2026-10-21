@@ -17,17 +17,7 @@
   "address": "200 Sample St, Fresno, CA 93650",
   "phone": "(555) 010-0200",
   "pos_name": "Clover",
-  "capabilities": [
-    "orders_by_business_date",
-    "orders_incremental",
-    "open_orders",
-    "live_today_sales",
-    "catalog",
-    "stock_levels",
-    "stock_negative_counts",
-    "item_cost",
-    "employees"
-  ],
+  "capabilities": [],
   "store_features": [],
   "labels_url": null,
   "public_host": "https://retailops-test-clover.retailops.invalid",
@@ -45,5 +35,7 @@
     "ios": null,
     "android": "https://play.google.com/store/apps/details?id=com.kloudc.retailops"
   },
-  "demo": false
+  "demo": false,
+  "pos_provider": "clover",
+  "pos_word": "Clover"
 }

@@ -464,7 +464,7 @@ def test_permissions_keep_the_existing_rule_and_demo_is_blocked(db):
     # The demo login can look, never add.
     assert demo.get(API).status_code == 200
     r = demo.post(f"{API}/accept-all", json={"keys": keys})
-    assert r.status_code == 403 and r.json() == {"detail": DEMO_READ_ONLY}
+    assert r.status_code == 403 and r.json() == {"detail": DEMO_READ_ONLY, "error": "demo_read_only", "message": DEMO_READ_ONLY}
     assert ("POST", f"{API}/accept-all") not in ALLOWLIST
     assert db.query(VendorSchedule).count() == 0
     # Anyone with Vendor Calendar may accept (same as the one-at-a-time Accept).

@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from app.auth import (
     clear_session_cookie,
     create_session,
-    delete_all_sessions_for_user,
     delete_session,
+    end_sessions_for_password_change,
     extract_bearer_token,
     get_current_user,
     hash_password,
@@ -130,6 +130,14 @@ def _me_out(user: User) -> dict:
 
     out["pos_provider"] = store_pos()
     out["store_timezone"] = str(restaurant_timezone())
+    # Pre-production (additive): the POS name to show people ("Toast",
+    # "Clover", "your POS" - never "CSV upload", G9) and whether the POS is
+    # connected (G6; None for a CSV-only store, which has nothing to connect).
+    from app.help_content import pos_word
+    from app.pos.gating import pos_connected
+
+    out["pos_word"] = pos_word()
+    out["pos_connected"] = pos_connected()
     return out
 
 
@@ -279,7 +287,6 @@ def change_password(
     guess the current password at speed), and every other session of this
     account ends - this one stays (docs/SECURITY_REVIEW.md SR-04)."""
     from app.platform.throttle import check_rate
-    from app.tenancy.tokens import token_hash
 
     wait = check_rate("change_password", f"{store_code() or '-'}:{user.id}", per_minute=5)
     if wait is not None:
@@ -291,7 +298,8 @@ def change_password(
     user.password_hash = hash_password(body.new_password)
     db.add(user)
     current = session_token or extract_bearer_token(authorization) or ""
-    db.execute(delete(UserSession).where(UserSession.user_id == user.id, UserSession.token != token_hash(current)))
+    # The other devices are signed out and hear why (401 password_changed).
+    end_sessions_for_password_change(db, user.id, keep_token=current or None)
     db.commit()
     return {"status": "ok"}
 
@@ -413,10 +421,11 @@ def set_user_password(
 
     target.password_hash = hash_password(body.new_password)
     db.add(target)
-    db.commit()
     # Force re-login everywhere for that account - an old session shouldn't
-    # keep working once the password's been changed out from under it.
-    delete_all_sessions_for_user(db, user_id)
+    # keep working once the password's been changed out from under it. The
+    # rows stay, marked, so those devices hear "password_changed" (G1).
+    end_sessions_for_password_change(db, user_id)
+    db.commit()
     return {"status": "ok"}
 
 

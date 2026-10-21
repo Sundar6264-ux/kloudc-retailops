@@ -473,13 +473,17 @@ def test_clover_store_gates_until_connected(db, monkeypatch):
     user = make_user(db, "clerk", features=["open_orders", "sales_insights", "invoice_submission"])
     me = client_for(db, user).get("/api/auth/me").json()
     assert "analytics_reports" not in me["capabilities"] and "day_totals" not in me["capabilities"]
-    assert "orders_by_business_date" in me["capabilities"]
-    assert "sales_insights" not in me["allowed_features"] and "open_orders" in me["allowed_features"]
+    # Pre-production G20: not connected yet, so nothing of Clover's is advertised.
+    assert "orders_by_business_date" not in me["capabilities"] and me["pos_connected"] is False
+    assert "sales_insights" not in me["allowed_features"] and "open_orders" not in me["allowed_features"]
     # Connected (single mode: the CLOVER_* settings): the POS gates open.
     monkeypatch.setenv("CLOVER_MERCHANT_ID", "TESTMERCH0001")
     monkeypatch.setenv("CLOVER_API_TOKEN", "tok-env-5555")
     registry.reset_cache()
     assert gating.has_capability(Capability.OPEN_ORDERS, Capability.ORDERS_BY_BUSINESS_DATE)
+    me = client_for(db, user).get("/api/auth/me").json()
+    assert "orders_by_business_date" in me["capabilities"] and me["pos_connected"] is True
+    assert "open_orders" in me["allowed_features"]
     assert not gating.has_capability(Capability.DAY_TOTALS)
     registry.reset_cache()
 
