@@ -14133,6 +14133,86 @@ button.btn-secondary.sp-qty-update {
   font-size: 0.85rem;
 }
 
+/* One-tap Add on Supplier Projection, then an inline − qty + stepper on the row. */
+.sp-qty-box.sp-stepper,
+.sp-qty-box.sp-qty-add {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.sp-step-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+button.sp-step {
+  width: 2rem;
+  height: 2rem;
+  min-height: 0;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+button.sp-step:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--on-fill);
+}
+
+button.sp-step:disabled {
+  opacity: 0.4;
+}
+
+.sp-stepper .sp-qty-input {
+  width: 3.5rem;
+  text-align: center;
+}
+
+button.sp-add-btn {
+  width: auto;
+  min-height: 0;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+.po-case-label {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.link-button.po-case-switch {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  font-size: inherit;
+}
+
+.sp-need-cases {
+  font-size: 0.78rem;
+}
+
+@media (max-width: 768px) {
+  .sp-qty-box.sp-stepper,
+  .sp-qty-box.sp-qty-add {
+    align-items: flex-start;
+  }
+
+  button.sp-step {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+
 .po-line-proj {
   font-size: 0.75rem;
   display: inline-flex;

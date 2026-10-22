@@ -60,4 +60,10 @@ def test_retailops_m2_chain_order():
     # KloudC RetailOps M2 adds exactly one migration: the store identity stamp (MT8).
     scripts = _scripts()
     assert scripts.get_revision("0062").down_revision == "0061"
-    assert scripts.get_heads() == ["0062"]
+
+
+def test_case_size_chain_order():
+    # Case quantities from receiving units: 0063 follows the store identity stamp.
+    scripts = _scripts()
+    assert scripts.get_revision("0063").down_revision == "0062"
+    assert scripts.get_heads() == ["0063"]

@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import CartItem, InventorySnapshot, User
+from app.services.receiving_units import case_size_value
 from app.services.supplier_projection import _container_qty_by_name, _split_suppliers, _supplier_item_id_for
 from app.tenancy import advisory_lock, tenant_lock
 
@@ -121,6 +122,10 @@ def add_items(db: Session, supplier: str, items: list[dict], added_by_user_id: O
         by_item_id: dict = {}
         for item in items:
             item_id = item.get("item_id")
+            size = case_size_value(item.get("case_size"))
+            if size is not None and (item.get("case_of") or 1.0) <= 1:
+                # A client that sends only case_size (units per case).
+                item = {**item, "case_of": size}
             if not item.get("supplier_item_id"):
                 item = {**item, "supplier_item_id": _lookup_supplier_item_id(db, item_id, supplier)}
             existing = by_item_id.get(item_id) if item_id else None
@@ -207,6 +212,25 @@ REMOVAL_ADMIN_ONLY = "Only an admin can remove items from the cart. Use Request 
 
 def can_remove(user: User) -> bool:
     return bool(user.is_admin)
+
+
+# One tap on Supplier Projection's Add puts the item in the cart, with a
+# short Undo. Undo is a removal, which only admins may do - so the person
+# who added a line may take it back out themselves for a few minutes after
+# adding it (an undo of their own tap, not a removal of someone else's line).
+UNDO_ADD_WINDOW = dt.timedelta(minutes=3)
+
+
+def can_undo_add(row: CartItem, user: Optional[User], now: Optional[dt.datetime] = None) -> bool:
+    if user is None or row.added_by_user_id is None or row.added_by_user_id != user.id:
+        return False
+    added = row.added_at
+    if added is None:
+        return False
+    if added.tzinfo is None:
+        added = added.replace(tzinfo=dt.timezone.utc)
+    now = now or dt.datetime.now(dt.timezone.utc)
+    return dt.timedelta(0) <= now - added <= UNDO_ADD_WINDOW
 
 
 def removal_requested_out(row: CartItem) -> Optional[dict]:

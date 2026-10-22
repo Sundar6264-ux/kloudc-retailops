@@ -27,6 +27,12 @@ class SimplePOExportItem(BaseModel):
     name: str
     supplier_item_id: Optional[str] = None
     qty: float
+    # Additive: the line's units per case. Sent by the website cart; when a
+    # client leaves it out (older app builds) the PDF takes it from the
+    # vendor's matching cart line (po_send.fill_case_from_cart).
+    item_id: Optional[str] = None
+    case_of: Optional[float] = None
+    case_size: Optional[float] = None
 
 
 class SimplePOExportRequest(BaseModel):
@@ -40,6 +46,10 @@ class CartItemIn(BaseModel):
     supplier_item_id: Optional[str] = None
     qty: float
     case_of: float = 1.0
+    # Additive: same as case_of (units per case) under the PO lines' name;
+    # used only when case_of isn't sent. `qty` is always the number to
+    # order: cases when the case size is above 1, else units.
+    case_size: Optional[float] = None
 
 
 class CartAddRequest(BaseModel):
@@ -82,6 +92,22 @@ class CartItemOut(BaseModel):
     # suggested qty + basis) - only on GET /cart?projection=1, else None.
     # services/order_suggestion.py.
     projection: Optional[dict] = None
+    # Additive (case quantities). `qty` is what staff type and what the
+    # vendor gets: CASES when case_size is set (case_of > 1), else units.
+    # case_size = case_of when above 1 (else None); cases = qty for a case
+    # line (else None); qty_text = "2 cases (48 units)" / "5".
+    case_size: Optional[float] = None
+    cases: Optional[float] = None
+    qty_text: Optional[str] = None
+    # The item's case size from the inventory file's receiving units and the
+    # unit's name ("Case") - on GET /cart only. When it differs from the
+    # line's own case_of (a line added in units before), the cart offers to
+    # switch the line to cases.
+    item_case_size: Optional[float] = None
+    receiving_unit: Optional[str] = None
+    # True for a line the caller added in the last few minutes: they may
+    # take it back out (Undo) even without removal rights.
+    can_undo_add: Optional[bool] = None
 
 
 class CartRemovalRequest(BaseModel):

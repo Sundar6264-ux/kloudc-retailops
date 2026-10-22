@@ -19,6 +19,7 @@ from app.services.po_cart import (
     add_items,
     bad_cart_number,
     can_remove,
+    can_undo_add,
     clear_removal_request,
     clear_supplier,
     delete_item,
@@ -29,7 +30,8 @@ from app.services.po_cart import (
     update_item,
 )
 from app.services.po_section_rules import cart_line_sections, load_section_rules
-from app.services.po_send import build_po_pdf
+from app.services.po_send import build_po_pdf, fill_case_from_cart
+from app.services.receiving_units import case_size_value, po_line_case_fields
 from app.services.purchase_order_log import (
     STATUSES,
     list_recent_placed_orders,
@@ -287,7 +289,10 @@ def export_purchase_order_pdf(
 ):
     if not payload.items:
         raise HTTPException(status_code=400, detail="No items to include in the order.")
-    items = [item.model_dump() for item in payload.items]
+    # Each line's case size - its own, else its cart line's - so the PDF
+    # shows the cases and the logged "pdf" row carries case_size / cases
+    # like a placed order's lines.
+    items = fill_case_from_cart(db, payload.supplier, [item.model_dump() for item in payload.items])
     # Grouped into picking sections (supplier complaint: cart-order POs were
     # hard to pick), with owner-edited PO sections and hand-added lines'
     # sections applied. Purely a server-side layout change - the
@@ -441,9 +446,12 @@ def _cart_item_out(
     unit_cost: Optional[float] = None,
     stock: Optional[tuple] = None,
     section: Optional[tuple] = None,
+    snap=None,
+    user: Optional[User] = None,
 ) -> CartItemOut:
     total_units = row.qty * row.case_of
     line_cost = unit_cost * total_units if unit_cost is not None else None
+    case = po_line_case_fields(row.qty, row.case_of)
     return CartItemOut(
         id=row.id,
         supplier=row.supplier,
@@ -461,6 +469,13 @@ def _cart_item_out(
         section=section[0] if section else None,
         section_source=section[1] if section else None,
         removal_requested=removal_requested_out(row),
+        # Additive (case quantities, one-tap Add) - see CartItemOut.
+        case_size=case["case_size"],
+        cases=case["cases"],
+        qty_text=case["qty_text"],
+        item_case_size=case_size_value(getattr(snap, "case_size", None)) if snap is not None else None,
+        receiving_unit=getattr(snap, "receiving_unit", None) if snap is not None else None,
+        can_undo_add=can_undo_add(row, user) if user is not None else None,
     )
 
 
@@ -520,7 +535,7 @@ def get_cart(
     for row in rows:
         snap = latest_inventory.get(row.item_id) if row.item_id else None
         unit_cost = snap.cost if snap is not None else None
-        out = _cart_item_out(row, unit_cost, stock.get(row.id), sections.get(row.id))
+        out = _cart_item_out(row, unit_cost, stock.get(row.id), sections.get(row.id), snap=snap, user=user)
         if projection:
             out.projection = contexts.get(row.id)
         by_supplier.setdefault(row.supplier, []).append(out)
@@ -574,7 +589,7 @@ def post_cart_items(
         if any(item.qty <= 0 and item.item_id in existing for item in payload.items):
             raise HTTPException(status_code=403, detail=REMOVAL_ADMIN_ONLY)
     rows = add_items(db, payload.supplier, [item.model_dump() for item in payload.items], user.id)
-    return [_cart_item_out(row) for row in rows]
+    return [_cart_item_out(row, user=user) for row in rows]
 
 
 @router.patch("/cart/items/{cart_item_id}", response_model=CartItemOut, dependencies=[_cart_access])
@@ -586,19 +601,26 @@ def patch_cart_item(
 ):
     _require_sane_numbers(payload.qty, payload.case_of)
     if payload.qty is not None and payload.qty <= 0:
-        # Qty 0 drops the line from the PO - a removal (admins only).
-        _require_remover(user)
+        # Qty 0 drops the line from the PO - a removal (admins only, or the
+        # person who just added it: the one-tap Add's Undo).
+        existing = db.get(CartItem, cart_item_id)
+        if existing is None or not can_undo_add(existing, user):
+            _require_remover(user)
     row = update_item(db, cart_item_id, qty=payload.qty, case_of=payload.case_of)
     if row is None:
         raise HTTPException(status_code=404, detail="Cart item not found.")
-    return _cart_item_out(row)
+    return _cart_item_out(row, user=user)
 
 
 @router.delete("/cart/items/{cart_item_id}", dependencies=[_cart_access])
 def delete_cart_item(
     cart_item_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ):
-    _require_remover(user)
+    # Admins remove lines; anyone may Undo their own add for a few minutes
+    # (Supplier Projection's one-tap Add).
+    existing = db.get(CartItem, cart_item_id)
+    if existing is None or not can_undo_add(existing, user):
+        _require_remover(user)
     if not delete_item(db, cart_item_id):
         raise HTTPException(status_code=404, detail="Cart item not found.")
     return {"deleted": True}

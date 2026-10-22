@@ -22,6 +22,7 @@ genuinely different products, not an Each/Container split - left alone. See
 
 import datetime as dt
 import logging
+import math
 from collections import defaultdict
 from typing import Optional
 
@@ -33,6 +34,7 @@ from app.services.demand_forecast import DEFAULT_CONFIG, build_models, exception
 from app.services.forecast import forecast_daily_demand
 from app.services.inventory_api import overlay_live_stock
 from app.services.item_vendors import vendors_of
+from app.services.receiving_units import case_size_value, cases_for_units
 from app.services.reorder import latest_inventory_by_item
 from app.services.similar_products import aligned_codes, other_vendor_refs, split_aligned
 from app.services.vendor_schedule import decode_weekdays, get_vendor_schedule_by_name
@@ -170,6 +172,24 @@ def protection_days(db: Session, supplier: str, today: dt.date) -> Optional[int]
         d for d in (first + dt.timedelta(days=i) for i in range(1, 8)) if d.weekday() in weekdays
     )
     return (second - today).days
+
+
+def _add_need_cases(projections: dict, case_size: Optional[float]) -> None:
+    """Additive: each horizon's need in whole cases - ceil(need_to_order /
+    case size) - next to need_to_order (units, kept as is). Only when the
+    case size is known; the forecast itself is untouched."""
+    if case_size is None:
+        return
+    for p in projections.values():
+        need = p.get("need_to_order")
+        if need is None:
+            p["need_cases"] = None
+            continue
+        # Same whole-unit rounding as the suggested order (a shortfall under
+        # round_down_below is "enough stock", not 1 case).
+        tol = DEFAULT_CONFIG.round_down_below
+        units = 0 if need < tol else math.ceil(need - tol - 1e-9)
+        p["need_cases"] = cases_for_units(units, case_size)[0]
 
 
 def _round_or_none(value: Optional[float], digits: int) -> Optional[float]:
@@ -410,6 +430,11 @@ def _project_rows(
             # Additive (Oct 14, W2): every vendor SKU + the barcode, for search.
             "all_supplier_item_ids": getattr(snap, "supplier_item_id", None),
             "barcode": getattr(snap, "barcode", None),
+            # Additive (case quantities): units per case from the inventory
+            # file's receiving units (null = not ordered by the case) and the
+            # unit's name ("Case"). The order qty is in cases when this is set.
+            "case_size": case_size_value(getattr(snap, "case_size", None)),
+            "receiving_unit": getattr(snap, "receiving_unit", None),
         }
 
         model = models.get(item_id) if models else None
@@ -421,6 +446,7 @@ def _project_rows(
                 logger.exception("Availability-adjusted projection failed for item %s; using the legacy average", item_id)
         if fields is None:
             fields = _legacy_fields(legacy_daily, horizons_days, on_hand)
+        _add_need_cases(fields["projections"], row["case_size"])
         row.update(fields)
         results.append(row)
 

@@ -59,6 +59,20 @@ COLUMN_MAP = {
     "supplier item number": "supplier_item_id",
 }
 
+# The receiving-unit columns give each item's case size (units per case). Not
+# a 1:1 field copy - the two cells are read together by
+# services/receiving_units.case_info into case_size / receiving_unit /
+# receiving_units_raw. Header variants are all mapped, like supplier item id
+# above; the first of each is the export's own header.
+RECEIVING_UNITS_HEADERS = ("receiving units", "receiving unit", "receiving unit names")
+RECEIVING_QTYS_HEADERS = (
+    "receiving unit quantities",
+    "receiving unit quantity",
+    "receiving unit qty",
+    "receiving unit qtys",
+    "receiving quantities",
+)
+
 REQUIRED_SOURCE_COLUMNS = {"item id"}
 
 NUMERIC_FIELDS = {

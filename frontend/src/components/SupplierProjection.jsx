@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { storeTodayStr, storeDateOffsetStr } from "../format.js";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getSuppliers, getSupplierProjection, getItemWeeklySales, getSimilarItems, addToCart, getCart, updateCartItem } from "../api";
+import { getSuppliers, getSupplierProjection, getItemWeeklySales, getSimilarItems, addToCart, getCart, updateCartItem, deleteCartItem } from "../api";
+import { UndoBar } from "./CriticalDismissals.jsx";
 import InfoBlock from "./InfoBlock.jsx";
 import { CLASS_TERMS, FLAG_TERMS, SIMILAR_REASON_TERMS, Term, TermInfo } from "../glossary.jsx";
 import SortableTh from "./SortableTh.jsx";
@@ -14,8 +15,13 @@ import { WeeklySalesTable } from "./weeklySales/WeeklySalesTable.jsx";
 import {
   addMessage,
   buildAddItems,
+  caseLabel,
+  caseSizeOf,
   parseQty,
   qtyText,
+  qtyWords,
+  quickAddLine,
+  stepQty,
   suggestionOf,
   updateFor,
 } from "./projectionQty/projectionQtyModel.js";
@@ -218,7 +224,7 @@ export default function SupplierProjection() {
       const ids = new Set((supplierRow?.items || []).map((i) => i.item_id).filter(Boolean));
       const lines = {};
       (supplierRow?.items || []).forEach((i) => {
-        if (i.item_id) lines[i.item_id] = { id: i.id, qty: i.qty, case_of: i.case_of };
+        if (i.item_id) lines[i.item_id] = { id: i.id, qty: i.qty, case_of: i.case_of, can_undo_add: i.can_undo_add };
       });
       setCartItemIds(ids);
       setCartLines(lines);
@@ -533,6 +539,84 @@ export default function SupplierProjection() {
     }
   }
 
+  // Owner: opening a window to enter the qty for every item was slow. One
+  // tap on a row's Add puts its suggested qty (cases when the case size is
+  // known) in the cart, the row turns into a − / + stepper, and a short
+  // Undo shows. No window.
+  const [quickBusy, setQuickBusy] = useState(null);
+  const [undoAdd, setUndoAdd] = useState(null); // {lineId, itemId, message}
+  const closeUndoAdd = useCallback(() => setUndoAdd(null), []);
+
+  async function handleQuickAdd(item) {
+    if (!data || quickBusy) return;
+    const cartSupplier = data.supplier;
+    if (cartItemIds.has(item.item_id)) return;
+    const line = quickAddLine(item, activeHorizon);
+    setQuickBusy(item.item_id);
+    setCartMessage(null);
+    try {
+      const added = await addToCart(cartSupplier, [line]);
+      const row = Array.isArray(added) ? added[0] : null;
+      setCartItemIds((prev) => new Set([...prev, item.item_id]));
+      if (row) {
+        setCartLines((prev) => ({
+          ...prev,
+          [item.item_id]: { id: row.id, qty: row.qty, case_of: row.case_of, can_undo_add: row.can_undo_add },
+        }));
+      }
+      setQtyDrafts((prev) => {
+        const next = { ...prev };
+        delete next[item.item_id];
+        return next;
+      });
+      setUndoAdd({
+        lineId: row?.id ?? null,
+        itemId: item.item_id,
+        message: `Added ${item.name || item.item_id}: ${qtyWords(line.qty, line.case_of)}.`,
+      });
+      refreshCartMembership(cartSupplier);
+    } catch (err) {
+      setCartMessage(`${item.name}: ${err.message}`);
+    } finally {
+      setQuickBusy(null);
+    }
+  }
+
+  async function handleUndoAdd() {
+    const u = undoAdd;
+    if (!u || u.lineId == null) return;
+    try {
+      await deleteCartItem(u.lineId);
+      setCartMessage("Taken back out of the cart.");
+    } catch (err) {
+      setCartMessage(err.message);
+    } finally {
+      setUndoAdd(null);
+      if (data) refreshCartMembership(data.supplier);
+    }
+  }
+
+  // − / + on an in-cart row: saved straight away (never below 1).
+  async function handleStep(item, delta) {
+    const line = cartLines[item.item_id];
+    if (!line || !data) return;
+    const next = stepQty(line.qty, delta);
+    if (next === Number(line.qty)) return;
+    setCartLines((prev) => ({ ...prev, [item.item_id]: { ...line, qty: next } }));
+    setQtyDrafts((prev) => {
+      const copy = { ...prev };
+      delete copy[item.item_id];
+      return copy;
+    });
+    try {
+      await updateCartItem(line.id, { qty: next });
+      window.dispatchEvent(new Event("cart:updated"));
+    } catch (err) {
+      setCartLines((prev) => ({ ...prev, [item.item_id]: line }));
+      setCartMessage(`${item.name}: ${err.message}`);
+    }
+  }
+
   // An in-cart item's own Update: replaces that one cart line's qty (X1).
   async function handleUpdateCartQty(item) {
     const update = updateFor(item, qtyDrafts, cartLines[item.item_id]);
@@ -541,7 +625,7 @@ export default function SupplierProjection() {
     setCartMessage(null);
     try {
       await updateCartItem(update.id, { qty: update.qty });
-      setCartMessage(`${item.name}: cart quantity set to ${update.qty}.`);
+      setCartMessage(`${item.name}: cart quantity set to ${qtyWords(update.qty, cartLines[item.item_id]?.case_of)}.`);
       await refreshCartMembership(data.supplier);
       setQtyDrafts((prev) => {
         const next = { ...prev };
@@ -573,8 +657,10 @@ export default function SupplierProjection() {
         re-running the projection won't touch their quantity. Check the items you want to order:
         each ticked item gets a quantity box filled in with its suggested order quantity, with the
         numbers it comes from beside it (sold per week, on hand and its 4-week average, the next
-        delivery). Change any box, then click "Add to cart". An item already in the cart shows "In
-        cart: N" - its box starts at the cart quantity and only its own Update button changes it.
+        delivery). Tap a row's Add to put its suggested quantity straight in the cart (Undo
+        shows for a few seconds), or tick several and click "Add to cart". An item packed by the
+        case is ordered in cases ("1 case = 24 units"). An item in the cart shows − / + on its row;
+        type a number in its box to set it exactly.
         The cart is shared and persists across visits, so you can come back and add more (from this or another supplier)
         before adjusting quantities and downloading a PO PDF. See the Help page for the full
         walkthrough.
@@ -678,7 +764,7 @@ export default function SupplierProjection() {
               Ticked items start at their <Term k="suggested_order_qty">suggested order qty</Term> for{" "}
               {data.order_window.label}
               {data.order_window.delivery ? ` - ${data.order_window.delivery.label}` : " - no delivery schedule"}.
-              Change any box before adding.
+              Tap Add on a row, or tick items and add them together.
             </p>
           )}
           <div className="sp-filters" role="group" aria-label="Filter items">
@@ -782,6 +868,9 @@ export default function SupplierProjection() {
                     canUpdate={!!updateFor(item, qtyDrafts, cartLines[item.item_id])}
                     updating={updatingId === item.item_id}
                     onUpdateCart={() => handleUpdateCartQty(item)}
+                    quickBusy={quickBusy === item.item_id}
+                    onQuickAdd={() => handleQuickAdd(item)}
+                    onStep={(delta) => handleStep(item, delta)}
                   />
                 ))}
                 {rows.length === 0 && (
@@ -799,6 +888,14 @@ export default function SupplierProjection() {
             </table>
           </div>
         </>
+      )}
+      {undoAdd && (
+        <UndoBar
+          key={`undo-add-${undoAdd.lineId}`}
+          message={undoAdd.message}
+          onUndo={undoAdd.lineId != null ? handleUndoAdd : undefined}
+          onClose={closeUndoAdd}
+        />
       )}
       {similarFor && data && (
         <SimilarItemsDrawer item={similarFor} fallbackSupplier={data.supplier} onClose={closeSimilar} />
@@ -824,9 +921,16 @@ function SupplierProjectionRow({
   canUpdate,
   updating,
   onUpdateCart,
+  quickBusy,
+  onQuickAdd,
+  onStep,
 }) {
   const p = item.projections[activeHorizon];
   const suggestion = suggestionOf(item);
+  // Order qty in cases when the case size is known.
+  const caseSize = caseSizeOf(item, inCart ? cartLine : null);
+  const typed = parseQty(qtyValue);
+  const caseText = caseLabel(typed.ok ? typed.value : null, caseSize);
   const qtyBad = (isSelected || inCart) && !parseQty(qtyValue).ok;
   const qtyLabel = `Order qty for ${item.name || item.item_id}`;
   const known = p.need_to_order !== null;
@@ -910,39 +1014,85 @@ function SupplierProjectionRow({
           )}
         </td>
         <td className="num sp-qty-cell">
-          {isSelected || inCart ? (
-            <span className="sp-qty-box">
-              {inCart && cartLine && <span className="sp-qty-incart">In cart: {cartLine.qty}</span>}
-              <input
-                type="number"
-                min="0"
-                step="1"
-                inputMode="decimal"
-                className={`po-qty-input sp-qty-input${qtyBad ? " qty-mismatch" : ""}`}
-                value={qtyValue}
-                aria-label={qtyLabel}
-                aria-invalid={qtyBad || undefined}
-                onChange={(e) => onQtyChange(e.target.value)}
-              />
-              {suggestion?.case_of ? <span className="sp-qty-unit">cases of {suggestion.case_of}</span> : null}
-              {inCart && (
+          {inCart && cartLine ? (
+            // In the cart: − qty + right on the row. Typing a number
+            // saves it on Enter or when the box is left.
+            <span className="sp-qty-box sp-stepper">
+              <span className="sp-step-row">
                 <button
                   type="button"
-                  className="btn-secondary sp-qty-update"
-                  disabled={!canUpdate || updating}
-                  onClick={onUpdateCart}
-                  title="Set this item's quantity in the cart to the number in the box"
+                  className="sp-step"
+                  aria-label={`One less ${item.name || ""}`.trim()}
+                  disabled={updating || Number(cartLine.qty) <= 1}
+                  onClick={() => onStep(-1)}
                 >
-                  {updating ? "Saving…" : "Update"}
+                  −
                 </button>
-              )}
-            </span>
-          ) : suggestion ? (
-            <span className="muted sp-qty-hint" title={suggestion.basis}>
-              {suggestion.enough_stock ? "enough" : suggestion.qty}
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  inputMode="decimal"
+                  className={`po-qty-input sp-qty-input${qtyBad ? " qty-mismatch" : ""}`}
+                  value={qtyValue}
+                  aria-label={qtyLabel}
+                  aria-invalid={qtyBad || undefined}
+                  onChange={(e) => onQtyChange(e.target.value)}
+                  onBlur={() => canUpdate && onUpdateCart()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && canUpdate) onUpdateCart();
+                  }}
+                />
+                <button
+                  type="button"
+                  className="sp-step"
+                  aria-label={`One more ${item.name || ""}`.trim()}
+                  disabled={updating}
+                  onClick={() => onStep(1)}
+                >
+                  +
+                </button>
+              </span>
+              <span className="sp-qty-unit">{caseText || (caseSize ? null : "units")} · in cart</span>
             </span>
           ) : (
-            <span className="muted">-</span>
+            <span className="sp-qty-box sp-qty-add">
+              <span className="sp-step-row">
+                {isSelected ? (
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="decimal"
+                    className={`po-qty-input sp-qty-input${qtyBad ? " qty-mismatch" : ""}`}
+                    value={qtyValue}
+                    aria-label={qtyLabel}
+                    aria-invalid={qtyBad || undefined}
+                    onChange={(e) => onQtyChange(e.target.value)}
+                  />
+                ) : suggestion ? (
+                  <span className="muted sp-qty-hint" title={suggestion.basis}>
+                    {suggestion.enough_stock ? "enough" : qtyWords(suggestion.qty, caseSize).replace(/ \(.*\)$/, "")}
+                  </span>
+                ) : (
+                  <span className="muted">-</span>
+                )}
+                <button
+                  type="button"
+                  className="sp-add-btn"
+                  disabled={quickBusy}
+                  onClick={onQuickAdd}
+                  title="Put the suggested quantity in the cart"
+                >
+                  {quickBusy ? "Adding…" : "Add"}
+                </button>
+              </span>
+              {caseSize ? (
+                <span className="sp-qty-unit">
+                  {isSelected ? caseText : `1 case = ${caseSize} units`}
+                </span>
+              ) : null}
+            </span>
           )}
         </td>
         <td>{item.category || "-"}</td>
@@ -970,6 +1120,12 @@ function SupplierProjectionRow({
         </td>
         <td className={`num ${known && p.need_to_order > 0 ? "flag" : ""}`}>
           {known ? p.need_to_order : `${p.projected_demand}*`}
+          {known && p.need_cases != null && p.need_to_order > 0 && (
+            <span className="muted sp-need-cases">
+              {" "}
+              ({p.need_cases} {p.need_cases === 1 ? "case" : "cases"})
+            </span>
+          )}
         </td>
       </tr>
       {isExpanded && (

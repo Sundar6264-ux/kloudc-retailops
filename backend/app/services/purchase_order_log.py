@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.models import CartItem, PlacedOrder, User
 from app.services.item_vendors import vendors_of
 from app.services.po_cart import add_items, clear_supplier, list_cart
+from app.services.receiving_units import po_line_case_fields
 from app.services.reorder import latest_inventory_by_item
 from app.timeutil import restaurant_timezone, utcnow
 from app.tenancy import advisory_lock, tenant_lock
@@ -127,6 +128,8 @@ def mark_supplier_placed(db: Session, supplier: str, user: User) -> tuple:
                 "qty": r.qty,
                 "item_id": r.item_id,
                 "case_of": r.case_of,
+                # Additive (case quantities): case_size / cases / units / qty_text.
+                **po_line_case_fields(r.qty, r.case_of),
             }
             for r in cart_rows
         ]

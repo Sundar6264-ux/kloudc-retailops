@@ -379,7 +379,9 @@ CSV1 = (
 def test_csv_upload_fills_the_table(db):
     result = parse_and_store(db, "retail-items.csv", CSV1, D1)
     assert result["rows_loaded"] == 3
-    assert set(result) == {"snapshot_date", "rows_loaded", "rows_skipped", "columns_used", "columns_ignored", "api_rows_replaced"}
+    # Additive since: rows_with_case_size (receiving units; null without those columns).
+    assert set(result) == {"snapshot_date", "rows_loaded", "rows_skipped", "columns_used", "columns_ignored",
+                           "api_rows_replaced", "rows_with_case_size"}
     assert _table(db) == {
         "tea": [
             (1, "Raja Foods", None, "toast_csv", D1),

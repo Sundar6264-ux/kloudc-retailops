@@ -121,3 +121,82 @@ export function contextKey(cart) {
   lines.sort((a, b) => a[0] - b[0]);
   return JSON.stringify(lines);
 }
+
+// --- Cases and the one-tap Add ---------------------------------------------
+// Owner: "we order cases from vendor not the units" - when an item's case
+// size is known (the inventory file's receiving units, a cart line's Case
+// of), the order qty is in CASES. Old field names stay: `qty` is the number
+// typed / sent to the vendor; `case_of` is units per case.
+
+function bigCase(v) {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 1 ? n : null;
+}
+
+// Units per case for this row: its cart line's Case of decides once it is
+// in the cart (1 there = units); otherwise the suggestion's pack size, else
+// the item's own case_size (an older suggestion without one).
+export function caseSizeOf(item, cartLine) {
+  if (cartLine) return bigCase(cartLine.case_of);
+  return bigCase(suggestionOf(item)?.case_of) ?? bigCase(item?.case_size);
+}
+
+const fmt = (n) => (Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100));
+
+// "1 case = 24 units · 48 units" beside the qty; null for an item in units.
+export function caseLabel(qty, caseSize) {
+  const size = bigCase(caseSize);
+  if (!size) return null;
+  const q = Number(qty);
+  const total = Number.isFinite(q) && q >= 0 ? ` · ${fmt(q * size)} units` : "";
+  return `1 case = ${fmt(size)} units${total}`;
+}
+
+// "2 cases (48 units)" / "5" - the same words the PO uses.
+export function qtyWords(qty, caseSize) {
+  const size = bigCase(caseSize);
+  const q = Number(qty) || 0;
+  if (!size) return fmt(q);
+  return `${fmt(q)} ${q === 1 ? "case" : "cases"} (${fmt(q * size)} units)`;
+}
+
+// What one tap on a row's Add sends: the suggested qty (cases when the case
+// size is known). A suggestion of 0 ("enough stock") or none at all still
+// adds 1 - Add was tapped on purpose; the stepper changes it after. On an
+// older server (no suggestion) the need is turned into cases here.
+export function quickAddLine(item, horizon) {
+  const s = suggestionOf(item);
+  const size = bigCase(s?.case_of) ?? (s ? null : bigCase(item?.case_size));
+  let qty;
+  if (s && Number.isFinite(Number(s.qty))) qty = Number(s.qty);
+  else {
+    const need = Number(item?.projections?.[horizon]?.need_to_order);
+    qty = Number.isFinite(need) && need > 0 ? (size ? Math.ceil(need / size) : Math.ceil(need)) : 0;
+  }
+  if (!(qty > 0)) qty = 1;
+  const line = {
+    item_id: item.item_id,
+    name: item.name,
+    supplier_item_id: item.supplier_item_id || null,
+    qty,
+  };
+  if (size) line.case_of = size;
+  return line;
+}
+
+// − / + on an in-cart row: never below 1 (0 is a removal - admins, from the
+// cart page, or the Undo right after adding).
+export function stepQty(qty, delta) {
+  const q = Number(qty);
+  const next = (Number.isFinite(q) ? q : 0) + delta;
+  return Math.min(MAX_QTY, Math.max(1, Math.round(next * 100) / 100));
+}
+
+// The cart line offering "Switch to cases": in units (Case of 1) while the
+// inventory file says the item comes in cases. qty units -> whole cases.
+export function switchToCases(line) {
+  const size = bigCase(line?.item_case_size);
+  if (!size || bigCase(line?.case_of)) return null;
+  const units = Number(line.qty) || 0;
+  return { case_of: size, qty: Math.max(1, Math.ceil(units / size - 1e-9)) };
+}

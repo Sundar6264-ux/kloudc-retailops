@@ -48,6 +48,7 @@ from app.po_send_models import PoSend, VendorContact
 from app.services import whapi_client
 from app.services.po_cart import list_cart
 from app.services.po_export import export_simple_po_pdf
+from app.services.receiving_units import case_size_value, po_line_case_fields
 from app.services.toast_email import EmailNotConfigured, pilot_guard
 from app.timeutil import restaurant_today, utcnow
 from app.tenancy import advisory_lock, tenant_lock
@@ -334,11 +335,46 @@ def cart_lines(db: Session, supplier: str) -> Tuple[List[CartItem], List[dict]]:
             "qty": r.qty,
             "item_id": r.item_id,
             "case_of": r.case_of,
+            # Additive (case quantities): case_size / cases / units / qty_text.
+            **po_line_case_fields(r.qty, r.case_of),
         }
         for r in rows
         if r.qty is not None and r.qty > 0
     ]
     return rows, items
+
+
+def fill_case_from_cart(db: Session, supplier: str, items: list) -> list:
+    """PO lines from a client (the Download PDF request) with their case
+    fields: a line that brings its own case_of / case_size keeps it; one
+    without (older app builds send only name / code / qty) takes the Case of
+    of this vendor's cart line with the same name and qty, so the PDF shows
+    the cases whichever app made it. No match = no case size (the qty
+    prints as is, like before)."""
+    by_key = {}
+    for r in list_cart(db):
+        if r.supplier != supplier:
+            continue
+        key = ((r.name or "").strip().lower(), round(float(r.qty or 0), 3))
+        by_key.setdefault(key, r)
+    out = []
+    for item in items:
+        line = dict(item)
+        size = case_size_value(line.get("case_of")) or case_size_value(line.get("case_size"))
+        if size is None and line.get("case_of") is None and line.get("case_size") is None:
+            try:
+                key = ((line.get("name") or "").strip().lower(), round(float(line.get("qty") or 0), 3))
+            except (TypeError, ValueError):
+                key = None
+            match = by_key.get(key) if key else None
+            if match is not None:
+                size = case_size_value(match.case_of)
+                if not line.get("item_id"):
+                    line["item_id"] = match.item_id
+        line["case_of"] = size or 1.0
+        line.update(po_line_case_fields(line.get("qty"), size))
+        out.append(line)
+    return out
 
 
 def po_lines(items: list) -> list:
@@ -401,7 +437,8 @@ def compose(supplier: str, items: list, day: Optional[dt.date] = None) -> Tuple[
     body = (
         f"Hello {_clean_line(supplier, 200)} team,\n\n"
         f"Please find attached {store_name}'s purchase order: {_plural(len(items), 'item')}, "
-        f"{_fmt_qty(cases)} {'case' if cases == 1 else 'cases'} in total. Quantities are in cases.\n\n"
+        f"{_fmt_qty(cases)} {'case' if cases == 1 else 'cases'} in total. Quantities are in cases."
+        f"{_case_units_note(items)}\n\n"
         f"{NOTE_MARKER}\n\n"
         "Please reply to this email to confirm the order, and let us know if anything is unavailable.\n\n"
         "Thank you,\n"
@@ -409,6 +446,22 @@ def compose(supplier: str, items: list, day: Optional[dt.date] = None) -> Tuple[
         f"--\nSent with {sv.product_credit()}"
     )
     return subject, body
+
+
+def _case_units_note(items: list) -> str:
+    """When some lines have a known case size, say how many units that is,
+    so cases and units are never mixed up: " Lines with a case size also
+    show the units, e.g. 2 cases (48 units)." Empty when no line has one
+    (the email reads exactly as before)."""
+    example = next(
+        (
+            po_line_case_fields(i.get("qty"), i.get("case_of"))["qty_text"]
+            for i in items
+            if case_size_value(i.get("case_of")) is not None
+        ),
+        None,
+    )
+    return f" Lines with a case size also show the units, e.g. {example}." if example else ""
 
 
 def render_body(template: str, note: Optional[str]) -> str:
@@ -668,7 +721,14 @@ def preview(db: Session, supplier: str, user: User) -> dict:
     return {
         "supplier": supplier,
         "items": [
-            {"name": i["name"], "supplier_item_id": i["supplier_item_id"], "qty": i["qty"]} for i in items
+            {
+                "name": i["name"],
+                "supplier_item_id": i["supplier_item_id"],
+                "qty": i["qty"],
+                # Additive (case quantities): case_size / cases / units / qty_text.
+                **po_line_case_fields(i["qty"], i.get("case_of")),
+            }
+            for i in items
         ],
         "item_count": len(items),
         "total_qty": round(sum(float(i["qty"]) for i in items), 3),

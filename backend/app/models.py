@@ -219,6 +219,16 @@ class InventorySnapshot(Base):
     api_out_of_stock: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     csv_quantity: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
+    # Migration 0063: the case size from the inventory file's receiving-unit
+    # columns (services/receiving_units.py) - units per case, NULL when the
+    # item isn't received by the case (or the file had no such columns, e.g.
+    # a Clover store). Ordering only: the forecast never reads these.
+    # API-built rows carry them forward from the latest CSV
+    # (inventory_api.CARRIED_FIELDS).
+    case_size: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    receiving_unit: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    receiving_units_raw: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
 
 class VendorReference(Base):
     """Read-only cache of vendor cost/lead-time data from Toast's Purchasing & Receiving API.

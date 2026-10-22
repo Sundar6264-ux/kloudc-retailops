@@ -93,7 +93,18 @@ JOB_MENU_RECHECK = "menu_barcode_recheck"
 
 SALES_WINDOWS = (7, 30, 90)
 # Fields carried from the item's latest CSV row (no Toast API source).
-CARRIED_FIELDS = ("cost", "supplier", "supplier_item_id", "last_received_from", "inventory_last_received")
+CARRIED_FIELDS = (
+    "cost",
+    "supplier",
+    "supplier_item_id",
+    "last_received_from",
+    "inventory_last_received",
+    # Migration 0063: the case size from the CSV's receiving units (Toast's
+    # stock API has no receiving units).
+    "case_size",
+    "receiving_unit",
+    "receiving_units_raw",
+)
 
 # ---------------------------------------------------------------------------
 # Multi-store M1 batch MT3: building the API rows, the comparison, storing

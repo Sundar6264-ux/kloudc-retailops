@@ -42,7 +42,13 @@ import { Term, TermInfo } from "../glossary.jsx";
 import SendPoDialog from "./poSend/SendPoDialog.jsx";
 import PoDownloadMenu from "./poDownload/PoDownloadMenu.jsx";
 import { contactsLinkFor, sentNotice } from "./poSend/poSendModel.js";
-import { cartContext, contextKey, useSuggestedQty } from "./projectionQty/projectionQtyModel.js";
+import {
+  caseLabel,
+  cartContext,
+  contextKey,
+  switchToCases,
+  useSuggestedQty,
+} from "./projectionQty/projectionQtyModel.js";
 
 // How long the lines an add just put in stay highlighted (the fade itself
 // is in CSS), and how long a vendor opened from a link is outlined.
@@ -349,6 +355,20 @@ export default function PurchaseOrderCart() {
     }
   }
 
+  // A line added in units while the inventory file says the
+  // item comes in cases - one click turns it into whole cases.
+  async function handleSwitchCases(item) {
+    const change = switchToCases(item);
+    if (!change) return;
+    try {
+      await updateCartItem(item.id, change);
+      clearVendorError(item.supplier);
+    } catch (err) {
+      setVendorError(item.supplier, err.message);
+    }
+    refresh();
+  }
+
   async function handleRemove(item) {
     clearVendorError(item.supplier);
     try {
@@ -433,7 +453,13 @@ export default function PurchaseOrderCart() {
     // are a cart-side planning aid, not something to hand the vendor.
     const toOrder = supplierRow.items
       .filter((i) => Number(i.qty) > 0)
-      .map((i) => ({ name: i.name, supplier_item_id: i.supplier_item_id || null, qty: Number(i.qty) }));
+      // case_of: the PDF and downloads show Cases / Units per case for a case line.
+      .map((i) => ({
+        name: i.name,
+        supplier_item_id: i.supplier_item_id || null,
+        qty: Number(i.qty),
+        case_of: Number(i.case_of) || 1,
+      }));
     if (toOrder.length === 0) return;
     setExportingSupplier(supplierRow.supplier);
     setError(null);
@@ -574,6 +600,7 @@ export default function PurchaseOrderCart() {
                   flash={flash?.supplier === supplier ? flash : null}
                   vendorError={vendorErrors[supplier] || null}
                   onFieldChange={handleFieldChange}
+                  onSwitchCases={handleSwitchCases}
                   projections={projections}
                   onFieldBlur={(value) => {
                     const n = Number(value);
@@ -712,6 +739,7 @@ function VendorPanel({
   flash,
   vendorError,
   onFieldChange,
+  onSwitchCases,
   onFieldBlur,
   onRemove,
   onDownload,
@@ -912,6 +940,9 @@ function VendorPanel({
                               onChange={(e) => onFieldChange(item, "qty", e.target.value)}
                               onBlur={(e) => onFieldBlur(e.target.value)}
                             />
+                            {caseLabel(item.qty, item.case_of) && (
+                              <span className="po-case-label">{caseLabel(item.qty, item.case_of)}</span>
+                            )}
                           </td>
                           <td className="num">
                             <input
@@ -923,6 +954,14 @@ function VendorPanel({
                               aria-label={`Case of (units per case) for ${item.name}`}
                               onChange={(e) => onFieldChange(item, "case_of", e.target.value)}
                             />
+                            {switchToCases(item) && onSwitchCases && (
+                              <span className="po-case-label">
+                                Comes in cases of {item.item_case_size} ·{" "}
+                                <button type="button" className="link-button po-case-switch" onClick={() => onSwitchCases(item)}>
+                                  Order in cases
+                                </button>
+                              </span>
+                            )}
                           </td>
                           <td className="num">{item.unit_cost != null ? `$${item.unit_cost.toFixed(2)}` : "-"}</td>
                           <td className="num">

@@ -102,3 +102,56 @@ test("contextKey changes with lines, qty and Case of only", () => {
   assert.notEqual(contextKey(cart(1)), contextKey(cart(1, 6)));
   assert.equal(contextKey(null), "[]");
 });
+
+// --- Cases and the one-tap Add ---------------------------------------------
+import { caseLabel, caseSizeOf, qtyWords, quickAddLine, stepQty, switchToCases } from "./projectionQtyModel.js";
+
+test("case size: cart line decides, else suggestion, else the item's", () => {
+  const maggi = { item_id: "m", case_size: 24, suggested_order: { qty: 1, case_of: 24 } };
+  assert.equal(caseSizeOf(maggi, null), 24);
+  assert.equal(caseSizeOf(maggi, { case_of: 1 }), null); // in the cart in units
+  assert.equal(caseSizeOf(maggi, { case_of: 12 }), 12);
+  assert.equal(caseSizeOf({ case_size: 6 }, null), 6);
+  assert.equal(caseSizeOf({ case_size: 1 }, null), null);
+  assert.equal(caseSizeOf({}, null), null);
+});
+
+test("case label and words", () => {
+  assert.equal(caseLabel(2, 24), "1 case = 24 units · 48 units");
+  assert.equal(caseLabel(1, 24), "1 case = 24 units · 24 units");
+  assert.equal(caseLabel(5, 1), null);
+  assert.equal(caseLabel(5, null), null);
+  assert.equal(qtyWords(2, 24), "2 cases (48 units)");
+  assert.equal(qtyWords(1, 24), "1 case (24 units)");
+  assert.equal(qtyWords(5, null), "5");
+});
+
+test("one-tap Add sends the suggested cases (owner's Maggi: need 5 -> 1 case of 24)", () => {
+  const maggi = { item_id: "m", name: "Maggi 300g", supplier_item_id: "MG", case_size: 24,
+    suggested_order: { qty: 1, case_of: 24 }, projections: { 21: { need_to_order: 5 } } };
+  assert.deepEqual(quickAddLine(maggi, 21), { item_id: "m", name: "Maggi 300g", supplier_item_id: "MG", qty: 1, case_of: 24 });
+  // Units item.
+  const rice = { item_id: "r", name: "Rice", suggested_order: { qty: 16, case_of: null } };
+  assert.deepEqual(quickAddLine(rice, 21), { item_id: "r", name: "Rice", supplier_item_id: null, qty: 16 });
+  // Enough stock: Add still adds 1.
+  assert.equal(quickAddLine({ item_id: "x", suggested_order: { qty: 0 } }, 21).qty, 1);
+  // Older server: need in cases from the item's case size.
+  const old = { item_id: "o", case_size: 24, projections: { 21: { need_to_order: 30 } } };
+  assert.deepEqual(quickAddLine(old, 21), { item_id: "o", name: undefined, supplier_item_id: null, qty: 2, case_of: 24 });
+  assert.equal(quickAddLine({ item_id: "z", projections: { 21: { need_to_order: 4.2 } } }, 21).qty, 5);
+});
+
+test("stepper never goes below 1", () => {
+  assert.equal(stepQty(1, -1), 1);
+  assert.equal(stepQty(2, -1), 1);
+  assert.equal(stepQty(2, 1), 3);
+  assert.equal(stepQty("x", 1), 1);
+  assert.equal(stepQty(MAX_QTY, 1), MAX_QTY);
+});
+
+test("switch a units line to cases", () => {
+  assert.deepEqual(switchToCases({ qty: 16, case_of: 1, item_case_size: 24 }), { case_of: 24, qty: 1 });
+  assert.deepEqual(switchToCases({ qty: 48, case_of: 1, item_case_size: 24 }), { case_of: 24, qty: 2 });
+  assert.equal(switchToCases({ qty: 2, case_of: 24, item_case_size: 24 }), null);
+  assert.equal(switchToCases({ qty: 2, case_of: 1, item_case_size: null }), null);
+});

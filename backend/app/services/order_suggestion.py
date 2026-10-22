@@ -17,8 +17,9 @@ The rule (also in the glossary, `suggested_order_qty`, and on the Help page):
 2. minus units of the same item already in OTHER vendors' carts (an item
    several vendors sell must not be ordered twice). Never below 0.
 3. If the pack size is known (this vendor's cart line has Case of > 1, else
-   - only when the item is NOT in this vendor's cart - the latest placed
-   order from this vendor with that item had one), qty = units / Case of,
+   - only when the item is NOT in this vendor's cart - the inventory file's
+   receiving units give a case size, else the latest placed order from this
+   vendor with that item had one), qty = units / Case of,
    rounded up to whole cases. Otherwise qty = units. An item already in this
    vendor's cart is always in that line's own unit (a Case of 1 there means
    units): "Use N" and the In cart box change only the line's qty, so a
@@ -50,6 +51,7 @@ from sqlalchemy.orm import Session
 
 from app.models import CartItem, InventorySnapshot, PlacedOrder
 from app.services.demand_forecast import DEFAULT_CONFIG
+from app.services.receiving_units import case_size_value
 from app.services.supplier_projection import _container_qty_by_name
 from app.services.vendor_schedule import decode_weekdays, get_vendor_schedule_by_name
 from app.timeutil import restaurant_today, to_restaurant_date
@@ -199,12 +201,19 @@ def public_delivery(delivery: Optional[dict]) -> Optional[dict]:
 
 
 def known_case_sizes(
-    db: Session, vendor: str, item_ids: Iterable[str], cart_rows: Optional[List[CartItem]] = None
+    db: Session,
+    vendor: str,
+    item_ids: Iterable[str],
+    cart_rows: Optional[List[CartItem]] = None,
+    inventory_cases: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Tuple[float, str]]:
     """item_id -> (case_of, source) for items whose pack size is known for
-    this vendor: its cart line's Case of (> 1), else the newest placed order
-    from this vendor listing the item with a Case of > 1. A Case of 1 is the
-    default and says nothing, so it never counts as known."""
+    this vendor: its cart line's Case of (> 1), else the case size from the
+    inventory file's receiving units (`inventory_cases`, source
+    "receiving_units"), else the newest placed order from this vendor
+    listing the item with a Case of > 1. A Case of 1 is the default and says
+    nothing, so it never counts as known. A POS without receiving units
+    (Clover, a plain CSV) simply has no `inventory_cases`."""
     wanted = {i for i in item_ids if i}
     out: Dict[str, Tuple[float, str]] = {}
     if not wanted:
@@ -220,6 +229,13 @@ def known_case_sizes(
             if (row.case_of or 0) > 1:
                 out[row.item_id] = (float(row.case_of), "cart")
     missing = wanted - in_cart
+    # Owner: "Order qty has to be in cases ALWAYS": the receiving units' case
+    # size, for every item not already in this vendor's cart.
+    for item_id in list(missing):
+        size = case_size_value((inventory_cases or {}).get(item_id))
+        if size is not None:
+            out[item_id] = (size, "receiving_units")
+            missing.discard(item_id)
     if not missing:
         return out
     orders = db.execute(
@@ -388,6 +404,9 @@ def suggest(
         "need_units": need_units,
         "case_of": case_of,
         "case_of_source": case[1] if case else None,
+        # Additive: the same pack size under the PO lines' name (null = the
+        # qty is in units).
+        "case_size": case_of,
         "weekly_demand": weekly,
         "projected_demand": projected,
         "safety_buffer": projection.get("safety_buffer"),
@@ -437,7 +456,8 @@ def attach_to_projection(
     top-level `order_window` object."""
     cart_rows = db.execute(select(CartItem)).scalars().all()
     ids = [i["item_id"] for i in items]
-    cases = known_case_sizes(db, vendor, ids, cart_rows)
+    inventory_cases = {i["item_id"]: i.get("case_size") for i in items if i.get("case_size")}
+    cases = known_case_sizes(db, vendor, ids, cart_rows, inventory_cases)
     others = other_cart_units(vendor, ids, cart_rows)
     avgs = avg_on_hand(db, ids, latest_inventory, as_of)
     # The next delivery is about the real today, even when the sales window
@@ -485,7 +505,8 @@ def cart_projection_context(
     out: Dict[int, dict] = {}
     for vendor, vendor_rows in by_vendor.items():
         vendor_ids = [r.item_id for r in vendor_rows]
-        cases = known_case_sizes(db, vendor, vendor_ids, rows)
+        inventory_cases = {i: projected[i].get("case_size") for i in vendor_ids}
+        cases = known_case_sizes(db, vendor, vendor_ids, rows, inventory_cases)
         others = other_cart_units(vendor, vendor_ids, rows)
         delivery = vendor_delivery(db, vendor, as_of)
         for r in vendor_rows:
