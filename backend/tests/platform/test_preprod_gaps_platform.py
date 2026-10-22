@@ -281,12 +281,12 @@ def test_trying_many_different_store_ids_is_still_limited(client):
     anon = client.__class__(client.app)
     codes = [f"NOSUCH{i:02d}" for i in range(12)]
     statuses = [anon.get(f"/api/public/stores/{c}").status_code for c in codes]
-    assert statuses[:10] == [404] * 10
+    assert statuses[:10] == [200] * 10  # an unknown code reads like a real one
     assert statuses[10] == 429
     r = anon.get("/api/public/stores/NOSUCH99")
     assert r.status_code == 429 and int(r.headers["retry-after"]) >= 1
     # A code asked for before still answers (its own, higher limit).
-    assert anon.get(f"/api/public/stores/{codes[0]}").status_code == 404
+    assert anon.get(f"/api/public/stores/{codes[0]}").status_code == 200
 
 
 def test_lookup_limits_per_store_and_address(monkeypatch):

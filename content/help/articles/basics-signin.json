@@ -35,7 +35,7 @@
   },
   {
    "type": "tip",
-   "text": "When the Store ID is right, the page shows your store's logo and name, so you know you are signing in to the right place."
+   "text": "The sign-in page never shows a store's name or logo while you type, so nobody can guess Store IDs to find stores. Your store's name shows once you are signed in. On a computer you signed in on before, a **Sign in to (your store) again** button fills in the Store ID for you."
   },
   {
    "type": "h",

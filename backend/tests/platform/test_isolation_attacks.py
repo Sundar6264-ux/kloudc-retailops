@@ -136,7 +136,9 @@ def test_6_public_routes(client, three):
     assert anon.get("/api/public/checklists/bravo-7391?store=ALPHA").status_code == 404
     look = anon.get("/api/public/stores/ALPHA").text
     assert CANARY not in look
-    assert CANARY in anon.get("/api/public/stores/BRAVO").text  # control: the canary is really there
+    # The lookup names no store at all now (contract 13.4 "As built"), so
+    # BRAVO's canary isn't in its own lookup either.
+    assert CANARY not in anon.get("/api/public/stores/BRAVO").text
     assert anon.get("/c/ALPHA/bravo-7391").status_code == 404
 
 

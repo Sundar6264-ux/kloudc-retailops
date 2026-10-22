@@ -72,18 +72,20 @@ def test_signup_approve_provisions_a_working_store(client, master_client, pdb, u
         assert a in acts, a
 
 
-def test_public_store_lookup_matches_directory_shape(client, pdb):
+def test_public_store_lookup_is_connect_only(client, pdb):
+    """Contract 13.4 "As built": only what a client needs to connect."""
     provision("ALPHA")
     r = client.get("/api/public/stores/alpha")
     assert r.status_code == 200
     body = r.json()
-    assert list(body) == ["schema", "code", "name", "api_base_url", "status", "message", "branding", "min_build", "updated_at"]
-    assert body["code"] == "ALPHA" and body["status"] == "active" and body["api_base_url"] == "https://app.retailops.test"
-    assert list(body["branding"]) == ["short_name", "logo_url", "icon_url", "primary_color", "secondary_color", "timezone", "pos_name"]
-    assert body["branding"]["pos_name"] == "Toast" and body["branding"]["timezone"] == "America/Chicago"
+    assert list(body) == ["schema", "code", "api_base_url", "status", "min_build"]
+    assert body == {"schema": 1, "code": "ALPHA", "api_base_url": "https://app.retailops.test", "status": "active",
+                    "min_build": {"ios": 0, "android": 0}}
+    for leak in ("name", "short_name", "branding", "logo_url", "pos_name", "message", "updated_at"):
+        assert leak not in r.text
     etag = r.headers["etag"]
     assert client.get("/api/public/stores/ALPHA", headers={"If-None-Match": etag}).status_code == 304
-    assert client.get("/api/public/stores/nope_x").json()["error"] == "unknown_store"
+    assert client.get("/api/public/stores/nope_x").json()["code"] == "NOPE_X"
     assert client.get("/api/public/stores/!!").json()["error"] == "invalid_code"
 
 

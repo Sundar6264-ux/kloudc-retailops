@@ -454,7 +454,7 @@ against a dummy hash when the user is unknown):
    `{"scope":"platform","user":{...}}`.
 4. Registry lookup; unknown store, unknown user or wrong password -> **401
    "Incorrect store ID, username or password"** (one message, no
-   enumeration).
+   enumeration). *Wording changed: see "As built - Store ID privacy".*
 5. Credentials good but store `dedicated` and not served here -> 409
    `store_moved` with `api_base_url`; `suspended` -> 403
    `{"error":"store_suspended","message":...}`; `pending`/`provisioning`/
@@ -1002,6 +1002,9 @@ directory** (`docs/M2_CONTRACT.md` 4.2: `schema`, `code`, `name`,
 `provisioning`, `failed`, `archived`, unknown -> 404 `unknown_store`. Same
 rate limits and cache headers as the directory.
 
+*Superseded (2026-10): the lookup is now connect-only and answers every
+valid code alike; see "As built - Store ID privacy".*
+
 ### 13.5 Integrations (store admin; owner C; prefix `/api/settings/integrations`)
 
 | Method | Path | Notes |
@@ -1039,7 +1042,7 @@ Hash routes (the site uses a hash router):
 
 | Route | Who | What |
 |---|---|---|
-| `/#/login` | everyone | **Store ID**, Username, Password, "Sign in". Remembers the last Store ID (localStorage `storeops_last_store`, try/catch). Accepts `?store=CODE` prefill. Link "New store? Request access". Store ID `PLATFORM` -> platform login -> console. Error texts map 401/403/409/429 (incorrect, suspended / not ready, moved -> redirect, locked + wait). Product branding before login; optional store logo after a successful `GET /api/public/stores/{code}` on Store ID blur. |
+| `/#/login` | everyone | **Store ID**, Username, Password, "Sign in". Remembers the last Store ID (localStorage `storeops_last_store`, try/catch). Accepts `?store=CODE` prefill. Link "New store? Request access". Store ID `PLATFORM` -> platform login -> console. Error texts map 401/403/409/429 (incorrect, suspended / not ready, moved -> redirect, locked + wait). Product branding before login; ~~optional store logo after a successful `GET /api/public/stores/{code}` on Store ID blur~~ (removed 2026-10: no lookup, no store name or logo before sign-in; see "As built - Store ID privacy"). |
 | `/#/signup` | public | the 13.3 form, live code availability, password rules, terms checkbox, hidden honeypot; success -> `/#/signup/pending?id=&t=` |
 | `/#/signup/pending` | public | status (polls every 30 s while visible, max 1 hour): pending / approved ("Sign in with Store ID X") / rejected (+ note) |
 | `/#/platform` | master | one screen with tabs (tile-like, remembers the last tab): **Requests** (approve with pack/timezone/code override, reject with note), **Stores** (status chips, suspend/resume, retry provisioning, settings, hosting), **Hosting** (requests; disabled state when the flag is off), **Audit** (filter by store/action). Slim frozen header (search + filter + info icon). |
@@ -4349,3 +4352,78 @@ part of the cached report. Clients: an empty list with `has_sales_data`
 false reads "No sales have come in yet..."; with it true, "Nothing needs
 reordering right now."; a missing flag (older server) keeps the old text.
 Tests: `tests/test_g31_reorder_data_flags.py`.
+
+## As built - Store ID privacy (2026-10)
+
+Owner concern: Store IDs are readable (like a shop name), and typing one on
+the sign-in page used to show that store's name and logo before anyone
+signed in, so guessing IDs told which stores exist and what they are called.
+Owner-approved decisions, as built:
+
+1. **The public lookup reveals nothing about whether a store exists.**
+   `GET /api/public/stores/{code}` (13.4) and the directory's
+   `GET /v1/stores/{code}` (service, Worker and static build) now answer
+   only what a client needs to connect:
+   `{"schema":1,"code","api_base_url","status":"active","min_build":{"ios","android"}}`
+   (`app.directory.stores.connect_body`).
+   - Removed before sign-in: `name`, `branding` (`short_name`, `logo_url`,
+     `icon_url`, colours, `timezone`, `pos_name`), `message`, `updated_at`.
+     Those come after sign-in from `/api/auth/me` and `/api/app/branding`
+     (the website fetches the signed-in store's branding with its session).
+   - On the shared service an unknown, archived, pending/provisioning/failed
+     or paused code gets the **same** 200, the same shape, the same
+     `PLATFORM_PUBLIC_URL` `api_base_url`, `min_build` 0/0 and the same cache
+     headers (`public, max-age=300, stale-while-revalidate=3600`, ETag of the
+     body) as a real store there; only `code` differs. One registry read on
+     every path (similar timing). The status is always the neutral `active`:
+     a paused store's message comes only after a correct sign-in (2).
+   - Invalid codes still answer 400 `invalid_code`; the rate limits (G13:
+     per address, and per new code) are unchanged.
+   - **Accepted difference:** a store on its own dedicated server necessarily
+     answers with its own `api_base_url` (and its own `min_build`), so a
+     guesser can tell that such a code is a dedicated store.
+   - The directory takes the shared address from `PLATFORM_PUBLIC_URL`
+     (`DirectoryConfig.shared_api_url`, default `https://app.<PLATFORM_DOMAIN>`).
+     The static Pages copy can't answer unknown codes (no file; still 404);
+     the app only reads it when the directory is down.
+2. **Sign-in failures all read the same.** Unknown store, unknown user,
+   wrong password, archived store and a not-ready store without its owner's
+   credentials all answer 401 `{"detail": "That Store ID, username or
+   password isn't right. Check all three and try again."}` (replaces G30's
+   per-case wording; `app.platform.login.BAD_LOGIN`). A dummy bcrypt check
+   runs when the store or user doesn't exist. `store_suspended` /
+   `store_not_ready` only after the username and password are right.
+   Lockouts and `login_attempts` / audit rows are unchanged. The fixed master
+   code `PLATFORM` keeps its "Platform console" heading.
+3. **Website sign-in page**: no lookup at all; the heading stays "Sign in to
+   your store"; no store name or logo while typing. After sign-in the header
+   shows the store name as before. Convenience: the last store signed in to
+   **successfully** on this browser is kept in localStorage
+   (`retailops_last_signed_in`, `{code,name}`, try/catch) and offered as
+   "Sign in to <name> again" - from that memory only, never from a lookup.
+4. **App**: no name from the lookup before sign-in (the trimmed body is read
+   tolerantly); the same generic sentence for a bad Store ID, username or
+   password; a store is remembered (quick picks, "Switch store", the store
+   chip) only after a successful sign-in on that phone; the name shows after
+   sign-in.
+5. Help: "I can't sign in", "Signing in" and "Your store's look" no longer
+   say the page shows your store's name/logo as you type.
+
+**What a guesser can still learn** (known, not fixed here):
+- That a code belongs to a dedicated-server store (its own `api_base_url`).
+- The per-store public routes that take `?store=CODE` before sign-in
+  (`/api/app/branding`, `/api/app/config`, `/api/app/legal`,
+  `/api/public/checklists/`) still answer 404 `unknown_store` for an unknown
+  code, and `/api/app/branding?store=CODE` still returns a real store's name,
+  logo, address and phone: the app reads it before sign-in to check it
+  reached the right server and to theme itself. Follow-up: make anonymous
+  branding on the shared service neutral and have the app fetch the full
+  branding with its session after sign-in.
+- `/api/signup/code-available` says whether a code is taken (sign-up needs
+  it); it shares the lookup's rate limit.
+- `409 store_moved` on sign-in (before the password check) for a store that
+  moved to its own server.
+
+Tests: `backend/tests/platform/test_store_id_privacy.py`,
+`backend/tests/test_directory.py`, `frontend/src/login/loginModel.test.mjs`,
+the app's tenant / sign-in tests.

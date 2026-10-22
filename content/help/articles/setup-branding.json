@@ -19,7 +19,7 @@
  "blocks": [
   {
    "type": "p",
-   "text": "Your store's logo and colour show on the sign-in page (once your Store ID is typed), in the menu, on buttons and on your POs. The rest of RetailOps uses KloudC's calm blues and a colour for each area."
+   "text": "Your store's logo and colour show once you are signed in: in the menu, on buttons and on your POs. The sign-in page stays plain (it never shows a store's name or logo). The rest of RetailOps uses KloudC's calm blues and a colour for each area."
   },
   {
    "type": "bullets",

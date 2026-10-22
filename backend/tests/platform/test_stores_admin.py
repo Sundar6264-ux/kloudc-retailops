@@ -21,7 +21,9 @@ def test_suspend_resume_archive(master_client, client, pdb):
     assert r.status_code == 403 and r.json()["error"] == "store_suspended" and r.json()["message"] == "Back soon"
     assert store_login(client, "ALPHA", "ann", "wrong-pass-123").status_code == 401  # still no hint without the password
     look = client.get("/api/public/stores/ALPHA").json()
-    assert look["status"] == "maintenance" and look["message"] == "Back soon"
+    # The lookup never tells: neutral status, no message (only a correct
+    # sign-in shows "Back soon").
+    assert look["status"] == "active" and "message" not in look and "Back soon" not in json.dumps(look)
     assert master_client.post("/api/platform/stores/ALPHA/suspend", json={"reason": "again"}).status_code == 409
 
     assert master_client.post("/api/platform/stores/ALPHA/resume").json()["status"] == "active"
@@ -31,7 +33,7 @@ def test_suspend_resume_archive(master_client, client, pdb):
     assert master_client.post("/api/platform/stores/ALPHA/archive", json={"confirm": "nope"}).status_code == 400
     assert master_client.post("/api/platform/stores/ALPHA/archive", json={"confirm": "alpha"}).json()["status"] == "archived"
     assert store_login(client, "ALPHA", "ann", "alpha-owner-pass").status_code == 401
-    assert client.get("/api/public/stores/ALPHA").status_code == 404
+    assert client.get("/api/public/stores/ALPHA").json() == client.get("/api/public/stores/NOPE_X").json() | {"code": "ALPHA"}
     acts = [a for a in pdb.execute(select(AuditLog.action).where(AuditLog.store_code == "ALPHA")).scalars()]
     for a in ("store.suspended", "store.resumed", "store.archived"):
         assert a in acts
@@ -52,7 +54,7 @@ def test_not_ready_store_tells_only_its_owner(client, master_client, pdb):
     assert r.status_code == 403 and r.json()["error"] == "store_not_ready"
     assert store_login(client, "ALPHA", "ann", "bad-pass-1234").status_code == 401
     assert store_login(client, "ALPHA", "eve", "alpha-owner-pass").status_code == 401
-    assert client.get("/api/public/stores/ALPHA").status_code == 404
+    assert client.get("/api/public/stores/ALPHA").json() == client.get("/api/public/stores/NOPE_X").json() | {"code": "ALPHA"}
 
 
 def test_store_settings_whitelist_and_validation(master_client, pdb):
@@ -72,7 +74,7 @@ def test_store_settings_whitelist_and_validation(master_client, pdb):
     s = store_settings_for("ALPHA")
     assert s.store_name == "Alpha Two" and s.ai_enabled is True and s.store_code == "ALPHA"
     look = master_client.get("/api/public/stores/ALPHA").json()
-    assert look["name"] == "Alpha Two"
+    assert "name" not in look and "Alpha Two" not in json.dumps(look)  # the lookup never names a store
     audit = pdb.execute(select(AuditLog).where(AuditLog.action == "store.settings_changed")).scalars().first()
     assert json.loads(audit.details)["changed"]["store_name"] == "Alpha Two"
 

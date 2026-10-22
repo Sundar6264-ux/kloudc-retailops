@@ -32,7 +32,11 @@ from app.platform.errors import PlatformError
 
 logger = logging.getLogger(__name__)
 
-BAD_LOGIN = "Incorrect store ID, username or password"
+# One plain sentence for an unknown store, an unknown user and a wrong
+# password alike (owner, 2026-10; replaces G30's per-case wording): the
+# answer never says which of the three was wrong, so it can't be used to
+# find out which Store IDs exist.
+BAD_LOGIN = "That Store ID, username or password isn't right. Check all three and try again."
 LEGACY_BAD_LOGIN = "Incorrect username or password"  # single mode, old clients (no store_code)
 
 

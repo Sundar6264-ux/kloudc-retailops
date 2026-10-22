@@ -6,6 +6,7 @@ from sqlalchemy import select
 
 from app.platform import totp
 from app.platform.models import AuditLog, LoginAttempt, PlatformSession
+from app.platform.login import BAD_LOGIN
 from tests.platform.conftest import MASTER_PASSWORD, master_login, provision, store_login
 
 
@@ -45,7 +46,7 @@ def test_one_message_for_every_bad_login(client, master):
         r = client.post("/api/auth/login", json={"store_code": code, "username": user, "password": pw})
         assert r.status_code == 401, (code, user, r.text)
         msgs.add(r.json()["detail"])
-    assert msgs == {"Incorrect store ID, username or password"}
+    assert msgs == {BAD_LOGIN}
 
 
 def test_store_admin_cannot_use_platform_routes_and_master_cannot_use_store_routes(client, master):
@@ -105,7 +106,7 @@ def test_totp_enrolment_and_login(client, master_client, platform_env, monkeypat
     assert r.status_code == 401 and r.json()["error"] == "totp_required"
     r = client.post("/api/auth/login", json={"store_code": "PLATFORM", "username": "owner", "password": MASTER_PASSWORD,
                                              "totp": "123456"})
-    assert r.status_code == 401 and r.json()["detail"] == "Incorrect store ID, username or password"
+    assert r.status_code == 401 and r.json()["detail"] == BAD_LOGIN
     r = client.post("/api/auth/login", json={"store_code": "PLATFORM", "username": "owner", "password": MASTER_PASSWORD,
                                              "totp": totp.now_code(setup["secret"])})
     assert r.status_code == 200

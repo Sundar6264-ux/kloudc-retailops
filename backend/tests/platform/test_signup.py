@@ -101,4 +101,4 @@ def test_lookup_and_code_check_share_the_lookup_rate_limit(client, platform_env,
     # own, higher limit (a store's shared Wi-Fi); a new one is refused.
     got.append(client.get("/api/public/stores/abc").status_code)
     got.append(client.get("/api/public/stores/xyz").status_code)
-    assert got == [200, 200, 404, 404, 429]
+    assert got == [200, 200, 200, 200, 429]

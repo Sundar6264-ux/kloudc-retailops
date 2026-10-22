@@ -12,7 +12,7 @@
    {
     "type": "steps",
     "items": [
-     "Check the Store ID in your welcome email. When it is right, the page shows your store's logo.",
+     "Check the Store ID in your welcome email. The page doesn't show your store's name until you are signed in, on purpose.",
      "Type the password carefully: capital letters matter.",
      "Locked? Wait 15 minutes and try again.",
      "Still stuck? Ask an admin at your store to reset your password on Users."

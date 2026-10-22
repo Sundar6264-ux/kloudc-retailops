@@ -16,7 +16,7 @@ MESSAGES: Dict[str, str] = {
     "invalid_code": "That isn't a valid store code. Codes are 3 to 24 letters, numbers or underscores.",
     "rate_limited": "Too many requests. Try again in {retry_after} seconds.",
     "locked": "Too many failed sign-ins. Try again in {retry_after} seconds.",
-    "bad_login": "Incorrect store ID, username or password",
+    "bad_login": "That Store ID, username or password isn't right. Check all three and try again.",
     "store_suspended": "This store is paused. Contact support.",
     "store_not_ready": "This store is still being set up. Try again shortly.",
     "store_moved": "This store has moved to its own server.",

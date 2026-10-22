@@ -2,7 +2,7 @@
 
 - ``/api/platform/*``      masters only (platform session)
 - ``/api/signup*``         public sign-up, code check, status, owner set-up link
-- ``/api/public/stores/{code}``  public store lookup (M2 directory JSON)
+- ``/api/public/stores/{code}``  public store lookup (connect-only JSON, contract 13.4)
 - ``/api/settings/integrations/*``, ``/api/settings/store``,
   ``/api/settings/hosting/request``  store admin (store session)
 
@@ -455,7 +455,11 @@ def owner_setup(body: OwnerSetupBody, request: Request):
 
 @public_router.get("/stores/{code}")
 def store_lookup(code: str, request: Request) -> Response:
-    from app.directory.main import CACHE_200, CACHE_404, NO_STORE as DIR_NO_STORE, _if_none_match, _json
+    """Every valid code answers 200 with the connect-only body (contract
+    13.4 "As built"): a real store on the shared service and an unknown or
+    archived code read the same apart from the code - same status, shape,
+    cache headers and api_base_url."""
+    from app.directory.main import CACHE_200, NO_STORE as DIR_NO_STORE, _if_none_match, _json
     from app.directory.stores import error_body, etag_for
     from app.platform.lookup import lookup_body
 
@@ -465,8 +469,6 @@ def store_lookup(code: str, request: Request) -> Response:
     status, body = lookup_body(code)
     if status == 400:
         return _json(400, error_body("invalid_code"), DIR_NO_STORE)
-    if status == 404:
-        return _json(404, error_body("unknown_store"), CACHE_404)
     etag = etag_for(body)
     if _if_none_match(request, etag):
         return Response(status_code=304, headers={"ETag": etag, "Cache-Control": CACHE_200, "Access-Control-Allow-Origin": "*"})
