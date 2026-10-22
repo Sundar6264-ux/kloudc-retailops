@@ -26,6 +26,8 @@ import {
   suggestionOf,
   updateFor,
 } from "./projectionQty/projectionQtyModel.js";
+import { readOrderWindow, writeOrderWindow, windowWords } from "./projectionQty/orderWindow.js";
+import { browserStorage } from "./cartAdd/cartVendorPanels.js";
 
 const DURATIONS = [
   { value: "7", label: "1 week" },
@@ -178,12 +180,21 @@ export default function SupplierProjection() {
 
   // Default to a 3-month lookback - the store's real ordering rhythm makes a
   // wider sales history a more useful default starting point than 1 month.
-  const [lookbackPreset, setLookbackPreset] = useState("90");
-  const [startDate, setStartDate] = useState(daysAgoStr(90));
+  // Oct 22: starts at the order window last projected (shared with the
+  // Purchase Order Cart's suggestions - projectionQty/orderWindow.js).
+  const [savedWindow] = useState(() => readOrderWindow(browserStorage()));
+  const [lookbackPreset, setLookbackPreset] = useState(() =>
+    LOOKBACK_PRESETS.some((p) => p.value === String(savedWindow.lookbackDays)) ? String(savedWindow.lookbackDays) : "90"
+  );
+  const [startDate, setStartDate] = useState(() =>
+    daysAgoStr(LOOKBACK_PRESETS.some((p) => p.value === String(savedWindow.lookbackDays)) ? savedWindow.lookbackDays : 90)
+  );
   const [endDate, setEndDate] = useState(todayStr());
 
-  const [durationPreset, setDurationPreset] = useState("30");
-  const [customProjectionDate, setCustomProjectionDate] = useState(daysFromNowStr(30));
+  const [durationPreset, setDurationPreset] = useState(() =>
+    DURATIONS.some((d) => d.value === String(savedWindow.horizonDays)) ? String(savedWindow.horizonDays) : "custom"
+  );
+  const [customProjectionDate, setCustomProjectionDate] = useState(daysFromNowStr(savedWindow.horizonDays));
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -276,6 +287,7 @@ export default function SupplierProjection() {
     ])
       .then(([result, cartIds]) => {
         setData(result);
+        saveWindow(result, horizonDays);
         setSelected(new Set(cartIds));
       })
       .catch((err) => setError(err.message))
@@ -309,6 +321,15 @@ export default function SupplierProjection() {
     !!effectiveDuration &&
     (lookbackPreset !== "custom" || (!!startDate && !!endDate));
 
+  // Oct 22: the Purchase Order Cart's line suggestions and Add items use
+  // the window of the last projection, so both pages suggest the same qty.
+  function saveWindow(result, horizon) {
+    writeOrderWindow(browserStorage(), {
+      lookbackDays: result?.lookback_days,
+      horizonDays: result?.horizons_days?.[0] ?? horizon,
+    });
+  }
+
   async function handleRun(horizonOverride) {
     const horizon = typeof horizonOverride === "number" ? horizonOverride : effectiveDuration;
     if (!canRun || !horizon) return;
@@ -323,6 +344,8 @@ export default function SupplierProjection() {
         refreshCartMembership(supplier),
       ]);
       setData(result);
+      // The cart suggests for the window last projected (Oct 22).
+      saveWindow(result, horizon);
       // Pre-tick whatever's already in this supplier's cart, so it's obvious
       // at a glance which items are already queued up.
       setSelected(new Set(cartIds));
@@ -752,11 +775,11 @@ export default function SupplierProjection() {
           {cartMessage && <p className="muted">{cartMessage}</p>}
           {data.protection_days && data.protection_days !== activeHorizon && (
             <p className="muted" style={{ fontSize: "0.85rem" }}>
-              {data.supplier}'s delivery schedule says stock has to last {data.protection_days} days (until the
-              order after this one arrives).
+              {data.supplier}'s delivery schedule says this order has to last {data.protection_days} days (until
+              the order after this one arrives). The suggestions are for {windowWords(activeHorizon)} now.
               <TermInfo k="protection_days" />{" "}
               <button className="link-button" disabled={loading} onClick={() => handleUseProtectionPeriod(data.protection_days)}>
-                Project {data.protection_days} days instead
+                Order for {data.protection_days} days instead
               </button>
             </p>
           )}

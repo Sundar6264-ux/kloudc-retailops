@@ -27,8 +27,8 @@
    "type": "steps",
    "items": [
     "Pick a **vendor**.",
-    "Pick a **lookback**: how much sales history to average (3 months is the default, or choose exact dates).",
-    "Pick a **projection duration**: how far ahead to cover (1 week to 3 months, or a date).",
+    "Pick a **lookback**: the sales history the forecast is worked out from (3 months is the default, or choose exact dates).",
+    "Pick a **projection duration** (Order for): how many days this order should last (1 week to 3 months, or a date). It sets the suggested qty, and the cart suggests for the same window. The line \"this order has to last N days\" is the vendor's delivery schedule; **Order for N days instead** switches to it.",
     "Select **Generate projection**. Every item that vendor supplies in the latest inventory is listed, most needed first.",
     "Tick the items you want. Each gets an **Order qty** box filled with its suggestion. Change any of them.",
     "Select **Add to cart**. You stay on the page, so you can keep going or switch vendor."

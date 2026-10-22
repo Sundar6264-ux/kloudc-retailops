@@ -49,6 +49,7 @@ import {
   switchToCases,
   useSuggestedQty,
 } from "./projectionQty/projectionQtyModel.js";
+import { readOrderWindow, windowWords } from "./projectionQty/orderWindow.js";
 
 // How long the lines an add just put in stay highlighted (the fade itself
 // is in CSS), and how long a vendor opened from a link is outlined.
@@ -171,7 +172,7 @@ export default function PurchaseOrderCart() {
     if (!cart || cart.suppliers.length === 0) return undefined;
     let cancelled = false;
     const timer = setTimeout(() => {
-      getCartProjection()
+      getCartProjection(readOrderWindow(browserStorage()))
         .then((res) => {
           if (cancelled) return;
           const byId = {};
@@ -531,8 +532,8 @@ export default function PurchaseOrderCart() {
               <p className="muted po-cart-proj-note">
                 Each line shows its sales per week, on hand and the{" "}
                 <Term k="suggested_order_qty">suggested qty</Term> for{" "}
-                {projectionWindow.horizon_days === 7 ? "1 week" : `${projectionWindow.horizon_days} days`} (sales from
-                the last {projectionWindow.lookback_days === 90 ? "3 months" : `${projectionWindow.lookback_days} days`}).
+                {windowWords(projectionWindow.horizon_days)} (sales from the last{" "}
+                {windowWords(projectionWindow.lookback_days)}) - the same window as New order.
               </p>
             )}
           </div>

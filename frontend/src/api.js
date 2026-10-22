@@ -764,8 +764,9 @@ export async function getCart() {
 
 // X1: the cart with each line's projection context (weekly sales, on hand,
 // suggested qty + basis) - a second, slower read the cart page makes after
-// showing the plain cart. Same window as the Add items suggestions.
-export async function getCartProjection({ lookbackDays = 90, horizonDays = 7 } = {}) {
+// showing the plain cart. The window is the one New order last
+// used (components/projectionQty/orderWindow.js), so both suggest the same.
+export async function getCartProjection({ lookbackDays = 90, horizonDays = 30 } = {}) {
   const params = new URLSearchParams({
     projection: "true",
     lookback_days: String(lookbackDays),

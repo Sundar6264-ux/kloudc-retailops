@@ -14194,7 +14194,9 @@ button.sp-add-btn {
   margin-top: 0.15rem;
   font-size: 0.72rem;
   color: var(--text-muted);
-  white-space: nowrap;
+  /* Oct 22: wraps on a narrow phone instead of running past the line. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .link-button.po-case-switch {

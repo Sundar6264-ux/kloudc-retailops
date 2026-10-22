@@ -4,8 +4,6 @@ import { addToCart, getSupplierProjection, getSuppliers, searchItems } from "../
 import { useAuth } from "../../AuthContext.jsx";
 import { storeDateOffsetStr, storeTodayStr } from "../../format";
 import {
-  SUGGEST_HORIZON_DAYS,
-  SUGGEST_LOOKBACK_DAYS,
   addOutcome,
   canStepQty,
   canonicalVendor,
@@ -30,6 +28,12 @@ import {
 } from "./cartAddModel.js";
 import { codeMatchLabel } from "../../productMatch.js";
 import { currentPosName } from "../../store/gating.js";
+import { readOrderWindow, windowWords } from "../projectionQty/orderWindow.js";
+import { browserStorage } from "./cartVendorPanels.js";
+
+// Oct 22: the window New order last used (3 months / 1 month by default) -
+// the same one the cart lines' suggestions use.
+const currentWindow = () => readOrderWindow(browserStorage());
 
 // One vendor's projection is kept for 5 minutes (like the app's add sheet),
 // so adding several lists in a row doesn't recompute it each time.
@@ -37,16 +41,18 @@ const PROJECTION_TTL_MS = 5 * 60 * 1000;
 const projectionCache = new Map();
 
 function loadProjection(supplier) {
-  const hit = projectionCache.get(supplier);
+  const { lookbackDays, horizonDays } = currentWindow();
+  const key = `${supplier}|${lookbackDays}|${horizonDays}`;
+  const hit = projectionCache.get(key);
   if (hit && Date.now() - hit.at < PROJECTION_TTL_MS) return hit.promise;
   const promise = getSupplierProjection(
     supplier,
-    storeDateOffsetStr(-SUGGEST_LOOKBACK_DAYS),
+    storeDateOffsetStr(-lookbackDays),
     storeTodayStr(),
-    SUGGEST_HORIZON_DAYS
-  ).then((data) => projectionIndex(data, SUGGEST_HORIZON_DAYS));
-  projectionCache.set(supplier, { at: Date.now(), promise });
-  promise.catch(() => projectionCache.delete(supplier));
+    horizonDays
+  ).then((data) => projectionIndex(data, horizonDays));
+  projectionCache.set(key, { at: Date.now(), promise });
+  promise.catch(() => projectionCache.delete(key));
   return promise;
 }
 
@@ -64,7 +70,7 @@ const RESULTS_SHOWN = 8;
 //   whole catalog with each result's own vendor. Whatever is ticked goes
 //   into the chosen vendor's cart, like the app;
 // - ticked results collect in a "To add" table, each with a qty (the
-//   suggested order for 1 week when there's a projection, else 1). The
+//   suggested order for the shared order window when there's a projection, else 1). The
 //   search can change between ticks without losing the list;
 // - the footer's "Add to <vendor>'s cart" sends the list in one request,
 //   then clears it, keeping the vendor and the search mode for the next list;
@@ -772,8 +778,8 @@ export default function AddItemsForm({ cartSuppliers = [], onRefresh, onAdded, o
             searching and keep ticking.
           </li>
           <li>
-            Each qty starts at the suggested order for 1 week ({SUGGEST_LOOKBACK_DAYS} days of sales minus what's in
-            stock, the same as the app), or 1. A qty you type or step is kept.
+            Each qty starts at the suggested order for {windowWords(currentWindow().horizonDays)} (
+            {windowWords(currentWindow().lookbackDays)} of sales minus what's in stock - the same window as New order), or 1. A qty you type or step is kept.
           </li>
           <li>Greyed items are already in the vendor's cart - change their qty in the cart below.</li>
           <li>
@@ -1204,12 +1210,14 @@ function ToAddRow({ row, supplier, proj, projLoading, projReady, inCart, saving,
     basis = (
       <span
         className="po-add-suggest is-need"
-        title={`Projected need for 1 week from the last ${SUGGEST_LOOKBACK_DAYS} days of sales, minus what's in stock - the same suggestion as the app`}
+        title={`Projected need for ${windowWords(currentWindow().horizonDays)} from the last ${windowWords(
+          currentWindow().lookbackDays
+        )} of sales, minus what's in stock - the same window as New order`}
       >
-        Suggested {s} for 1 week
+        Suggested {s} for {windowWords(currentWindow().horizonDays)}
       </span>
     );
-  else if (s === 0) basis = <span className="po-add-suggest is-enough">Enough stock for 1 week</span>;
+  else if (s === 0) basis = <span className="po-add-suggest is-enough">Enough stock for {windowWords(currentWindow().horizonDays)}</span>;
   else if (otherVendor) basis = <span>{vendors.length ? `Listed under ${vendors.join(", ")}` : "No vendor listed"}</span>;
   else if (projLoading) basis = <span>Checking sales…</span>;
   // The projection is in but has no suggestion for this item: say why the

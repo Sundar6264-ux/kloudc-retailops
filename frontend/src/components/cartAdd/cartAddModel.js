@@ -2,9 +2,9 @@
 // (AddItemsForm.jsx) - no React, no fetch, so they can be tested with
 // `node --test src/components/cartAdd/cartAddModel.test.mjs`.
 
-// The window the suggested quantity is worked out over - the same as the
-// app's add sheet (Cart settings default: 90 days of sales, order for 1 week),
-// so the web and the phone suggest the same number for the same item.
+// Fallback window for projectionIndex. Since Oct 22 the form itself uses the
+// shared order window (projectionQty/orderWindow.js - New order's
+// last window, 3 months / 1 month by default), the same as the cart lines.
 export const SUGGEST_LOOKBACK_DAYS = 90;
 export const SUGGEST_HORIZON_DAYS = 7;
 
@@ -97,7 +97,7 @@ export function projectionIndex(projection, horizon = SUGGEST_HORIZON_DAYS) {
   return index;
 }
 
-// The suggested order for 1 week, as the app works it out: the projection's
+// The suggested order for the order window, as the app works it out: the projection's
 // need rounded up; 0 = enough stock; null = no projection for the item.
 export function suggestion(proj) {
   if (!proj || proj.need == null || !Number.isFinite(proj.need)) return null;

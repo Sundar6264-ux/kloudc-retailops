@@ -550,9 +550,9 @@ TERMS = [
         "(1 = units). Never below 0; 0 means enough stock for the window. With no stock count it is the projected "
         f"sales for the window (stock not subtracted). \"avg\" is the average daily count over the last "
         f"{_n(_OS.AVG_ON_HAND_DAYS)} days. When the next delivery is already ordered, it says so and how many of "
-        "the item are on that order; the quantity is not lowered by it. New order uses the projection "
-        "duration you picked; the cart uses its own order-for period (1 week unless changed). You can always "
-        "change the quantity.",
+        "the item are on that order; the quantity is not lowered by it. New order and the cart use the same "
+        "Order for window (1 month from 3 months of sales unless you change it), so an item shows the same "
+        "suggestion in both. You can always change the quantity.",
         None,
         ["suggested qty", "suggested", "qty to order", "how many to order"],
     ),
@@ -562,7 +562,9 @@ TERMS = [
         "projection",
         "How many days today's stock has to last: past the next delivery you can still order for, until the "
         "delivery after that arrives.",
-        "From the vendor's Vendor Calendar schedule (delivery days and lead days). Only for vendors with a schedule.",
+        "From the vendor's Vendor Calendar schedule (delivery days and lead days). Only for vendors with a schedule. "
+        "On New order it is a suggestion next to the Order for window: \"Use N days\" sets Order for to "
+        "it; Reorder uses it to decide how urgent an item is.",
         None,
         ["protection days", "use protection period"],
     ),

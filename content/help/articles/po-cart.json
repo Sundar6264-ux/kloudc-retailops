@@ -32,7 +32,7 @@
    "type": "bullets",
    "items": [
     "**Qty** is cases. **Case of** is units in one case. Qty 2 with Case of 12 is 24 units.",
-    "Each line shows what is in stock and, a moment later, its projection, like \"~14/week · suggested 10 · on hand 6\". **Use 10** sets the suggestion.",
+    "Each line shows what is in stock and, a moment later, its projection, like \"~14/week · suggested 10 · on hand 6\". The suggestion uses the same window as New order (3 months of sales, order for 1 month unless changed), so an item shows the same number on both. **Use 10** sets the suggestion.",
     "Lines are grouped by PO section, in the order they print on the PDF.",
     "Cost, the estimate and the stock figures are only for you. They never appear on the PDF."
    ]
@@ -43,7 +43,7 @@
   },
   {
    "type": "p",
-   "text": "**Add items** at the top adds several items to one vendor in one go. Pick the vendor, search this vendor's products or all products, tick items into the **To add** list (each starts at its suggested quantity for 1 week), then **Add to <vendor>'s cart**. An item already in that vendor's cart can't be added again, so its quantity is never replaced. Not in inventory yet? **Add it as a new item**."
+   "text": "**Add items** at the top adds several items to one vendor in one go. Pick the vendor, search this vendor's products or all products, tick items into the **To add** list (each starts at its suggested quantity for the same Order for window as New order, 1 month unless changed), then **Add to <vendor>'s cart**. An item already in that vendor's cart can't be added again, so its quantity is never replaced. Not in inventory yet? **Add it as a new item**."
   },
   {
    "type": "h",
