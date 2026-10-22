@@ -119,16 +119,19 @@ async function run(browser, width) {
     await shot(page, `login-${width}`);
 
     await login(page, "demo-grocery", "owner", "wrong-password");
-    check((await page.textContent('[data-testid="login-error"]'))?.includes("Incorrect store ID, username or password"), T("wrong password message"));
+    const SAME = "That Store ID, username or password isn't right. Check all three and try again.";
+    check((await page.textContent('[data-testid="login-error"]'))?.includes(SAME), T("wrong password message"));
     check((await page.inputValue('[data-testid="login-store-id"]')) === "DEMO_GROCERY", T("Store ID normalised on blur"));
-    check((await page.textContent('[data-testid="login-store-name"]'))?.trim() === "Demo Grocery", T("store name from lookup"));
+    // Store ID privacy (2026-10): typing a Store ID never shows its name.
+    check((await page.textContent('[data-testid="login-store-name"]'))?.trim() === "Sign in to your store", T("no store name before sign-in"));
+    check(!(await page.innerText("body")).includes("Demo Grocery"), T("no store name anywhere before sign-in"));
 
     await login(page, "PAUSED_MART", "owner", STORE_PW);
     check((await page.textContent('[data-testid="login-error"]'))?.includes("paused"), T("suspended store message"));
     await shot(page, `login-suspended-${width}`);
 
     await login(page, "NOPE_STORE", "owner", STORE_PW);
-    check((await page.textContent('[data-testid="login-error"]'))?.includes("Incorrect store ID"), T("unknown store: same message"));
+    check((await page.textContent('[data-testid="login-error"]'))?.includes(SAME), T("unknown store: same message"));
 
     // store moved: the browser goes to the store's own server
     await page.route("https://moved.retailops.invalid/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<p>moved</p>" }));
@@ -409,7 +412,7 @@ async function realOnly(browser) {
     await page.fill('[data-testid="login-totp"]', "000000");
     await page.click('button[type="submit"]');
     await settle(page);
-    check((await page.textContent('[data-testid="login-error"]'))?.includes("Incorrect"), T("a wrong code is refused"));
+    check((await page.textContent('[data-testid="login-error"]'))?.includes("isn't right"), T("a wrong code is refused"));
     await page.fill('[data-testid="login-totp"]', totpNow(secret));
     await page.click('button[type="submit"]');
     await page.waitForSelector('[data-testid="pf-tab-requests"]', { timeout: 8000 }).catch(() => {});

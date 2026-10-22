@@ -92,7 +92,8 @@ async function runStore(browser, store) {
       const page = await ctx.newPage();
       await page.goto(`${base}/`);
       await page.waitForSelector('[data-testid="login-store-name"]');
-      check((await page.textContent('[data-testid="login-store-name"]')).trim() === brand.name, `${store.code} ${width}: login name`);
+      // Store ID privacy (2026-10): the heading never names the store.
+      check((await page.textContent('[data-testid="login-store-name"]')).trim() === "Sign in to your store", `${store.code} ${width}: login heading`);
       check((await page.title()) === title, `${store.code} ${width}: login title "${await page.title()}"`);
       const body = await page.innerText("body");
       check(!hasOriginName(body), `${store.code} ${width}: origin-store name on the login page`);

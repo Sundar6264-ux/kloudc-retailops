@@ -226,7 +226,7 @@ async function api(req, res, url) {
     const fail = () => {
       failures.push({ key, at: Date.now() });
       log("login.failed", { store_code: code, target: user });
-      return send(res, 401, { detail: "Incorrect store ID, username or password" });
+      return send(res, 401, { detail: "That Store ID, username or password isn't right. Check all three and try again." });
     };
     if (code === "PLATFORM") {
       const u = masters.get(user);

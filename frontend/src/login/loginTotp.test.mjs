@@ -10,7 +10,7 @@ test("totp_required asks for the code, other 401s stay 'incorrect'", () => {
   assert.equal(loginErrorMessage({ status: 401, body: { error: "totp_required" } }).message, LOGIN_MESSAGES.totp);
   // inside FastAPI's detail too
   assert.equal(loginErrorMessage({ status: 401, body: { detail: { error: "totp_required" } } }).kind, "totp");
-  assert.equal(loginErrorMessage({ status: 401, body: { detail: "Incorrect store ID, username or password" } }).kind, "incorrect");
+  assert.equal(loginErrorMessage({ status: 401, body: { detail: "Incorrect username or password" } }).kind, "incorrect");
 });
 
 test("cleanTotp keeps at most 6 digits", () => {

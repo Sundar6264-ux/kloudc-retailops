@@ -1,7 +1,8 @@
 // The store this website belongs to (one server = one store, plan 3.1):
 // name, logo, colours and time zone from GET /api/app/branding, fetched
-// once at boot BEFORE login (the login page shows the store's name and
-// logo too). Applies them to the page: document title, favicon, CSS colour
+// once at boot BEFORE login (on the shared service that is the product's
+// own branding: the login page shows no store's name or logo) and again for
+// the signed-in store after sign-in. Applies them to the page: document title, favicon, CSS colour
 // variables and the store time zone used by format.js.
 //
 // useStore() gives the store as the signed-in user sees it: AuthProvider
@@ -9,6 +10,7 @@
 // (branding.js storeView) and provides it through UserStoreContext.
 import { createContext, useContext, useEffect, useState } from "react";
 import { getBranding } from "../api";
+import { rememberSignedInStore } from "../login/loginModel.js";
 import { setStoreTimeZone } from "../format.js";
 import { brandCssVars, documentTitle, normalizeBranding, storeView } from "./branding.js";
 import { elementAvailable, posText, setCurrentPosName } from "./gating.js";
@@ -72,9 +74,22 @@ export function StoreProvider({ children, storeCode = null }) {
   // after sign-out). Nothing to do when it's already that store's.
   useEffect(() => {
     let current = 0;
+    // A signed-in store's name, kept on this browser only for the login
+    // page's "Sign in to <name> again" (never from a lookup).
+    function remember(code, b) {
+      if (!code || b.code !== code) return;
+      try {
+        rememberSignedInStore(window.localStorage, code, b.name);
+      } catch {
+        // storage off: nothing remembered
+      }
+    }
     function onStore(e) {
       const code = e?.detail?.code || null;
-      if (branding && (branding.code || null) === code) return;
+      if (branding && (branding.code || null) === code) {
+        remember(code, branding);
+        return;
+      }
       const mine = ++current;
       getBranding(code)
         .then((raw) => {
@@ -82,6 +97,7 @@ export function StoreProvider({ children, storeCode = null }) {
           const b = normalizeBranding(raw);
           applyBranding(b);
           setBranding(b);
+          remember(code, b);
         })
         .catch(() => {
           // keep what's showing

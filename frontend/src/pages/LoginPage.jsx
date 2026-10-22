@@ -1,11 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
-import { lookupStore } from "../api";
 import PasswordInput from "../components/PasswordInput.jsx";
-import StoreLogo from "../components/StoreLogo.jsx";
 import { useBranding } from "../store/StoreContext.jsx";
-import { safeUrl } from "../store/branding.js";
 import AuthLayout from "../components/AuthLayout.jsx";
 import { InfoButton } from "../ui/helpBridge.jsx";
 import Icon from "../ui/icons.jsx";
@@ -17,6 +14,7 @@ import {
   movedLoginUrl,
   normalizeStoreCode,
   readLastStore,
+  readSignedInStore,
   rememberStore,
   validStoreCode,
 } from "../login/loginModel.js";
@@ -35,9 +33,17 @@ function storage() {
 // The one login page (docs/PLATFORM_CONTRACT.md 4.5, 14): Store ID,
 // Username, Password for everyone - store staff, store admins and (Store ID
 // PLATFORM) the master admins. The Store ID is remembered on this browser.
+//
+// Store ID privacy (owner, 2026-10; PLATFORM_CONTRACT "As built - Store ID
+// privacy"): the page never looks a Store ID up and never shows a store's
+// name or logo while someone types - guessing IDs must not tell which stores exist. The
+// store's name appears in the app header after a successful sign-in. The
+// only name shown here is this browser's own memory of the last store
+// signed in to successfully ("Sign in to <name> again").
 export default function LoginPage() {
   const { login } = useAuth();
-  // Product branding before login (a single-store server: its store's).
+  // Product branding before login (a single-store server: its own Store ID
+  // prefills the field).
   const brand = useBranding();
   const [searchParams] = useSearchParams();
   const [storeId, setStoreId] = useState(() =>
@@ -56,34 +62,19 @@ export default function LoginPage() {
   // Signed out because a master paused the store (A12): shown once.
   const [signedOutReason] = useState(() => takeSignOutReason(typeof window !== "undefined" ? window.sessionStorage : null));
   const [loading, setLoading] = useState(false);
-  // The store the typed Store ID belongs to (public lookup on blur), for
-  // its name and logo above the form. null = not looked up / not found.
-  const [found, setFound] = useState(null);
-  const lookupSeq = useRef(0);
+  // The last store signed in to successfully on this browser (never from
+  // a lookup): offered as one tap.
+  const [again] = useState(() => readSignedInStore(storage()));
+  const usernameRef = useRef(null);
 
   const code = validStoreCode(storeId);
 
-  async function lookUp(raw) {
-    const c = validStoreCode(raw);
-    const mine = ++lookupSeq.current;
-    if (!c || isPlatformCode(c) || c === brand.code) {
-      setFound(null);
-      return;
-    }
-    try {
-      const rec = await lookupStore(c);
-      if (mine !== lookupSeq.current) return;
-      setFound(rec && rec.code ? rec : null);
-    } catch {
-      if (mine === lookupSeq.current) setFound(null);
-    }
+  function pickAgain() {
+    setStoreId(again.code);
+    setNeedTotp(false);
+    setError(null);
+    usernameRef.current?.focus();
   }
-
-  useEffect(() => {
-    // Once, for a prefilled Store ID.
-    if (code) lookUp(code);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -128,45 +119,35 @@ export default function LoginPage() {
     }
   }
 
+  // PLATFORM is fixed and known, so its own heading may stay.
   const platform = isPlatformCode(storeId);
-  const ownStore = !!code && code === brand.code;
-  const header = found
-    ? { name: found.name, shortName: found.name, logoUrl: safeUrl(found.branding?.logo_url) }
-    : ownStore
-      ? brand
-      : { name: brand.productName, shortName: brand.productName, logoUrl: brand.code ? null : brand.logoUrl };
-  const title = platform ? `${brand.productName} platform` : header.name || brand.productName;
-  // No store chosen yet (or the master's PLATFORM): the product's own lockup.
-  const productHeader = platform || (!found && !ownStore);
 
   return (
     <AuthLayout testId="login-page" retailOps>
       <form onSubmit={handleSubmit} className="auth-card login-card" noValidate>
-        {productHeader ? (
-          <div className="auth-head">
-            <div className="auth-title-row">
-              <h1 className="auth-title" data-testid="login-store-name">
-                {platform ? "Platform console" : "Sign in to your store"}
-              </h1>
-              <InfoButton pageId="login" />
-            </div>
-            <p className="auth-sub">
-              {platform ? "KloudC staff only. You'll be asked for your 6-digit code." : "Use the Store ID, username and password your store gave you."}
-            </p>
-          </div>
-        ) : (
-          <div className="auth-head auth-title-row">
-            <div className="auth-store-chip">
-              <StoreLogo store={header} size={40} className="login-logo" />
-              <span className="auth-store-text">
-                <span className="auth-store-kicker">Signing in to</span>
-                <h1 className="login-title" data-testid="login-store-name">
-                  {title}
-                </h1>
-              </span>
-            </div>
+        <div className="auth-head">
+          <div className="auth-title-row">
+            <h1 className="auth-title" data-testid="login-store-name">
+              {platform ? "Platform console" : "Sign in to your store"}
+            </h1>
             <InfoButton pageId="login" />
           </div>
+          <p className="auth-sub">
+            {platform ? "KloudC staff only. You'll be asked for your 6-digit code." : "Use the Store ID, username and password your store gave you."}
+          </p>
+        </div>
+
+        {again && !platform && (
+          <button
+            type="button"
+            className="login-again"
+            data-testid="login-again"
+            aria-pressed={code === again.code}
+            onClick={pickAgain}
+          >
+            <Icon name="store" size={16} />
+            <span>Sign in to {again.name} again</span>
+          </button>
         )}
 
         <label className="login-field">
@@ -178,13 +159,11 @@ export default function LoginPage() {
             value={storeId}
             onChange={(e) => {
               setStoreId(e.target.value.replace(/[^A-Za-z0-9_\- ]/g, "").slice(0, 32));
-              setFound(null);
               setNeedTotp(false);
             }}
             onBlur={(e) => {
               const n = normalizeStoreCode(e.target.value);
               if (n !== storeId) setStoreId(n);
-              lookUp(n);
             }}
             autoComplete="organization"
             autoCapitalize="characters"
@@ -209,6 +188,7 @@ export default function LoginPage() {
               setNeedTotp(false);
             }}
             autoComplete="username"
+            ref={usernameRef}
             autoFocus={!!storeId}
           />
         </label>

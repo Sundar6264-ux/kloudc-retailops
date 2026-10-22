@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  LAST_SIGNED_IN_KEY,
   LAST_STORE_KEY,
   LOGIN_MESSAGES,
   errorInfo,
@@ -14,6 +15,8 @@ import {
   normalizeMe,
   normalizeStoreCode,
   readLastStore,
+  readSignedInStore,
+  rememberSignedInStore,
   rememberStore,
   storeFromPath,
   validStoreCode,
@@ -91,10 +94,14 @@ test("error bodies: new {error,message}, FastAPI {detail} and {detail:{...}}", (
 });
 
 test("login errors: 401 / 403 suspended and not ready / 409 moved / 429 / network", () => {
-  assert.deepEqual(loginErrorMessage(apiError(401, { detail: "Incorrect store ID, username or password" })), {
+  const same = {
     kind: "incorrect",
-    message: "Incorrect store ID, username or password",
-  });
+    message: "That Store ID, username or password isn't right. Check all three and try again.",
+  };
+  assert.deepEqual(loginErrorMessage(apiError(401, { detail: "That Store ID, username or password isn't right. Check all three and try again." })), same);
+  // An older server's per-case wording still reads as the one sentence.
+  assert.deepEqual(loginErrorMessage(apiError(401, { detail: "Incorrect username or password" })), same);
+  assert.deepEqual(loginErrorMessage(apiError(401, { detail: "No store with that Store ID." })), same);
   assert.equal(loginErrorMessage(apiError(401, null)).message, LOGIN_MESSAGES.incorrect);
 
   const suspended = loginErrorMessage(apiError(403, { error: "store_suspended", message: "Paused for billing." }));
@@ -160,4 +167,22 @@ test("a shared server's checklist link carries the Store ID; a single store's do
   assert.equal(storeFromPath("/c/!!/kitchen-4821"), null);
   assert.equal(storeFromPath("/x/XYZ/kitchen-4821"), null);
   assert.equal(storeFromPath(""), null);
+});
+
+test("the last store signed in to is remembered with its name, only from a sign-in", () => {
+  const store = new Map();
+  const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)) };
+  assert.equal(readSignedInStore(storage), null);
+  rememberSignedInStore(storage, "main-street", "  Main Street Grocery ");
+  assert.deepEqual(readSignedInStore(storage), { code: "MAIN_STREET", name: "Main Street Grocery" });
+  rememberSignedInStore(storage, "PLATFORM", "Console");
+  assert.deepEqual(readSignedInStore(storage), { code: "MAIN_STREET", name: "Main Street Grocery" });
+  rememberSignedInStore(storage, "OTHER", "");
+  assert.equal(readSignedInStore(storage).code, "MAIN_STREET");
+  store.set(LAST_SIGNED_IN_KEY, "{not json");
+  assert.equal(readSignedInStore(storage), null);
+  const broken = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); } };
+  assert.equal(readSignedInStore(broken), null);
+  rememberSignedInStore(broken, "MAIN_STREET", "x"); // never throws
+  assert.equal(readSignedInStore(null), null);
 });

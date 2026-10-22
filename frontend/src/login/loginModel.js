@@ -40,6 +40,35 @@ export function readLastStore(storage) {
   }
 }
 
+// The last store someone signed in to SUCCESSFULLY on this browser, with
+// its name, for the "Sign in to <name> again" button. Only ever written
+// after a sign-in worked (StoreContext, once the signed-in store's branding
+// arrives) - never from a lookup, so typing a Store ID shows no name.
+export const LAST_SIGNED_IN_KEY = "retailops_last_signed_in";
+
+export function readSignedInStore(storage) {
+  try {
+    const raw = storage?.getItem(LAST_SIGNED_IN_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    const code = validStoreCode(v?.code || "");
+    const name = typeof v?.name === "string" ? v.name.trim().slice(0, 120) : "";
+    return code && name && code !== PLATFORM_LOGIN_CODE ? { code, name } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function rememberSignedInStore(storage, code, name) {
+  try {
+    const c = validStoreCode(code);
+    const n = typeof name === "string" ? name.trim().slice(0, 120) : "";
+    if (c && n && c !== PLATFORM_LOGIN_CODE) storage?.setItem(LAST_SIGNED_IN_KEY, JSON.stringify({ code: c, name: n }));
+  } catch {
+    // not remembered - no "Sign in again" button next time
+  }
+}
+
 export function rememberStore(storage, code) {
   try {
     const c = validStoreCode(code);
@@ -73,7 +102,9 @@ export function errorInfo(body) {
 }
 
 export const LOGIN_MESSAGES = {
-  incorrect: "Incorrect store ID, username or password",
+  // One sentence for an unknown store, an unknown user and a wrong password
+  // (owner, 2026-10; replaces G30's per-case wording).
+  incorrect: "That Store ID, username or password isn't right. Check all three and try again.",
   suspended: "This store is paused. Please contact the store owner.",
   notReady: "This store isn't ready yet. You'll be able to sign in once it has been set up.",
   moved: "This store moved to its own server. Taking you there…",
@@ -102,7 +133,8 @@ export function loginErrorMessage(err) {
   const { code, message, data } = errorInfo(err.body);
   // A master with two-step sign-in: the password was right, ask for the code.
   if (status === 401 && code === "totp_required") return { kind: "totp", message: message || LOGIN_MESSAGES.totp };
-  if (status === 401) return { kind: "incorrect", message: message || LOGIN_MESSAGES.incorrect };
+  // Always our own sentence (an older server's wording may differ per case).
+  if (status === 401) return { kind: "incorrect", message: LOGIN_MESSAGES.incorrect };
   if (status === 429) {
     const retryAfter = Number(data.retry_after) || 0;
     return {
