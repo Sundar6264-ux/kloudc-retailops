@@ -230,12 +230,22 @@ def _database_exists(conn, db_name: str) -> bool:
     return conn.execute(text("SELECT 1 FROM pg_database WHERE datname = :n"), {"n": db_name}).first() is not None
 
 
+# A connection that was just closed (a server stopped a moment ago) stays in
+# pg_stat_activity until its backend process exits, which on a busy machine
+# can take a moment: look again for this long before refusing.
+CONNECTIONS_GRACE_S = 3.0
+
+
 def _refuse_if_connected(db_name: str, code: str) -> None:
     _release_own_connections(code)
     admin = _admin_engine()
     try:
         with admin.connect() as conn:
             others = _other_connections(conn, db_name)
+            deadline = time.monotonic() + CONNECTIONS_GRACE_S
+            while others and time.monotonic() < deadline:
+                time.sleep(0.2)
+                others = _other_connections(conn, db_name)
     finally:
         admin.dispose()
     if others:

@@ -166,6 +166,34 @@ def test_import_refuses_a_store_with_data_or_open_connections(tmp_path, pdb):
         import_sqlite("NOPE", src, log=lambda *a: None)
 
 
+def test_a_connection_that_is_closing_is_waited_for_not_refused(monkeypatch):
+    # Final demo check (Oct 22): under load a just-closed connection was still
+    # counted and the import refused. It is looked at again for a moment.
+    from app.ops import store_import as si
+
+    seen = iter([1, 1, 0])
+    monkeypatch.setattr(si, "_release_own_connections", lambda code: None)
+    monkeypatch.setattr(si, "_other_connections", lambda conn, db: next(seen))
+    monkeypatch.setattr(si.time, "sleep", lambda s: None)
+
+    class _Engine:
+        def connect(self):
+            import contextlib
+
+            return contextlib.nullcontext(object())
+
+        def dispose(self):
+            pass
+
+    monkeypatch.setattr(si, "_admin_engine", lambda: _Engine())
+    si._refuse_if_connected("so_x_s_alpha", "ALPHA")  # no error: it went away
+    # Still there after the grace: refused, in plain words.
+    monkeypatch.setattr(si, "_other_connections", lambda conn, db: 2)
+    monkeypatch.setattr(si, "CONNECTIONS_GRACE_S", 0)
+    with pytest.raises(si.StoreImportError, match="2 other connection"):
+        si._refuse_if_connected("so_x_s_alpha", "ALPHA")
+
+
 def test_import_command_needs_confirm_for_replace(tmp_path, pdb, capsys):
     from app.platform.__main__ import main
 
