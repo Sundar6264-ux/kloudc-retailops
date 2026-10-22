@@ -56,5 +56,10 @@
   },
   "demo": false,
   "pos_provider": "toast",
-  "pos_word": "Toast"
+  "pos_word": "Toast",
+  "label_printing": {
+    "enabled": true,
+    "url": "https://labels-retailops-test-toast.retailops.invalid",
+    "options": {}
+  }
 }

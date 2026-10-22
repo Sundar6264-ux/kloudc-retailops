@@ -250,6 +250,46 @@ def owner_setup_link(code: str, request: Request, body: SetupLinkBody = Body(def
     return {"store_code": store.code, "username": username, "setup_url": url}
 
 
+# --- feature requests (docs/LABEL_PRINTING_FEATURE.md 3.3, 4) ------------------------
+
+
+@platform_router.get("/feature-requests")
+def list_feature_requests(status: Optional[str] = None, store: Optional[str] = None, feature: Optional[str] = None,
+                          _: PlatformUser = Depends(masters.require_master), db: Session = Depends(get_platform_db)):
+    from app.platform import feature_requests
+
+    return {
+        "requests": feature_requests.list_requests(db, status, store, feature),
+        "open_count": feature_requests.open_count(db),
+    }
+
+
+class FeatureApproveBody(BaseModel):
+    labels_url: Optional[str] = Field(default=None, max_length=300)
+    note: Optional[str] = Field(default=None, max_length=1000)
+
+
+class FeatureDeclineBody(BaseModel):
+    note: Optional[str] = Field(default=None, max_length=1000)
+
+
+@platform_router.post("/feature-requests/{request_id}/approve")
+def approve_feature_request(request_id: int, request: Request, body: FeatureApproveBody = Body(default_factory=FeatureApproveBody),
+                            user: PlatformUser = Depends(platform_write), db: Session = Depends(get_platform_db)):
+    from app.platform import feature_requests
+
+    return feature_requests.approve(db, request_id, actor=masters.actor_name(user), labels_url=body.labels_url,
+                                    note=body.note, client_ip=_ip(request))
+
+
+@platform_router.post("/feature-requests/{request_id}/decline")
+def decline_feature_request(request_id: int, request: Request, body: FeatureDeclineBody = Body(default_factory=FeatureDeclineBody),
+                            user: PlatformUser = Depends(platform_write), db: Session = Depends(get_platform_db)):
+    from app.platform import feature_requests
+
+    return feature_requests.decline(db, request_id, actor=masters.actor_name(user), note=body.note, client_ip=_ip(request))
+
+
 # --- dedicated hosting --------------------------------------------------------------
 
 
@@ -650,6 +690,16 @@ def patch_store_settings_admin(request: Request, body: Dict[str, Any] = Body(...
     if bad:
         raise PlatformError(400, "invalid", f"Not editable here: {', '.join(bad)}", fields=bad)
     with platform_session() as db:
+        if "labels_url" in body:
+            # Only while label printing is on (docs/LABEL_PRINTING_FEATURE.md 1.4);
+            # a bad address is still a 400 first.
+            from app.platform.feature_requests import label_printing_state_of
+
+            stores._validate_settings({}, {"labels_url": body["labels_url"]})
+            if label_printing_state_of(stores.settings_values(db, stores.store_by_code(db, code))) == "off":
+                raise PlatformError(409, "label_printing_off",
+                                    "Label printing isn't on for this store yet. Ask for it under Label printing.",
+                                    field="labels_url")
         values = stores.put_settings(db, code, body, actor=_store_actor(code, user), actor_type="store_user",
                                      client_ip=_ip(request))
     return {"store_code": code, "settings": {k: values.get(k) for k in STORE_ADMIN_SETTING_KEYS}}

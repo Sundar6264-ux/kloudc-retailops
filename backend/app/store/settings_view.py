@@ -206,11 +206,39 @@ def ai_enabled(s=None) -> bool:
     return bool(_get(_s(s), "ai_enabled", False))
 
 
+def label_printing_enabled(s=None) -> bool:
+    """Label printing (docs/LABEL_PRINTING_FEATURE.md 1.2): LABEL_PRINTING_ENABLED
+    when set, else (legacy) on exactly when LABELS_URL is set."""
+    s = _s(s)
+    explicit = _get(s, "label_printing_enabled", None)
+    if isinstance(explicit, bool):
+        return explicit
+    return bool(labels_url(s))
+
+
+def label_printing_state(s=None) -> str:
+    """"on", "off" or "on_no_address" (turned on, no label site address yet)."""
+    s = _s(s)
+    if not label_printing_enabled(s):
+        return "off"
+    return "on" if labels_url(s) else "on_no_address"
+
+
+def label_printing_options(s=None) -> dict:
+    """LABEL_PRINTING_OPTIONS as a dict ({} when unset or invalid)."""
+    from app.config import check_label_printing_options
+
+    try:
+        return check_label_printing_options(_get(_s(s), "label_printing_options", None))
+    except ValueError:
+        return {}
+
+
 def store_features(s=None) -> List[str]:
     s = _s(s)
     on = {
         "ap_inbox": bool(ap_inbox_address(s)),
-        "labels": bool(labels_url(s)),
+        "labels": label_printing_enabled(s) and bool(labels_url(s)),
         "whatsapp": bool(_clean(_get(s, "whapi_api_token"))),
         "ai": ai_enabled(s),
     }

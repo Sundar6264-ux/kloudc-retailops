@@ -16,7 +16,6 @@ so the shared service answers ``store_moved`` for that store (track B's
 
 import datetime as dt
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlsplit
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -24,10 +23,11 @@ from sqlalchemy.orm import Session
 
 from app.platform import bridge
 from app.platform.audit import audit
-from app.platform.config import dedicated_enabled, extra_api_hosts, pget
+from app.platform.config import dedicated_enabled
 from app.platform.errors import PlatformError
 from app.platform.models import DedicatedHostingRequest, Store, utcnow
 from app.platform.stores import store_by_code
+from app.platform.urls import validate_origin_url
 
 OPEN = ("requested", "approved", "migrating")
 ROLLBACK_DAYS = 7
@@ -40,35 +40,9 @@ def require_enabled() -> None:
 
 def validate_api_base_url(value: Optional[str]) -> Optional[str]:
     """https, origin only, host under PLATFORM_DOMAIN or
-    DIRECTORY_EXTRA_API_HOSTS, never the refused legacy domain."""
-    if value in (None, ""):
-        return None
-    from app.config import refused_host
-
-    v = str(value).strip()
-    try:
-        parts = urlsplit(v)
-        port = parts.port
-    except ValueError:
-        raise PlatformError(400, "invalid", "Not a valid URL.", field="target_api_base_url") from None
-    host = (parts.hostname or "").lower()
-    if (
-        parts.scheme != "https"
-        or not host
-        or parts.path not in ("",)
-        or parts.query
-        or parts.fragment
-        or parts.username
-        or port is not None
-        or v.endswith("/")
-    ):
-        raise PlatformError(400, "invalid", "Use https://<host> with no path, port or trailing slash.", field="target_api_base_url")
-    if refused_host(v):
-        raise PlatformError(400, "invalid", "That domain is not allowed.", field="target_api_base_url")
-    domain = str(pget("platform_domain") or "").strip().lower()
-    if not ((domain and host.endswith("." + domain)) or host in extra_api_hosts()):
-        raise PlatformError(400, "invalid", f"The host must be under .{domain} or listed in DIRECTORY_EXTRA_API_HOSTS.", field="target_api_base_url")
-    return v
+    DIRECTORY_EXTRA_API_HOSTS, never the refused legacy domain (the shared
+    rule in app/platform/urls.py)."""
+    return validate_origin_url(value, "target_api_base_url")
 
 
 def validate_db_host_ref(value: Optional[str]) -> Optional[str]:

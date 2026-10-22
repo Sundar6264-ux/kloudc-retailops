@@ -39,5 +39,10 @@
   },
   "demo": true,
   "pos_provider": "csv",
-  "pos_word": "your POS"
+  "pos_word": "your POS",
+  "label_printing": {
+    "enabled": false,
+    "url": null,
+    "options": {}
+  }
 }

@@ -84,7 +84,8 @@ def platform_db_url():
 
 
 TABLES = (
-    "owner_setup_tokens, support_sessions, login_attempts, dedicated_hosting_requests, audit_log, "
+    "label_handoffs, feature_requests, owner_setup_tokens, support_sessions, login_attempts, dedicated_hosting_requests, "
+    "audit_log, "
     "store_credentials, store_settings, platform_sessions, platform_users, stores, signup_requests"
 )
 

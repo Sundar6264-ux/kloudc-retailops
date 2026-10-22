@@ -13,6 +13,7 @@ from app.platform import bridge
 from app.platform.audit import audit
 from app.platform.errors import PlatformError
 from app.platform.models import Store, StoreCredential, StoreSetting, SupportSession, utcnow
+from app.platform.urls import validate_origin_url
 
 DEFAULT_MAINTENANCE = "This store is paused. Please contact the store owner."
 
@@ -82,6 +83,7 @@ def store_detail(db: Session, code: str) -> Dict[str, Any]:
                 db.execute(select(StoreCredential.kind).where(StoreCredential.store_id == store.id)).scalars()
             ),
             "settings": settings_values(db, store),
+            "label_printing": label_printing_view(db, store),
             "support_sessions": [
                 {
                     "id": s.id,
@@ -205,6 +207,13 @@ def _validate_settings(current: Dict[str, Any], updates: Dict[str, Any]) -> Dict
             continue
         if key in URL_SETTING_KEYS:
             value = _https_setting(key, value)
+        if key == "labels_url" and value:
+            # Same rule as a dedicated server's address and the app's
+            # ApiHostPolicy (docs/LABEL_PRINTING_FEATURE.md 1.1): checked
+            # on write only, never when a stored value is merged.
+            value = validate_origin_url(value, key, {p: LABELS_URL_MESSAGE for p in ("invalid", "shape", "refused", "host")})
+        if key == "label_printing_enabled" and not isinstance(value, bool):
+            raise PlatformError(400, "invalid", "Label printing: use true or false.", field=key)
         try:
             out[key] = t.validate_store_setting(key, value)
         except ValueError as exc:
@@ -212,9 +221,31 @@ def _validate_settings(current: Dict[str, Any], updates: Dict[str, Any]) -> Dict
     return out
 
 
+LABELS_URL_MESSAGE = "Label site address: use https://<name>.{domain} with nothing after it."
+
+
+def label_printing_view(db: Session, store: Store, values: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """The master's view of a store's label printing (docs/LABEL_PRINTING_FEATURE.md 1.3)."""
+    from app.platform import feature_requests
+
+    values = settings_values(db, store) if values is None else values
+    state = feature_requests.label_printing_state_of(values)
+    open_row = feature_requests.open_request(db, store.id, feature_requests.LABEL_PRINTING)
+    return {
+        "state": state,
+        "url": (values.get("labels_url") or None),
+        "options": feature_requests.options_of(values),
+        "open_request_id": open_row.id if open_row is not None else None,
+    }
+
+
 def put_settings(db: Session, code: str, updates: Dict[str, Any], *, actor: str, actor_type: str = "platform_user",
-                 client_ip: Optional[str] = None) -> Dict[str, Any]:
-    """Set (value) or remove (null) whitelisted store settings."""
+                 client_ip: Optional[str] = None, commit: bool = True) -> Dict[str, Any]:
+    """Set (value) or remove (null) whitelisted store settings.
+
+    ``commit=False`` leaves the transaction open for the caller (a feature
+    request's approval writes its status in the same one); the caller then
+    commits and calls ``bridge.store_changed``."""
     if not isinstance(updates, dict) or not updates:
         raise PlatformError(400, "invalid", "Send an object of setting -> value.")
     bad = sorted(k for k in updates if not isinstance(k, str) or not setting_allowed(k))
@@ -251,6 +282,21 @@ def put_settings(db: Session, code: str, updates: Dict[str, Any], *, actor: str,
         _bump(store)
         audit("store.settings_changed", actor_type=actor_type, actor_name=actor, store_code=store.code,
               details={"changed": changed}, client_ip=client_ip, db=db)
+    if changed.get("label_printing_enabled") is True and actor_type != "store_user":
+        # A master (console or CLI) turned it on by hand: any open request
+        # is answered (docs/LABEL_PRINTING_FEATURE.md 4).
+        from app.platform import feature_requests
+
+        feature_requests.close_open_on_manual_enable(db, store, actor=actor, actor_type=actor_type, client_ip=client_ip)
+    if not commit:
+        db.flush()
+        merged = dict(current)
+        for key, value in clean.items():
+            if value is None:
+                merged.pop(key, None)
+            else:
+                merged[key] = value
+        return merged
     db.commit()
     if changed:
         bridge.store_changed(store.code)

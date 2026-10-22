@@ -265,6 +265,52 @@ class OwnerSetupToken(PlatformBase):
     used_at: Mapped[Optional[dt.datetime]] = mapped_column(TS)
 
 
+class FeatureRequest(PlatformBase):
+    """A store asks for a store feature a master turns on (label printing in
+    v1; docs/LABEL_PRINTING_FEATURE.md section 4). Generic: ``feature`` names
+    which one. At most one open (``requested``) row per store and feature."""
+
+    __tablename__ = "feature_requests"
+    __table_args__ = (
+        Index(
+            "uq_feature_requests_open",
+            "store_id",
+            "feature",
+            unique=True,
+            postgresql_where=text("status = 'requested'"),
+            sqlite_where=text("status = 'requested'"),
+        ),
+        Index("ix_feature_requests_status", "status", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigId, primary_key=True, autoincrement=True)
+    store_id: Mapped[int] = mapped_column(BigId, ForeignKey("stores.id", ondelete="CASCADE"), nullable=False)
+    feature: Mapped[str] = mapped_column(String(40), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    requested_by: Mapped[str] = mapped_column(String(128), nullable=False)
+    note: Mapped[Optional[str]] = mapped_column(Text)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(String(128))
+    reviewed_at: Mapped[Optional[dt.datetime]] = mapped_column(TS)
+    review_note: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[dt.datetime] = mapped_column(TS, nullable=False, default=utcnow)
+
+
+class LabelHandoff(PlatformBase):
+    """A one-time code that opens the label site from the website, signed in
+    (docs/LABEL_PRINTING_FEATURE.md 3.4). Only the code's sha256 is kept; it
+    lasts 60 seconds and works once."""
+
+    __tablename__ = "label_handoffs"
+    __table_args__ = (Index("ix_label_handoffs_expires", "expires_at"),)
+
+    code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    store_code: Mapped[str] = mapped_column(String(24), nullable=False)
+    identity: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(TS, nullable=False, default=utcnow)
+    expires_at: Mapped[dt.datetime] = mapped_column(TS, nullable=False)
+    used_at: Mapped[Optional[dt.datetime]] = mapped_column(TS)
+
+
 # Website-ready track C: the job queue tables (p0004) live with the platform
 # metadata. Imported last: app/jobqueue/models.py builds on PlatformBase.
 from app.jobqueue import models as _jobqueue_models  # noqa: E402,F401

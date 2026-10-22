@@ -71,6 +71,20 @@ def branding_payload(request_base: Optional[str] = None, s=None) -> dict:
         # ("your POS" for a CSV-only store, never "CSV upload").
         "pos_provider": _pos_provider(),
         "pos_word": _pos_word(),
+        # Label printing (additive, docs/LABEL_PRINTING_FEATURE.md 1.3).
+        "label_printing": label_printing_body(s),
+    }
+
+
+def label_printing_body(s=None) -> dict:
+    """``{"enabled", "url", "options"}``: enabled is the store feature
+    ``labels`` (on and an address set)."""
+    s = s if s is not None else get_settings()
+    on = sv.has_store_feature("labels", s)
+    return {
+        "enabled": on,
+        "url": sv.labels_url(s) or None,
+        "options": sv.label_printing_options(s),
     }
 
 
@@ -100,6 +114,7 @@ def neutral_branding_payload(request_base: Optional[str] = None, store_code: Opt
             "address": None,
             "phone": None,
             "labels_url": None,
+            "label_printing": None,
             "demo": False,
             "store_specific": False,
         }

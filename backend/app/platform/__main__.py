@@ -18,6 +18,7 @@ Onboarding a store that already runs on another system (app/ops,
 docs/PILOT_RUNBOOK.md):
 
     python -m app.platform pilot-mode CODE on|off
+    python -m app.platform label-printing CODE on|off|status [--url URL]
     python -m app.platform import-sqlite CODE --sqlite PATH [--workdir DIR] [--uploads DIR]
                                          [--replace --confirm CODE] [--no-keep-owner] [--keep-workdir]
     python -m app.platform load-pack CODE --file PATH_OUTSIDE_GIT [--no-rows]
@@ -233,6 +234,35 @@ def cmd_pilot_mode(args) -> int:
     return 0
 
 
+def cmd_label_printing(args) -> int:
+    """Label printing on / off / status (docs/LABEL_PRINTING_FEATURE.md 5).
+    Through put_settings, so validated and audited as cli:<user>."""
+    from app.platform import feature_requests
+    from app.platform.db import platform_session
+    from app.platform.errors import PlatformError
+    from app.platform.stores import put_settings, settings_values, store_by_code
+
+    code = args.code.upper()
+    with platform_session() as db:
+        store = store_by_code(db, code)
+        values = settings_values(db, store)
+        if args.state == "on":
+            updates = {"label_printing_enabled": True}
+            if args.url:
+                updates["labels_url"] = args.url
+            elif not values.get("labels_url"):
+                raise PlatformError(400, "invalid", feature_requests.MSG_NEED_ADDRESS, field="labels_url")
+            values = put_settings(db, code, updates, actor=ACTOR, actor_type="system")
+        elif args.state == "off":
+            if args.url:
+                raise PlatformError(400, "invalid", "--url only goes with on.")
+            values = put_settings(db, code, {"label_printing_enabled": False}, actor=ACTOR, actor_type="system")
+    state = feature_requests.label_printing_state_of(values)
+    url = values.get("labels_url") or "(no address)"
+    print(f"{code}: label printing {state} {url}")
+    return 0
+
+
 def cmd_import_sqlite(args) -> int:
     from app.ops.store_import import StoreImportError, import_sqlite
 
@@ -371,6 +401,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("code")
     p.add_argument("state", choices=("on", "off"))
     p.set_defaults(func=cmd_pilot_mode)
+    p = sub.add_parser("label-printing", help="label printing on/off/status for one store")
+    p.add_argument("code")
+    p.add_argument("state", choices=("on", "off", "status"))
+    p.add_argument("--url", default=None, help="the label site address (https://labels-<name>.<platform domain>)")
+    p.set_defaults(func=cmd_label_printing)
     p = sub.add_parser("import-sqlite", help="copy a single-store SQLite database into a provisioned store")
     p.add_argument("code")
     p.add_argument("--sqlite", required=True, help="the source database (opened read-only)")

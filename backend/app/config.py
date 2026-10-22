@@ -2,7 +2,8 @@ import datetime as dt
 import re
 import zoneinfo
 from functools import lru_cache
-from typing import Optional
+import json
+from typing import Any, Optional
 from urllib.parse import unquote, urlsplit
 
 from pydantic import AliasChoices, Field, field_validator, model_validator
@@ -29,6 +30,63 @@ def refused_host(value: str) -> bool:
         host = raw.split("/", 1)[0].rsplit("@", 1)[-1].split(":", 1)[0]
     host = (host or "").strip(".")
     return host == REFUSED_DOMAIN or host.endswith("." + REFUSED_DOMAIN)
+
+
+LABEL_OPTION_KEY_RE = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
+LABEL_OPTIONS_MAX_BYTES = 4096
+LABEL_OPTIONS_MAX_DEPTH = 3
+LABEL_OPTIONS_MAX_STRING = 200
+LABEL_OPTIONS_MAX_LIST = 50
+
+
+def check_label_printing_options(value: Any) -> dict:
+    """LABEL_PRINTING_OPTIONS (docs/LABEL_PRINTING_FEATURE.md 1.1): a JSON
+    object of at most 4096 bytes, keys like ``label_size``, at most 3 levels
+    deep, short strings, numbers, booleans, null, short lists or objects.
+    Blank / None -> {}. Unknown keys are kept. Returns a fresh dict."""
+    if value is None:
+        return {}
+    if isinstance(value, (str, bytes)):
+        text = value.decode("utf-8") if isinstance(value, bytes) else value
+        if not text.strip():
+            return {}
+        try:
+            value = json.loads(text)
+        except ValueError:
+            raise ValueError("must be a JSON object") from None
+    if not isinstance(value, dict):
+        raise ValueError("must be a JSON object")
+
+    def walk(node: Any, depth: int) -> Any:
+        if isinstance(node, dict):
+            if depth > LABEL_OPTIONS_MAX_DEPTH:
+                raise ValueError(f"is nested more than {LABEL_OPTIONS_MAX_DEPTH} levels")
+            out = {}
+            for key, item in node.items():
+                if not isinstance(key, str) or not LABEL_OPTION_KEY_RE.match(key):
+                    raise ValueError("has a name that isn't lower case letters, digits and _")
+                out[key] = walk(item, depth + 1)
+            return out
+        if isinstance(node, list):
+            if depth > LABEL_OPTIONS_MAX_DEPTH:
+                raise ValueError(f"is nested more than {LABEL_OPTIONS_MAX_DEPTH} levels")
+            if len(node) > LABEL_OPTIONS_MAX_LIST:
+                raise ValueError(f"has a list longer than {LABEL_OPTIONS_MAX_LIST}")
+            return [walk(item, depth + 1) for item in node]
+        if isinstance(node, str):
+            if len(node) > LABEL_OPTIONS_MAX_STRING:
+                raise ValueError(f"has a text longer than {LABEL_OPTIONS_MAX_STRING} characters")
+            return node
+        if node is None or isinstance(node, (bool, int, float)):
+            if isinstance(node, float) and node != node:  # NaN
+                raise ValueError("has a value that isn't a number")
+            return node
+        raise ValueError("has a value that isn't text, a number, true/false, a list or an object")
+
+    out = walk(value, 1)
+    if len(json.dumps(out, separators=(",", ":"), ensure_ascii=False).encode("utf-8")) > LABEL_OPTIONS_MAX_BYTES:
+        raise ValueError(f"is larger than {LABEL_OPTIONS_MAX_BYTES} bytes")
+    return out
 
 
 class Settings(BaseSettings):
@@ -89,6 +147,12 @@ class Settings(BaseSettings):
     # Labels site origin. Blank = this store has no labels (Scan tab, Print
     # Label History and the website's Label Scanner link are hidden).
     labels_url: str = ""
+    # Label printing (docs/LABEL_PRINTING_FEATURE.md 1.1). True = on, False =
+    # off, None (blank) = legacy: on exactly when LABELS_URL is set.
+    label_printing_enabled: Optional[bool] = None
+    # Choices for later (printer, label size, label styles...): one JSON
+    # object, so a new choice never needs a migration. Unknown keys are kept.
+    label_printing_options: Any = {}
     # Per-store AI switch: off -> the Ask bot is not offered and the weekly
     # digest has no written summary. ANTHROPIC_API_KEY is still needed for
     # real calls.
@@ -511,6 +575,18 @@ class Settings(BaseSettings):
         if isinstance(value, str) and not value.strip():
             return None
         return value
+
+    @field_validator("label_printing_enabled", mode="before")
+    @classmethod
+    def _blank_label_printing(cls, value):
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @field_validator("label_printing_options", mode="before")
+    @classmethod
+    def _label_printing_options(cls, value):
+        return check_label_printing_options(value)
 
     @field_validator("log_format")
     @classmethod

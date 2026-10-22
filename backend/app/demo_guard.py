@@ -184,6 +184,9 @@ ALLOWLIST: Dict[Tuple[str, str], Optional[Check]] = {
     ("POST", "/api/notifications/unregister"): None,
     ("PUT", "/api/notifications/prefs"): None,
     ("POST", "/api/notifications/test"): None,  # a test push to the caller's own phones
+    # --- Label printing: opening the label site is a look; it refuses a demo's prints itself
+    # (docs/LABEL_PRINTING_FEATURE.md D5, can_print false). The request routes stay refused.
+    ("POST", "/api/labels/handoff"): None,
     # --- Invoices: submitting is sandboxed (never sent); actions only on its own submissions
     ("POST", "/api/invoices"): None,
     ("POST", "/api/invoices/{submission_id}/resend"): own_invoice,

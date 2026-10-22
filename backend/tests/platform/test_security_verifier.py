@@ -305,8 +305,16 @@ def test_store_urls_must_be_https(alpha_admin, master_client, key, value):
     assert r.status_code == 400, (key, value, r.text)
 
 
-def test_store_urls_https_still_fine(alpha_admin):
-    r = alpha_admin.patch("/api/settings/store", json={"labels_url": "https://labels.alpha.example.com",
-                                                       "logo_url": "https://cdn.example.com/a/logo.png", "icon_url": ""})
+def test_store_urls_https_still_fine(alpha_admin, master_client):
+    r = alpha_admin.patch("/api/settings/store", json={"logo_url": "https://cdn.example.com/a/logo.png", "icon_url": ""})
     assert r.status_code == 200, r.text
-    assert r.json()["settings"]["labels_url"] == "https://labels.alpha.example.com"
+    # The label site address: only while label printing is on, and only under
+    # the platform domain (docs/LABEL_PRINTING_FEATURE.md 1.1, 1.4).
+    r = alpha_admin.patch("/api/settings/store", json={"labels_url": "https://labels-alpha.retailops.test"})
+    assert r.status_code == 409 and r.json()["error"] == "label_printing_off", r.text
+    assert master_client.put("/api/platform/stores/ALPHA/settings", json={"label_printing_enabled": True}).status_code == 200
+    r = alpha_admin.patch("/api/settings/store", json={"labels_url": "https://labels.alpha.example.com"})
+    assert r.status_code == 400, r.text
+    r = alpha_admin.patch("/api/settings/store", json={"labels_url": "https://labels-alpha.retailops.test"})
+    assert r.status_code == 200, r.text
+    assert r.json()["settings"]["labels_url"] == "https://labels-alpha.retailops.test"

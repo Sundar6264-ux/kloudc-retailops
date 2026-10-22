@@ -37,5 +37,10 @@
   },
   "demo": false,
   "pos_provider": "clover",
-  "pos_word": "Clover"
+  "pos_word": "Clover",
+  "label_printing": {
+    "enabled": false,
+    "url": null,
+    "options": {}
+  }
 }

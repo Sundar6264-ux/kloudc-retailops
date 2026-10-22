@@ -15,7 +15,7 @@ KEYS = [
     "schema", "store_code", "name", "short_name", "product", "logo_url", "icon_url", "primary_color",
     "secondary_color", "timezone", "currency", "locale", "address", "phone", "pos_name", "capabilities",
     "store_features", "labels_url", "public_host", "legal", "min_build", "store_url", "demo",
-    "pos_provider", "pos_word",
+    "pos_provider", "pos_word", "label_printing",
 ]
 
 

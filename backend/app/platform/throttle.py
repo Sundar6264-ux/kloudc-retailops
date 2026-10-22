@@ -108,6 +108,10 @@ def record_attempt(db: Session, store_code: str, username: str, ip: str, ok: boo
 def prune_login_attempts(db: Session, days: int = 7) -> int:
     """The platform job: drop attempts older than ``days``."""
     n = db.execute(delete(LoginAttempt).where(LoginAttempt.at < utcnow() - dt.timedelta(days=days))).rowcount
+    # Label site hand-off codes (60 s each, docs/LABEL_PRINTING_FEATURE.md 4): kept one day.
+    from app.platform.models import LabelHandoff
+
+    db.execute(delete(LabelHandoff).where(LabelHandoff.created_at < utcnow() - dt.timedelta(days=1)))
     db.commit()
     return int(n or 0)
 

@@ -27,7 +27,7 @@ def test_platform_migration_up_down_up_and_parity():
     url = _url_for(name)
     try:
         head = platform_head_revision()
-        assert head == "p0004"  # website-ready: p0002 B, p0003 A, p0004 C
+        assert head == "p0005"  # website-ready: p0002 B, p0003 A, p0004 C; p0005 label printing
         assert upgrade_platform_db(url) == head
         assert downgrade_platform_db(url, "base") is None
         eng = create_engine(url)
