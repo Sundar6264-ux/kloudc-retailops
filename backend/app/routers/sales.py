@@ -27,18 +27,41 @@ router = APIRouter(prefix="/api/sales", tags=["sales"], dependencies=[Depends(ge
 logger = logging.getLogger(__name__)
 
 
+TOAST_NOT_CONNECTED = (
+    "Toast isn't connected yet, so today's sales can't be shown. "
+    "Add the Toast keys on the website: Settings › Integrations."
+)
+
+
+def _toast_not_connected() -> bool:
+    """A Toast store whose keys aren't set (a new store, or keys removed):
+    its live pull can only fail, and "try again" would not help."""
+    try:
+        from app.pos import registry
+
+        conn = registry.get_connector()
+        return getattr(conn, "source", "") == "toast" and not conn.is_configured()
+    except Exception:  # noqa: BLE001 - only picks the wording of an error
+        return False
+
+
 def _items_sold_or_503(db: Session, start_date: dt.date, end_date: dt.date, fresh: bool = False) -> dict:
     """get_items_sold, with Toast being down or slow for today's live part
-    answered as a plain 503 (instead of a 500 with a stack trace)."""
+    answered as a plain 503 (instead of a 500 with a stack trace). A Toast
+    store with no keys gets the same 503 saying so, in plain words."""
     try:
         return get_items_sold(db, start_date, end_date, fresh=fresh)
     except LiveSalesUnavailable as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        detail = TOAST_NOT_CONNECTED if _toast_not_connected() else str(exc)
+        raise HTTPException(status_code=503, detail=detail) from exc
     except (httpx.HTTPError, ToastAPIError) as exc:
         logger.warning("Items Sold: Toast live pull failed (%s)", type(exc).__name__)
-        raise HTTPException(
-            status_code=503, detail="Toast didn't answer for today's sales just now - try again in a moment."
-        ) from exc
+        detail = (
+            TOAST_NOT_CONNECTED
+            if _toast_not_connected()
+            else "Toast didn't answer for today's sales just now - try again in a moment."
+        )
+        raise HTTPException(status_code=503, detail=detail) from exc
 
 
 # Sales numbers: 403 for a user whose admin ticked "Hide sales numbers"

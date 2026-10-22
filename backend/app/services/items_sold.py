@@ -105,9 +105,10 @@ def _cached_live(business_date: dt.date, max_age: float):
             return hit
         failed = _LIVE_FAILED.get(business_date)
         if failed and now - failed[0] < LIVE_FAILURE_BACKOFF_SECONDS:
-            raise LiveSalesUnavailable(
-                f"Toast didn't answer for {business_date.isoformat()} a moment ago ({failed[1]}) - try again shortly."
-            )
+            # Plain words for store staff: no error class name, and no date
+            # (the live pull covers yesterday and tomorrow too, so the
+            # failing date often isn't the one on screen).
+            raise LiveSalesUnavailable("Toast didn't answer a moment ago - try again shortly.")
     return None
 
 
