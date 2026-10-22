@@ -8,9 +8,17 @@ const tick = () => new Promise((r) => setImmediate(r));
 async function settle(n = 10) {
   for (let i = 0; i < n; i += 1) await tick();
 }
-// Lets the (shortened, <= 5 ms) sleeps run out.
+// The engine's sleeps (badge-poll interval, error back-off) use these manual
+// timers: they only run when a test calls later(), never on their own. Real
+// (shortened) timers made the "nothing yet" checks race the wall clock on a
+// busy machine.
+let pendingTimers = new Set();
+// Lets every sleep that is waiting now run out.
 async function later() {
-  await new Promise((r) => setTimeout(r, 30));
+  await settle(); // whatever was just answered reaches its sleep first
+  const due = [...pendingTimers];
+  pendingTimers.clear();
+  for (const t of due) t.fn();
   await settle();
 }
 
@@ -18,6 +26,8 @@ async function later() {
 function fakeServer({ visible = true } = {}) {
   const calls = [];
   const state = { visible, shown: null, clock: 0, bootstraps: 0 };
+  const timers = new Set();
+  pendingTimers = timers; // tests run one at a time; later() serves this one
   const deps = {
     bootstrap: async () => {
       state.bootstraps += 1;
@@ -43,8 +53,12 @@ function fakeServer({ visible = true } = {}) {
       };
     },
     now: () => state.clock,
-    setTimeout: (fn, ms) => setTimeout(fn, Math.min(ms, 5)), // time flies
-    clearTimeout,
+    setTimeout: (fn) => {
+      const t = { fn };
+      timers.add(t);
+      return t;
+    },
+    clearTimeout: (t) => timers.delete(t),
   };
   return { deps, calls, state };
 }
