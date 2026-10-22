@@ -5,6 +5,7 @@ import { ChecklistUploadContext } from "../components/checklists/uploadContext.j
 import StoreLogo from "../components/StoreLogo.jsx";
 import { useBranding } from "../store/StoreContext.jsx";
 import { storeFromPath } from "../login/loginModel.js";
+import { linkStore } from "../store/branding.js";
 
 // The logged-out checklist page: /c/{slug}-{code}, e.g. /c/kitchen-4821
 // (docs/PUBLIC_CHECKLIST_LINK_CONTRACT.md). main.jsx renders ONLY this for /c/
@@ -25,11 +26,14 @@ export function tokenFromPath(pathname) {
   return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?-(?:[0-9]{4}|[A-Za-z0-9]{22})$/.test(last) && last.length <= 70 ? last : null;
 }
 
-// The store's name + logo (public branding) on top of every public checklist
-// page (owner's ask: part-time staff open these links without the app, so
-// show whose page it is).
-function BrandHeader() {
-  const store = useBranding();
+// The store's name + logo on top of every public checklist page (owner's ask:
+// part-time staff open these links without the app, so show whose page it
+// is). On the shared service the public branding is the product's own for
+// everyone (Store ID privacy, 2026-10); a working link's form says whose
+// page it is ("store"), so the header shows that once the form is loaded.
+function BrandHeader({ owner = null }) {
+  const branding = useBranding();
+  const store = owner || branding;
   return (
     <header className="clp-brand">
       <StoreLogo store={store} size={36} />
@@ -219,7 +223,7 @@ export default function PublicChecklistPage() {
   return (
     <ChecklistUploadContext.Provider value={upload}>
       <main className="clp-page">
-        <BrandHeader />
+        <BrandHeader owner={linkStore(form)} />
         <section className="card" ref={topRef}>
           <ChecklistForm
             key={formKey}

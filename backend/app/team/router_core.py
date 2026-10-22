@@ -46,8 +46,16 @@ class RulesAcceptRequest(BaseModel):
 
 
 @app_router.get("/config")
-def app_config():
-    return svc.app_config()
+def app_config(request: Request):
+    """Shared service (Store ID privacy, 2026-10): the store's own answer
+    only to a live session of that store; anyone else gets the product's
+    (process-wide minimum builds), the same for every Store ID."""
+    from app.routers.branding import neutral_scope, signed_in_store
+
+    if signed_in_store(request):
+        return svc.app_config()
+    with neutral_scope():
+        return svc.app_config()
 
 
 @router.get("/bootstrap")

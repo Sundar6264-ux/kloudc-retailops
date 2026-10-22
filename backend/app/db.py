@@ -163,6 +163,14 @@ def _store_session_or_http_error() -> Session:
             raise _store_access_error(403, "store_not_ready", "This store is not ready yet.")
         if current_scope() == "platform":
             raise _store_access_error(403, "platform_scope", "Sign in with a store login to use this page.")
+        from app.tenancy.context import current_dead_token
+
+        if current_dead_token():
+            # A token for no store here: the same 401 a dead session at a
+            # real store gets (Store ID privacy, 2026-10).
+            from app.auth import session_error
+
+            raise session_error()
         raise HTTPException(status_code=401, detail="Not logged in")
     try:
         return SessionLocal()

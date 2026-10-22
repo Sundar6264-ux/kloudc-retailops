@@ -62,6 +62,32 @@ def current_scope() -> str:
     return _scope_var.get()
 
 
+# The request carried a store token that selects no store: unknown store,
+# or a session that isn't live in a paused / archived / not-ready store's
+# database. Store routes then answer exactly what a dead session at a real
+# store gets (401 session_expired), so a forged ``CODE.x`` token can't tell
+# which Store IDs exist or which are paused (Store ID privacy, 2026-10).
+_dead_token_var: contextvars.ContextVar[bool] = contextvars.ContextVar("retailops_dead_token", default=False)
+
+
+def current_dead_token() -> bool:
+    return _dead_token_var.get()
+
+
+@contextmanager
+def dead_token() -> Iterator[None]:
+    """No store; the request's token is no live session anywhere here."""
+    tok_store = _store_var.set(None)
+    tok_scope = _scope_var.set("none")
+    tok_dead = _dead_token_var.set(True)
+    try:
+        yield
+    finally:
+        _dead_token_var.reset(tok_dead)
+        _scope_var.reset(tok_scope)
+        _store_var.reset(tok_store)
+
+
 def current_store_block() -> Optional[str]:
     """Status of the inactive store this request's token points at, or None."""
     return _block_var.get()

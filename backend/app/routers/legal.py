@@ -14,10 +14,17 @@ router = APIRouter(prefix="/api/app", tags=["app"])
 
 @router.get("/legal")
 def get_legal(request: Request, response: Response) -> dict:
-    from app.routers.branding import public_cache_headers
+    """Shared service (Store ID privacy, 2026-10): the store's own answer
+    only to a live session of that store; anyone else gets the product's,
+    the same for every Store ID."""
+    from app.routers.branding import neutral_scope, public_cache_headers, signed_in_store
 
-    response.headers.update(public_cache_headers(request, "public, max-age=300"))
-    return legal_payload()
+    mine = signed_in_store(request)
+    response.headers.update(public_cache_headers(request, "public, max-age=300", signed_in=mine))
+    if mine:
+        return legal_payload()
+    with neutral_scope():
+        return legal_payload()
 
 
 # --- /terms: the Terms of Service draft (pre-production 2026-10-21) -------------------

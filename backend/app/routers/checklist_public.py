@@ -12,6 +12,7 @@ rotated link always gets the same 404.
 """
 
 import logging
+from typing import Optional
 from html import escape as _html_escape
 from urllib.parse import urlsplit
 
@@ -75,19 +76,30 @@ def _ip(request: Request) -> str:
     return svc.client_ip(request.headers, request.client.host if request.client else None)
 
 
-def _lookup(db: Session, key: str, ip: str):
+def _link_db(request: Request):
+    """The store's database for a link lookup, or None when the shared
+    service's ``?store=`` code is unknown, inactive or on another server
+    (the tenancy middleware marks that). None reads exactly like a wrong
+    link: same 404, same failed-lookup count (Store ID privacy, 2026-10)."""
+    if getattr(request.state, "checklist_store_unknown", False):
+        yield None
+        return
+    yield from get_db()
+
+
+def _lookup(db: Optional[Session], key: str, ip: str):
     """The active link for {key} ("{slug}-{code}", or an old bare token), or
     None. Raises PublicError(429) once this IP has too many failed lookups;
-    a miss counts as one."""
+    a miss counts as one. No database (an unknown Store ID) is a miss."""
     svc.check_failed(ip)
-    link = svc.find_active_link(db, key)
+    link = svc.find_active_link(db, key) if db is not None else None
     if link is None:
         svc.record_failed(ip)
     return link
 
 
 @public_router.get("/{token}")
-def public_form(token: str, request: Request, db: Session = Depends(get_db)):
+def public_form(token: str, request: Request, db: Optional[Session] = Depends(_link_db)):
     """The form: {checklist_type, title, description, schema, name_mode, allowed_names}."""
     try:
         ip = _ip(request)
@@ -95,7 +107,13 @@ def public_form(token: str, request: Request, db: Session = Depends(get_db)):
         link = _lookup(db, token, ip)
         if link is None:
             return _not_active()
-        return _json(200, svc.public_view(link))
+        view = svc.public_view(link)
+        # Whose page this is (additive). Only behind a working link: the
+        # public branding no longer names a store before sign-in (Store ID
+        # privacy, 2026-10), and the website's checklist page shows this.
+        view["store"] = {"name": sv.store_display_name(), "short_name": sv.store_short_name(),
+                         "logo_url": sv.logo_path_or_url()}
+        return _json(200, view)
     except svc.PublicError as exc:
         return _error(exc.status_code, exc.detail)
     except Exception:  # noqa: BLE001 - never leak details to a logged-out caller
@@ -146,7 +164,7 @@ def _submit(db: Session, link, body: dict, background_tasks: BackgroundTasks) ->
 
 
 @public_router.post("/{token}/submit")
-async def public_submit(token: str, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def public_submit(token: str, request: Request, background_tasks: BackgroundTasks, db: Optional[Session] = Depends(_link_db)):
     """{name, answers, definition_version?, media_keys?} -> {ok, all_clear, issue_summary}
     only. Same validation / flags / WhatsApp / alerts as the app's submit."""
     try:
@@ -167,7 +185,7 @@ async def public_submit(token: str, request: Request, background_tasks: Backgrou
 
 
 @public_router.post("/{token}/media")
-async def public_media(token: str, request: Request, db: Session = Depends(get_db)):
+async def public_media(token: str, request: Request, db: Optional[Session] = Depends(_link_db)):
     """A photo for a photo question (multipart field `file`; same checks and
     10 MB cap as staff photos). Returns {id, key, width, height} - no URL:
     the photo can't be viewed through the link. Send `id` in the answer and
@@ -212,7 +230,7 @@ async def public_media(token: str, request: Request, db: Session = Depends(get_d
 
 
 @public_router.get("/{token}/images/{media_token}")
-def public_form_image(token: str, media_token: str, request: Request, db: Session = Depends(get_db)):
+def public_form_image(token: str, media_token: str, request: Request, db: Optional[Session] = Depends(_link_db)):
     """A picture the form itself shows (an image item added in the builder) -
     never an uploaded answer photo."""
     try:

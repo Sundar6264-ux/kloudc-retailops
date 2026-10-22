@@ -106,15 +106,27 @@ export async function logout() {
   }
 }
 
-// The store's public branding (docs/M2_CONTRACT.md section 2): name, logo,
-// colours, time zone, POS name and capabilities. No login and no cookies
-// (it is the same for everyone), so a plain fetch, never the 401 bounce.
+// The store's branding (docs/M2_CONTRACT.md section 2): name, logo,
+// colours, time zone, POS name and capabilities. Never the 401 bounce.
 // null when the server has no branding endpoint (older server).
-// `storeCode` asks a shared (multi-store) server for that store's branding
-// (contract 4.4 `?store=CODE`); a single-store server ignores it.
-export async function getBranding(storeCode) {
+// `storeCode` names the store (contract 4.4 `?store=CODE`); a single-store
+// server ignores it. Before sign-in (`signedIn` false) no cookie or token
+// goes with it: a shared server then answers the product's neutral look for
+// every Store ID (Store ID privacy, 2026-10). After sign-in the session goes
+// with it (cookie, or the app's bearer token) and the shared server answers
+// the signed-in store's own look.
+export async function getBranding(storeCode, { signedIn = false } = {}) {
   const q = storeCode ? `?store=${encodeURIComponent(storeCode)}` : "";
-  const res = await fetch(`${API_BASE}/api/app/branding${q}`, { credentials: "omit" });
+  const opts = { credentials: "omit" };
+  if (signedIn) {
+    if (isNative()) {
+      const token = getCachedToken();
+      if (token) opts.headers = { Authorization: `Bearer ${token}` };
+    } else {
+      opts.credentials = "include";
+    }
+  }
+  const res = await fetch(`${API_BASE}/api/app/branding${q}`, opts);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`branding ${res.status}`);
   return res.json();

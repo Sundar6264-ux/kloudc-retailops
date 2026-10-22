@@ -270,7 +270,10 @@ def test_end_to_end_like_an_in_app_submission(db, admin_client, checker_client, 
     form = anon.get(f"{PUBLIC}/{token}")
     assert form.status_code == 200
     body = form.json()
-    assert set(body) == {"checklist_type", "title", "description", "schema", "name_mode", "allowed_names"}
+    # "store" (additive, Store ID privacy 2026-10): whose page this is, only
+    # behind a working link (the public branding no longer names the store).
+    assert set(body) == {"checklist_type", "title", "description", "schema", "name_mode", "allowed_names", "store"}
+    assert set(body["store"]) == {"name", "short_name", "logo_url"} and body["store"]["name"]
     assert body["checklist_type"] == FSA and body["name_mode"] == "list"
     assert body["allowed_names"] == ["Dana", "Satinder"]
     assert body["schema"]["version"] == get_schema(FSA)["version"]

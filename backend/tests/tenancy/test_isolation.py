@@ -83,11 +83,17 @@ def test_inactive_store_tokens_are_refused_with_403(multi):
 
 
 def test_public_store_route_takes_store_query(multi):
-    r = TestClient(app).get("/api/app/branding", params={"store": "NOSUCH"})
-    assert r.status_code == 404 and r.json()["error"] == "unknown_store"
-    r = TestClient(app).get("/api/app/branding", params={"store": "beta"})
-    assert r.status_code == 200
-    body = r.json()
+    # Store ID privacy (2026-10): before sign-in every code, real or unknown,
+    # gets the product's neutral branding (only the code is echoed).
+    unknown = TestClient(app).get("/api/app/branding", params={"store": "NOSUCH"})
+    real = TestClient(app).get("/api/app/branding", params={"store": "beta"})
+    assert unknown.status_code == real.status_code == 200
+    ju, jr = unknown.json(), real.json()
+    assert (ju.pop("store_code"), jr.pop("store_code")) == ("NOSUCH", "BETA")
+    assert ju == jr and jr["store_specific"] is False and "Beta Market" not in real.text
+    # A store session gets its own look.
+    b = seed_users("BETA", "bob")
+    body = _client(b["bob"][1]).get("/api/app/branding", params={"store": "beta"}).json()
     assert (body["store_code"], body["name"], body["public_host"]) == ("BETA", "Beta Market", "https://app.retailops.test")
     # No store: product branding (store fields null).
     assert TestClient(app).get("/api/app/branding").json()["store_code"] is None

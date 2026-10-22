@@ -259,7 +259,15 @@ def test_public_store_answers_are_not_shared_cacheable_unless_the_url_names_the_
             r = anon.get(url, **kwargs)
             assert r.status_code == 200, (url, r.text)
             assert r.headers["cache-control"].startswith("private"), (url, kwargs, r.headers["cache-control"])
-    assert anon.get("/api/app/branding", headers={"X-Store": "BRAVO"}).json()["store_code"] == "BRAVO"
+    # Store ID privacy (2026-10): without a session the X-Store code is only
+    # echoed (neutral body); the store's own look needs its session, and
+    # that answer is private even when the URL names the store.
+    anon_body = anon.get("/api/app/branding", headers={"X-Store": "BRAVO"}).json()
+    assert anon_body["store_code"] == "BRAVO" and anon_body["store_specific"] is False
+    for url in ("/api/app/branding", "/api/app/legal"):
+        r = anon.get(url + "?store=BRAVO", headers=_as(three["BRAVO"]))
+        assert r.headers["cache-control"].startswith("private"), url
+    assert anon.get("/api/app/branding", headers=_as(three["BRAVO"])).json()["store_specific"] is True
 
 
 # --- one browser, two tabs, two stores ------------------------------------------------------

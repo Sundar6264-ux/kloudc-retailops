@@ -69,6 +69,10 @@ export function normalizeBranding(raw) {
       supportUrl: safeUrl(legal.support_url),
     },
     demo: b.demo === true,
+    // false = the product's neutral look a shared server gives before
+    // sign-in (Store ID privacy, 2026-10); a single-store server's body has
+    // no such key and is always the store's own.
+    storeSpecific: b.store_specific !== false,
   };
 }
 
@@ -229,4 +233,17 @@ export function brandCssVars(primary, secondary) {
     "--brand-text-dark": textDark,
     "--brand-text-dark-rgb": hexToRgb(textDark).join(", "),
   };
+}
+
+// Whose page a public checklist link is: the "store" a working link's form
+// carries ({name, short_name, logo_url}), in the shape StoreLogo reads, or
+// null (an older server, or nothing usable). The public branding no longer
+// names a store before sign-in on the shared service (Store ID privacy).
+export function linkStore(form) {
+  const s = form && typeof form.store === "object" ? form.store : null;
+  const name = s && typeof s.name === "string" ? s.name.trim() : "";
+  if (!name) return null;
+  const shortName = typeof s.short_name === "string" && s.short_name.trim() ? s.short_name.trim() : name;
+  const logoUrl = typeof s.logo_url === "string" && s.logo_url.trim() ? s.logo_url.trim() : null;
+  return { name, shortName, logoUrl };
 }

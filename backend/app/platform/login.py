@@ -8,7 +8,11 @@ user or store is unknown) and one message for every credential failure:
 2. lockout (platform database) -> 429 ``locked``
 3. ``PLATFORM`` -> master login (platform session)
 4. unknown store / user / wrong password -> 401
-5. good credentials but: store on another server -> 409 ``store_moved``;
+5. store on another server -> 409 ``store_moved`` BEFORE the password
+   (this server doesn't hold that store's passwords; on the shared service
+   the public lookup already names such a store's own server; a dedicated
+   server answers every code it doesn't serve the same, unknown ones
+   included - Store ID privacy, 2026-10); good credentials but:
    suspended -> 403 ``store_suspended``; pending / provisioning / failed ->
    403 ``store_not_ready``; archived -> 401 (as unknown)
 6. session in the store's database; reply = the M2 ``/me`` body + scope
@@ -225,6 +229,15 @@ def _store_login(code, username, password, client_ip, attempts: _Attempts, me_ou
     from app.platform.bridge import tenancy
 
     t = tenancy(required=True)
+    from app.tenancy.routing import foreign_on_dedicated_node, moved_to_shared_body
+
+    if foreign_on_dedicated_node(code):
+        # A dedicated server holds only its own store's passwords: every
+        # other code (real, archived or unknown) gets the same 409 towards
+        # the shared service, which checks the password (Store ID privacy).
+        masters.dummy_verify(password)
+        body = moved_to_shared_body(code)
+        raise _err(409, "store_moved", body["message"], api_base_url=body["api_base_url"], store_code=body["store_code"])
     ref = t.registry.find_store(code) if hasattr(t, "registry") else None
     if ref is None:
         try:
@@ -236,7 +249,13 @@ def _store_login(code, username, password, client_ip, attempts: _Attempts, me_ou
         attempts.record(False, reason="unknown_store")
         raise _bad()
     if not t.node_serves(ref):
-        # Its data is on its own server; this node can't check the password.
+        # Its data (users and passwords) is on its own server; this node
+        # can't check the password, so it can't wait for one. This tells a
+        # guesser nothing new: the public lookup already gives such a store
+        # its own api_base_url (the accepted difference, "As built - Store
+        # ID privacy"). Answering 401 instead would leave an app that still
+        # has the old address stuck on "wrong password" with no way to find
+        # the new server.
         masters.dummy_verify(password)
         from app.tenancy.routing import store_moved_body
 

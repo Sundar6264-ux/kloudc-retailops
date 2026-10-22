@@ -73,6 +73,30 @@ def store_moved_body(store: StoreRef) -> dict:
     }
 
 
+def foreign_on_dedicated_node(code: str) -> bool:
+    """True on a dedicated server for any Store ID it doesn't serve - a
+    shared store, another dedicated store, an archived or an unknown code
+    alike. Such a server can't check those passwords (their data is not
+    here), so it answers all of them the same 409 ``store_moved`` towards
+    the shared service (Store ID privacy, 2026-10: an unknown code must not
+    read differently from a real one)."""
+    own = dedicated_store_codes()
+    return bool(own) and normalize_store_code(code) not in own
+
+
+def moved_to_shared_body(code: str) -> dict:
+    """The dedicated server's 409 for a code it doesn't serve: the same body
+    as ``store_moved_body`` gives a real store there."""
+    from app.config import platform_public_url
+
+    return {
+        "error": "store_moved",
+        "message": "This store is served from another address. Sign in again there.",
+        "store_code": normalize_store_code(code),
+        "api_base_url": platform_public_url(),
+    }
+
+
 def store_moved_response(store: StoreRef):
     from fastapi.responses import JSONResponse
 

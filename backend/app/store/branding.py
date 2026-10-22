@@ -1,9 +1,13 @@
 """The public branding body (``GET /api/app/branding``, M2 contract section 2).
 
-What the app and the website need before anyone logs in: the store's names,
-logo, colours, time zone, POS, capabilities, store features and legal links.
-Nothing secret is ever in it - only booleans derived from secrets (the store
-features).
+What the app and the website need: the store's names, logo, colours, time
+zone, POS, capabilities, store features and legal links. Nothing secret is
+ever in it - only booleans derived from secrets (the store features).
+
+Store ID privacy (2026-10): on the shared service a caller without a live
+session of the store gets ``neutral_branding_payload`` - the product's own
+look, the same for every Store ID (only the echoed ``store_code`` differs).
+``store_specific`` (additive) says which one a body is.
 """
 
 import hashlib
@@ -68,6 +72,39 @@ def branding_payload(request_base: Optional[str] = None, s=None) -> dict:
         "pos_provider": _pos_provider(),
         "pos_word": _pos_word(),
     }
+
+
+# The product's own colours (contract 1.1 BRAND_COLOR / BRAND_SECONDARY_COLOR defaults).
+PRODUCT_PRIMARY = "#004BAD"
+PRODUCT_SECONDARY = "#2EA3F2"
+
+
+def neutral_branding_payload(request_base: Optional[str] = None, store_code: Optional[str] = None) -> dict:
+    """The branding body before sign-in on the shared service: the product's
+    name, bundled logo and colours, no address, phone or labels site. Built
+    with no store selected, so it can't depend on which Store ID was asked
+    for; ``store_code`` only echoes the (valid) code the caller sent, so an
+    app can still check it reached a server that answers for codes."""
+    from app.tenancy.context import no_store
+
+    with no_store():
+        body = branding_payload(request_base=request_base)
+    product = body["product"]["name"]
+    body.update(
+        {
+            "store_code": store_code,
+            "name": product,
+            "short_name": product,
+            "primary_color": PRODUCT_PRIMARY,
+            "secondary_color": PRODUCT_SECONDARY,
+            "address": None,
+            "phone": None,
+            "labels_url": None,
+            "demo": False,
+            "store_specific": False,
+        }
+    )
+    return body
 
 
 def _pos_provider() -> Optional[str]:

@@ -132,3 +132,24 @@ test("store links and images are http(s) or a path on this site, never javascrip
   assert.equal(b.legal.supportUrl, "/help");
   assert.equal(normalizeBranding({ labels_url: "https://labels.alpha.example.com" }).labelsUrl, "https://labels.alpha.example.com");
 });
+
+// Store ID privacy (2026-10): a shared server's neutral body before sign-in.
+test("a neutral (product) body is marked, a store's own or an older body is not", async () => {
+  const { normalizeBranding } = await import("./branding.js");
+  assert.equal(normalizeBranding({ name: "KloudC RetailOps", store_code: "ALPHA", store_specific: false }).storeSpecific, false);
+  assert.equal(normalizeBranding({ name: "Alpha Market", store_code: "ALPHA", store_specific: true }).storeSpecific, true);
+  assert.equal(normalizeBranding({ name: "Alpha Market", store_code: "ALPHA" }).storeSpecific, true);
+});
+
+test("a public checklist link names its store from the form, never from branding", async () => {
+  const { linkStore } = await import("./branding.js");
+  assert.deepEqual(linkStore({ store: { name: " Alpha Market ", short_name: "Alpha", logo_url: "/branding/logo.png" } }), {
+    name: "Alpha Market",
+    shortName: "Alpha",
+    logoUrl: "/branding/logo.png",
+  });
+  assert.deepEqual(linkStore({ store: { name: "Alpha Market" } }), { name: "Alpha Market", shortName: "Alpha Market", logoUrl: null });
+  assert.equal(linkStore({}), null);
+  assert.equal(linkStore(null), null);
+  assert.equal(linkStore({ store: { name: "  " } }), null);
+});

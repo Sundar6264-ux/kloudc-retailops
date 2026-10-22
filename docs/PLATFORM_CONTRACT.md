@@ -4409,21 +4409,92 @@ Owner-approved decisions, as built:
 5. Help: "I can't sign in", "Signing in" and "Your store's look" no longer
    say the page shows your store's name/logo as you type.
 
-**What a guesser can still learn** (known, not fixed here):
+**What a guesser can still learn** (known, not fixed here; see the
+follow-up below for what was closed after):
 - That a code belongs to a dedicated-server store (its own `api_base_url`).
-- The per-store public routes that take `?store=CODE` before sign-in
-  (`/api/app/branding`, `/api/app/config`, `/api/app/legal`,
-  `/api/public/checklists/`) still answer 404 `unknown_store` for an unknown
-  code, and `/api/app/branding?store=CODE` still returns a real store's name,
-  logo, address and phone: the app reads it before sign-in to check it
-  reached the right server and to theme itself. Follow-up: make anonymous
-  branding on the shared service neutral and have the app fetch the full
-  branding with its session after sign-in.
 - `/api/signup/code-available` says whether a code is taken (sign-up needs
-  it); it shares the lookup's rate limit.
-- `409 store_moved` on sign-in (before the password check) for a store that
-  moved to its own server.
+  it); it shares the lookup's rate limit. Owner accepts this.
+
+### Follow-up (2026-10-22): public store routes and "store moved"
+
+6. **`/api/app/branding`, `/api/app/config`, `/api/app/legal` before
+   sign-in** (shared service): the tenancy middleware no longer selects a
+   store for them without a token (`NEUTRAL_PUBLIC_ROUTES`), so every
+   `?store=` / `X-Store` code - real, unknown, invalid, paused, archived,
+   not ready or moved - gets the same 200 with the product's neutral answer,
+   the same shape and the same cache headers:
+   - branding = `app.store.branding.neutral_branding_payload`: product name
+     as `name` / `short_name`, bundled logo and icon, product colours
+     `#004BAD` / `#2EA3F2`, no address, phone or labels site, `demo` false,
+     plus `"store_specific": false` (additive). `store_code` only echoes the
+     valid code the caller sent (null for an invalid one), so an app can
+     still check it reached a server that answers for codes; it is the only
+     difference (and so the ETag / length).
+   - config and legal = the process-wide answer (no store selected).
+   - **The store's own look** (name, logo, colours, address, phone, POS,
+     store features, legal) only with a live session of that store: the
+     route checks the cookie / Bearer token in the store's own database
+     (`app.routers.branding.signed_in_store`). Body as before plus
+     `"store_specific": true`; `Cache-Control: private, max-age=300` even when
+     the URL names the store. A forged, expired or signed-out token, another
+     store's token and a master's token all get the neutral answer.
+   - A single-store server (M2 / pilot, `single` mode) is unchanged: its
+     store's branding to everyone, with no `store_specific` key.
+7. **Public checklist links** (`/api/public/checklists/{key}...?store=`):
+   an unknown, inactive or moved code gets exactly a wrong link's answer:
+   404 `{"detail": "This link is not active."}` with the same security
+   headers, and it counts as a failed lookup for the per-address limit (the
+   middleware marks `checklist_store_unknown`; the route's `_link_db` gives
+   no database). A working link's form now carries `"store": {"name",
+   "short_name", "logo_url"}` (additive), so the website's checklist page
+   still shows whose page it is (`linkStore` in `frontend/src/store/branding.js`).
+8. **`409 store_moved` on sign-in** stays before the password on the shared
+   service for a store moved to its own server: its users and passwords are
+   on that server, so the shared service cannot check them, and answering
+   401 instead would leave an app that still has the old address stuck on
+   "wrong password" with no way to find the new one. It tells a guesser
+   nothing new: the public lookup already gives such a store its own
+   `api_base_url` (the accepted difference). **Closed:** a dedicated server
+   used to answer a real shared store 409 and an unknown code 401; now every
+   code it does not serve (real, archived or unknown) gets the same 409
+   towards the shared service, at sign-in and for a forged token on any
+   `/api/` route (`app.tenancy.routing.foreign_on_dedicated_node`).
+9. **Forged tokens** (`Authorization: Bearer CODE.anything`): a token whose
+   store is unknown, or that is not a live session in a paused / archived /
+   not-ready store's own database, now selects no store
+   (`app.tenancy.context.dead_token`, checked in the middleware with
+   `_live_session_in`), and store routes answer it exactly like a dead
+   session at a real store: 401 `{"detail": "Session expired or invalid",
+   "error": "session_expired", ...}`. Before, an unknown code answered
+   "Not logged in", a paused store 403 `store_suspended` with its pause
+   message, an archived one 403 `store_archived`. A real session of a paused
+   or archived store still gets its 403 and message (G2 / G3).
+10. **Website**: before sign-in it reads branding with no cookie (the
+   product's look on the shared service); after sign-in it reads it again
+   WITH the session (`getBranding(code, { signedIn: true })`, cookie or the
+   native app's Bearer). `normalizeBranding` adds `storeSpecific`; the
+   "Sign in to <name> again" memory is written only from a store-specific
+   body. Nothing else before sign-in reads store branding (`lookupStore` is
+   unused).
+11. **App**: the pre-sign-in branding read only checks the server answers
+    for the code (`store_code` echo). After a correct password the app
+    reads `GET /api/app/branding?store=CODE` with its session
+    (`AuthController.loadStoreLook`, 5 s cap, never fails sign-in;
+    also on refresh while signed in) and applies it
+    (`TenantConfigNotifier.applySignedInBranding`; ignored when it is
+    another store's or neutral). `TenantConfig.storeSpecific` (saved;
+    older records read as true); `keepLookOf` keeps a store's saved look
+    when a neutral answer arrives (activate, background refresh). Quick
+    picks get the store's name, or the Store ID when its look could not be
+    read yet - never the product name.
+
+**What a guesser can still learn after the follow-up:**
+- That a code is a dedicated-server store (lookup `api_base_url`, and
+  sign-in / forged-token `409 store_moved` on the shared service).
+- `/api/signup/code-available` (accepted by the owner).
+- Timing: a real store's checklist / branding-with-token path opens its
+  database; an unknown code does not.
 
 Tests: `backend/tests/platform/test_store_id_privacy.py`,
-`backend/tests/test_directory.py`, `frontend/src/login/loginModel.test.mjs`,
+`backend/tests/tenancy/test_isolation.py`, `backend/tests/test_directory.py`, `frontend/src/login/loginModel.test.mjs`,
 the app's tenant / sign-in tests.

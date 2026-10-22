@@ -1,8 +1,10 @@
 // The store this website belongs to (one server = one store, plan 3.1):
 // name, logo, colours and time zone from GET /api/app/branding, fetched
-// once at boot BEFORE login (on the shared service that is the product's
-// own branding: the login page shows no store's name or logo) and again for
-// the signed-in store after sign-in. Applies them to the page: document title, favicon, CSS colour
+// once at boot BEFORE login with no cookie (on the shared service that is
+// the product's own branding for every Store ID: the login page shows no
+// store's name or logo) and again WITH the session for the signed-in store
+// after sign-in (the shared service gives a store's own look only to its
+// signed-in session). Applies them to the page: document title, favicon, CSS colour
 // variables and the store time zone used by format.js.
 //
 // useStore() gives the store as the signed-in user sees it: AuthProvider
@@ -77,7 +79,7 @@ export function StoreProvider({ children, storeCode = null }) {
     // A signed-in store's name, kept on this browser only for the login
     // page's "Sign in to <name> again" (never from a lookup).
     function remember(code, b) {
-      if (!code || b.code !== code) return;
+      if (!code || b.code !== code || !b.storeSpecific) return;
       try {
         rememberSignedInStore(window.localStorage, code, b.name);
       } catch {
@@ -86,12 +88,12 @@ export function StoreProvider({ children, storeCode = null }) {
     }
     function onStore(e) {
       const code = e?.detail?.code || null;
-      if (branding && (branding.code || null) === code) {
+      if (branding && (branding.code || null) === code && (branding.storeSpecific || !code)) {
         remember(code, branding);
         return;
       }
       const mine = ++current;
-      getBranding(code)
+      getBranding(code, { signedIn: Boolean(code) })
         .then((raw) => {
           if (mine !== current) return;
           const b = normalizeBranding(raw);
