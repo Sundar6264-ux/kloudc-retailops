@@ -356,6 +356,79 @@ def post_order_again(order_id: int, user: User = Depends(get_current_user), db: 
     return order_again(db, row, user)
 
 
+# --- Download a PO (Excel / PDF / CSV) ------------------------------------
+# The owner (Oct 22): one Download button with a file-type menu wherever a PO
+# can be viewed or sent. Nothing new is stored - the file is made from the PO
+# as it is kept today (services/po_download.py). GETs, so the demo login can
+# download too (it only reads).
+
+_PO_FORMAT = Query("pdf", description='"xlsx" (Excel), "pdf" or "csv"')
+
+
+def _po_file(db: Session, supplier: str, items: list, day: dt.date, fmt: str) -> Response:
+    from app.services import po_download
+
+    try:
+        content, media_type, filename = po_download.render(db, supplier, items, day, fmt)
+    except po_download.PoDownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail)
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.get("/orders/{order_id}/export", dependencies=[Depends(require_feature("purchase_order_cart"))])
+def export_placed_order(order_id: int, format: str = _PO_FORMAT, db: Session = Depends(get_db)):
+    """A PO from the purchase order log as a file, dated the day it was made."""
+    from app.services.purchase_order_log import order_items
+    from app.timeutil import to_restaurant_date
+
+    row = db.get(PlacedOrder, order_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    return _po_file(db, row.supplier, order_items(row), to_restaurant_date(row.placed_at), format)
+
+
+@router.get("/po-sends/{send_id}/export", dependencies=[Depends(require_feature("purchase_order_cart"))])
+def export_sent_po(send_id: int, format: str = _PO_FORMAT, db: Session = Depends(get_db)):
+    """A PO from the Send PO log as a file: exactly the lines that were sent
+    (no email addresses - only the PO itself)."""
+    from app.po_send_models import PoSend
+    from app.services.po_send import _json_list
+    from app.timeutil import to_restaurant_date
+
+    row = db.get(PoSend, send_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="That sent order wasn't found.")
+    day = to_restaurant_date(row.created_at) if row.created_at else restaurant_today()
+    return _po_file(db, row.supplier, _json_list(row.items_json), day, format)
+
+
+@router.get("/cart/export", dependencies=[Depends(require_feature("purchase_order_cart"))])
+def export_cart_po(
+    supplier: str = Query(..., min_length=1), format: str = _PO_FORMAT, db: Session = Depends(get_db)
+):
+    """The PO a vendor's cart would send right now (the lines Send PO and
+    Download PDF use). Only a look - not logged as an order."""
+    from app.services import po_download
+    from app.services.po_send import cart_lines
+
+    try:
+        po_download.normalize_format(format)
+    except po_download.PoDownloadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail)
+    _rows, items = cart_lines(db, supplier)
+    if not items:
+        raise HTTPException(status_code=400, detail=f"Nothing to download - {supplier} has no items in the cart.")
+    return _po_file(db, supplier, items, restaurant_today(), format)
+
+
 # --- Purchase order cart --------------------------------------------------
 # A persistent, shared cart (see CartItem/po_cart.py) so a Supplier Projection
 # review doesn't have to end in one immediate PDF: items can be added across

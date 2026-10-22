@@ -341,20 +341,47 @@ def cart_lines(db: Session, supplier: str) -> Tuple[List[CartItem], List[dict]]:
     return rows, items
 
 
-def build_po_pdf(db: Session, supplier: str, items: list) -> bytes:
-    """The vendor PO PDF, grouped into picking sections - shared with the
-    Download PDF route. Any grouping failure falls back to the ungrouped PDF
-    so a PO can always be made."""
+def po_lines(items: list) -> list:
+    """The PO's printed lines: name, vendor code and qty, plus the optional
+    case fields (`cases` / `case_size`) when a line has them."""
+    lines = []
+    for i in items:
+        line = {"name": i["name"], "supplier_item_id": i.get("supplier_item_id"), "qty": i["qty"]}
+        for key in ("cases", "case_size"):
+            if i.get(key) not in (None, ""):
+                line[key] = i[key]
+        lines.append(line)
+    return lines
+
+
+def group_po_lines(db: Session, supplier: str, lines: list) -> Optional[list]:
+    """[(section, lines)] exactly as the PDF prints them, or None when the
+    grouping fails (the PO is then made ungrouped)."""
     from app.services.po_section_rules import group_for_pdf
     from app.services.reorder import latest_inventory_by_item
 
-    lines = [{"name": i["name"], "supplier_item_id": i.get("supplier_item_id"), "qty": i["qty"]} for i in items]
     try:
-        sections = group_for_pdf(db, lines, latest_inventory_by_item(db), supplier)
-        return export_simple_po_pdf(supplier, lines, sections)
+        return group_for_pdf(db, lines, latest_inventory_by_item(db), supplier)
     except Exception:  # noqa: BLE001
         logger.exception("PO section grouping failed for %s - building ungrouped", supplier)
-        return export_simple_po_pdf(supplier, lines)
+        return None
+
+
+def build_po_pdf(db: Session, supplier: str, items: list, prepared: Optional[dt.date] = None) -> bytes:
+    """The vendor PO PDF, grouped into picking sections - shared with the
+    Download PDF route and the PO downloads (services/po_download.py). Any
+    grouping failure falls back to the ungrouped PDF so a PO can always be
+    made."""
+    lines = po_lines(items)
+    sections = group_po_lines(db, supplier, lines)
+    extra = {"prepared": prepared} if prepared else {}
+    try:
+        return export_simple_po_pdf(supplier, lines, sections, **extra)
+    except Exception:  # noqa: BLE001
+        if sections is None:
+            raise
+        logger.exception("Grouped PO PDF failed for %s - building ungrouped", supplier)
+        return export_simple_po_pdf(supplier, lines, **extra)
 
 
 def pdf_filename(supplier: str, day: Optional[dt.date] = None) -> str:

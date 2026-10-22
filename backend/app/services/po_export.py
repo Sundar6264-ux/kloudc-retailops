@@ -66,9 +66,24 @@ def _format_qty(value) -> str:
     return str(int(f)) if f.is_integer() else str(f)
 
 
+def has_case_fields(items: list) -> bool:
+    """True when any PO line carries the optional case fields (`case_size` /
+    `cases`) - only then do the Cases / Units per case columns appear, on the
+    PDF and on the Excel / CSV downloads (services/po_download.py)."""
+    return any(
+        isinstance(i, dict) and (i.get("case_size") not in (None, "") or i.get("cases") not in (None, ""))
+        for i in items
+    )
+
+
 def export_simple_po_pdf(
-    supplier: str, items: list[dict], sections: Optional[list[tuple[str, list[dict]]]] = None
+    supplier: str,
+    items: list[dict],
+    sections: Optional[list[tuple[str, list[dict]]]] = None,
+    prepared: Optional[dt.date] = None,
 ) -> bytes:
+    """`prepared`: the date printed under the title (a stored PO's own date
+    when it is downloaded again later); today when not given."""
     styles = getSampleStyleSheet()
     header_style = ParagraphStyle(
         "POHeader", parent=styles["Normal"], textColor=_HEADER_TEXT, fontName="Helvetica-Bold", fontSize=9
@@ -121,7 +136,7 @@ def export_simple_po_pdf(
         # Escaped: a vendor name is text, never reportlab markup such as <img src=...>
         # (which would read a file from this server; docs/SECURITY_REVIEW.md SR-10).
         Paragraph(f"Supplier: <b>{xml_escape(str(supplier or ''))}</b>", subtitle_style_right),
-        Paragraph(f"Prepared: {restaurant_today().isoformat()}", subtitle_style_right),
+        Paragraph(f"Prepared: {(prepared or restaurant_today()).isoformat()}", subtitle_style_right),
     ]
     icon_path = _icon_file()
     if icon_path is not None:
@@ -165,12 +180,16 @@ def export_simple_po_pdf(
         text = "" if value is None else xml_escape(str(value))
         return Paragraph(text, cell_style_right if numeric else cell_style)
 
+    with_cases = has_case_fields(items)
     header_row = [
         header_cell("S.No", True),
         header_cell("Supplier Code", False),
         header_cell("Item Name", False),
         header_cell("Qty", True),
     ]
+    if with_cases:
+        header_row += [header_cell("Cases", True), header_cell("Units per case", True)]
+    blank_cells = [""] * (len(header_row) - 1)
 
     # `sections` (from po_sections.group_po_items) prints each section's
     # lines under a full-width heading row; without it the lines print in the
@@ -182,24 +201,26 @@ def export_simple_po_pdf(
     for section, section_items in groups:
         if section:
             section_rows.append(len(table_data))
-            table_data.append([Paragraph(xml_escape(section.upper()), section_style), "", "", ""])
+            table_data.append([Paragraph(xml_escape(section.upper()), section_style), *blank_cells])
         for item in section_items:
             idx += 1
-            table_data.append(
-                [
-                    body_cell(idx, True),
-                    body_cell(item.get("supplier_item_id") or "", False),
-                    body_cell(item.get("name"), False),
-                    body_cell(_format_qty(item.get("qty")), True),
-                ]
-            )
+            row = [
+                body_cell(idx, True),
+                body_cell(item.get("supplier_item_id") or "", False),
+                body_cell(item.get("name"), False),
+                body_cell(_format_qty(item.get("qty")), True),
+            ]
+            if with_cases:
+                row += [body_cell(_format_qty(item.get("cases")), True), body_cell(_format_qty(item.get("case_size")), True)]
+            table_data.append(row)
 
     page_width = letter[0] - 1.2 * inch
     serial_width = 0.55 * inch
     qty_width = 0.9 * inch
     supplier_code_width = 1.6 * inch
-    name_width = page_width - serial_width - qty_width - supplier_code_width
-    col_widths = [serial_width, supplier_code_width, name_width, qty_width]
+    case_widths = [0.65 * inch, 1.25 * inch] if with_cases else []
+    name_width = page_width - serial_width - qty_width - supplier_code_width - sum(case_widths)
+    col_widths = [serial_width, supplier_code_width, name_width, qty_width, *case_widths]
 
     table = Table(table_data, colWidths=col_widths, repeatRows=1)
     table.setStyle(
@@ -214,7 +235,7 @@ def export_simple_po_pdf(
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
                 ("LEFTPADDING", (0, 0), (-1, -1), 7),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 7),
-                ("BACKGROUND", (-1, 1), (-1, -1), _QTY_HIGHLIGHT),
+                ("BACKGROUND", (3, 1), (3, -1), _QTY_HIGHLIGHT),
             ]
             + [
                 cmd
