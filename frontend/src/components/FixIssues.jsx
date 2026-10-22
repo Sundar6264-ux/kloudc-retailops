@@ -19,6 +19,15 @@ import { ItemWeeklySales } from "./weeklySales/WeeklySalesTable.jsx";
 import { LiveStockNote, MenuCheckNote } from "./DataSourceNote.jsx";
 import { useLocation } from "react-router-dom";
 import FixIssueFilters from "./issueLeads/FixIssueFilters.jsx";
+import ClosedFilters from "./issueLeads/ClosedFilters.jsx";
+import {
+  EMPTY_CLOSED_FILTERS,
+  applyClosedFilters,
+  closedReportTileCount,
+  closedReportTileHint,
+  closedShowing,
+  personChips,
+} from "./issueLeads/closedFiltersModel.js";
 import {
   EMPTY_FILTERS,
   LEAD_NONE,
@@ -722,6 +731,8 @@ function IssueTable({ type, reasons, onChanged, lead, onLeadChange, savedLeads }
   // FixIssues so it stays across lists and comes from the task's link.
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const allFilters = useMemo(() => ({ ...filters, lead }), [filters, lead]);
+  // Closed tab only (Oct 22): Employee (who closed it) and Category.
+  const [closedFilters, setClosedFilters] = useState(EMPTY_CLOSED_FILTERS);
 
   const load = useCallback(() => {
     setError(null);
@@ -743,7 +754,7 @@ function IssueTable({ type, reasons, onChanged, lead, onLeadChange, savedLeads }
     setLimit(PAGE);
     setOtherExpanded(false);
     setGroupLimits({});
-  }, [view, cameBackOnly, allFilters]);
+  }, [view, cameBackOnly, allFilters, closedFilters]);
 
   const cameBackCount = data ? data.came_back_count ?? (data.open || []).filter(isCameBack).length : 0;
   const baseColumns = [...type.columns, ...PRODUCT_COLUMNS.filter((c) => !(type.hideProductOnHand && c.key === "p_on_hand"))];
@@ -752,7 +763,10 @@ function IssueTable({ type, reasons, onChanged, lead, onLeadChange, savedLeads }
     const list = data?.[view] || [];
     return withProduct(view === "open" && cameBackOnly ? list.filter(isCameBack) : list);
   }, [data, view, cameBackOnly]);
-  const viewRows = useMemo(() => applyFilters(tabRows, allFilters), [tabRows, allFilters]);
+  const viewRows = useMemo(() => {
+    const filtered = applyFilters(tabRows, allFilters);
+    return view === "closed" ? applyClosedFilters(filtered, closedFilters) : filtered;
+  }, [tabRows, allFilters, view, closedFilters]);
   const bySection = hasSections(data?.[view]);
   const { search, setSearch, sortKey, sortDir, toggleSort, rows } = useTableControls(viewRows, {
     searchKeys: view === "open" ? type.searchKeys : [...type.searchKeys, "reason_label", "reason_detail", "closed_by"],
@@ -932,6 +946,14 @@ function IssueTable({ type, reasons, onChanged, lead, onLeadChange, savedLeads }
           }}
         />
       )}
+      {data && view === "closed" && data.closed.length > 0 && (
+        <ClosedFilters
+          rows={bySection ? applyFilters(tabRows, allFilters) : tabRows}
+          filters={closedFilters}
+          shownCount={viewRows.length}
+          onChange={setClosedFilters}
+        />
+      )}
       {error && <p className="error">{error}</p>}
       {!data && !error && <p className="muted">Loading…</p>}
       {data && view === "open" && <LiveStockNote liveStock={data.live_stock} />}
@@ -1041,6 +1063,11 @@ function IssueTable({ type, reasons, onChanged, lead, onLeadChange, savedLeads }
 // The store date `n` days before the store's today (plain-date arithmetic:
 // stepping a device-local Date back 24h can skip a store day across a DST
 // change when the device is in another zone).
+// "Sep 23" for a store date ("2026-09-23").
+function shortDay(iso) {
+  return new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 function isoDaysAgo(n) {
   return storeDateOffsetStr(-n);
 }
@@ -1058,6 +1085,9 @@ function ClosedReport() {
   const [end, setEnd] = useState(isoDaysAgo(0));
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  // Additive (Oct 22): Employee (who closed it) and Category, sent to the server.
+  const [closedBy, setClosedBy] = useState("");
+  const [category, setCategory] = useState("");
 
   useEffect(() => {
     const preset = RANGES.find((r) => r.key === range);
@@ -1073,13 +1103,21 @@ function ClosedReport() {
     let cancelled = false;
     setData(null);
     setError(null);
-    getIssueReport(start, end)
+    getIssueReport(start, end, { closedBy, category })
       .then((d) => !cancelled && setData(d))
       .catch((err) => !cancelled && setError(err.message));
     return () => {
       cancelled = true;
     };
-  }, [start, end]);
+  }, [start, end, closedBy, category]);
+
+  const rangeLabel = RANGES.find((r) => r.key === range && r.days != null)?.label;
+  const dates = start && end ? `${shortDay(start)} – ${shortDay(end)}` : "";
+  const filtered = Boolean(closedBy || category);
+  // Options come from the report itself (who closed something / which
+  // categories, in this period); a pick with nothing left still shows.
+  const people = data?.people || [];
+  const categories = data?.categories || [];
 
   const typeLabel = Object.fromEntries(TYPES.map((t) => [t.key, t.label]));
 
@@ -1100,16 +1138,56 @@ function ClosedReport() {
             <input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} aria-label="To" />
           </>
         )}
+        <select className="fi-filter-select" aria-label="Employee" value={closedBy} onChange={(e) => setClosedBy(e.target.value)}>
+          <option value="">Everyone</option>
+          {closedBy && !people.some((p) => p.name.toLowerCase() === closedBy.toLowerCase()) && (
+            <option value={closedBy}>Closed by {closedBy}</option>
+          )}
+          {people.map((p) => (
+            <option key={p.name} value={p.name}>
+              Closed by {p.name} ({p.count})
+            </option>
+          ))}
+        </select>
+        <select className="fi-filter-select" aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">All categories</option>
+          {category && !categories.some((c) => c.name.toLowerCase() === category.toLowerCase()) && (
+            <option value={category}>{category}</option>
+          )}
+          {categories.map((c) => (
+            <option key={c.name} value={c.name}>
+              {c.name} ({c.count})
+            </option>
+          ))}
+        </select>
+        {filtered && (
+          <button
+            type="button"
+            className="link-button fi-filter-clear"
+            onClick={() => {
+              setClosedBy("");
+              setCategory("");
+            }}
+          >
+            Clear filters ({(closedBy ? 1 : 0) + (category ? 1 : 0)})
+          </button>
+        )}
       </div>
+      {/* Which filter is on, in plain words - the numbers below are for exactly this. */}
+      <p className="muted issue-report-showing">
+        Showing: {rangeLabel ? `${rangeLabel} (${dates})` : dates} · {data?.showing || closedShowing({ closedBy, category })}
+      </p>
       {error && <p className="error">{error}</p>}
       {!data && !error && <p className="muted">Loading…</p>}
-      {data && data.total === 0 && <p className="muted">No issues were closed in this period.</p>}
+      {data && data.total === 0 && (
+        <p className="muted">{filtered ? "Nothing closed in this period matches the filters." : "No issues were closed in this period."}</p>
+      )}
       {data && data.total > 0 && (
         <>
           <div className="issue-report-summary">
             <div className="issue-report-total">
               <strong>{data.total}</strong>
-              <span>closed</span>
+              <span>{filtered && data.all_total != null ? `of ${data.all_total} closed in this period` : "closed"}</span>
             </div>
             <div className="issue-report-reasons">
               {Object.entries(data.by_reason).map(([label, n]) => (
@@ -1119,6 +1197,22 @@ function ClosedReport() {
               ))}
             </div>
           </div>
+          {data.by_person && Object.keys(data.by_person).length > 0 && (
+            <div className="issue-report-people">
+              <span className="muted">By who closed them (these add up to {data.total}):</span>{" "}
+              {personChips(data.by_person).map((p) => (
+                <button
+                  key={p.name}
+                  type="button"
+                  className={`issue-reason-chip issue-person-chip${closedBy && closedBy.toLowerCase() === p.name.toLowerCase() ? " active" : ""}`}
+                  title={`Show only what ${p.name} closed`}
+                  onClick={() => setClosedBy(closedBy && closedBy.toLowerCase() === p.name.toLowerCase() ? "" : p.name)}
+                >
+                  {p.name} <b>{p.count}</b>
+                </button>
+              ))}
+            </div>
+          )}
           {data.days.map((day) => (
             <div key={day.date} className="issue-report-day">
               <div className="issue-report-day-head">
@@ -1172,6 +1266,8 @@ export default function FixIssues() {
   const location = useLocation();
   const [active, setActive] = useState("missing_barcode");
   const [summary, setSummary] = useState(null);
+  // Additive (Oct 22): what the Closed report tab counts (last 30 days, everyone).
+  const [closedReport, setClosedReport] = useState(null);
   // W4: the lead filter - from the daily task's link (?lead=<id>), kept
   // across lists; savedLeads = every saved category / vendor lead.
   const [lead, setLead] = useState(() => leadFromSearch(location.search));
@@ -1188,6 +1284,7 @@ export default function FixIssues() {
       .then((d) => {
         setSummary(Object.fromEntries(d.items.map((i) => [i.issue_type, i])));
         setSavedLeads(d.leads || []);
+        setClosedReport(d.closed_report || null);
       })
       .catch((err) => setError(err.message));
   }, []);
@@ -1264,11 +1361,10 @@ export default function FixIssues() {
           className={`issue-tab tone-green${active === "report" ? " active" : ""}`}
           onClick={() => pick("report")}
         >
-          <span className="issue-tab-count">
-            {summary ? Object.values(summary).reduce((n, s) => n + (s.closed_count || 0), 0) : "…"}
-          </span>
+          {/* The report's own default (last 30 days, everyone) - the same number the report opens with. */}
+          <span className="issue-tab-count">{summary ? closedReportTileCount(summary, closedReport) ?? "-" : "…"}</span>
           <span className="issue-tab-label">Closed report</span>
-          <span className="issue-tab-hint">What was closed, day by day.</span>
+          <span className="issue-tab-hint">{closedReportTileHint(closedReport)}</span>
         </button>
       </div>
 

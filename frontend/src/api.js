@@ -1506,8 +1506,11 @@ export async function reopenIssues(issueType, issueKeys) {
   return postJSON("/api/issues/reopen", { issue_type: issueType, issue_keys: issueKeys });
 }
 
-export async function getIssueReport(start, end) {
+// Additive (Oct 22): optional Employee (closedBy) and Category filters.
+export async function getIssueReport(start, end, { closedBy = "", category = "" } = {}) {
   const params = new URLSearchParams({ start, end });
+  if (closedBy) params.set("closed_by", closedBy);
+  if (category) params.set("category", category);
   const res = await request(`/api/issues/report?${params.toString()}`);
   return res.json();
 }

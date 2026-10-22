@@ -17,6 +17,8 @@ from app.services.fix_issues import (
     IssueCloseError,
     all_reasons,
     close_issues,
+    CLOSED_REPORT_DEFAULT_DAYS,
+    closed_report_tile,
     get_closed_report,
     get_issue_history,
     get_issue_list,
@@ -61,21 +63,28 @@ def summary(db: Session = Depends(get_db)):
     # Fix Issues lead filter (a lead with nothing open still shows).
     from app.services.issue_leads import lead_people
 
-    return {"items": get_summary(db), "leads": lead_people(db)}
+    # Additive (Oct 22): `closed_report` = what the Closed report tiles show -
+    # the report's default (last 30 days, everyone), worked out by the report
+    # itself so the tile and the report always agree.
+    return {"items": get_summary(db), "leads": lead_people(db), "closed_report": closed_report_tile(db)}
 
 
 @router.get("/report")
 def report(
     start: Optional[dt.date] = None,
     end: Optional[dt.date] = None,
+    # Additive (Oct 22): Employee (who closed it) and Category filters.
+    closed_by: Optional[str] = Query(None, max_length=200),
+    category: Optional[str] = Query(None, max_length=200),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     end = end or restaurant_today()
-    start = start or end - dt.timedelta(days=29)
+    start = start or end - dt.timedelta(days=CLOSED_REPORT_DEFAULT_DAYS - 1)
     if end < start:
         raise HTTPException(status_code=400, detail="End date is before start date.")
-    return strip_sales_deep(get_closed_report(db, start, end), TOAST_SALES_DOLLAR_FIELDS, user)
+    report = get_closed_report(db, start, end, closed_by=closed_by, category=category)
+    return strip_sales_deep(report, TOAST_SALES_DOLLAR_FIELDS, user)
 
 
 @router.post("/close")

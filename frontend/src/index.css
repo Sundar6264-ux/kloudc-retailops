@@ -3616,6 +3616,31 @@ td.cell-wrap {
   border: 1px solid var(--border);
 }
 
+/* Closed report (Oct 22): which filter is on, and per-person counts. */
+.issue-report-showing {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.issue-report-people {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.issue-person-chip {
+  cursor: pointer;
+  color: inherit;
+}
+
+.issue-person-chip.active {
+  border-color: var(--success-text);
+  font-weight: 600;
+}
+
 .issue-report-day {
   margin-bottom: 1.1rem;
 }

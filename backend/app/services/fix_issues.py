@@ -863,12 +863,61 @@ def reopen_issues(
     return len(rows)
 
 
-def get_closed_report(db: Session, start: dt.date, end: dt.date) -> dict:
+# The Closed report's default range - also what the Closed report tiles
+# count (app Fix Issues, website tab), so the two numbers always agree.
+CLOSED_REPORT_DEFAULT_DAYS = 30
+UNKNOWN_PERSON = "Unknown"
+NO_CATEGORY = "No category"
+
+
+def _person_of(r: IssueResolution) -> str:
+    return (r.closed_by_name or "").strip() or UNKNOWN_PERSON
+
+
+def _category_of(r: IssueResolution) -> str:
+    return (r.category or "").strip() or NO_CATEGORY
+
+
+def _same(a: Optional[str], b: Optional[str]) -> bool:
+    return (a or "").strip().lower() == (b or "").strip().lower()
+
+
+def closed_report_showing(closed_by: Optional[str], category: Optional[str]) -> str:
+    """The filter in plain words, e.g. "Closed by Ravi · Snacks" or
+    "Everyone · All categories"."""
+    who = f"Closed by {closed_by.strip()}" if closed_by and closed_by.strip() else "Everyone"
+    what = category.strip() if category and category.strip() else "All categories"
+    return f"{who} · {what}"
+
+
+def get_closed_report(
+    db: Session,
+    start: dt.date,
+    end: dt.date,
+    closed_by: Optional[str] = None,
+    category: Optional[str] = None,
+) -> dict:
     """Closed issues grouped by the (store-local) day they were closed, newest
-    day first, with per-type and per-reason counts."""
+    day first, with per-type and per-reason counts.
+
+    Additive (Oct 22, owner: the per-person count and the 30-day report
+    disagreed): `closed_by` (who closed it - "Unknown" for no name) and
+    `category` ("No category" for none) filter everything here, matched
+    ignoring case. `filters` / `showing` say which filter is on, in plain
+    words; `by_person` counts the filtered closes per person (they add up to
+    `total`); `people` / `categories` are the filter options with how many
+    each would show (people: before the person filter; categories: before
+    the category filter); `all_total` is the range's total with no filter."""
+    closed_by = (closed_by or "").strip() or None
+    category = (category or "").strip() or None
     rows = db.query(IssueResolution).order_by(IssueResolution.closed_at.desc(), IssueResolution.id.desc()).all()
     days: dict = {}
     by_reason_total: dict = defaultdict(int)
+    by_person: dict = defaultdict(int)
+    people: dict = defaultdict(int)
+    categories: dict = defaultdict(int)
+    spelling: dict = {}
+    all_total = 0
     for r in rows:
         # A close stored for an issue type that no longer exists (retired, or
         # renamed) is left out rather than failing the whole report.
@@ -877,6 +926,20 @@ def get_closed_report(db: Session, start: dt.date, end: dt.date) -> dict:
         day = to_restaurant_date(r.closed_at)
         if day < start or day > end:
             continue
+        all_total += 1
+        # Grouped ignoring case (the filter matches that way too): "Ravi" and
+        # "ravi" are one person, shown with the newest spelling.
+        person = spelling.setdefault(("p", _person_of(r).lower()), _person_of(r))
+        cat = spelling.setdefault(("c", _category_of(r).lower()), _category_of(r))
+        person_ok = closed_by is None or _same(person, closed_by)
+        category_ok = category is None or _same(cat, category)
+        if category_ok:
+            people[person] += 1
+        if person_ok:
+            categories[cat] += 1
+        if not (person_ok and category_ok):
+            continue
+        by_person[person] += 1
         entry = days.setdefault(
             day, {"date": day.isoformat(), "total": 0, "by_type": defaultdict(int), "items": []}
         )
@@ -903,12 +966,39 @@ def get_closed_report(db: Session, start: dt.date, end: dt.date) -> dict:
         e = days[day]
         e["by_type"] = dict(e["by_type"])
         out_days.append(e)
+
+    def _options(counts: dict) -> list:
+        return [{"name": k, "count": counts[k]} for k in sorted(counts, key=lambda k: k.lower())]
+
     return {
         "start": start.isoformat(),
         "end": end.isoformat(),
         "total": sum(d["total"] for d in out_days),
         "by_reason": dict(sorted(by_reason_total.items(), key=lambda kv: -kv[1])),
         "days": out_days,
+        "filters": {"closed_by": closed_by, "category": category},
+        "showing": closed_report_showing(closed_by, category),
+        "all_total": all_total,
+        "by_person": dict(sorted(by_person.items(), key=lambda kv: (-kv[1], kv[0].lower()))),
+        "people": _options(people),
+        "categories": _options(categories),
+    }
+
+
+def closed_report_tile(db: Session, today: Optional[dt.date] = None) -> dict:
+    """What the Closed report tiles show: the report's own default (the last
+    CLOSED_REPORT_DEFAULT_DAYS days, everyone, all categories) - the same
+    function, so the tile and the report it opens always agree."""
+    end = today or restaurant_today()
+    start = end - dt.timedelta(days=CLOSED_REPORT_DEFAULT_DAYS - 1)
+    report = get_closed_report(db, start, end)
+    return {
+        "days": CLOSED_REPORT_DEFAULT_DAYS,
+        "start": report["start"],
+        "end": report["end"],
+        "total": report["total"],
+        "showing": report["showing"],
+        "by_person": report["by_person"],
     }
 
 
