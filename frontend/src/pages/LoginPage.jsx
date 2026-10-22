@@ -140,7 +140,7 @@ export default function LoginPage() {
   const productHeader = platform || (!found && !ownStore);
 
   return (
-    <AuthLayout testId="login-page">
+    <AuthLayout testId="login-page" retailOps>
       <form onSubmit={handleSubmit} className="auth-card login-card" noValidate>
         {productHeader ? (
           <div className="auth-head">

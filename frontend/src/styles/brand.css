@@ -38,6 +38,36 @@
   fill: rgba(255, 255, 255, 0.86);
 }
 
+/* RetailOps lockup (sign-in page only, ui/RetailOpsLogo.jsx) */
+
+.ro-logo {
+  display: block;
+  overflow: visible;
+}
+
+.ro-logo-bag { fill: var(--kc-blue); }
+.ro-logo-handle { stroke: var(--kc-blue); }
+.ro-logo-tick { stroke: var(--kc-sky); }
+
+.ro-logo-word {
+  fill: var(--kc-blue);
+  font-family: "Arial Rounded MT Bold", "Nunito", "Varela Round", var(--font-sans);
+  letter-spacing: -0.3px;
+}
+
+.ro-logo-ops { fill: var(--kc-sky); }
+
+.ro-logo-light .ro-logo-bag { fill: var(--on-fill); }
+.ro-logo-light .ro-logo-handle { stroke: var(--on-fill); }
+.ro-logo-light .ro-logo-tick { stroke: var(--kc-blue-fill); }
+.ro-logo-light .ro-logo-word { fill: var(--on-fill); }
+.ro-logo-light .ro-logo-ops { fill: rgba(255, 255, 255, 0.86); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ro-logo-brand .ro-logo-tick { stroke: var(--on-fill); }
+}
+:root[data-theme="dark"] .ro-logo-brand .ro-logo-tick { stroke: var(--on-fill); }
+
 /* ---------- logged-out pages ---------- */
 
 .auth-page {

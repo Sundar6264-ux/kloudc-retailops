@@ -7,6 +7,7 @@
 import { useBranding } from "../store/StoreContext.jsx";
 import Icon from "../ui/icons.jsx";
 import KloudcLogo from "../ui/KloudcLogo.jsx";
+import RetailOpsLogo from "../ui/RetailOpsLogo.jsx";
 import { COPYRIGHT, KLOUDC, KLOUDC_LINKS, VALUE_POINTS } from "../ui/kloudc.js";
 
 function ValuePoints() {
@@ -51,29 +52,32 @@ export function AuthFooter() {
   );
 }
 
-export default function AuthLayout({ children, wide = false, testId }) {
+// `retailOps`: the sign-in page shows the short name "RetailOps" and the bag
+// logo (owner, 2026-10-22); the other logged-out pages keep KloudC RetailOps.
+export default function AuthLayout({ children, wide = false, testId, retailOps = false }) {
+  const product = retailOps ? "RetailOps" : KLOUDC.product;
   return (
     <div className="auth-page" data-testid={testId}>
-      <aside className="auth-brand" aria-label={KLOUDC.product}>
+      <aside className="auth-brand" aria-label={product}>
         <div className="auth-brand-inner">
-          <KloudcLogo tone="light" height={52} />
+          {retailOps ? <RetailOpsLogo tone="light" height={52} /> : <KloudcLogo tone="light" height={52} />}
           <p className="auth-tagline">{KLOUDC.tagline}</p>
           <ValuePoints />
         </div>
         <span className="auth-plane" aria-hidden="true">
-          <KloudcLogo mark tone="light" height={420} />
+          {retailOps ? <RetailOpsLogo mark tone="light" height={380} /> : <KloudcLogo mark tone="light" height={420} />}
         </span>
         <p className="auth-brand-foot">
-          {KLOUDC.product} by {KLOUDC.company}
+          {product} by {KLOUDC.company}
         </p>
       </aside>
       <main className={`auth-main${wide ? " auth-main-wide" : ""}`}>
         <div className="auth-mobile-logo">
-          <KloudcLogo height={40} />
+          {retailOps ? <RetailOpsLogo height={40} /> : <KloudcLogo height={40} />}
         </div>
         <div className="auth-content">{children}</div>
         <details className="auth-what">
-          <summary>What is {KLOUDC.product}?</summary>
+          <summary>What is {product}?</summary>
           <p>{KLOUDC.tagline}</p>
           <ValuePoints />
         </details>
