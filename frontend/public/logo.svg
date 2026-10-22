@@ -1,17 +1,16 @@
-<!-- KloudC paper plane (redrawn vector, from kloudc.com site icon). -->
+<!-- RetailOps mark, Plane-R (the app icon on a rounded tile): the website's
+     SVG favicon and manifest icon (frontend/public/logo.svg). -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <g stroke-linecap="round" stroke-linejoin="round">
-    <!-- motion lines -->
-    <g stroke="#9AA1A9" stroke-width="22" fill="none">
-      <path d="M150 640 L170 628 M215 602 L245 584 M290 556 L430 470"/>
-      <path d="M110 760 L130 748 M180 720 L215 699 M265 669 L470 548"/>
-      <path d="M300 740 L320 728 M370 700 L405 679 M455 649 L560 586"/>
-    </g>
-    <!-- upper wing -->
-    <path d="M290 372 L936 238 L462 478 Z" fill="#2EA3F2" stroke="#8C949C" stroke-width="10"/>
-    <!-- dark keel -->
-    <path d="M462 478 L936 238 L510 660 Z" fill="#004BAD" stroke="#8C949C" stroke-width="10"/>
-    <!-- lower wing -->
-    <path d="M560 540 L936 238 L752 622 Z" fill="#2EA3F2" stroke="#8C949C" stroke-width="10"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A5CC4"/>
+      <stop offset="1" stop-color="#004BAD"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <g transform="translate(-20 0)">
+    <path d="M214 180 L360 180 L850 400 L360 452 L360 844 L214 844 Z" fill="#FFFFFF"/>
+    <polygon points="360,452 850,400 360,640" fill="#2EA3F2"/>
+    <polygon points="476,583 622,512 834,844 668,844" fill="#FFFFFF"/>
   </g>
 </svg>

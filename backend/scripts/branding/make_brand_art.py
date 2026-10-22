@@ -1,7 +1,8 @@
 """Build every KloudC RetailOps image the server, website and app ship from
 the brand sources in backend/app/assets/branding/source/ (the KloudC paper
-plane, the app icon and the KloudC RetailOps lockup; brand colours KloudC
-blue #004BAD and sky #2EA3F2). Run it again after the sources change; every
+plane, the Plane-R app icon icon.svg / icon-1024.png and its rounded mark.svg,
+and the KloudC RetailOps lockup; brand colours KloudC blue #004BAD and sky
+#2EA3F2). Run it again after the sources change; every
 output is overwritten.
 
     python scripts/branding/make_brand_art.py                         # server + website
@@ -10,7 +11,7 @@ output is overwritten.
 Outputs
   server   app/assets/branding/: logo.svg, logo-512.png, logo-128.png (the plane:
            the product logo a store without its own logo gets), app-icon-1024.png
-  website  frontend/public/: logo.svg (favicon), favicon-32.png, favicon-512.png,
+  website  frontend/public/: logo.svg (favicon, the Plane-R mark), favicon-32.png, favicon-512.png,
            icon-192.png, apple-touch-icon.png, logo-header.png,
            kloudc-retailops-logo.svg, kloudc-retailops-logo.png, manifest.webmanifest
   app      assets/icon/app_icon.png, assets/icon/wordmark.png, the iOS AppIcon set
@@ -71,7 +72,7 @@ def server_and_web() -> None:
     _save(icon, branding / "app-icon-1024.png")
 
     public = ROOT / "frontend" / "public"
-    shutil.copyfile(SOURCE / "plane.svg", public / "logo.svg")
+    shutil.copyfile(SOURCE / "mark.svg", public / "logo.svg")
     shutil.copyfile(SOURCE / "logo.svg", public / "kloudc-retailops-logo.svg")
     _save(_resize(icon, 32), public / "favicon-32.png")
     _save(_resize(icon, 512), public / "favicon-512.png")

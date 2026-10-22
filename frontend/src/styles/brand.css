@@ -38,16 +38,19 @@
   fill: rgba(255, 255, 255, 0.86);
 }
 
-/* RetailOps lockup (sign-in page only, ui/RetailOpsLogo.jsx) */
+/* RetailOps lockup (sign-in page only, ui/RetailOpsLogo.jsx): the Plane-R
+   mark - a white R with a sky fold, on its KloudC-blue tile (the app icon,
+   the same in both themes) or alone on the blue band (tone="light"). */
 
 .ro-logo {
   display: block;
   overflow: visible;
 }
 
-.ro-logo-bag { fill: var(--kc-blue); }
-.ro-logo-handle { stroke: var(--kc-blue); }
-.ro-logo-tick { stroke: var(--kc-sky); }
+.ro-logo-r { fill: var(--on-fill); }
+.ro-logo-fold { fill: var(--kc-sky); }
+.ro-logo-tile-top { stop-color: var(--kc-mark-top); }
+.ro-logo-tile-bottom { stop-color: var(--kc-mark-bottom); }
 
 .ro-logo-word {
   fill: var(--kc-blue);
@@ -57,16 +60,8 @@
 
 .ro-logo-ops { fill: var(--kc-sky); }
 
-.ro-logo-light .ro-logo-bag { fill: var(--on-fill); }
-.ro-logo-light .ro-logo-handle { stroke: var(--on-fill); }
-.ro-logo-light .ro-logo-tick { stroke: var(--kc-blue-fill); }
 .ro-logo-light .ro-logo-word { fill: var(--on-fill); }
 .ro-logo-light .ro-logo-ops { fill: rgba(255, 255, 255, 0.86); }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .ro-logo-brand .ro-logo-tick { stroke: var(--on-fill); }
-}
-:root[data-theme="dark"] .ro-logo-brand .ro-logo-tick { stroke: var(--on-fill); }
 
 /* ---------- logged-out pages ---------- */
 

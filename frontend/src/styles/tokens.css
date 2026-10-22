@@ -12,6 +12,10 @@
   --kc-blue: #004bad;
   --kc-blue-fill: #004bad;
   --kc-sky: #2ea3f2;
+  /* The RetailOps mark's tile (Plane-R, as the app icon): the same in both
+     themes, so no dark value. */
+  --kc-mark-top: #0a5cc4;
+  --kc-mark-bottom: #004bad;
   /* KloudC link blue (#0C71C3) deepened a touch so links pass 4.5:1 on the
      tinted surfaces too (src/test/tokens.test.mjs). */
   --kc-link: #0b6cbb;

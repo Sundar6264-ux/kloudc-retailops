@@ -52,8 +52,8 @@ export function AuthFooter() {
   );
 }
 
-// `retailOps`: the sign-in page shows the short name "RetailOps" and the bag
-// logo (owner, 2026-10-22); the other logged-out pages keep KloudC RetailOps.
+// `retailOps`: the sign-in page shows the short name "RetailOps" and the
+// Plane-R mark (owner, 2026-10-22); the other logged-out pages keep KloudC RetailOps.
 export default function AuthLayout({ children, wide = false, testId, retailOps = false }) {
   const product = retailOps ? "RetailOps" : KLOUDC.product;
   return (
