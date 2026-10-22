@@ -2519,9 +2519,11 @@ def _store_words() -> dict:
 def _fill(text, words: dict):
     if not isinstance(text, str):
         return text
-    for k, v in words.items():
-        text = text.replace(k, v)
-    return text
+    from app.help_content import fill_text
+
+    # "{pos} says..." starting a sentence reads "Your POS says..." for a
+    # store without a named POS.
+    return fill_text(text, words)
 
 
 def localize_term(term: Optional[dict], words: Optional[dict] = None) -> Optional[dict]:

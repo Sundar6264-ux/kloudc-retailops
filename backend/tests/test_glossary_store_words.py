@@ -61,3 +61,30 @@ def test_no_store_names_in_the_glossary(monkeypatch):
     assert hits == [], hits
     source = open(g.__file__, encoding="utf-8").read()
     assert not has_origin_name(source)
+
+
+def test_a_sentence_never_starts_lowercase_for_a_store_without_a_named_pos(monkeypatch):
+    # A CSV-only store (and the App Store demo) reads "your POS": at the
+    # start of a sentence that is "Your POS" (App Store screenshot review,
+    # Oct 22: Check count read "your POS says 0 or less on hand...").
+    monkeypatch.setattr("app.help_content.pos_word", lambda: "your POS")
+    monkeypatch.setattr("app.config.get_settings", lambda: _settings(""))
+    terms = g.get_glossary()["terms"]
+    check = next(t for t in terms if t["label"] == "Check count")
+    assert check["definition"].startswith("Your POS says 0 or less on hand")
+    # Mid-sentence it stays lower case.
+    assert "fix it in your POS before ordering" in check["definition"]
+    for t in terms:
+        for field in ("label", "definition", "rule"):
+            text = t.get(field) or ""
+            assert not re.search(r"(^|[.!?]\s+)your POS", text), (t["key"], field, text)
+
+
+def test_fill_text_capitalises_only_word_placeholders_at_a_sentence_start():
+    from app.help_content import fill_text
+
+    words = {"{pos}": "your POS", "{store}": "your store", "{support_email}": "support@kloudc.com"}
+    assert fill_text("{pos} says 0. {store} is open.", words) == "Your POS says 0. Your store is open."
+    assert fill_text("Count it in {pos}.", words) == "Count it in your POS."
+    assert fill_text("{support_email} answers.", words) == "support@kloudc.com answers."
+    assert fill_text("Toast", {"{pos}": "Toast"}) == "Toast"

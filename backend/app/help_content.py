@@ -292,12 +292,32 @@ def store_words() -> Dict[str, str]:
     }
 
 
+# A word placeholder that starts a sentence ("{pos} says 0 or less on
+# hand...") is capitalised there: "your POS says" read as a typo on a store
+# without a named POS (App Store screenshot review, Oct 22). An email
+# address is never capitalised.
+_SENTENCE_START = re.compile(r"(^|[.!?]\s+)(\{(?:pos|store|store_city)\})")
+
+
+def fill_text(text: str, words: Dict[str, str]) -> str:
+    """`text` with its placeholders filled, capitalised at a sentence start."""
+
+    def cap(m: "re.Match[str]") -> str:
+        word = words.get(m.group(2))
+        if word is None:
+            return m.group(0)
+        return m.group(1) + word[:1].upper() + word[1:]
+
+    text = _SENTENCE_START.sub(cap, text)
+    for k, v in words.items():
+        text = text.replace(k, v)
+    return text
+
+
 def fill(value, words: Dict[str, str]):
     """A deep copy of any JSON value with every string's placeholders filled."""
     if isinstance(value, str):
-        for k, v in words.items():
-            value = value.replace(k, v)
-        return value
+        return fill_text(value, words)
     if isinstance(value, list):
         return [fill(v, words) for v in value]
     if isinstance(value, dict):
