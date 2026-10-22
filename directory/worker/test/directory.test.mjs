@@ -3,9 +3,10 @@
 // backend/tests/test_directory.py (it drives test/parity.mjs).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SlidingWindowLimiter, createDirectory, normalizeCode } from "../src/directory.js";
+import { createHash } from "node:crypto";
+import { SlidingWindowLimiter, connectBody, createDirectory, etagFor, normalizeCode } from "../src/directory.js";
 
-const BODY = '{"schema":1,"code":"DEMO","name":"KloudC RetailOps Demo Market"}';
+const BODY = '{"schema":1,"code":"DEMO","api_base_url":"https://app.retailops.invalid","status":"active","min_build":{"ios":0,"android":0}}';
 const DATA = {
   schema: 1,
   rate: { per_minute: 3, per_hour: 100 },
@@ -26,6 +27,7 @@ const DATA = {
   aasa: '{"applinks":{"details":[{"appIDs":[],"components":[]}]}}',
   assetlinks: "[]",
   open_page: { html: "<!doctype html><p>open</p>", csp: "default-src 'none'" },
+  shared_api_url: "https://app.retailops.invalid",
   stores: { DEMO: { body: BODY, etag: '"abc"' } },
 };
 
@@ -53,15 +55,19 @@ test("known, unknown, invalid codes and 304", async () => {
   assert.equal(r.headers.get("etag"), '"abc"');
   assert.equal(r.headers.get("content-type"), "application/json");
   r = await get(dir, "/v1/stores/NOPE_NOPE", { ip: "2" });
-  assert.equal(r.status, 404);
-  assert.equal(r.headers.get("cache-control"), "public, max-age=60");
+  // An unknown code reads like a store on the shared service.
+  assert.equal(r.status, 200);
+  assert.equal(r.headers.get("cache-control"), "public, max-age=300, stale-while-revalidate=3600");
+  const unknown = await r.text();
+  assert.equal(unknown, BODY.replace('"DEMO"', '"NOPE_NOPE"'));
+  assert.equal(r.headers.get("etag"), `"${createHash("sha256").update(unknown).digest("hex").slice(0, 32)}"`);
   r = await get(dir, "/v1/stores/%E0%A4%A", { ip: "3" });
   assert.equal(r.status, 400);
   r = await get(dir, "/v1/stores/DEMO", { ip: "4", headers: { "If-None-Match": 'W/"abc"' } });
   assert.equal(r.status, 304);
   assert.equal(await r.text(), "");
   r = await get(dir, "/v1/stores/constructor", { ip: "5" });
-  assert.equal(r.status, 404, "object prototype keys are not stores");
+  assert.equal(await r.text(), connectBody("CONSTRUCTOR", DATA.shared_api_url), "object prototype keys are not stores");
 });
 
 test("rate limit: per minute, Retry-After, refused hits not counted", async () => {
@@ -135,4 +141,8 @@ test("other routes: healthz, well-known, open page, 404, HEAD, 405", async () =>
   assert.equal(await head.text(), "");
   const post = await get(dir, "/v1/stores/DEMO", { method: "POST" });
   assert.equal(post.status, 405);
+});
+
+test("etagFor is the first 32 hex of sha256, quoted", async () => {
+  assert.equal(await etagFor("abc"), '"ba7816bf8f01cfea414140de5dae2223"');
 });

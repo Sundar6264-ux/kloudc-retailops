@@ -2,9 +2,27 @@
 
 The directory tells the KloudC RetailOps app which server a store code belongs to.
 Staff type a code (or scan a QR code), the app asks
-`GET https://directory.<PLATFORM_DOMAIN>/v1/stores/<CODE>`, and gets back the
-store's server address, name, colours, time zone and minimum app build.
-The full interface is in `docs/M2_CONTRACT.md`, section 4.
+`GET https://directory.<PLATFORM_DOMAIN>/v1/stores/<CODE>`, and gets back
+only what it needs to connect:
+
+```json
+{"schema":1,"code":"<CODE>","api_base_url":"https://<host>","status":"active","min_build":{"ios":0,"android":0}}
+```
+
+No name, short name, logo, colours, POS name, message or timestamp (owner
+decision, 2026-10; `docs/PLATFORM_CONTRACT.md` 13.4 "As built"). The store's
+name and look come from its own server after sign-in.
+
+**A guessed code learns nothing.** A code that isn't in the stores file gets
+the same `200`, the same shape and the same cache headers, with the shared
+service's address (`PLATFORM_PUBLIC_URL`, else `https://app.<PLATFORM_DOMAIN>`)
+- exactly what a real store on the shared service gets (a shared-service
+store's `min_build` is always 0 here; its server's `/api/app/config` gives the
+real one). `status` is always `active`: a paused store's message is shown only
+after a correct sign-in. A store on its own server necessarily answers with
+its own address; that is accepted.
+
+The rest of the interface is in `docs/M2_CONTRACT.md`, section 4.
 
 It is built from one file, `directory/stores.json`, in three forms that
 return the same bytes:
@@ -12,7 +30,7 @@ return the same bytes:
 | Form | Where | Used for |
 |---|---|---|
 | Cloudflare Worker (`directory/worker/`) | `https://directory.<PLATFORM_DOMAIN>` | Production |
-| Static files (Cloudflare Pages) | `https://static.<PLATFORM_DOMAIN>/v1/stores/<CODE>.json` | Fallback when the Worker is down |
+| Static files (Cloudflare Pages) | `https://static.<PLATFORM_DOMAIN>/v1/stores/<CODE>.json` | Fallback when the Worker is down. Known limitation: static hosting has no file for an unknown code, so that one is still a 404 here |
 | Python service (`backend/app/directory/`) | `uvicorn app.directory.main:app --port 8090` | Tests, local development, self-hosting |
 
 `backend/tests/test_directory.py` runs the Python service and the Worker
@@ -33,15 +51,15 @@ Each store needs:
 - `name`.
 - `api_base_url`: `https://<host>` with no path. The host must end in
   `.<PLATFORM_DOMAIN>` or be listed in `DIRECTORY_EXTRA_API_HOSTS`.
-- `status`: `active` or `maintenance`. With `maintenance`, the app shows
-  `message` and does not log in.
+- `status`: `active` or `maintenance` (checked, but no longer served: the
+  lookup always says `active`).
 - `branding`: short name, logo and icon URLs, two `#RRGGBB` colours, an IANA
-  time zone and the POS name.
+  time zone and the POS name (checked, but no longer served).
 - `min_build`: the lowest iOS and Android build that may log in. It is
   optional and defaults to 0.
 
-To retire a store, delete its entry. Its code then answers 404, the same as a
-code that never existed.
+To retire a store, delete its entry. Its code then answers like a code that
+never existed (the shared service's address).
 
 The whole file is refused if any entry is wrong. A bad file stops the Python
 service from starting, and `build_static` exits with code 2 and lists every
@@ -62,6 +80,7 @@ settings fields are merged.
 | Variable | Default | Notes |
 |---|---|---|
 | `PLATFORM_DOMAIN` | `retailops.invalid` | A placeholder until you choose the real domain |
+| `PLATFORM_PUBLIC_URL` | `https://app.<PLATFORM_DOMAIN>` | The shared service; the answer for an unknown code |
 | `DIRECTORY_STORES_FILE` | `directory/stores.json` | |
 | `DIRECTORY_RATE_PER_MINUTE` / `_PER_HOUR` | `10` / `100` | Per client IP; `0` turns a window off |
 | `DIRECTORY_CLIENT_IP_HEADER` | blank | Set to `CF-Connecting-IP` behind Cloudflare. The Worker always uses it |

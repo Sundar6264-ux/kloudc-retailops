@@ -167,9 +167,10 @@ def create_app(
         except StoresFileError as exc:
             log.error("directory unavailable: %s", exc)
             return _json(503, error_body("directory_unavailable"), NO_STORE, **{"Retry-After": "30"})
-        body = stores.body(norm)
-        if body is None:
-            return _json(404, error_body("unknown_store"), CACHE_404)
+        # Known or not, the same shape, status and cache headers (owner
+        # decision 2026-10: a lookup reveals nothing about whether a store
+        # exists; PLATFORM_CONTRACT 13.4 "As built").
+        body = stores.connect(norm, cfg.shared_api_url)
         etag = etag_for(body)
         if _if_none_match(request, etag):
             return Response(

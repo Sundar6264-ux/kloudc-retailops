@@ -114,6 +114,10 @@ class DirectoryConfig:
     android_cert_sha256: Tuple[str, ...] = field(default_factory=tuple)
     app_store_url: str = ""
     play_store_url: str = ""
+    # The shared service's origin (PLATFORM_PUBLIC_URL; blank ->
+    # https://app.<platform_domain>). An unknown code is answered with it, so
+    # a guessed code reads like a real store on the shared service.
+    shared_api_url: str = ""
 
     def __post_init__(self) -> None:
         dom = (self.platform_domain or "").strip().lower().rstrip(".")
@@ -166,6 +170,13 @@ class DirectoryConfig:
             log.warning("PLAY_STORE_URL is not the listing for %s; the default listing URL is used", self.app_bundle_id)
             play = ""
         object.__setattr__(self, "play_store_url", play)
+        shared = (self.shared_api_url or "").strip().rstrip("/") or f"https://app.{dom}"
+        sp = urlsplit(shared)
+        if sp.scheme != "https" or not sp.hostname:
+            raise DirectoryConfigError("PLATFORM_PUBLIC_URL must be an https:// URL or blank")
+        if is_forbidden_host(sp.hostname):
+            raise DirectoryConfigError(f"PLATFORM_PUBLIC_URL may not point at {FORBIDDEN_DOMAIN}")
+        object.__setattr__(self, "shared_api_url", shared)
 
     @property
     def effective_play_store_url(self) -> str:
@@ -190,6 +201,7 @@ class DirectoryConfig:
             android_cert_sha256=_split_list(_setting("android_cert_sha256", "")),
             app_store_url=str(_setting("app_store_url", "") or ""),
             play_store_url=str(_setting("play_store_url", "") or ""),
+            shared_api_url=str(_setting("platform_public_url", "") or ""),
         )
         values.update(overrides)
         return cls(**values)

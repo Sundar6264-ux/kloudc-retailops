@@ -6,7 +6,12 @@ data module from one stores file (M2 contract 4.3).
         [--worker-data ../directory/worker/src/data.json] [--refresh-branding]
 
 Writes, under ``--out``:
-- ``v1/stores/<CODE>.json``: the exact ``200`` body the service serves;
+- ``v1/stores/<CODE>.json``: the exact ``200`` body the service serves (the
+  trimmed connect body: code, api_base_url, status, min_build). Known
+  limitation: static hosting can't answer a code it has no file for, so an
+  unknown code is still a 404 here, unlike the service and the Worker (which
+  answer it like a store on the shared service). The app only reads this
+  copy when the directory itself is down;
 - ``.well-known/apple-app-site-association``, ``.well-known/assetlinks.json``;
 - ``s/index.html``: the open-in-app page (the code is read from the URL in JS);
 - ``_headers`` / ``_redirects``: Cloudflare Pages header rules and the
@@ -138,8 +143,7 @@ def worker_data(stores: StoresFile, cfg: DirectoryConfig) -> "OrderedDict[str, A
     page, csp = open_page(cfg.product_name, cfg.app_store_url, cfg.effective_play_store_url)
     entries: "OrderedDict[str, Any]" = OrderedDict()
     for code in stores.stores:
-        body = stores.body(code)
-        assert body is not None
+        body = stores.connect(code, cfg.shared_api_url)
         entries[code] = OrderedDict([("body", body.decode("utf-8")), ("etag", etag_for(body))])
     return OrderedDict(
         [
@@ -173,6 +177,8 @@ def worker_data(stores: StoresFile, cfg: DirectoryConfig) -> "OrderedDict[str, A
             ("aasa", aasa_bytes(cfg.apple_team_id, cfg.app_bundle_id).decode("utf-8")),
             ("assetlinks", assetlinks_bytes(cfg.app_bundle_id, cfg.android_cert_sha256).decode("utf-8")),
             ("open_page", OrderedDict([("html", page.decode("utf-8")), ("csp", csp)])),
+            # An unknown code is answered like a store on the shared service.
+            ("shared_api_url", cfg.shared_api_url),
             ("stores", entries),
         ]
     )
@@ -200,8 +206,7 @@ def build(
                 if old.stem not in stores.stores:
                     old.unlink()
         for code in stores.stores:
-            body = stores.body(code)
-            assert body is not None
+            body = stores.connect(code, cfg.shared_api_url)
             _write(store_dir / f"{code}.json", body)
             written.append(store_dir / f"{code}.json")
         page, csp = open_page(cfg.product_name, cfg.app_store_url, cfg.effective_play_store_url)

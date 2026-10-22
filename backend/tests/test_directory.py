@@ -227,38 +227,68 @@ def test_normalize_code():
 # --- GET /v1/stores/{code} ---------------------------------------------------
 
 
-def test_known_code_returns_the_contract_body_and_headers(directory):
+def test_known_code_returns_only_what_a_client_needs_to_connect(directory):
+    # Owner decision 2026-10 (PLATFORM_CONTRACT 13.4 "As built"): no name,
+    # branding, message or timestamp before sign-in.
     r = _get(directory, "/v1/stores/RETAILOPS_TEST_TOAST")
     assert r.status_code == 200
     body = r.json()
-    assert list(body) == [
-        "schema", "code", "name", "api_base_url", "status", "message", "branding", "min_build", "updated_at"
-    ]
+    assert list(body) == ["schema", "code", "api_base_url", "status", "min_build"]
     assert body == {
         "schema": 1,
         "code": "RETAILOPS_TEST_TOAST",
-        "name": "Test Toast Market",
         "api_base_url": "https://retailops-test-toast.retailops.invalid",
         "status": "active",
-        "message": None,
-        "branding": {
-            "short_name": "Toast Test",
-            "logo_url": "https://retailops-test-toast.retailops.invalid/branding/logo.png",
-            "icon_url": "https://retailops-test-toast.retailops.invalid/branding/icon.png",
-            "primary_color": "#1D4ED8",
-            "secondary_color": "#93C5FD",
-            "timezone": "America/Chicago",
-            "pos_name": "Toast",
-        },
         "min_build": {"ios": 0, "android": 0},
-        "updated_at": "2026-10-18T00:00:00Z",
     }
+    assert "Test Toast Market" not in r.text and "Toast Test" not in r.text
     assert r.headers["content-type"] == "application/json"
     assert r.headers["cache-control"] == "public, max-age=300, stale-while-revalidate=3600"
     assert r.headers["access-control-allow-origin"] == "*"
     assert r.headers["etag"] == etag_for(r.content)
     assert r.content == compact_json(body)
     assert "set-cookie" not in r.headers
+
+
+def _shared_store_file(tmp_path, **changes):
+    data = _one(api_base_url="https://app.retailops.invalid", min_build={"ios": 7, "android": 9}, **changes)
+    return _write_stores(tmp_path / "shared.json", data)
+
+
+def test_unknown_code_reads_exactly_like_a_store_on_the_shared_service(tmp_path, clock):
+    client = TestClient(create_app(_cfg(_shared_store_file(tmp_path)), clock=clock))
+    real = _get(client, "/v1/stores/RETAILOPS_TEST_TOAST")
+    fake = _get(client, "/v1/stores/RETAILOPS_TEST_FAKE")
+    assert real.status_code == fake.status_code == 200
+    assert real.content.replace(b"RETAILOPS_TEST_TOAST", b"RETAILOPS_TEST_FAKE") == fake.content
+    assert fake.json()["api_base_url"] == "https://app.retailops.invalid"
+    # The store's own min build would tell it apart: its server's
+    # /api/app/config gives it after the connect.
+    assert real.json()["min_build"] == {"ios": 0, "android": 0}
+    for h in ("content-type", "cache-control", "access-control-allow-origin", "x-content-type-options"):
+        assert real.headers[h] == fake.headers[h], h
+    assert fake.headers["etag"] == etag_for(fake.content)
+
+
+def test_a_store_on_its_own_server_answers_with_its_own_address(directory):
+    # Accepted (owner): a dedicated server necessarily answers differently.
+    own = _get(directory, "/v1/stores/RETAILOPS_TEST_CLOVER").json()
+    assert own["api_base_url"] == "https://retailops-test-clover.retailops.invalid"
+    assert _get(directory, "/v1/stores/NO_SUCH_STORE").json()["api_base_url"] == "https://app.retailops.invalid"
+
+
+def test_shared_api_url_setting(monkeypatch):
+    assert DirectoryConfig().shared_api_url == "https://app.retailops.invalid"
+    assert DirectoryConfig(platform_domain="kloudc.com").shared_api_url == "https://app.kloudc.com"
+    assert DirectoryConfig(shared_api_url=" https://ops.example.com/ ").shared_api_url == "https://ops.example.com"
+    with pytest.raises(DirectoryConfigError):
+        DirectoryConfig(shared_api_url="http://ops.example.com")
+    with pytest.raises(DirectoryConfigError):
+        DirectoryConfig(shared_api_url=f"https://app.{FORBIDDEN_DOMAIN}")
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "platform_public_url", "https://app.example.com/")
+    assert DirectoryConfig.from_settings().shared_api_url == "https://app.example.com"
 
 
 def test_code_is_normalised(directory):
@@ -277,24 +307,34 @@ def test_invalid_code_is_400(directory, raw):
     assert r.headers["cache-control"] == "no-store"
 
 
-def test_unknown_and_retired_codes_are_the_same_404(directory, stores_file):
+def test_unknown_and_retired_codes_get_the_shared_service_answer(directory, stores_file):
     r = _get(directory, "/v1/stores/NO_SUCH_STORE")
-    assert r.status_code == 404
-    assert r.json() == {"error": "unknown_store", "message": "No store with that code."}
-    assert r.headers["cache-control"] == "public, max-age=60"
-    assert _get(directory, "/v1/stores/DEMO").status_code == 200
+    assert r.status_code == 200
+    assert r.json() == {
+        "schema": 1,
+        "code": "NO_SUCH_STORE",
+        "api_base_url": "https://app.retailops.invalid",
+        "status": "active",
+        "min_build": {"ios": 0, "android": 0},
+    }
+    assert r.headers["cache-control"] == "public, max-age=300, stale-while-revalidate=3600"
+    assert _get(directory, "/v1/stores/DEMO").json()["api_base_url"] == "https://demo.retailops.invalid"
     data = _example()
     data["stores"] = [s for s in data["stores"] if s["code"] != "DEMO"]
     _write_stores(stores_file, data, mtime=1_792_281_700)  # a changed file is re-read
     retired = _get(directory, "/v1/stores/DEMO")
-    assert retired.status_code == 404 and retired.content == r.content
+    assert retired.status_code == 200
+    assert retired.content == r.content.replace(b"NO_SUCH_STORE", b"DEMO")
 
 
-def test_maintenance_status_and_message_pass_through(tmp_path, clock):
+def test_maintenance_status_and_message_are_not_served(tmp_path, clock):
+    # A paused store's message comes after a correct sign-in, never from the
+    # lookup.
     data = _one(status="maintenance", message="Back at 6 am.")
     client = TestClient(create_app(_cfg(_write_stores(tmp_path / "s.json", data)), clock=clock))
-    body = _get(client, "/v1/stores/RETAILOPS_TEST_TOAST").json()
-    assert body["status"] == "maintenance" and body["message"] == "Back at 6 am."
+    r = _get(client, "/v1/stores/RETAILOPS_TEST_TOAST")
+    assert r.json()["status"] == "active" and "message" not in r.json()
+    assert "Back at 6 am" not in r.text
 
 
 def test_etag_and_304(directory):
@@ -308,10 +348,10 @@ def test_etag_and_304(directory):
     assert _get(directory, "/v1/stores/DEMO", **{"If-None-Match": '"other"'}).status_code == 200
 
 
-def test_rate_limit_per_minute_counts_404s_and_sets_retry_after(stores_file, clock):
+def test_rate_limit_per_minute_counts_every_lookup_and_sets_retry_after(stores_file, clock):
     client = TestClient(create_app(_cfg(stores_file, rate_per_minute=3, rate_per_hour=100), clock=clock))
     assert _get(client, "/v1/stores/DEMO").status_code == 200
-    assert _get(client, "/v1/stores/NOPE_NOPE").status_code == 404
+    assert _get(client, "/v1/stores/NOPE_NOPE").status_code == 200
     assert _get(client, "/v1/stores/x").status_code == 400
     r = _get(client, "/v1/stores/DEMO")
     assert r.status_code == 429
@@ -624,7 +664,7 @@ def test_worker_answers_exactly_like_the_service(stores_file, tmp_path, clock):
             }
         )
     statuses = [s["status"] for s in steps if "status" in s]
-    assert statuses[:9] == [200, 200, 200, 404, 400, 200, 304, 200, 429]
+    assert statuses[:9] == [200, 200, 200, 200, 400, 200, 304, 200, 429]
     cases = tmp_path / "cases.json"
     cases.write_text(json.dumps({"start": start, "steps": steps}))
     proc = subprocess.run(
@@ -662,7 +702,7 @@ _ODD_CODE_PATHS = [
     "/v1/stores/%C2%85demo",  # U+0085 (NEL): Python whitespace, not JS
     "/v1/stores/%EF%BB%BFdemo",  # U+FEFF (BOM): JS whitespace, not Python
     "/v1/stores/%E2%80%A8demo",  # U+2028: whitespace to both
-    "/v1/stores/%C3%9Femo",  # "ß" upper-cases to "SS" in both (unknown code)
+    "/v1/stores/%C3%9Femo",  # "ß" upper-cases to "SS" in both (unknown code: the shared answer)
     "/v1/stores/DE%2FMO",  # an encoded slash: not a lookup path
     "/s/DE%2FMO",
     "/v1/stores/%E0%A4",  # broken UTF-8 escape
@@ -702,7 +742,7 @@ def test_worker_and_service_agree_on_odd_codes(stores_file, tmp_path, clock):
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
     # Only ASCII whitespace is trimmed; nothing else turns into a valid code.
-    assert [s["status"] for s in steps] == [400, 400, 400, 400, 404, 404, 404, 400, 400, 404, 404]
+    assert [s["status"] for s in steps] == [400, 400, 400, 400, 200, 404, 404, 400, 400, 200, 404]
     assert json.loads(steps[5]["body"])["error"] == "not_found"
 
 

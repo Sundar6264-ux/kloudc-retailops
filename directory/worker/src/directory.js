@@ -70,6 +70,32 @@ export class SlidingWindowLimiter {
   }
 }
 
+// The body for a code the stores file doesn't list: the shared service's
+// address, byte-identical to stores.connect_body() in the Python service
+// (compact JSON, same key order). A guessed code reads like a real store on
+// the shared service (PLATFORM_CONTRACT 13.4 "As built").
+export function connectBody(code, sharedApiUrl) {
+  return JSON.stringify({
+    schema: 1,
+    code,
+    api_base_url: sharedApiUrl,
+    status: "active",
+    min_build: { ios: 0, android: 0 },
+  });
+}
+
+async function subtle() {
+  if (globalThis.crypto && globalThis.crypto.subtle) return globalThis.crypto.subtle;
+  return (await import("node:crypto")).webcrypto.subtle;
+}
+
+// Same rule as stores.etag_for: the first 32 hex of sha256 of the body.
+export async function etagFor(body) {
+  const digest = await (await subtle()).digest("SHA-256", new TextEncoder().encode(body));
+  const hex = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  return `"${hex.slice(0, 32)}"`;
+}
+
 function ifNoneMatch(request, etag) {
   const header = request.headers.get("If-None-Match");
   if (!header) return false;
@@ -140,8 +166,11 @@ export function createDirectory(data, options = {}) {
     if (decoded !== null && decoded.includes("/")) return notFound(request);
     const code = normalizeCode(decoded);
     if (code === null) return json(request, 400, data.errors.invalid_code, cache.no_store);
-    const entry = Object.prototype.hasOwnProperty.call(data.stores, code) ? data.stores[code] : null;
-    if (entry === null) return json(request, 404, data.errors.unknown_store, cache.not_found);
+    let entry = Object.prototype.hasOwnProperty.call(data.stores, code) ? data.stores[code] : null;
+    if (entry === null) {
+      const body = connectBody(code, data.shared_api_url);
+      entry = { body, etag: await etagFor(body) };
+    }
     if (ifNoneMatch(request, entry.etag)) {
       return respond(request, 304, null, {
         ETag: entry.etag,

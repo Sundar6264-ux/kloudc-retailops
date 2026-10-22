@@ -129,6 +129,26 @@ class StoreRecord:
         )
 
 
+ZERO_MIN_BUILD: Tuple[Tuple[str, int], ...] = (("ios", 0), ("android", 0))
+
+
+def connect_body(code: str, api_base_url: str, min_build: Tuple[Tuple[str, int], ...] = ZERO_MIN_BUILD) -> "OrderedDict[str, Any]":
+    """The public lookup's body (as built 2026-10, PLATFORM_CONTRACT 13.4):
+    only what a client needs to connect. No name, branding, message or
+    timestamp, so a known store and an unknown code on the shared service
+    read the same apart from ``code``. The status is always the neutral
+    "active": a paused store's message comes only after a correct sign-in."""
+    return OrderedDict(
+        [
+            ("schema", SCHEMA),
+            ("code", code),
+            ("api_base_url", api_base_url),
+            ("status", "active"),
+            ("min_build", OrderedDict(min_build)),
+        ]
+    )
+
+
 @dataclass(frozen=True)
 class StoresFile:
     path: str
@@ -137,8 +157,23 @@ class StoresFile:
     stamp: Tuple[int, int]  # (mtime_ns, size): reload when it changes
 
     def body(self, code: str) -> Optional[bytes]:
+        """The full record (name, branding, ...). Not served any more: the
+        lookup answers ``connect(code, shared_api_url)``."""
         rec = self.stores.get(code)
         return None if rec is None else compact_json(rec.body(self.updated_at))
+
+    def connect(self, code: str, shared_api_url: str) -> bytes:
+        """The lookup's body for a valid code: known or not, only what a
+        client needs to connect (``connect_body``). An unknown code gets the
+        shared service's address; a store on the shared service reads the
+        same apart from its code (its min build comes from its server's
+        /api/app/config). A store on its own server necessarily differs."""
+        shared = shared_api_url.rstrip("/")
+        rec = self.stores.get(code)
+        if rec is None:
+            return compact_json(connect_body(code, shared))
+        on_shared = rec.api_base_url.rstrip("/") == shared
+        return compact_json(connect_body(code, rec.api_base_url, ZERO_MIN_BUILD if on_shared else rec.min_build))
 
 
 def _api_host_allowed(host: str, cfg: DirectoryConfig) -> bool:
