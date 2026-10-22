@@ -29,6 +29,7 @@ from app.services.category_overrides import apply_overrides
 from app.services.forecast import forecast_daily_demand
 from app.services.inventory_api import overlay_live_stock
 from app.services.item_vendors import vendors_of
+from app.services.order_cycle import delivery_for_order
 from app.services.product_match import code_fields
 from app.services.vendor_schedule import decode_weekdays, get_vendor_schedule_by_name
 from app.timeutil import restaurant_today, to_restaurant_date
@@ -354,8 +355,14 @@ def ordered_vendors(
     out = {}
     for key, row in latest.items():
         placed_day = to_restaurant_date(row.placed_at)
-        _weekdays, lead = _delivery_schedule(db, row.supplier)
+        weekdays, lead = _delivery_schedule(db, row.supplier)
+        # The delivery this order is for - the same rule as the Vendor
+        # Calendar's "ordered" chips (services/order_cycle.py).
+        for_delivery = delivery_for_order(row.placed_at, getattr(row, "for_delivery_date", None), weekdays, lead)
         earliest = placed_day + dt.timedelta(days=lead)
+        if for_delivery is not None:
+            # Marked late (small hours of delivery day): that day's delivery is this order's.
+            earliest = min(earliest, for_delivery)
         if any(when > row.placed_at and to_restaurant_date(when) >= earliest for when in delivered.get(key, [])):
             continue
         receipt = toast.get(key)
@@ -364,7 +371,10 @@ def ordered_vendors(
                 continue
         elif receipt is not None and receipt > placed_day and receipt >= earliest:
             continue
-        until = placed_day + dt.timedelta(days=ordered_window_days(db, row.supplier, placed_day, lead_time_days))
+        if for_delivery is not None:
+            until = for_delivery + dt.timedelta(days=ORDERED_GRACE_DAYS)
+        else:
+            until = placed_day + dt.timedelta(days=ordered_window_days(db, row.supplier, placed_day, lead_time_days))
         if as_of_date > until:
             continue
         out[key] = {

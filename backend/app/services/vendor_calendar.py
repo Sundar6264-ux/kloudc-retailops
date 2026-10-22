@@ -43,6 +43,7 @@ from sqlalchemy.orm import Session
 
 from app.models import PlacedOrder, PurchaseLogEntry, VendorOrderSkip
 from app.services.order_actions import placed_handled, skip_handled
+from app.services.order_cycle import delivery_for_order
 from app.services.reorder import VENDOR_MIN_ORDER_ITEMS
 from app.services import report_cache, supplier_projection
 from app.services.supplier_projection import compute_supplier_projection, project_suppliers
@@ -261,22 +262,16 @@ def get_vendor_calendar(db: Session, start_date: dt.date, end_date: dt.date) -> 
                 needed_count, total_need = need_by_vendor.get((schedule.vendor, horizon_days), (0, 0))
                 skip_row = skipped.get((vendor_key, delivery_date))
                 is_skipped = skip_row is not None
-                # The order for this delivery: placed after the previous
-                # delivery, up to this one - each order counts for ONE
-                # delivery, the first on/after the day it was placed. (A
-                # window starting at the previous order-due day overlapped
-                # the next cycle: an order marked placed at 4am on delivery
-                # day - real data, Sep 17 - also showed next week's order as
-                # placed and silenced its alert.)
-                prev_delivery = _prev_occurrence(delivery_date, weekdays) or delivery_date - dt.timedelta(days=7)
+                # The order for this delivery: one shared rule for every
+                # screen (services/order_cycle.py) - a row marked for this
+                # delivery, or one placed early enough for it (lead days)
+                # and not for an earlier one. Each order counts for ONE
+                # delivery.
                 placed = [
                     (at, row)
-                    for day, at, row in placed_by_vendor.get(vendor_key, [])
-                    if (
-                        row.for_delivery_date == delivery_date
-                        if row.for_delivery_date is not None
-                        else prev_delivery < day <= delivery_date
-                    )
+                    for _day, at, row in placed_by_vendor.get(vendor_key, [])
+                    if delivery_for_order(row.placed_at, row.for_delivery_date, weekdays, schedule.lead_days)
+                    == delivery_date
                 ]
                 ordered_at, order_row = max(placed, key=lambda p: (p[0], p[1].id)) if placed else (None, None)
                 if skip_row is not None:
