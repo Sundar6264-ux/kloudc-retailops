@@ -23,6 +23,14 @@ Pure ASGI, runs before routing; a no-op in single mode.
      own 404 "This link is not active.", with the same rate limits).
 4. ``X-Store`` / ``?store=`` WITH a store token must name the token's store,
    else 409 ``store_mismatch``. Never used to pick the store.
+5. On the logged-out routes (the public store routes above and the ``/c``
+   checklist pages) a token counts only when it is a live session in its
+   store's own database; any other token (forged, expired, signed out, an
+   unknown or inactive store's) is ignored, so the answer is exactly the one
+   with no token at all. Before (verification, 2026-10-22) a forged token
+   naming an active store selected that store with no session check, so the
+   "not active" page showed the store's name and logo and the checklist API
+   answered 404 for a real store but 401 for an unknown one.
 """
 
 import json
@@ -52,6 +60,9 @@ _PUBLIC_STORE_ROUTES: List[str] = [
 # sign-in (Store ID privacy, 2026-10): no store is selected without a token.
 NEUTRAL_PUBLIC_ROUTES: Tuple[str, ...] = ("/api/app/branding", "/api/app/config", "/api/app/legal")
 CHECKLIST_PUBLIC_PREFIX = "/api/public/checklists/"
+# The public checklist pages (app/routers/checklist_public.py page_router):
+# logged out, no ?store= (the store is in the path).
+CHECKLIST_PAGE_PATH = "/c"
 
 
 def register_public_store_route(prefix: str) -> None:
@@ -72,6 +83,15 @@ def _is_public_store_route(path: str) -> bool:
         elif path == prefix or path.startswith(prefix + "/"):
             return True
     return False
+
+
+def is_logged_out_route(path: str) -> bool:
+    """A route anyone may call without signing in that may still show a
+    store: the public store routes and the /c checklist pages. A token there
+    must be a live session to count (rule 5)."""
+    if path == CHECKLIST_PAGE_PATH or path.startswith(CHECKLIST_PAGE_PATH + "/"):
+        return True
+    return _is_public_store_route(path)
 
 
 def _headers(scope) -> dict:
@@ -136,6 +156,12 @@ def _live_session_in(code: str, token: str) -> bool:
         return False
 
 
+async def _live(code: str, token: str) -> bool:
+    from starlette.concurrency import run_in_threadpool
+
+    return await run_in_threadpool(_live_session_in, code, token)
+
+
 class TenantMiddleware:
     def __init__(self, app):
         self.app = app
@@ -179,14 +205,18 @@ class TenantMiddleware:
                 with no_store():
                     await self.app(scope, receive, send)
                 return
-            if ref is not None and ref.status != "active" and node_serves(ref):
+            logged_out_route = is_logged_out_route(path)
+            if ref is not None and node_serves(ref) and (ref.status != "active" or logged_out_route):
                 # A paused / archived / not-ready store says so only to a
                 # live session of its own; a forged token reads like an
-                # unknown store's (Store ID privacy, 2026-10).
-                from starlette.concurrency import run_in_threadpool
-
-                if not await run_in_threadpool(_live_session_in, ref.code, token):
+                # unknown store's (Store ID privacy, 2026-10). On a
+                # logged-out route an active store needs a live session too.
+                if not await _live(ref.code, token):
                     ref = None
+            if ref is None and logged_out_route:
+                # Not a live session anywhere here: exactly as with no token.
+                await self._anonymous(scope, receive, send, path, explicit_code, state)
+                return
             if ref is not None and ref.status == "archived":
                 # An archived store: no store context, like an unknown one,
                 # but the auth dependency answers 403 store_archived (with a
@@ -214,8 +244,19 @@ class TenantMiddleware:
                 await self.app(scope, receive, send)
             return
 
+        await self._anonymous(scope, receive, send, path, explicit_code, state)
+
+    async def _anonymous(self, scope, receive, send, path, explicit_code, state) -> None:
+        """A request with no (live) session."""
         if path in NEUTRAL_PUBLIC_ROUTES:
             # Before sign-in: the same neutral answer for every Store ID.
+            with no_store():
+                await self.app(scope, receive, send)
+            return
+
+        if path.startswith(CHECKLIST_PUBLIC_PREFIX) and not explicit_code:
+            # No store named: a wrong link's answer, like an unknown code.
+            state["checklist_store_unknown"] = True
             with no_store():
                 await self.app(scope, receive, send)
             return

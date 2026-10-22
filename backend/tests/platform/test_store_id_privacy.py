@@ -302,3 +302,87 @@ def test_forged_tokens_read_the_same_for_unknown_real_paused_and_archived_stores
     master_client.post("/api/platform/stores/BRAVO/suspend", json={"reason": "unpaid", "message": "Back soon"})
     r = c.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 403 and r.json()["error"] == "store_suspended" and r.json()["message"] == "Back soon"
+
+
+# --- Public pages with a forged token (verification, 2026-10-22) ----------------------------
+
+
+def _forged_variants(code):
+    return (
+        {"headers": {"Authorization": f"Bearer {code}.forged"}},
+        {"cookies": {"session_token": f"{code}.forged"}},
+    )
+
+
+def test_checklist_not_active_page_never_names_a_store_for_a_forged_token(client, master_client):
+    """GET /c/... with a forged token naming a real store used to render that
+    store's name and logo on the "not active" page."""
+    _alpha(master_client)
+    provision("BRAVO", owner="bob", password="bravo-owner-pass")
+    master_client.post("/api/platform/stores/BRAVO/suspend", json={"reason": "unpaid", "message": "Back soon"})
+    from app.services import checklist_public as svc
+
+    from app.platform import throttle
+
+    throttle.reset_limiters()
+    svc.limiter.reset() if hasattr(svc.limiter, "reset") else None
+    c = _anon(client)
+    plain = c.get("/c/zzzz")
+    assert plain.status_code == 404 and "KloudC RetailOps" in plain.text
+    for code in ("ALPHA", "BRAVO", "NOPE_X"):
+        for kw in _forged_variants(code):
+            svc.limiter.reset() if hasattr(svc.limiter, "reset") else None
+            throttle.reset_limiters()
+            for path in ("/c/zzzz", f"/c/{code}/kitchen-4821", "/c"):
+                cc = _anon(client)
+                r = cc.get(path, **kw)
+                assert r.status_code == 404, (code, path, r.status_code, r.text[:200])
+                assert r.text == plain.text, (code, path)
+                for leak in ALPHA_LOOK + ("Back soon",):
+                    assert leak not in r.text, (code, path, leak)
+    # Even a live session: the message page is the product's (the link's
+    # store is in the path, not the session's).
+    token = store_login(client, "ALPHA", "ann", "alpha-owner-pass").json()["token"]
+    throttle.reset_limiters()
+    svc.limiter.reset() if hasattr(svc.limiter, "reset") else None
+    r = _anon(client).get("/c/BRAVO/kitchen-4821", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 404 and r.text == plain.text
+
+
+def test_checklist_api_answers_forged_tokens_like_no_token(client, master_client):
+    """A forged token naming an active store used to reach the route (404)
+    while an unknown code got 401 from the middleware: an existence oracle."""
+    _alpha(master_client)
+    provision("BRAVO", owner="bob", password="bravo-owner-pass")
+    provision("CHARLIE", owner="cat", password="charlie-owner-pass")
+    master_client.post("/api/platform/stores/BRAVO/suspend", json={"reason": "unpaid", "message": "Back soon"})
+    master_client.post("/api/platform/stores/CHARLIE/archive", json={"confirm": "charlie"})
+    from app.platform import throttle
+    from app.services import checklist_public as svc
+
+    key = "kitchen-4821"
+    calls = [
+        ("get", f"/api/public/checklists/{key}", {}),
+        ("post", f"/api/public/checklists/{key}/submit", {"json": {"name": "Sam", "answers": {}}}),
+        ("get", f"/api/public/checklists/{key}/images/abc", {}),
+    ]
+    for method, url, kw in calls:
+        for with_store in (False, True):
+            answers = []
+            for code in ("NOPE_X", "ALPHA", "BRAVO", "CHARLIE"):
+                for extra in _forged_variants(code):
+                    throttle.reset_limiters()
+                    svc.limiter.reset() if hasattr(svc.limiter, "reset") else None
+                    params = {"store": code} if with_store else None
+                    r = getattr(_anon(client), method)(url, params=params, **kw, **extra)
+                    answers.append((code, r.status_code, r.text))
+                    assert "Back soon" not in r.text
+            first = answers[0][1:]
+            assert all(a[1:] == first for a in answers), (url, with_store, answers)
+            assert first[0] == 404 and json.loads(first[1]) == {"detail": svc.NOT_ACTIVE}, (url, first)
+    # A real session of the store still reaches its own links (a wrong key: 404).
+    token = store_login(client, "ALPHA", "ann", "alpha-owner-pass").json()["token"]
+    throttle.reset_limiters()
+    svc.limiter.reset() if hasattr(svc.limiter, "reset") else None
+    r = _anon(client).get(f"/api/public/checklists/{key}", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 404 and r.json() == {"detail": svc.NOT_ACTIVE}

@@ -4488,12 +4488,56 @@ follow-up below for what was closed after):
     picks get the store's name, or the Store ID when its look could not be
     read yet - never the product name.
 
+### Follow-up 2 (2026-10-22, after verification)
+
+12. **Forged tokens on logged-out routes.** A forged token naming an
+    *active* store used to select that store with no session check (only
+    paused / archived / not-ready stores were checked), so on routes with no
+    sign-in it decided the answer: the `/c/...` "This link is not active"
+    page showed that store's name and logo, and the checklist API answered
+    404 for a real store but 401 `session_expired` for an unknown code. Now
+    (`app.tenancy.middleware.is_logged_out_route`: the public store routes
+    and `/c`, `/c/...`) a token counts there only when it is a live session
+    in its store's own database; any other token (forged, expired, signed
+    out, an unknown or inactive store's) is ignored and the answer is
+    exactly the one with no token. (A token naming another store than
+    `?store=` still gets `409 store_mismatch` first, as before: that says
+    nothing about whether either code exists.) The checklist API with
+    no `?store=` answers a wrong link's 404 too (was 401). Signed-in routes
+    are unchanged (their auth already answered every dead token alike).
+    The `/c` message pages ("not active", "too many tries") show the
+    product's own name and logo on the shared service, whatever session
+    the browser has (the link's store is in the path, not the session).
+13. **App: Store settings > Save** now refreshes through
+    `AuthController.refreshStore` (store lookup, then the store's own look
+    read with the session), so a new name, logo or colours show at once.
+    `keepLookOf` keeps the saved look's own `fetched_at` (a neutral answer
+    is no fresh read), so the hourly resume check still tries.
+14. **App: the store's look could not be read at sign-in** (error, or
+    over the 5 s cap):
+    - the neutral look names the store by its **Store ID**, never the
+      product's name (store chip, footer, Face ID and push prompts, quick
+      pick), and its POS is unknown (`pos_name` from the neutral body is
+      not used);
+    - the sign-in reply's own store facts (`pos_name`, `capabilities`,
+      `store_features`, `store_timezone`) are applied meanwhile
+      (`TenantConfig.withSessionFacts`; kept across neutral refreshes);
+    - a slow answer is still applied when it comes (while the same session
+      is on), a resume tries again every time while only the neutral look
+      is on the phone, and a Face ID launch / unlock reads the look after
+      the unlock;
+    - when the look arrives, the quick pick gets the store's name.
+    - Also fixed: a branding body without `public_host` gave an empty
+      public host that could not be read back from storage.
+
 **What a guesser can still learn after the follow-up:**
 - That a code is a dedicated-server store (lookup `api_base_url`, and
   sign-in / forged-token `409 store_moved` on the shared service).
 - `/api/signup/code-available` (accepted by the owner).
 - Timing: a real store's checklist / branding-with-token path opens its
-  database; an unknown code does not.
+  database (and, since follow-up 2, a token naming an active store on a
+  logged-out route is checked in that store's database); an unknown code
+  does not.
 
 Tests: `backend/tests/platform/test_store_id_privacy.py`,
 `backend/tests/tenancy/test_isolation.py`, `backend/tests/test_directory.py`, `frontend/src/login/loginModel.test.mjs`,

@@ -276,14 +276,29 @@ def _page_headers(csp: str) -> dict:
     return headers
 
 
+def _page_look():
+    """(logo, name) for the small message pages. The shared service always
+    shows the product's own look: the store of a /c link is in the path, not
+    the request's session, and a message page must never say which stores
+    exist (Store ID privacy, 2026-10). A single-store server shows its store."""
+    from app.tenancy import is_multi_tenant
+
+    if is_multi_tenant():
+        from app.tenancy.context import no_store
+
+        with no_store():
+            return sv.logo_path_or_url(), sv.store_display_name()
+    return sv.logo_path_or_url(), sv.store_display_name()
+
+
 def _message_page(status: int, title: str, text: str) -> HTMLResponse:
-    logo = sv.logo_path_or_url()
+    logo, name = _page_look()
     img_src = "'self'"
     parts = urlsplit(logo)
     if parts.scheme in ("http", "https") and parts.netloc:
         img_src += f" {parts.scheme}://{parts.netloc}"
     return HTMLResponse(
-        _NOT_ACTIVE_HTML % (_html_escape(logo, quote=True), _html_escape(sv.store_display_name()), title, text),
+        _NOT_ACTIVE_HTML % (_html_escape(logo, quote=True), _html_escape(name), title, text),
         status_code=status,
         headers=_page_headers(
             f"default-src 'none'; img-src {img_src}; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
