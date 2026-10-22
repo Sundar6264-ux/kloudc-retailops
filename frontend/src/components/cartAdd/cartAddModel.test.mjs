@@ -28,6 +28,7 @@ import {
   suggestion,
   tickRow,
   vendorOptions,
+  needLabel,
 } from "./cartAddModel.js";
 import {
   MAX_JUST_ADDED,
@@ -158,6 +159,13 @@ test("Oct 22: the add form starts at the server's suggested order - CASES when t
   assert.equal(defaultQty(idx.get("loose")), 9);
   assert.equal(caseOfFor(idx.get("loose")), null);
   assert.equal(caseUnitsLabel(9, null), null);
+  // A search result's status: cases named for a case item (it read "Need 3",
+  // which looked like 3 units), units otherwise.
+  assert.equal(needLabel(idx.get("tuna")), "Need 3 cases");
+  assert.equal(needLabel(idx.get("loose")), "Need 9");
+  assert.equal(needLabel(idx.get("full")), "Enough");
+  assert.equal(needLabel(idx.get("old")), "Need 3 cases");
+  assert.equal(needLabel(undefined), null);
   assert.equal(suggestionWords(9, null), "9");
   assert.equal(suggestion(idx.get("full")), 0);
   assert.equal(defaultQty(idx.get("full")), 1);

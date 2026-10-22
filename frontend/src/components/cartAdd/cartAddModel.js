@@ -145,6 +145,17 @@ export function suggestionWords(qty, caseOf) {
   return `${formatQty(qty)} ${Number(qty) === 1 ? "case" : "cases"}`;
 }
 
+// A search result's status words: "Need 3 cases" / "Need 1 case" for an
+// item with a case size, "Need 48" (units) without one, "Enough" when the
+// stock covers the window; null = no projection. Matches the app's
+// "Need 3 cases" (the number is the suggestion, already in cases).
+export function needLabel(proj) {
+  const s = suggestion(proj);
+  if (s == null) return null;
+  if (!(s > 0)) return "Enough";
+  return `Need ${suggestionWords(s, caseOfFor(proj))}`;
+}
+
 // The quantity a newly ticked item starts at: the suggestion, else 1.
 export function defaultQty(proj) {
   const s = suggestion(proj);

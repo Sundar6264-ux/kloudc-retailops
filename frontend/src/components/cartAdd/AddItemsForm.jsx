@@ -24,6 +24,7 @@ import {
   splitPostable,
   splitVendors,
   stepQty,
+  needLabel,
   suggestion,
   suggestionWords,
   tickRow,
@@ -1157,7 +1158,7 @@ function ResultRow({ item, proj, inCart, ticked, showVendors, showSku = true, on
 
   let tag = null;
   if (inCart) tag = <span className="pill pill-neutral po-add-tag">Already in cart</span>;
-  else if (s != null && s > 0) tag = <span className="pill pill-warn po-add-tag">Need {s}</span>;
+  else if (s != null && s > 0) tag = <span className="pill pill-warn po-add-tag">{needLabel(proj)}</span>;
   else if (s === 0) tag = <span className="pill pill-success po-add-tag">Enough</span>;
 
   return (
