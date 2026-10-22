@@ -24,7 +24,7 @@ from app.models import CartItem, PlacedOrder, PurchaseLogEntry, VendorSchedule
 from app.services import notification_triggers as nt
 from app.services import order_actions
 from app.services import vendor_calendar
-from app.services.order_cycle import delivery_for_order, order_day
+from app.services.order_cycle import order_delivery
 from app.services.purchase_order_log import mark_supplier_placed, place_sent_order
 from app.services.reorder import group_candidates_by_vendor, ordered_vendors
 from app.timeutil import utcnow
@@ -181,17 +181,13 @@ def test_order_placed_on_a_delivery_day_is_for_the_next_delivery_it_can_make(db,
 
 def test_the_shared_rule():
     mon_thu = [0, 3]
-    # Lead days count: placed Monday, 2 days' lead -> Thursday.
-    assert delivery_for_order(_at(MON), None, mon_thu, 2) == THU
-    # Placed in the small hours = the evening before.
-    assert order_day(_at(dt.date(2026, 9, 24), 4)) == dt.date(2026, 9, 23)
-    assert order_day(_at(dt.date(2026, 9, 24), 5)) == dt.date(2026, 9, 24)
-    assert delivery_for_order(_at(dt.date(2026, 9, 24), 4), None, [3], 1) == dt.date(2026, 9, 24)
-    assert delivery_for_order(_at(dt.date(2026, 9, 24), 10), None, [3], 1) == dt.date(2026, 10, 1)
+    # Placed Monday, 2 days' lead: Thursday's order day (Tue) is closer than
+    # Monday's (Sat) -> Thursday.
+    assert order_delivery(_at(MON), mon_thu, 2) == THU
     # Marked for a delivery: exactly that one.
-    assert delivery_for_order(_at(MON), dt.date(2026, 10, 26), mon_thu, 2) == dt.date(2026, 10, 26)
+    assert order_delivery(_at(MON), mon_thu, 2, for_delivery_date=dt.date(2026, 10, 26)) == dt.date(2026, 10, 26)
     # No schedule: no delivery to tie it to.
-    assert delivery_for_order(_at(MON), None, [], 2) is None
+    assert order_delivery(_at(MON), [], 2) is None
 
 
 def test_morning_summary_leaves_out_a_placed_vendor(db, setup):

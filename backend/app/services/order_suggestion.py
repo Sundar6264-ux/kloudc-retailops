@@ -150,19 +150,14 @@ def vendor_delivery(db: Session, vendor: str, today: dt.date) -> Optional[dict]:
 
 def cycle_order(db: Session, vendor: str, delivery: dt.date, weekdays: List[int]) -> Optional[PlacedOrder]:
     """The placed order (status "placed", outside orders included) for this
-    vendor's `delivery` - the Vendor Calendar's rule: a row tied to a
-    delivery (for_delivery_date) counts for exactly that one, the rest when
-    placed after the previous delivery day, up to this one. None if not
-    ordered yet."""
-    prev = None
-    for i in range(1, 8):
-        d = delivery - dt.timedelta(days=i)
-        if d.weekday() in weekdays:
-            prev = d
-            break
-    prev = prev or delivery - dt.timedelta(days=7)
+    vendor's `delivery`, by the shared rule (services/order_cycle.py - the
+    Vendor Calendar and Reorder use the same one). None if not ordered yet.
+    `weekdays` is kept for callers; the schedule's own days and lead are used."""
+    from app.services.order_cycle import OrderCycles
+
+    floor = dt.datetime.combine(delivery - dt.timedelta(days=22), dt.time.min, dt.timezone.utc)
+    cycles = OrderCycles(db, since=floor)
     key = _norm(vendor)
-    floor = dt.datetime.combine(prev - dt.timedelta(days=1), dt.time.min, dt.timezone.utc)
     best = None
     for row in db.execute(
         select(PlacedOrder).where(
@@ -170,12 +165,7 @@ def cycle_order(db: Session, vendor: str, delivery: dt.date, weekdays: List[int]
             (PlacedOrder.placed_at >= floor) | (PlacedOrder.for_delivery_date == delivery),
         )
     ).scalars():
-        if _norm(row.supplier) != key:
-            continue
-        if row.for_delivery_date is not None:
-            if row.for_delivery_date != delivery:
-                continue
-        elif not (prev < to_restaurant_date(row.placed_at) <= delivery):
+        if _norm(row.supplier) != key or cycles.delivery_for(row) != delivery:
             continue
         if best is None or (row.placed_at, row.id) > (best.placed_at, best.id):
             best = row

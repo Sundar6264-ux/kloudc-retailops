@@ -72,7 +72,7 @@ from app.services.checklist_schemas import closing_checklist_types
 from app.services.checklist_schemas import whatsapp_group as checklist_whatsapp_group
 from app.services.whatsapp_groups import resolve_chat_id as resolve_whatsapp_chat_id
 from app.services.notifications import QUIET_HOURS_START
-from app.services.order_cycle import delivery_for_order
+from app.services.order_cycle import OrderCycles
 from app.services.vendor_calendar import get_vendor_calendar
 from app.team.changes import team_member_user_ids
 from app.team.models import Team, TeamMember
@@ -505,16 +505,10 @@ def _placed_since(
         return False
     # Also any order the shared rule gives this delivery (services/order_cycle.py,
     # as the Vendor Calendar and Home's tiles do) - e.g. one placed early.
-    schedule = db.execute(
-        select(VendorSchedule).where(func.lower(VendorSchedule.vendor) == vendor.strip().lower())
-    ).scalars().first()
-    if schedule is None:
-        return False
-    try:
-        weekdays = set(json.loads(schedule.delivery_weekdays or "[]"))
-    except ValueError:
-        return False
     since, _ = _day_bounds(delivery_day - dt.timedelta(days=28))
+    cycles = OrderCycles(db, since=since)
+    if not cycles.schedule(vendor)[0]:
+        return False
     for row in db.execute(
         select(PlacedOrder).where(
             func.lower(PlacedOrder.supplier) == vendor.strip().lower(),
@@ -522,7 +516,7 @@ def _placed_since(
             PlacedOrder.placed_at >= since,
         )
     ).scalars():
-        if delivery_for_order(row.placed_at, row.for_delivery_date, weekdays, schedule.lead_days) == delivery_day:
+        if cycles.delivery_for(row) == delivery_day:
             return True
     return False
 

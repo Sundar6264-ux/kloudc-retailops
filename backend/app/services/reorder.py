@@ -29,7 +29,7 @@ from app.services.category_overrides import apply_overrides
 from app.services.forecast import forecast_daily_demand
 from app.services.inventory_api import overlay_live_stock
 from app.services.item_vendors import vendors_of
-from app.services.order_cycle import delivery_for_order
+from app.services.order_cycle import OrderCycles
 from app.services.product_match import code_fields
 from app.services.vendor_schedule import decode_weekdays, get_vendor_schedule_by_name
 from app.timeutil import restaurant_today, to_restaurant_date
@@ -352,16 +352,19 @@ def ordered_vendors(
         seen(vendor, created)
     toast = {_vendor_key(v): d for v, d in (toast_last_delivery or {}).items()}
 
+    # The shared rule (services/order_cycle.py) decides which delivery each
+    # order is for - the same as the Vendor Calendar's "ordered" chips.
+    cycles = OrderCycles(db, since=placed_after - dt.timedelta(days=1))
     out = {}
     for key, row in latest.items():
         placed_day = to_restaurant_date(row.placed_at)
         weekdays, lead = _delivery_schedule(db, row.supplier)
         # The delivery this order is for - the same rule as the Vendor
         # Calendar's "ordered" chips (services/order_cycle.py).
-        for_delivery = delivery_for_order(row.placed_at, getattr(row, "for_delivery_date", None), weekdays, lead)
+        for_delivery = cycles.delivery_for(row)
         earliest = placed_day + dt.timedelta(days=lead)
         if for_delivery is not None:
-            # Marked late (small hours of delivery day): that day's delivery is this order's.
+            # Placed on delivery day for that day's delivery: that delivery is this order's.
             earliest = min(earliest, for_delivery)
         if any(when > row.placed_at and to_restaurant_date(when) >= earliest for when in delivered.get(key, [])):
             continue

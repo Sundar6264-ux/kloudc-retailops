@@ -43,7 +43,7 @@ from sqlalchemy.orm import Session
 
 from app.models import PlacedOrder, PurchaseLogEntry, VendorOrderSkip
 from app.services.order_actions import placed_handled, skip_handled
-from app.services.order_cycle import delivery_for_order
+from app.services.order_cycle import OrderCycles, order_delivery
 from app.services.reorder import VENDOR_MIN_ORDER_ITEMS
 from app.services import report_cache, supplier_projection
 from app.services.supplier_projection import compute_supplier_projection, project_suppliers
@@ -242,6 +242,12 @@ def get_vendor_calendar(db: Session, start_date: dt.date, end_date: dt.date) -> 
                 (to_restaurant_date(row.placed_at), row.placed_at.isoformat(), row)
             )
 
+    # Deliveries recorded per vendor (rule 3 of the shared order rule: a
+    # delivery recorded before an order went in is done).
+    cycles = OrderCycles(
+        db, since=dt.datetime.combine(start_date - dt.timedelta(days=28), dt.time.min, dt.timezone.utc)
+    )
+
     events = []
     for schedule in schedules:
         weekdays = decode_weekdays(schedule.delivery_weekdays)
@@ -264,13 +270,18 @@ def get_vendor_calendar(db: Session, start_date: dt.date, end_date: dt.date) -> 
                 is_skipped = skip_row is not None
                 # The order for this delivery: one shared rule for every
                 # screen (services/order_cycle.py) - a row marked for this
-                # delivery, or one placed early enough for it (lead days)
-                # and not for an earlier one. Each order counts for ONE
-                # delivery.
+                # delivery, or the delivery whose order day is closest to
+                # the day it was placed. Each order counts for ONE delivery.
                 placed = [
                     (at, row)
                     for _day, at, row in placed_by_vendor.get(vendor_key, [])
-                    if delivery_for_order(row.placed_at, row.for_delivery_date, weekdays, schedule.lead_days)
+                    if order_delivery(
+                        row.placed_at,
+                        weekdays,
+                        schedule.lead_days,
+                        row.for_delivery_date,
+                        cycles.recorded.get(vendor_key, ()),
+                    )
                     == delivery_date
                 ]
                 ordered_at, order_row = max(placed, key=lambda p: (p[0], p[1].id)) if placed else (None, None)

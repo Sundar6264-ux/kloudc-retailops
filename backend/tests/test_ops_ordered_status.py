@@ -177,8 +177,22 @@ def test_window_expiry_scheduled_uses_next_delivery(db):
 
 
 def test_order_placed_after_the_cutoff_waits_for_the_next_delivery(db):
-    # Placed Thursday (delivery day, past the 1-day lead): next Thursday + 3.
+    # Oct 22 (one shared rule - services/order_cycle.py): placed on the
+    # Thursday delivery day with that delivery not recorded yet, the order
+    # is that Thursday's (a day late - the Vendor Calendar's Sep 17 case),
+    # so it holds through Sunday and next week's order is still asked for.
     _schedule(db, "Raja Foods", [3], 1)
+    _order(db, "Raja Foods", _at(dt.date(2026, 10, 1)))
+    assert ordered_vendors(db, dt.date(2026, 10, 1), 7)["raja foods"]["ordered_until"] == "2026-10-04"
+
+
+def test_order_placed_after_that_days_delivery_waits_for_the_next_one(db):
+    # Once that Thursday's delivery is recorded (here at 9am, order at 10am),
+    # the order is for next Thursday: ordered through next Thursday + 3.
+    _schedule(db, "Raja Foods", [3], 1)
+    db.add(PurchaseLogEntry(item_id="x", item_name="x", supplier="Raja Foods", quantity_received=1,
+                            received_date=dt.date(2026, 10, 1), created_at=_at(dt.date(2026, 10, 1), 9)))
+    db.commit()
     _order(db, "Raja Foods", _at(dt.date(2026, 10, 1)))
     assert ordered_vendors(db, dt.date(2026, 10, 1), 7)["raja foods"]["ordered_until"] == "2026-10-11"
 
