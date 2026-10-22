@@ -44,6 +44,7 @@ import {
   platformErrorMessage,
   readLastTab,
   rememberTab,
+  requestsBadge,
   signupStatusChip,
   storeActions,
   storeStatusChip,
@@ -57,6 +58,7 @@ import MastersTab from "../platform/MastersTab.jsx";
 import PasswordChangePanel from "../platform/PasswordChangePanel.jsx";
 import PlatformSettingsTab from "../platform/PlatformSettingsTab.jsx";
 import StoreDetail from "../platform/StoreDetail.jsx";
+import { FeatureRequestsList } from "../platform/FeatureRequests.jsx";
 import "../platform/console.css";
 import { timezoneOptions } from "../signup/signupModel.js";
 import "../platform/platform.css";
@@ -323,7 +325,7 @@ export default function PlatformConsolePage() {
         {showInfo && listTab && (
           <div className="pf-info">
             <p>
-              <strong>Requests</strong>: new stores asking to join. Approve sets the store up automatically (database,
+              <strong>Requests</strong>: new stores asking to join, and stores asking for a feature such as Label printing. Approve sets the store up automatically (database,
               store pack, the owner's admin login); the owner then signs in with the Store ID.
             </p>
             <p>
@@ -465,10 +467,11 @@ function RequestsTab({ status, search, onCount }) {
       .catch(() => setPacks([]));
   }, []);
 
+  const [featureOpen, setFeatureOpen] = useState(0);
   useEffect(() => {
-    if (status === "pending" && rows) onCount(rows.length);
+    if (status === "pending" && rows) onCount(requestsBadge(rows.length, featureOpen));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, status]);
+  }, [rows, status, featureOpen]);
 
   const shown = (rows || []).filter((r) => matchesSearch(r, search, SIGNUP_SEARCH_FIELDS));
 
@@ -496,6 +499,7 @@ function RequestsTab({ status, search, onCount }) {
           ))}
         </div>
       )}
+      <FeatureRequestsList search={search} onOpenCount={setFeatureOpen} />
     </div>
   );
 }

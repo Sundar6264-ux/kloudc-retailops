@@ -2566,7 +2566,8 @@
    "summary": "Scan a barcode to look an item up and print its price label.",
    "points": [
     "Point the camera at the barcode and hold still.",
-    "Search by name if a barcode won't scan."
+    "Search by name if a barcode won't scan.",
+    "Shows only when Label printing is on for your store."
    ],
    "source": null,
    "freshness": null
@@ -2634,7 +2635,8 @@
   "info": {
    "summary": "Recent label prints, with Reprint.",
    "points": [
-    "A print still in the printer's queue shows as still printing."
+    "A print still in the printer's queue shows as still printing.",
+    "When Label printing is off, an admin sees a Label printing tile instead, to ask for it."
    ],
    "source": null,
    "freshness": null

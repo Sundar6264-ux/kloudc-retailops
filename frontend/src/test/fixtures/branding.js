@@ -63,7 +63,8 @@ export const BRANDING = {
     },
     "demo": false,
     "pos_provider": "toast",
-    "pos_word": "Toast"
+    "pos_word": "Toast",
+    "label_printing": {"enabled": true, "url": "https://labels-retailops-test-toast.retailops.invalid", "options": {}}
   },
   "RETAILOPS_TEST_CLOVER": {
     "schema": 1,
@@ -114,7 +115,8 @@ export const BRANDING = {
     },
     "demo": false,
     "pos_provider": "clover",
-    "pos_word": "Clover"
+    "pos_word": "Clover",
+    "label_printing": {"enabled": false, "url": null, "options": {}}
   },
   "DEMO": {
     "schema": 1,
@@ -157,6 +159,7 @@ export const BRANDING = {
     },
     "demo": true,
     "pos_provider": "csv",
-    "pos_word": "your POS"
+    "pos_word": "your POS",
+    "label_printing": {"enabled": false, "url": null, "options": {}}
   }
 };

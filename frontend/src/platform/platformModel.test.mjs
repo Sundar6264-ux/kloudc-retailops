@@ -7,6 +7,9 @@ import {
   PLATFORM_TABS,
   approveBody,
   archiveConfirmed,
+  featureApproveBody,
+  labelPrintingChip,
+  requestsBadge,
   auditDetails,
   auditQuery,
   hostingActions,
@@ -147,4 +150,19 @@ test("status filter options read like the row chips; POS names are words", async
   assert.equal(posLabel("toast"), "Toast");
   assert.equal(posLabel("csv"), "CSV");
   assert.equal(posLabel(""), "");
+});
+
+test("feature requests: badge counts sign-ups and open feature requests; approve needs an address", () => {
+  assert.equal(requestsBadge(2, 3), 5);
+  assert.equal(requestsBadge(undefined, 1), 1);
+  assert.equal(requestsBadge(0, null), 0);
+  assert.deepEqual(featureApproveBody({}, null), { error: "Add the label site address first." });
+  assert.deepEqual(featureApproveBody({ labelsUrl: " https://labels-a.kloudc.test ", note: " ok " }), {
+    body: { labels_url: "https://labels-a.kloudc.test", note: "ok" },
+  });
+  // A stored address is kept when none is typed.
+  assert.deepEqual(featureApproveBody({}, "https://labels-a.kloudc.test"), { body: { labels_url: null, note: null } });
+  assert.deepEqual(labelPrintingChip("on"), { tone: "good", label: "On" });
+  assert.deepEqual(labelPrintingChip("on_no_address"), { tone: "warn", label: "On, no address" });
+  assert.equal(labelPrintingChip("off").label, "Off");
 });

@@ -33,7 +33,6 @@ export const STORE_SETTING_GROUPS = [
     key: "other",
     title: "Other",
     fields: [
-      { key: "labels_url", label: "Label Scanner link", kind: "url", help: "Shows Label Scanner in the menu when set." },
       { key: "ai_enabled", label: "AI features", kind: "bool", help: "Ask Inventory Bot and the weekly digest's sentences." },
     ],
   },
@@ -94,4 +93,33 @@ export function hostingView(h) {
   if (!h || !h.enabled) return { show: false };
   const open = (h.requests || []).find((r) => ["requested", "approved", "migrating"].includes(r.status));
   return { show: true, dedicated: h.hosting === "dedicated", pending: open || null };
+}
+
+// Label printing (docs/LABEL_PRINTING_FEATURE.md 3.1): the card's state from
+// GET /api/label-printing. "on" | "requested" | "declined" | "off".
+export const LABEL_PRINTING_TEXT = {
+  on: "Label printing is on.",
+  off: "Print shelf labels from your phone: scan a barcode, check the price, print.",
+  askAdmin: "Ask your store admin.",
+  asked: "Asked. We'll turn it on and let you know.",
+};
+
+export function labelPrintingView(status) {
+  if (!status) return { kind: "loading" };
+  const req = status.request || null;
+  if (status.state === "on") return { kind: "on", url: status.url || null };
+  if (req?.status === "requested") return { kind: "requested", since: req.created_at || null, canCancel: !!status.can_request };
+  if (req?.status === "declined") return { kind: "declined", note: req.review_note || "", canAsk: !!status.can_request };
+  return { kind: "off", canAsk: !!status.can_request, noAddress: status.state === "on_no_address" };
+}
+
+// The label site address: https://<name> with nothing after it (the server
+// also checks the host is under the platform domain).
+const ORIGIN = /^https:\/\/[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
+
+export function labelsAddressError(value) {
+  const v = String(value ?? "").trim();
+  if (!v) return "Enter the label site address.";
+  if (!ORIGIN.test(v)) return "Use https://<name> with nothing after it.";
+  return null;
 }

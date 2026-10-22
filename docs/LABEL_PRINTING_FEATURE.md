@@ -775,3 +775,44 @@ first and tell the other two builders:
 
 (Each builder adds a short dated note here: what shipped, the commits, and
 any change from the contract.)
+
+### As built - S (server and website), 2026-10-22
+
+Shipped on `main` as specified, with these notes:
+- **Server.** `label_printing_enabled` / `label_printing_options` settings, the
+  derived values in `settings_view.py`, `label_printing` in branding (`null`
+  in the neutral body), `app/label_printing.py` (status card, request,
+  cancel, `/api/labels/session`, hand-off and redeem), the master
+  feature-request routes, the `label_printing` block in the master store
+  view, the shared address check `app/platform/urls.py` (hosting uses it
+  too), the CLI `label-printing CODE on|off|status [--url]`, and platform
+  migration `p0005` (`feature_requests`, `label_handoffs`; old hand-off rows
+  go with the nightly `prune-logins` job).
+- **Changes from the contract (small):**
+  - `label_printing_options` is typed `Any` in `config.py` (pydantic-settings
+    2.5 can't read a blank env value into a dict); the validator always
+    returns a dict.
+  - The store admin's `PATCH /api/settings/store` checks the address first
+    (a bad one is still 400), then the on/off rule (409 `label_printing_off`).
+  - Redeem answers 410 `code_used` for a used **or** expired code, and 403
+    `label_printing_off` when the feature was turned off after the code was
+    made. The hand-off answer also has `expires_in` (60).
+  - The store's card sees a declined request's note as
+    `request.review_note`; `request` is the latest request
+    (`{id, status, note, created_at, reviewed_at, review_note}`) or `null`.
+  - Single-store servers: `/api/labels/session` works; the request and
+    hand-off routes answer 409 `platform_mode_required`.
+  - `POST /api/labels/handoff` is allowed for demo logins (opening is a
+    look; the labels site refuses their prints with `can_print: false`).
+- **Website.** Store settings has a Label printing card (on with the address
+  and Open label printing, off with Request, requested with Cancel request,
+  declined with the note and Ask again); the old "Label Scanner link" field
+  is gone from the form. The footer link is "Label printing" and opens
+  `/#/label-printing/open` in a new tab. The master console has a Feature
+  requests list under sign-ups (counted in the Requests badge) and a Label
+  printing row (state chip, switch, address, options read-only) in each
+  store's Overview.
+- **Help.** The `concept_label_scanner` glossary entry now reads "Label
+  printing"; the scan / print-label pages and the troubleshooting entry say
+  how to ask for it. The app's bundled copy was synced (only these entries).
+- **Not done here:** the Playwright pass (contract 7.12).

@@ -53,6 +53,7 @@ const IssueLeadsPage = lazy(() => import("./pages/IssueLeadsPage.jsx"));
 const StoreDataPage = lazy(() => import("./pages/StoreDataPage.jsx"));
 const ItemVendorsPage = lazy(() => import("./pages/ItemVendorsPage.jsx"));
 const StoreSettingsPage = lazy(() => import("./pages/StoreSettingsPage.jsx"));
+const LabelPrintingOpenPage = lazy(() => import("./pages/LabelPrintingOpenPage.jsx"));
 const DailyComparePage = lazy(() => import("./pages/insights/DailyComparePage.jsx"));
 const HeatmapPage = lazy(() => import("./pages/insights/HeatmapPage.jsx"));
 const ChannelsPage = lazy(() => import("./pages/insights/ChannelsPage.jsx"));
@@ -474,6 +475,7 @@ function AppShell() {
           <Route path="/platform" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
+          <Route path="/label-printing/open" element={<LabelPrintingOpenPage />} />
           <Route path="/no-access" element={<NoAccessPage />} />
           <Route path="/not-available" element={<NotAvailablePage />} />
           <Route path="/users" element={user.is_admin ? <UsersPage /> : <Navigate to="/" replace />} />

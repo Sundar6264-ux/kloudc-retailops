@@ -85,9 +85,9 @@ const pageKeys = FEATURE_ROUTES.filter((r) => !r.retired).map((r) => r.key || r.
 const hiddenPages = (store) => pageKeys.filter((k) => !routeVisible(ROUTES_BY_KEY[k], adminCtx(store)));
 const elementsOn = (store) => Object.keys(ELEMENT_REQUIREMENTS).filter((e) => elementAvailable(e, store));
 
-test("Toast store: every page, the Label Scanner, every control", () => {
+test("Toast store: every page, Label printing, every control", () => {
   assert.deepEqual(hiddenPages(TOAST), []);
-  assert.ok(footerLinks(adminCtx(TOAST)).some((l) => l.key === "labels" && l.href === BRANDING.RETAILOPS_TEST_TOAST.labels_url));
+  assert.ok(footerLinks(adminCtx(TOAST)).some((l) => l.key === "labels" && l.href === "#/label-printing/open"));
   assert.deepEqual(elementsOn(TOAST), Object.keys(ELEMENT_REQUIREMENTS));
   assert.equal(featureAvailable("ask_bot", TOAST), true);
 });

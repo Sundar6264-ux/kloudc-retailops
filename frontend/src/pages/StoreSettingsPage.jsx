@@ -1,7 +1,8 @@
 // Setup > Store settings (website ready A5; contract "Deferred"): the store
 // admin edits the store's own non-secret details (name, address, contact,
-// sender name, logo and colours, Label Scanner link, AI) - GET/PATCH
-// /api/settings/store - and, when the platform offers it, asks for the
+// sender name, logo and colours, AI) - GET/PATCH
+// /api/settings/store - the Label printing card (on / Request,
+// docs/LABEL_PRINTING_FEATURE.md 3.1) and, when the platform offers it, asks for the
 // store's own server (/api/settings/hosting). Owners/admins only (the route
 // and the API are admin-only). On a single-store server the settings live
 // with KloudC support, and the page says so.
@@ -18,6 +19,7 @@ import {
 import { useStore } from "../store/StoreContext.jsx";
 import EmptyState from "../ui/EmptyState.jsx";
 import PageHeader from "../ui/PageHeader.jsx";
+import LabelPrintingCard from "../settings/LabelPrintingCard.jsx";
 import "../platform/console.css";
 
 const COLOR_RE = /^#[0-9a-fA-F]{6}$/;
@@ -172,6 +174,7 @@ export default function StoreSettingsPage() {
           </div>
         </form>
       )}
+      <LabelPrintingCard isAdmin />
       <OwnServer hosting={hosting} onRequested={() => getHostingStatus().then(setHosting).catch(() => {})} />
     </div>
   );

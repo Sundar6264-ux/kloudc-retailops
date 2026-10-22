@@ -174,14 +174,14 @@
  },
  {
   "id": "ts-label-scanner",
-  "symptom": "The Label Scanner link is missing",
+  "symptom": "Label printing is missing",
   "causes": [
-   "Your store has no label app set up."
+   "Label printing isn't turned on for your store yet."
   ],
   "fixes": [
    {
     "type": "p",
-    "text": "The link only shows when your store has a label app. Ask your owner, or email support to have it added. In the phone app, labels print from the Scan tab."
+    "text": "Label printing shows only when it's on for your store. A store admin can ask for it: Store settings, Label printing, Request (or the Label printing tile on Home in the app). You'll see the answer on the same card. In the phone app, labels print from the Scan tab."
    }
   ],
   "area": "stock",

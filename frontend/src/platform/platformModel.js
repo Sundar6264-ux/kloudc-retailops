@@ -253,3 +253,23 @@ export function groupSecret(secret) {
     .replace(/(.{4})/g, "$1 ")
     .trim();
 }
+
+// Feature requests (docs/LABEL_PRINTING_FEATURE.md 3.2): stores asking for a
+// feature a master turns on. The Requests badge counts both lists.
+export function requestsBadge(pendingSignups, openFeatureRequests) {
+  return (Number(pendingSignups) || 0) + (Number(openFeatureRequests) || 0);
+}
+
+const LABEL_PRINTING_STATE = {
+  on: { tone: "good", label: "On" },
+  off: { tone: "off", label: "Off" },
+  on_no_address: { tone: "warn", label: "On, no address" },
+};
+export const labelPrintingChip = (state) => LABEL_PRINTING_STATE[state] || { tone: "neutral", label: state || "Off" };
+
+// The approve form: an address is required unless the store has one stored.
+export function featureApproveBody({ labelsUrl = "", note = "" } = {}, storedUrl = null) {
+  const url = String(labelsUrl || "").trim();
+  if (!url && !storedUrl) return { error: "Add the label site address first." };
+  return { body: { labels_url: url || null, note: String(note || "").trim() || null } };
+}

@@ -212,14 +212,15 @@ export function groupFeatures(group) {
   return group.sections ? group.sections.flatMap((s) => s.features) : group.features;
 }
 
-// Below the groups, for everyone: the label printer (another app, only when
-// the store has one: its address is branding `labels_url`) and Help (its
+// Below the groups, for everyone: Label printing (another app, only when the
+// store has the feature; it opens through a one-time code at
+// /#/label-printing/open, docs/LABEL_PRINTING_FEATURE.md 3.4) and Help (its
 // Glossary tab is /glossary, for anyone without Help). Change password and
 // sign-out live in the top bar's user menu (USER_MENU_LINKS).
 export const FOOTER_LINKS = [
   { key: "help", label: "Help", path: "/help", feature: "help", activePaths: ["/help", "/glossary"], icon: "life-buoy" },
   { key: "glossary", label: "Glossary", path: "/glossary", unlessFeature: "help", icon: "book" },
-  { key: "labels", label: "Label Scanner", hrefFrom: "labelsUrl", external: true, icon: "scan-barcode" },
+  { key: "labels", label: "Label printing", href: "#/label-printing/open", external: true, icon: "scan-barcode" },
 ];
 
 // The user menu's page links (top bar, components/TopBar.jsx).
@@ -303,7 +304,7 @@ export function buildSidebar(ctx) {
 }
 
 // The footer links this user gets (Help or, without it, Glossary; Label
-// Scanner only when the store has a labels site), with `href` filled in.
+// printing only when the store has it), with `href` filled in.
 export function footerLinks({ hasFeature, store }) {
   return FOOTER_LINKS.filter(
     (l) =>

@@ -45,3 +45,30 @@ export const saveOwnStoreSettings = (changes) => patchJSON("/api/settings/store"
 export const getHostingStatus = () => getJSON("/api/settings/hosting");
 export const requestOwnServer = ({ reason, targetUrl }) =>
   postJSON("/api/settings/hosting/request", { reason, target_api_base_url: targetUrl || null });
+
+// Label printing (docs/LABEL_PRINTING_FEATURE.md 3.2): feature requests and
+// the per-store switch (master session).
+export const listFeatureRequests = (status = "requested") =>
+  getJSON(`${P}/feature-requests${status ? `?status=${enc(status)}` : ""}`);
+export const approveFeatureRequest = (id, body) => postJSON(`${P}/feature-requests/${enc(id)}/approve`, body);
+export const declineFeatureRequest = (id, note) => postJSON(`${P}/feature-requests/${enc(id)}/decline`, { note });
+export const getStoreLabelPrinting = async (code) => (await getJSON(`${P}/stores/${enc(code)}`)).label_printing || null;
+export const setLabelPrinting = async (code, { enabled, url } = {}) => {
+  const body = {};
+  if (enabled !== undefined) body.label_printing_enabled = !!enabled;
+  if (url !== undefined) body.labels_url = String(url || "").trim() || null;
+  return (
+    await request(`${P}/stores/${enc(code)}/settings`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  ).json();
+};
+
+// Label printing, the store's own side (docs/LABEL_PRINTING_FEATURE.md 3.3).
+export const getLabelPrinting = () => getJSON("/api/label-printing");
+export const requestLabelPrinting = (note) => postJSON("/api/label-printing/request", note ? { note } : {});
+export const cancelLabelPrintingRequest = () => postJSON("/api/label-printing/request/cancel", {});
+// A one-time code (60 s) that opens the label site already signed in.
+export const openLabelsHandoff = () => postJSON("/api/labels/handoff", {});

@@ -215,15 +215,20 @@ test("every page has a page id, an area and an icon (registry, search, header)",
   assert.equal(routeForPath("/").pageId, "home");
 });
 
-test("footer: Help (or Glossary without Help) and Label Scanner; account links in the user menu", () => {
+test("footer: Help (or Glossary without Help) and Label printing; account links in the user menu", () => {
   assert.deepEqual(
     footerLinks(ctxFor(ADMIN)).map((l) => l.label),
-    ["Help", "Label Scanner"],
+    ["Help", "Label printing"],
   );
   assert.deepEqual(
     footerLinks(ctxFor(FLYERS_ONLY)).map((l) => l.label),
-    ["Glossary", "Label Scanner"],
+    ["Glossary", "Label printing"],
   );
+  // Label printing opens through the one-time hand-off page, never the
+  // label site's address directly (docs/LABEL_PRINTING_FEATURE.md 3.4).
+  const labels = footerLinks(ctxFor(ADMIN)).find((l) => l.key === "labels");
+  assert.equal(labels.href, "#/label-printing/open");
+  assert.equal(labels.hrefFrom, undefined);
   const help = footerLinks(ctxFor(ADMIN)).find((l) => l.key === "help");
   assert.deepEqual(help.activePaths, ["/help", "/glossary"]);
   assert.deepEqual(userMenuLinks(ctxFor(ADMIN)).map((l) => l.label), ["Change password", "Help center", "Glossary"]);

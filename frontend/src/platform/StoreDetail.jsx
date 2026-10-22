@@ -21,6 +21,7 @@ import {
   jobChip,
   jobLabel,
 } from "./consoleModel.js";
+import { LabelPrintingRow } from "./FeatureRequests.jsx";
 import StoreDataPanel from "./panels/StoreDataPanel.jsx";
 import StoreUsagePanel from "./panels/StoreUsagePanel.jsx";
 import { platformErrorMessage, posLabel, storeStatusChip } from "./platformModel.js";
@@ -133,6 +134,8 @@ function Overview({ code }) {
           <dd>{h.timezone || "—"}</dd>
         </div>
       </dl>
+
+      <LabelPrintingRow code={code} />
 
       <h3 className="pf-section-title">Background jobs</h3>
       {(db.jobs || []).length === 0 ? (

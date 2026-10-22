@@ -1083,15 +1083,17 @@
  },
  {
   "key": "concept_label_scanner",
-  "label": "Label Scanner",
+  "label": "Label printing",
   "category": "concept_stock",
   "area": "stock",
-  "definition": "The store's label app for scanning items and printing price labels. On the website it opens from the menu when the store has one.",
+  "definition": "Scan a barcode, check the price and print a shelf label. It's a store feature: when it's off, a store admin can ask for it under Label printing (Store settings on the website, or the Label printing tile on Home in the app).",
   "aliases": [
    "labels",
-   "label app"
+   "label app",
+   "label scanner",
+   "label printer"
   ],
-  "where": "Website menu, app Scan tab",
+  "where": "Website menu (Label printing), Store settings, app Scan tab",
   "pages": [
    "scan",
    "print_labels"

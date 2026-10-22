@@ -33,7 +33,7 @@ export const ROUTE_REQUIREMENTS = {
   insights_heatmap: INSIGHTS,
   insights_menu_sellers: INSIGHTS,
   setup_inventory_api: { capabilities: ["catalog", "stock_levels"] },
-  // Footer "Label Scanner": only when the store has a labels site (its href).
+  // Footer "Label printing": only when the store has the feature (on and an address).
   labels: { storeFeatures: ["labels"] },
 };
 
