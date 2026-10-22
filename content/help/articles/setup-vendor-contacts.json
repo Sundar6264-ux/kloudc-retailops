@@ -30,7 +30,7 @@
    "items": [
     "Send PO can only email addresses saved here. CC on a single send can be any address.",
     "Only admins add or change contacts. Anyone with the cart can send.",
-    "**Recent PO sends** lists every send: who, when, to whom, CC, and whether it went out."
+    "**Recent PO sends** lists every send: who, when, to whom, CC, and whether it went out. **Download** gets that PO as Excel, PDF or CSV."
    ]
   },
   {

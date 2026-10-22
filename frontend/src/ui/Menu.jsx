@@ -2,12 +2,25 @@
 // a popover list; Esc / outside click closes and focus goes back to the
 // button; arrow keys move between items. `children(close)` renders the
 // items (MenuItem / MenuLink / MenuLabel / MenuDivider).
+// `fixed`: the list is placed against the window (position: fixed) instead of
+// the button's box, so a menu inside a scrolling table isn't cut off; it
+// opens upward when there's no room below and closes on scroll.
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "./icons.jsx";
 
-export default function Menu({ button, buttonClass = "kc-icon-btn", label, align = "end", children, className = "", testId }) {
+export default function Menu({
+  button,
+  buttonClass = "kc-icon-btn",
+  label,
+  align = "end",
+  children,
+  className = "",
+  testId,
+  fixed = false,
+}) {
   const [open, setOpen] = useState(false);
+  const [place, setPlace] = useState(null);
   const wrap = useRef(null);
   const btn = useRef(null);
   const listRef = useRef(null);
@@ -24,16 +37,42 @@ export default function Menu({ button, buttonClass = "kc-icon-btn", label, align
         btn.current?.focus();
       }
     };
+    const onScroll = (e) => {
+      if (listRef.current && listRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
+    if (fixed) {
+      window.addEventListener("scroll", onScroll, true);
+      window.addEventListener("resize", onScroll);
+    }
     // First item gets focus so the keyboard can walk the list.
     const first = listRef.current?.querySelector('[role="menuitem"], [role="menuitemradio"]');
     first?.focus();
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
     };
-  }, [open]);
+  }, [open, fixed]);
+
+  function toggle() {
+    if (!open && fixed && btn.current) {
+      const r = btn.current.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom;
+      const style = { position: "fixed" };
+      if (below < 180 && r.top > below) {
+        style.top = "auto";
+        style.bottom = window.innerHeight - r.top + 6;
+      } else style.top = r.bottom + 6;
+      if (align === "start") style.left = Math.max(8, r.left);
+      else style.right = Math.max(8, window.innerWidth - r.right);
+      setPlace(style);
+    }
+    setOpen((v) => !v);
+  }
 
   function onListKey(e) {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
@@ -59,13 +98,21 @@ export default function Menu({ button, buttonClass = "kc-icon-btn", label, align
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         aria-label={label}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         data-testid={testId}
       >
         {button}
       </button>
       {open && (
-        <div className={`kc-popover kc-menu-list kc-menu-${align}`} role="menu" id={id} aria-label={label} ref={listRef} onKeyDown={onListKey}>
+        <div
+          className={`kc-popover kc-menu-list kc-menu-${align}`}
+          role="menu"
+          id={id}
+          aria-label={label}
+          ref={listRef}
+          onKeyDown={onListKey}
+          style={fixed && place ? place : undefined}
+        >
           {children(close)}
         </div>
       )}

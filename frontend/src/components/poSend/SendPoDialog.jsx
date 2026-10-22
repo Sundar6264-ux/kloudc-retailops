@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { fetchPoSendPdfUrl, getPoSendPreview, sendPurchaseOrder } from "../../api";
+import PoDownloadMenu from "../poDownload/PoDownloadMenu.jsx";
 import { formatRestaurantTime } from "../../format";
 import { PO_SEND_TERMS, Term } from "../../glossary.jsx";
 import useDialog from "../flyers/useDialog.js";
@@ -501,6 +502,13 @@ export default function SendPoDialog({ supplier, isAdmin, isDemo, onClose, onSen
                   >
                     {pdf.open ? "Hide PDF" : "Preview PDF"}
                   </button>
+                  {preview.item_count > 0 && (
+                    <PoDownloadMenu
+                      target={{ kind: "cart", supplier }}
+                      supplier={supplier}
+                      buttonClass="link-button po-dl-link"
+                    />
+                  )}
                 </div>
                 {pdf.open && (
                   <div className="pos-pdf">

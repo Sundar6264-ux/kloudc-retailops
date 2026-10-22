@@ -10,6 +10,7 @@ import {
 } from "../../api";
 import { formatRestaurantTime } from "../../format";
 import { SendStatusPill } from "./SendPoDialog.jsx";
+import PoDownloadMenu from "../poDownload/PoDownloadMenu.jsx";
 import { Term } from "../../glossary.jsx";
 import {
   contactForm,
@@ -375,6 +376,9 @@ export default function VendorContacts({ isAdmin }) {
                   <th>To</th>
                   <th>Status</th>
                   <th>By</th>
+                  <th>
+                    <span className="sr-only">Download</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -394,6 +398,16 @@ export default function VendorContacts({ isAdmin }) {
                       )}
                     </td>
                     <td>{s.sent_by_name || "-"}</td>
+                    <td>
+                      {s.item_count > 0 && (
+                        <PoDownloadMenu
+                          target={{ kind: "send", id: s.id }}
+                          supplier={s.supplier}
+                          buttonClass="link-button po-dl-link"
+                          fixed
+                        />
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

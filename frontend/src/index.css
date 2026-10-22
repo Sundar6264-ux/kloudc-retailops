@@ -14239,3 +14239,34 @@ button.btn-secondary.sp-qty-update {
     padding-left: 0.6rem;
   }
 }
+
+/* PO Download with a file-type menu (Excel / PDF / CSV; PoDownloadMenu). */
+.po-dl {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.po-dl .kc-menu-list {
+  width: 180px;
+  min-width: 0;
+}
+
+button.po-dl-btn,
+button.po-dl-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: auto;
+  white-space: nowrap;
+}
+
+.po-dl-caret {
+  font-size: 0.7em;
+  opacity: 0.75;
+}
+
+.po-dl-error {
+  font-size: 0.8rem;
+}

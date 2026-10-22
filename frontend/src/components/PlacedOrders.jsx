@@ -8,6 +8,7 @@ import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
 import { cartLinkFor } from "./cartAdd/cartVendorPanels.js";
 import { isOutsideOrder, outsideDetail, outsideLabel } from "./placedOrderSource.js";
+import PoDownloadMenu from "./poDownload/PoDownloadMenu.jsx";
 
 const PAGE_SIZE = 50;
 
@@ -339,6 +340,7 @@ export default function PlacedOrders() {
                                     {again === "busy" ? "Adding…" : "Order again"}
                                   </button>
                                   <TermInfo k="order_again" label="Order again" />
+                                  <PoDownloadMenu target={{ kind: "order", id: o.id }} supplier={o.supplier} align="start" fixed />
                                   {again === "done" && (
                                     <span className="muted">
                                       Added to {o.supplier}'s cart - <Link to={cartLinkFor(o.supplier)}>open the cart</Link>

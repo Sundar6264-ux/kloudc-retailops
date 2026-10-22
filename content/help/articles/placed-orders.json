@@ -9,7 +9,7 @@
   "admin",
   "staff"
  ],
- "summary": "Every order from the cart, newest first: what counts as placed, PDF only, and Order again.",
+ "summary": "Every order from the cart, newest first: what counts as placed, PDF only, Order again and Download.",
  "pages": [
   "placed_orders"
  ],
@@ -46,6 +46,14 @@
   {
    "type": "p",
    "text": "Open an order and select **Order again** to put its items back into that vendor's cart with the same quantities. Then check the cart as usual."
+  },
+  {
+   "type": "h",
+   "text": "Download an order"
+  },
+  {
+   "type": "p",
+   "text": "Open an order and select **Download**, then pick **Excel**, **PDF** or **CSV**. You get that order's PO again, with the same columns as the one sent to the vendor and the day it was made. Downloading changes nothing."
   }
  ]
 }

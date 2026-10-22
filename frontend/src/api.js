@@ -2,6 +2,8 @@ import { isNative, getCachedToken, setToken, clearToken } from "./mobileAuth";
 import { saveOrShareBlob } from "./downloadOrShare";
 import { errorText } from "./errorText";
 import { isStoreMismatch, setStoreHeadersOn, storeHeaders } from "./sessionStore";
+import { poExportPath, poFallbackName } from "./components/poDownload/poDownloadModel.js";
+import { storeToday } from "./format.js";
 
 export { restoreToken } from "./mobileAuth";
 
@@ -904,6 +906,12 @@ async function downloadFile(path, fallbackFilename) {
   const match = (res.headers.get("Content-Disposition") || "").match(/filename="?([^"]+)"?/);
   const filename = match ? match[1] : fallbackFilename;
   await saveOrShareBlob(blob, filename);
+}
+
+// A PO as Excel / PDF / CSV (PoDownloadMenu). target: { kind: "order" |
+// "send", id } or { kind: "cart", supplier }; read-only on the server.
+export async function downloadPo(target, format, supplier) {
+  await downloadFile(poExportPath(target, format), poFallbackName(supplier || target?.supplier, format, storeToday()));
 }
 
 export async function downloadSales(start, end, format) {

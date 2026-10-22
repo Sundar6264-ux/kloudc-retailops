@@ -8,6 +8,7 @@ import {
   clearSupplierCart,
   markOrderPlaced,
   getRecentPlacedOrders,
+  downloadPo,
   exportPurchaseOrderPdf,
   getSectionOptions,
   requestCartRemoval,
@@ -39,6 +40,7 @@ import {
 } from "./cartAdd/cartVendorPanels.js";
 import { Term, TermInfo } from "../glossary.jsx";
 import SendPoDialog from "./poSend/SendPoDialog.jsx";
+import PoDownloadMenu from "./poDownload/PoDownloadMenu.jsx";
 import { contactsLinkFor, sentNotice } from "./poSend/poSendModel.js";
 import { cartContext, contextKey, useSuggestedQty } from "./projectionQty/projectionQtyModel.js";
 
@@ -809,23 +811,19 @@ function VendorPanel({
               Send<span className="po-pdf-word"> PO</span>
             </span>
           </button>
-          <button
-            type="button"
-            className="btn-secondary po-vendor-pdf"
+          {/* Download with a file-type menu (owner, Oct 22): PDF keeps the
+              old route (it also logs the PDF on Placed Orders); Excel and
+              CSV are made from the same cart lines and aren't logged. */}
+          <PoDownloadMenu
+            target={{ kind: "cart", supplier }}
+            supplier={supplier}
             disabled={summary.orderable === 0 || exporting}
-            onClick={onDownload}
-            title={summary.orderable === 0 ? "Every line is at 0 - nothing to put on the PDF" : undefined}
-          >
-            <DownloadIcon />
-            {exporting ? (
-              "Building PDF…"
-            ) : (
-              <span>
-                {/* "Download" is dropped on a narrow phone (still read out). */}
-                <span className="po-pdf-word">Download </span>PDF ({summary.orderable})
-              </span>
-            )}
-          </button>
+            label={exporting ? "Building PDF…" : `Download (${summary.orderable})`}
+            buttonClass="btn-secondary po-vendor-pdf"
+            onDownload={(format) => (format === "pdf" ? onDownload() : downloadPo({ kind: "cart", supplier }, format, supplier))}
+            onError={onError}
+            testId="po-vendor-download"
+          />
         </div>
       </div>
 
@@ -1003,21 +1001,6 @@ function MailIcon() {
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg className="po-btn-icon" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-      <path
-        d="M8 2.5v7.5M4.75 7 8 10.25 11.25 7M3 13.25h10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

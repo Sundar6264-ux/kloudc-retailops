@@ -9,7 +9,7 @@
   "admin",
   "staff"
  ],
- "summary": "Every list can be downloaded as a CSV file for Excel or Google Sheets, and the PO as a PDF.",
+ "summary": "Every list can be downloaded as a CSV file for Excel or Google Sheets, and a PO as Excel, PDF or CSV.",
  "pages": [
   "items_sold",
   "fix_issues",
@@ -26,7 +26,7 @@
   },
   {
    "type": "p",
-   "text": "Look for **Download CSV** on Items Sold, Open Checks, Reconciliation, Invoices without a logged purchase, the purchase log, every Fix Issues list and every Inventory Report. Items Sold also has **Download sales data**: every line item sold, as CSV or PDF."
+   "text": "Look for **Download CSV** on Items Sold, Open Checks, Reconciliation, Invoices without a logged purchase, the purchase log, every Fix Issues list and every Inventory Report. Items Sold also has **Download sales data**: every line item sold, as CSV or PDF. A purchase order has **Download** with a menu: **Excel**, **PDF** or **CSV**. It is on each vendor in the cart, in Send PO, on each order in Placed Orders and in Recent PO sends."
   },
   {
    "type": "h",
