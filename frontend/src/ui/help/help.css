@@ -888,7 +888,10 @@ a.kc-term-chip:hover {
   box-shadow: var(--kh-shadow-xs);
   transition: border-color var(--kh-fast), background var(--kh-fast), box-shadow var(--kh-fast);
 }
+/* background: out-ranks the global button:hover:not(:disabled) solid brand
+   fill (gotcha #18) - without it a hovered tile turned red / green. */
 .kc-tiletab:hover:not(:disabled) {
+  background: var(--kh-surface);
   border-color: var(--kh-border-strong);
   box-shadow: var(--kh-shadow-sm);
 }
@@ -1598,6 +1601,7 @@ a.kc-term-chip:hover {
   cursor: pointer;
 }
 .kc-area-tab:hover:not(:disabled) {
+  background: var(--surface, var(--card-bg)); /* not the global solid fill (gotcha #18) */
   border-color: var(--border-strong);
 }
 .kc-area-tab-icon {
