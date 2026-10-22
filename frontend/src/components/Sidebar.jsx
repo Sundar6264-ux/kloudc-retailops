@@ -14,6 +14,7 @@ import Icon from "../ui/icons.jsx";
 import { readRemembered, writeRemembered } from "../ui/useRemembered.js";
 import useTeamBadges from "./team/useTeamBadges.js";
 import StoreLogo from "./StoreLogo.jsx";
+import { COPYRIGHT_YEAR, KLOUDC, KLOUDC_LINKS } from "../ui/kloudc.js";
 
 const COLLAPSE_STORAGE_KEY = "kc.nav.collapsed";
 const OPEN_STORAGE_KEY = "kc.nav.open";
@@ -211,6 +212,14 @@ export default function Sidebar({ open = false, onClose = () => {}, collapsed = 
             <Icon name={collapsed ? "chevrons-right" : "chevrons-left"} size={16} />
             <span className="sidebar-link-label">Collapse</span>
           </button>
+          {!collapsed && (
+            <p className="sidebar-copyright">
+              © {COPYRIGHT_YEAR}{" "}
+              <a href={KLOUDC_LINKS.home} target="_blank" rel="noopener noreferrer">
+                {KLOUDC.company}
+              </a>
+            </p>
+          )}
         </div>
       </nav>
     </>

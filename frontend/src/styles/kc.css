@@ -385,6 +385,19 @@ kbd {
   color: var(--nav-muted);
 }
 
+.sidebar-copyright {
+  margin: var(--space-2) var(--space-3) 0;
+  font-size: 11.5px;
+  color: var(--nav-muted);
+}
+
+.sidebar-copyright a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .sidebar-ext {
   color: var(--nav-muted);
 }

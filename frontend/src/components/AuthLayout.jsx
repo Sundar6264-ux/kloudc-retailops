@@ -8,7 +8,7 @@ import { useBranding } from "../store/StoreContext.jsx";
 import Icon from "../ui/icons.jsx";
 import KloudcLogo from "../ui/KloudcLogo.jsx";
 import RetailOpsLogo from "../ui/RetailOpsLogo.jsx";
-import { COPYRIGHT, KLOUDC, KLOUDC_LINKS, VALUE_POINTS } from "../ui/kloudc.js";
+import { COPYRIGHT_YEAR, KLOUDC, KLOUDC_LINKS, VALUE_POINTS } from "../ui/kloudc.js";
 
 function ValuePoints() {
   return (
@@ -47,7 +47,12 @@ export function AuthFooter() {
           Contact
         </a>
       </nav>
-      <p>{COPYRIGHT}</p>
+      <p>
+        © {COPYRIGHT_YEAR}{" "}
+        <a href={KLOUDC_LINKS.home} target="_blank" rel="noopener noreferrer">
+          {KLOUDC.company}
+        </a>
+      </p>
     </footer>
   );
 }

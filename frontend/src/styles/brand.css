@@ -382,6 +382,19 @@ button.auth-submit:hover:not(:disabled) {
   margin: 0;
 }
 
+.auth-page .auth-footer p a {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The sign-in box fills its column (420px) so it lines up with the footer
+   below it; the old platform .login-card width (340px) no longer applies. */
+.auth-card.login-card {
+  width: 100%;
+}
+
 /* Sign-up, pending and owner set-up inside the auth card. */
 .auth-card.signup-card {
   gap: var(--space-3);
