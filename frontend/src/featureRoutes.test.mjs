@@ -14,6 +14,7 @@ import {
   PAGE_META,
   ROUTES_BY_KEY,
   buildSidebar,
+  canBuildChecklists,
   firstAccessiblePath,
   footerLinks,
   groupFeatures,
@@ -144,7 +145,7 @@ test("flyers-only login: Team holds News + Flyers; nothing admin", () => {
 
 test("Setup pages are declared, admin-only and never a landing page", () => {
   const setup = NAV_GROUPS.find((g) => g.key === "setup");
-  for (const key of ["setup_users", "setup_teams", "setup_checklist_builder", "setup_issue_leads", "setup_inventory_api", "setup_integrations"]) {
+  for (const key of ["setup_users", "setup_teams", "setup_issue_leads", "setup_inventory_api", "setup_integrations"]) {
     assert.ok(groupFeatures(setup).includes(key), key);
     const r = ROUTES_BY_KEY[key];
     assert.equal(r.feature, null);
@@ -155,6 +156,35 @@ test("Setup pages are declared, admin-only and never a landing page", () => {
   // A user with nothing still lands on /no-access, not an admin page.
   assert.equal(firstAccessiblePath(ctxFor({ is_admin: false, allowed_features: [] }).hasFeature), "/no-access");
   assert.equal(firstAccessiblePath(ctxFor(ADMIN).hasFeature), "/");
+});
+
+test('Checklist builder: admins and "Build checklists" only, never the demo login', () => {
+  const setup = NAV_GROUPS.find((g) => g.key === "setup");
+  assert.ok(groupFeatures(setup).includes("setup_checklist_builder"));
+  const route = ROUTES_BY_KEY.setup_checklist_builder;
+  assert.equal(route.feature, "checklist_builder");
+  const builder = { ...STAFF, username: "builder", allowed_features: [...STAFF.allowed_features, "checklist_builder"] };
+  const builderOnly = { username: "builder_only", is_admin: false, allowed_features: ["checklist_builder"] };
+  // Shown with the key (and for admins); hidden without it and for the demo login.
+  assert.equal(canBuildChecklists(ctxFor(ADMIN)), true);
+  assert.equal(canBuildChecklists(ctxFor(builder)), true);
+  assert.equal(canBuildChecklists(ctxFor(builderOnly)), true);
+  assert.equal(canBuildChecklists(ctxFor(STAFF)), false);
+  assert.equal(canBuildChecklists(ctxFor({ ...DEMO, allowed_features: [...DEMO.allowed_features, "checklist_builder"] })), false);
+  const setupItems = (user) => {
+    const entry = buildSidebar(ctxFor(user)).find((e) => e.key === "setup" || e.route?.key?.startsWith("setup_"));
+    if (!entry) return [];
+    return entry.type === "group" ? entry.items.map((r) => r.key) : [entry.route.key];
+  };
+  assert.ok(setupItems(builder).includes("setup_checklist_builder"));
+  assert.ok(!setupItems(STAFF).includes("setup_checklist_builder"));
+  // The key opens nothing else in Setup (Users, Teams and the rest stay admin-only).
+  assert.deepEqual(setupItems(builder).filter((k) => k.startsWith("setup_")), ["setup_checklist_builder"]);
+  // Someone who can open nothing else lands on the builder, not "no access".
+  assert.equal(firstAccessiblePath(ctxFor(builderOnly).hasFeature), "/checklists/admin");
+  // The route guard and the Daily Checklists button use the same check.
+  assert.match(read("App.jsx"), /canBuild \? <ChecklistAdminPage \/>/);
+  assert.match(read("components/DailyChecklists.jsx"), /canBuildChecklists\(auth\) &&/);
 });
 
 test("every menu key points at a route, every page is in the menu once (Insights pages via the hub)", () => {

@@ -72,7 +72,10 @@ export const FEATURE_ROUTES = [
   // are require_admin). Never a landing page (no `feature`).
   { path: "/users", label: "Users", feature: null, key: "setup_users", admin: true, pageId: "users", area: "setup", icon: "user" },
   { path: "/teams", label: "Teams", feature: null, key: "setup_teams", admin: true, pageId: "teams", area: "setup", icon: "users" },
-  { path: "/checklists/admin", label: "Checklist builder", feature: null, key: "setup_checklist_builder", admin: true, pageId: "checklist_builder", area: "setup", icon: "clipboard-check" },
+  // Checklist builder (Oct 22): admins, and anyone an admin gave "Build
+  // checklists" on the Users page (the API is require_checklist_builder).
+  // Never the App Review demo login.
+  { path: "/checklists/admin", label: "Checklist builder", feature: "checklist_builder", key: "setup_checklist_builder", noDemo: true, pageId: "checklist_builder", area: "setup", icon: "clipboard-check" },
   { path: "/issue-leads", label: "Category & vendor leads", feature: null, key: "setup_issue_leads", admin: true, pageId: "issue_leads", area: "setup", icon: "contact" },
   { path: "/inventory-api", label: "Inventory from {pos}", feature: null, key: "setup_inventory_api", admin: true, pageId: "inventory_from_pos", area: "setup", icon: "database" },
   // Settings -> Integrations (docs/PLATFORM_CONTRACT.md 13.5): the store's
@@ -244,6 +247,12 @@ export function routeVisible(route, ctx) {
   if (route.salesOnly && !canSeeSales) return false;
   if (route.noDemo && user?.demo) return false;
   return true;
+}
+
+// Can this user open the Checklist builder (/checklists/admin)? Same rule as
+// its menu entry - App.jsx's route guard and the Daily Checklists button.
+export function canBuildChecklists(ctx) {
+  return routeVisible(ROUTES_BY_KEY.setup_checklist_builder, ctx);
 }
 
 // The Insights hub's tiles this user can open: { main, alsoIn } route lists.

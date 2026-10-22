@@ -10,6 +10,7 @@ import {
   submitChecklist,
 } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import { canBuildChecklists } from "../featureRoutes.js";
 import InfoBlock from "./InfoBlock.jsx";
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
@@ -382,19 +383,19 @@ function ChecklistDetail({ id, schemas, onBack }) {
 }
 
 function ChecklistHub({ schemas, recent, recentError, onOpenForm, onOpenHistory, onSelectSubmission }) {
-  const { user } = useAuth();
+  const auth = useAuth();
   return (
     <>
       <section className="card">
         <div className="clb-hub-head">
           <h2>Daily Checklists</h2>
-          {user?.is_admin && (
+          {canBuildChecklists(auth) && (
             <Link to="/checklists/admin" className="button-link btn-secondary clb-hub-builder">
               Checklist builder
             </Link>
           )}
         </div>
-        <InfoBlock brief="The store's daily checklists. Answers are saved in this app, and checklists set up for it post a summary to the staff WhatsApp group automatically. Admins create and edit the checklists in the Checklist builder.">
+        <InfoBlock brief={'The store\'s daily checklists. Answers are saved in this app, and checklists set up for it post a summary to the staff WhatsApp group automatically. Admins, and anyone they give "Build checklists" on the Users page, create and edit the checklists in the Checklist builder.'}>
           Each submission is tied to your logged-in account - you're never asked to type your own
           name. Admins see every submission from every employee; everyone else sees their own, plus
           any sent through a checklist's public link (marked "via public link", with the name the

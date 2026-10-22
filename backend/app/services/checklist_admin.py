@@ -1,7 +1,7 @@
 """Checklist builder - admin side (owner, Sep 30: "give access to admins to
 create / modify existing checklists questionnaires (give all the options that
 google form gives)"). Routes: routers/checklist_admin.py
-(/api/checklists/admin/..., admins only).
+(/api/checklists/admin/..., admins and "Build checklists").
 
 Model: a checklist (ChecklistDefinition) has immutable, numbered versions
 (ChecklistDefinitionVersion). The editor saves a draft (PUT), publishing
@@ -49,7 +49,12 @@ _MEDIA_URL_RE = re.compile(r"/api/team/media/([A-Za-z0-9_-]+)")
 
 def _can_see_definition_media(db: Session, user: User, definition_id: int) -> bool:
     row = db.get(ChecklistDefinition, definition_id)
-    return row is not None and bool(row.active) and user_has_feature(user, "daily_checklists")
+    if row is None:
+        return False
+    # Builders see every checklist's pictures (also turned-off ones) in the editor.
+    if user_has_feature(user, "checklist_builder"):
+        return True
+    return bool(row.active) and user_has_feature(user, "daily_checklists")
 
 
 media_svc.register_media_access(MEDIA_OWNER_TYPE, _can_see_definition_media)

@@ -223,7 +223,8 @@ def test_admin_validation(db, admin_client):
 def test_every_admin_route_is_admin_only(db, admin_client, anon):
     from app.features import FEATURE_KEYS
 
-    staff = client_for(db, make_user(db, "allfeatures", features=sorted(FEATURE_KEYS)))
+    # Every feature but "Build checklists" (which opens these routes, Oct 22).
+    staff = client_for(db, make_user(db, "allfeatures", features=sorted(FEATURE_KEYS - {"checklist_builder"})))
     calls = [
         ("GET", "/api/checklists/admin/public-links"),
         ("GET", f"{ADMIN_BASE}/{FSA}/public-link"),

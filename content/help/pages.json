@@ -1974,8 +1974,8 @@
    "location": "More › Setup"
   },
   "gating": {
-   "feature": null,
-   "admin": true,
+   "feature": "checklist_builder",
+   "admin": false,
    "salesOnly": false
   },
   "public": false,
@@ -2002,7 +2002,8 @@
    "concept_checklist_builder",
    "checklist_version",
    "checklist_draft",
-   "concept_public_checklist_link"
+   "concept_public_checklist_link",
+   "concept_build_checklists"
   ],
   "article": "setup-checklist-builder",
   "new_until": null

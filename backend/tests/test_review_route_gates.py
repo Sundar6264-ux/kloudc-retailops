@@ -179,11 +179,14 @@ def test_new_routes_have_the_right_gate(db):
 
 def test_checklist_builder_admin_routes_are_admin_only(db):
     """Every /api/checklists/admin/* route (the checklist builder) needs an
-    admin: a staff user granted every feature, daily_checklists included,
-    gets 403 on each one."""
+    admin or "Build checklists" (checklist_builder, Oct 22): a staff user
+    granted every other feature, daily_checklists included, gets 403 on each
+    one (tests/test_checklist_builder_access.py covers the grant)."""
     from app.features import FEATURE_KEYS
 
-    staff = client_for(db, make_user(db, "checklist_staff", features=sorted(FEATURE_KEYS)))
+    staff = client_for(
+        db, make_user(db, "checklist_staff", features=sorted(FEATURE_KEYS - {"checklist_builder"}))
+    )
     admin_routes = [(m, p) for m, p in _routes() if p.startswith("/api/checklists/admin")]
     assert len(admin_routes) >= 12
     wrong = [(m, p, s) for m, p in admin_routes if (s := _call(staff, m, p).status_code) != 403]

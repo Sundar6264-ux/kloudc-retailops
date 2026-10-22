@@ -38,6 +38,13 @@ FEATURES = [
     {"key": "category_edits", "label": "PO sections"},
     {"key": "invoice_submission", "label": "Invoices"},
     {"key": "daily_checklists", "label": "Daily Checklists"},
+    # Checklist builder (routers/checklist_admin.py): create, edit, reorder,
+    # turn on/off and publish checklists, their public links and WhatsApp
+    # groups. Gives nothing else - not admin, no Users page, can't grant
+    # features. Never auto-granted; the App Review demo login is refused
+    # even if ticked (owner, Oct 22: "give a separate feature access on who
+    # can build checklists").
+    {"key": "checklist_builder", "label": "Build checklists"},
     {"key": "ask_bot", "label": "Ask Inventory Bot"},
     # Team hub (app/team/). Announcements need no key - everyone gets them.
     {"key": "team_tasks", "label": "Tasks"},

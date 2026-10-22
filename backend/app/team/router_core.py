@@ -159,8 +159,15 @@ def set_members(
 
 def _uploader(user: User = Depends(get_current_user)) -> User:
     """Photos are for tasks, chat and announcements - so only people who can
-    use one of those (admins always) may upload."""
-    if not (user.is_admin or user_has_feature(user, "team_tasks") or user_has_feature(user, "team_chat")):
+    use one of those (admins always) may upload. Plus "Build checklists":
+    the builder's picture items upload here (images only - voice notes and
+    PDFs stay chat-only below)."""
+    if not (
+        user.is_admin
+        or user_has_feature(user, "team_tasks")
+        or user_has_feature(user, "team_chat")
+        or user_has_feature(user, "checklist_builder")
+    ):
         raise HTTPException(status_code=403, detail="You don't have access to Team")
     return user
 

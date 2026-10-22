@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext.jsx";
-import { FEATURE_ROUTES, firstAccessiblePath, insightsHomePath, insightsLandingPath, routeForPath } from "./featureRoutes.js";
+import { FEATURE_ROUTES, canBuildChecklists, firstAccessiblePath, insightsHomePath, insightsLandingPath, routeForPath } from "./featureRoutes.js";
 import { StoreProvider } from "./store/StoreContext.jsx";
 import { featureAvailable, routeAvailable } from "./store/gating.js";
 const NotAvailablePage = lazy(() => import("./pages/NotAvailablePage.jsx"));
@@ -161,7 +161,9 @@ function OldMenuPerformance() {
 }
 
 function AppShell() {
-  const { user, loading, hasFeature } = useAuth();
+  const auth = useAuth();
+  const { user, loading, hasFeature } = auth;
+  const canBuild = canBuildChecklists(auth);
   const location = useLocation();
   // Team chat has its own composer at the bottom - the floating Inventory
   // Bot bubble would sit on top of its Send button on a phone.
@@ -260,14 +262,14 @@ function AppShell() {
               </Protected>
             }
           />
-          {/* Checklist builder: admins only (the admin API is require_admin). */}
+          {/* Checklist builder: admins and "Build checklists" (canBuildChecklists). */}
           <Route
             path="/checklists/admin"
-            element={user.is_admin ? <ChecklistAdminPage /> : <Navigate to="/daily-checklists" replace />}
+            element={canBuild ? <ChecklistAdminPage /> : <Navigate to="/daily-checklists" replace />}
           />
           <Route
             path="/checklists/admin/:type"
-            element={user.is_admin ? <ChecklistAdminPage /> : <Navigate to="/daily-checklists" replace />}
+            element={canBuild ? <ChecklistAdminPage /> : <Navigate to="/daily-checklists" replace />}
           />
           <Route
             path="/open-orders"

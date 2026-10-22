@@ -1498,7 +1498,27 @@
   ],
   "related": [
    "concept_daily_checklist",
-   "checklist_public_link"
+   "checklist_public_link",
+   "concept_build_checklists"
+  ]
+ },
+ {
+  "key": "concept_build_checklists",
+  "label": "Build checklists",
+  "category": "concept_team",
+  "area": "setup",
+  "definition": "Admins can give Build checklists to anyone on the Users page. That person can then create and edit checklists in the Checklist builder, without becoming an admin.",
+  "aliases": [
+   "who can build checklists",
+   "checklist builder access"
+  ],
+  "where": "Setup › Users",
+  "pages": [
+   "users",
+   "checklist_builder"
+  ],
+  "related": [
+   "concept_checklist_builder"
   ]
  },
  {

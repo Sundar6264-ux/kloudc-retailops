@@ -259,6 +259,7 @@ const FEATURE_LABELS = {
   category_edits: "Edit PO sections",
   invoice_submission: "Invoice Submission",
   daily_checklists: "Daily Checklists",
+  checklist_builder: "Build checklists",
   ask_bot: "Ask Inventory Bot",
   team_tasks: "Team Tasks",
   team_chat: "Team Chat",

@@ -1,6 +1,7 @@
-"""Checklist builder - admin API (docs/CHECKLIST_BUILDER_CONTRACT.md). Admins
-create and edit checklists on the website; logic in
-services/checklist_admin.py. Every route is admin-only.
+"""Checklist builder API (docs/CHECKLIST_BUILDER_CONTRACT.md). Admins - and
+anyone an admin gave "Build checklists" (feature `checklist_builder`, Oct 22)
+- create and edit checklists on the website and the app; logic in
+services/checklist_admin.py. Every route needs require_checklist_builder.
 """
 
 from typing import List, Optional
@@ -9,14 +10,32 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.auth import require_admin
+from app.auth import get_current_user
 from app.db import get_db
+from app.demo import is_demo_user
+from app.features import user_has_feature
 from app.models import User
 from app.services import checklist_admin as svc
 from app.services import checklist_public as public_svc
 from app.services import whatsapp_groups as groups_svc
 
-router = APIRouter(prefix="/api/checklists/admin", tags=["checklists-admin"], dependencies=[Depends(require_admin)])
+CHECKLIST_BUILDER = "checklist_builder"
+
+
+def require_checklist_builder(user: User = Depends(get_current_user)) -> User:
+    """Admins (as before), or a non-admin granted "Build checklists" in this
+    store. Never the App Review demo login unless it is an admin, even if
+    ticked. Anyone else gets the same 403 as before the grant existed."""
+    if user.is_admin:
+        return user
+    if is_demo_user(user) or not user_has_feature(user, CHECKLIST_BUILDER):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    return user
+
+
+router = APIRouter(
+    prefix="/api/checklists/admin", tags=["checklists-admin"], dependencies=[Depends(require_checklist_builder)]
+)
 
 
 def _run(fn, *args):
@@ -47,14 +66,14 @@ def list_definitions(db: Session = Depends(get_db)):
 
 @router.post("/definitions")
 def create_definition(
-    payload: Optional[dict] = Body(None), user: User = Depends(require_admin), db: Session = Depends(get_db)
+    payload: Optional[dict] = Body(None), user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)
 ):
     return _run(svc.create_definition, db, user, _body(payload))
 
 
 @router.post("/definitions/order")
 def reorder(
-    order: List[str] = Body(..., embed=True), user: User = Depends(require_admin), db: Session = Depends(get_db)
+    order: List[str] = Body(..., embed=True), user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)
 ):
     result = _run(svc.reorder, db, user, order)
     return result if isinstance(result, JSONResponse) else {"definitions": result}
@@ -69,14 +88,14 @@ def get_definition(checklist_type: str, db: Session = Depends(get_db)):
 def save_draft(
     checklist_type: str,
     payload: Optional[dict] = Body(None),
-    user: User = Depends(require_admin),
+    user: User = Depends(require_checklist_builder),
     db: Session = Depends(get_db),
 ):
     return _run(svc.save_draft, db, user, checklist_type, _body(payload))
 
 
 @router.delete("/definitions/{checklist_type}/draft")
-def discard_draft(checklist_type: str, user: User = Depends(require_admin), db: Session = Depends(get_db)):
+def discard_draft(checklist_type: str, user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)):
     return _run(svc.discard_draft, db, user, checklist_type)
 
 
@@ -84,7 +103,7 @@ def discard_draft(checklist_type: str, user: User = Depends(require_admin), db: 
 def publish(
     checklist_type: str,
     payload: Optional[dict] = Body(None),
-    user: User = Depends(require_admin),
+    user: User = Depends(require_checklist_builder),
     db: Session = Depends(get_db),
 ):
     return _run(svc.publish, db, user, checklist_type, _body(payload))
@@ -94,7 +113,7 @@ def publish(
 def duplicate(
     checklist_type: str,
     payload: Optional[dict] = Body(None),
-    user: User = Depends(require_admin),
+    user: User = Depends(require_checklist_builder),
     db: Session = Depends(get_db),
 ):
     return _run(svc.duplicate, db, user, checklist_type, _body(payload))
@@ -104,7 +123,7 @@ def duplicate(
 def patch_definition(
     checklist_type: str,
     payload: Optional[dict] = Body(None),
-    user: User = Depends(require_admin),
+    user: User = Depends(require_checklist_builder),
     db: Session = Depends(get_db),
 ):
     return _run(svc.patch, db, user, checklist_type, _body(payload))
@@ -120,14 +139,14 @@ def revert(
     checklist_type: str,
     version: int,
     payload: Optional[dict] = Body(None),
-    user: User = Depends(require_admin),
+    user: User = Depends(require_checklist_builder),
     db: Session = Depends(get_db),
 ):
     return _run(svc.revert, db, user, checklist_type, version, _body(payload))
 
 
 # --- Public checklist link (docs/PUBLIC_CHECKLIST_LINK_CONTRACT.md) -----------------
-# Logic: services/checklist_public.py. Admin-only like the rest of this router.
+# Logic: services/checklist_public.py. Same access as the rest of this router.
 
 
 @router.get("/public-links")
@@ -146,7 +165,7 @@ def get_public_link(checklist_type: str, db: Session = Depends(get_db)):
 def put_public_link(
     checklist_type: str,
     payload: Optional[dict] = Body(None),
-    user: User = Depends(require_admin),
+    user: User = Depends(require_checklist_builder),
     db: Session = Depends(get_db),
 ):
     """Create or update: any of enabled, slug, name_mode, allowed_names, max_per_hour."""
@@ -154,18 +173,18 @@ def put_public_link(
 
 
 @router.post("/definitions/{checklist_type}/public-link/rotate")
-def rotate_public_link(checklist_type: str, user: User = Depends(require_admin), db: Session = Depends(get_db)):
+def rotate_public_link(checklist_type: str, user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)):
     """A new token: the old URL stops working at once."""
     return _run(public_svc.rotate_link, db, user, checklist_type)
 
 
 @router.delete("/definitions/{checklist_type}/public-link")
-def delete_public_link(checklist_type: str, user: User = Depends(require_admin), db: Session = Depends(get_db)):
+def delete_public_link(checklist_type: str, user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)):
     return _run(public_svc.delete_link, db, user, checklist_type)
 
 
 # --- WhatsApp groups (docs/CHECKLIST_BUILDER_APP_AND_GROUPS_CONTRACT.md, section 1) --------
-# Logic: services/whatsapp_groups.py. Admin-only like the rest of this router.
+# Logic: services/whatsapp_groups.py. Same access as the rest of this router.
 
 GROUPS = "/whatsapp-groups"
 
@@ -196,7 +215,7 @@ def available_whatsapp_groups(refresh: bool = Query(False), db: Session = Depend
 
 @router.post(GROUPS)
 def create_whatsapp_group(
-    payload: Optional[dict] = Body(None), user: User = Depends(require_admin), db: Session = Depends(get_db)
+    payload: Optional[dict] = Body(None), user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)
 ):
     """{chat_id, label, marketing?} -> the new group (key slugified from the label)."""
     return _run_groups(groups_svc.create_group, db, user, _body(payload))
@@ -204,7 +223,7 @@ def create_whatsapp_group(
 
 @router.patch(GROUPS + "/{key}")
 def patch_whatsapp_group(
-    key: str, payload: Optional[dict] = Body(None), user: User = Depends(require_admin), db: Session = Depends(get_db)
+    key: str, payload: Optional[dict] = Body(None), user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)
 ):
     """{label?, active?, marketing?} (marketing = "Use for flyers")"""
     return _run_groups(groups_svc.patch_group, db, user, key, _body(payload))

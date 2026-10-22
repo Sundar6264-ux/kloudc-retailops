@@ -37,7 +37,7 @@
   },
   {
    "type": "p",
-   "text": "A non-admin sees only the pages ticked for them, on the website and in the app. With none ticked they can sign in but see nothing. Admins always see everything. Some pages are admins-only whatever is ticked: Users, Teams, Integrations, Inventory from {pos}, Checklist builder, Category & vendor leads, Loss watch and Odd checks."
+   "text": "A non-admin sees only the pages ticked for them, on the website and in the app. With none ticked they can sign in but see nothing. Admins always see everything. Some pages are admins-only whatever is ticked: Users, Teams, Integrations, Inventory from {pos}, Category & vendor leads, Loss watch and Odd checks. The Checklist builder is for admins and anyone given **Build checklists**."
   },
   {
    "type": "h",
