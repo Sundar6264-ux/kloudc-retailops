@@ -483,3 +483,15 @@ export function issueTagForValue(options, value) {
   const opt = (options || []).find((o) => o.value === value);
   return opt ? opt.issue_tag || null : null;
 }
+
+// A checklist picture's address is shown as a link and an <img>: only an
+// uploaded picture (a same-site /path), a web address, or a local preview
+// (blob:, data:image/) - never javascript: and the like. Since Oct 22 a
+// non-admin with "Build checklists" can type this address, and admins open
+// the pictures (the server refuses to publish anything else too).
+export function isSafeImageUrl(url) {
+  const u = String(url || "").trim();
+  if (!u) return false;
+  if (u.startsWith("/") && !u.startsWith("//")) return true;
+  return /^(https?:\/\/|blob:|data:image\/)/i.test(u);
+}

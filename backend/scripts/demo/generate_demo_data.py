@@ -61,9 +61,10 @@ GENERATOR_VERSION = 1
 DATASET_KEY = "demo_dataset"  # setting_changes key marking a generated DEMO database
 MIN_PASSWORD_LENGTH = 10
 # Features the review login does not get (same choices as the earlier App
-# Review account): flyers are refused for demo logins, PO-section editing is
-# an admin tool, and Sales insights need a POS with analytics.
-REVIEW_LEFT_OUT = frozenset({"marketing_flyers", "category_edits", "sales_insights"})
+# Review account): flyers and Build checklists are refused for demo logins,
+# PO-section editing is an admin tool, and Sales insights need a POS with
+# analytics.
+REVIEW_LEFT_OUT = frozenset({"marketing_flyers", "checklist_builder", "category_edits", "sales_insights"})
 
 # Settings forced for the generator process (and the subprocesses it runs).
 # Every outside channel is blank: nothing can be sent while generating.

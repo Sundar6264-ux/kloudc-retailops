@@ -222,3 +222,27 @@ def test_builder_can_upload_a_checklist_picture_and_see_it(db):
     nobody = client_for(db, make_user(db, "no_pics", features=["daily_checklists"]))
     r = nobody.post("/api/team/media", files={"file": ("p.jpg", buf.getvalue(), "image/jpeg")})
     assert r.status_code == 403
+
+
+def test_a_picture_item_must_be_an_upload_or_a_web_address(db):
+    """A builder is not an admin, and admins open checklist pictures (the
+    website links each one): a javascript: or data: address can't be
+    published - only an uploaded picture (/api/...) or http(s)."""
+    builder = _builder(db, "builder_urls")
+    r = builder.post(DEFS, json={"title": "Pictures"})
+    assert r.status_code == 200, r.text
+    ctype = r.json()["checklist_type"]
+    question = {"id": "q1", "type": "short_text", "title": "Done?"}
+    for bad in ("javascript:alert(1)", " JavaScript:alert(1)", "data:text/html,x", "//evil.example/x.png", "vbscript:x"):
+        picture = {"id": "p1", "type": "image", "title": "Sign", "image_url": bad}
+        draft = {"sections": [{"id": "s1", "title": "A", "items": [picture, question]}]}
+        assert builder.put(f"{DEFS}/{ctype}", json=draft).status_code == 200
+        r = builder.post(f"{DEFS}/{ctype}/publish", json={})
+        assert r.status_code == 400, (bad, r.text)
+        assert "uploaded or a web address" in r.text
+    for good in ("https://example.com/a.png", "http://example.com/a.png", "/api/team/media/abc"):
+        picture = {"id": "p1", "type": "image", "title": "Sign", "image_url": good}
+        draft = {"sections": [{"id": "s1", "title": "A", "items": [picture, question]}]}
+        assert builder.put(f"{DEFS}/{ctype}", json=draft).status_code == 200
+        r = builder.post(f"{DEFS}/{ctype}/publish", json={})
+        assert r.status_code == 200, (good, r.text)

@@ -137,6 +137,10 @@ MAX_PATTERN_LENGTH = 300
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _URL_RE = re.compile(r"^(https?://)?[^\s/$.?#]+\.[^\s]+$", re.IGNORECASE)
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# A picture item's address: an uploaded picture (/api/...) or a web address.
+# Never javascript:, data: and the like - since Oct 22 a non-admin with
+# "Build checklists" can set it, and admins open these pictures.
+_IMAGE_URL_RE = re.compile(r"^(https?://\S+|/(?!/)\S*)$", re.IGNORECASE)
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
@@ -874,6 +878,8 @@ def _check_item(item: dict, itype: str, prefix: str, tags: dict, errors: List[st
     if itype == "image":
         if not isinstance(item.get("image_url"), str) or not item["image_url"].strip():
             errors.append(f"{prefix}: an image needs an image_url")
+        elif not _IMAGE_URL_RE.match(item["image_url"].strip()):
+            errors.append(f"{prefix}: the picture must be uploaded or a web address (https://...)")
     if item.get("flag_if_answered") and itype not in TEXT_TYPES:
         errors.append(f"{prefix}: only text questions can flag any answer as an issue")
     if item.get("summary_label") is not None:

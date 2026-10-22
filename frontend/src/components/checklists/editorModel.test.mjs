@@ -23,3 +23,13 @@ test("a base is sent as is; no draft is sent as null", () => {
 test("legacy_order still rides along", () => {
   assert.equal(draftPayload({ ...draft, legacy_order: true }, { base: null }).legacy_order, true);
 });
+
+test("a checklist picture's address: uploads, web addresses and previews only", async () => {
+  const { isSafeImageUrl } = await import("./model.js");
+  for (const ok of ["/api/team/media/abc", "/api/public/checklists/k/images/t", "https://x.example/a.png", "HTTP://x.example/a.png", "blob:http://127.0.0.1/1", "data:image/png;base64,AA"]) {
+    assert.equal(isSafeImageUrl(ok), true, ok);
+  }
+  for (const bad of ["javascript:alert(1)", " JavaScript:alert(1)", "vbscript:x", "data:text/html,x", "//evil.example/a.png", "", null, undefined]) {
+    assert.equal(isSafeImageUrl(bad), false, String(bad));
+  }
+});

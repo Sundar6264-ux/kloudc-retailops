@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchTeamMediaUrl } from "../../api";
+import { isSafeImageUrl } from "./model.js";
 
 // An image in a checklist: a display-only "image" item or an uploaded photo
 // answer. Team media (/api/team/media/{token}) is auth-checked, so it is
@@ -13,7 +14,10 @@ export function mediaUrlFor(media, mediaId) {
 }
 
 export default function ChecklistImage({ url, media, mediaId, alt, className }) {
-  const target = url || mediaUrlFor(media, mediaId);
+  const raw = url || mediaUrlFor(media, mediaId);
+  // A javascript:/vbscript:/... address is never linked or loaded.
+  const target = raw && isSafeImageUrl(raw) ? raw : null;
+  const unsafe = Boolean(raw) && !target;
   // Team media needs the session; a public checklist link's form pictures
   // (/api/public/...) and local previews (blob:) are plain images.
   const isTeamMedia = Boolean(target && target.startsWith("/api/") && !target.startsWith("/api/public/"));
@@ -44,6 +48,7 @@ export default function ChecklistImage({ url, media, mediaId, alt, className }) 
   }, [target, isTeamMedia]);
 
   const cls = className || "clf-thumb-img";
+  if (unsafe) return <span className={`${cls} clf-img-placeholder`}>Couldn't load the image</span>;
   if (!target) return <span className={`${cls} clf-img-placeholder`}>Photo {mediaId ? `#${mediaId}` : ""}</span>;
   if (error) return <span className={`${cls} clf-img-placeholder`}>Couldn't load the image</span>;
   if (!src) return <span className={`${cls} clf-img-placeholder`}>Loading…</span>;

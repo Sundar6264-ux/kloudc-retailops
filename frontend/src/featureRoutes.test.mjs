@@ -171,6 +171,9 @@ test('Checklist builder: admins and "Build checklists" only, never the demo logi
   assert.equal(canBuildChecklists(ctxFor(builderOnly)), true);
   assert.equal(canBuildChecklists(ctxFor(STAFF)), false);
   assert.equal(canBuildChecklists(ctxFor({ ...DEMO, allowed_features: [...DEMO.allowed_features, "checklist_builder"] })), false);
+  // A DEMO store's admin (every login there is a demo login) keeps it, as
+  // when the builder was admin-only (the server lets admins through first).
+  assert.equal(canBuildChecklists(ctxFor({ ...ADMIN, demo: true })), true);
   const setupItems = (user) => {
     const entry = buildSidebar(ctxFor(user)).find((e) => e.key === "setup" || e.route?.key?.startsWith("setup_"));
     if (!entry) return [];
