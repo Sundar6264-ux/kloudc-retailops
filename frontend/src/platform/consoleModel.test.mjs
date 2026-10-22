@@ -70,6 +70,14 @@ test("store detail: health headline, job and integration chips", () => {
   assert.equal(healthSummary({ status: "active", database: { reachable: false } }).tone, "bad");
   assert.match(healthSummary({ status: "active", database: { reachable: true, jobs: [{ status: "failed" }] } }).text, /1 background job failed/);
   assert.equal(healthSummary({ status: "active", database: { reachable: true, jobs: [{ status: "success" }] } }).tone, "good");
+  // The store's own POS not set up: a warning, not "Everything looks fine."
+  const ok = { status: "active", database: { reachable: true, jobs: [] } };
+  const toastOff = healthSummary({ ...ok, pos_provider: "toast", integrations: [{ kind: "toast", configured: false }] });
+  assert.equal(toastOff.tone, "warn");
+  assert.equal(toastOff.text, "Toast isn't connected yet, so sales and stock aren't updating.");
+  assert.match(healthSummary({ ...ok, pos_provider: "clover", integrations: [] }).text, /^Clover isn't connected/);
+  assert.equal(healthSummary({ ...ok, pos_provider: "toast", integrations: [{ kind: "toast", configured: true }] }).tone, "good");
+  assert.equal(healthSummary({ ...ok, pos_provider: "csv", integrations: [] }).tone, "good"); // no POS keys to add
   assert.deepEqual(jobChip("failed"), { label: "Failed", tone: "bad" });
   assert.equal(jobChip(undefined).label, "Never");
   assert.equal(jobLabel("sales_sync"), "Sales sync");

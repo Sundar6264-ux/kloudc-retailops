@@ -121,5 +121,15 @@ export function healthSummary(h) {
   if (!h.database?.reachable) return { tone: "bad", text: "The store's database can't be reached." };
   const failed = (h.database.jobs || []).filter((j) => j.status === "failed");
   if (failed.length) return { tone: "bad", text: `${failed.length} background job${failed.length > 1 ? "s" : ""} failed last time.` };
+  // The store's own POS not connected: nothing updates, so it isn't "fine"
+  // (it read "Everything looks fine." right above "Toast - Not set up").
+  const pos = String(h.pos_provider || "").toLowerCase();
+  if (POS_KINDS.has(pos) && Array.isArray(h.integrations)) {
+    const row = h.integrations.find((i) => i && String(i.kind).toLowerCase() === pos);
+    if (!row || !row.configured) {
+      const name = pos === "toast" ? "Toast" : "Clover";
+      return { tone: "warn", text: `${name} isn't connected yet, so sales and stock aren't updating.` };
+    }
+  }
   return { tone: "good", text: "Everything looks fine." };
 }
