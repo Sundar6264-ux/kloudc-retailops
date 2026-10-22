@@ -52,4 +52,4 @@ export function supportMailto({ storeCode, page, email = KLOUDC.email } = {}) {
   return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-export const COPYRIGHT = `© ${new Date().getFullYear() < 2026 ? 2026 : new Date().getFullYear()} ${KLOUDC.company} · ${KLOUDC.location}`;
+export const COPYRIGHT = `© ${new Date().getFullYear() < 2026 ? 2026 : new Date().getFullYear()} ${KLOUDC.company}`;

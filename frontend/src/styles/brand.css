@@ -158,6 +158,19 @@
   z-index: 1;
 }
 
+.auth-page .auth-brand-foot a {
+  color: var(--on-fill);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.45);
+  text-underline-offset: 2px;
+}
+
+.auth-page .auth-brand-foot a:hover,
+.auth-page .auth-brand-foot a:focus-visible {
+  text-decoration-color: currentColor;
+}
+
 .auth-main {
   display: flex;
   flex-direction: column;

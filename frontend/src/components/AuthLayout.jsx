@@ -68,7 +68,10 @@ export default function AuthLayout({ children, wide = false, testId, retailOps =
           {retailOps ? <RetailOpsLogo mark tone="light" height={380} /> : <KloudcLogo mark tone="light" height={420} />}
         </span>
         <p className="auth-brand-foot">
-          {product} by {KLOUDC.company}
+          {product} by{" "}
+          <a href={KLOUDC_LINKS.home} target="_blank" rel="noopener noreferrer">
+            {KLOUDC.company}
+          </a>
         </p>
       </aside>
       <main className={`auth-main${wide ? " auth-main-wide" : ""}`}>
