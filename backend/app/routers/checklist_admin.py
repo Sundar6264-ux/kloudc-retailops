@@ -199,6 +199,14 @@ def _run_groups(fn, *args):
         return JSONResponse(status_code=exc.status_code, content=content)
 
 
+def _flyers_admin_only(db: Session, user: User, body: dict, key: Optional[str] = None, deleting: bool = False):
+    """Which groups get marketing flyers stays admin-only, even for a
+    "Build checklists" user (groups_svc.flyer_change_blocked)."""
+    message = groups_svc.flyer_change_blocked(db, user, body, key, deleting)
+    if message:
+        raise HTTPException(status_code=403, detail=message)
+
+
 @router.get(GROUPS)
 def list_whatsapp_groups(db: Session = Depends(get_db)):
     """{items: [{key, label, chat_id_masked, configured, builtin, active, marketing, used_by}]}"""
@@ -217,20 +225,28 @@ def available_whatsapp_groups(refresh: bool = Query(False), db: Session = Depend
 def create_whatsapp_group(
     payload: Optional[dict] = Body(None), user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)
 ):
-    """{chat_id, label, marketing?} -> the new group (key slugified from the label)."""
-    return _run_groups(groups_svc.create_group, db, user, _body(payload))
+    """{chat_id, label, marketing?} -> the new group (key slugified from the label).
+    marketing true is admin-only (403 for a builder)."""
+    body = _body(payload)
+    _flyers_admin_only(db, user, body)
+    return _run_groups(groups_svc.create_group, db, user, body)
 
 
 @router.patch(GROUPS + "/{key}")
 def patch_whatsapp_group(
     key: str, payload: Optional[dict] = Body(None), user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)
 ):
-    """{label?, active?, marketing?} (marketing = "Use for flyers")"""
-    return _run_groups(groups_svc.patch_group, db, user, key, _body(payload))
+    """{label?, active?, marketing?} (marketing = "Use for flyers"; changing
+    it, or turning a flyer group off or on, is admin-only)"""
+    body = _body(payload)
+    _flyers_admin_only(db, user, body, key)
+    return _run_groups(groups_svc.patch_group, db, user, key, body)
 
 
 @router.delete(GROUPS + "/{key}", status_code=204)
-def delete_whatsapp_group(key: str, db: Session = Depends(get_db)):
-    """400 for a built-in, 409 (with used_by) when a checklist uses it."""
+def delete_whatsapp_group(key: str, user: User = Depends(require_checklist_builder), db: Session = Depends(get_db)):
+    """400 for a built-in, 409 (with used_by) when a checklist uses it; 403
+    for a non-admin when the group gets flyers."""
+    _flyers_admin_only(db, user, {}, key, deleting=True)
     result = _run_groups(groups_svc.delete_group, db, key)
     return result if isinstance(result, JSONResponse) else Response(status_code=204)

@@ -6,6 +6,7 @@ import {
   listWhatsAppGroups,
   updateWhatsAppGroup,
 } from "../../api";
+import { useAuth } from "../../AuthContext.jsx";
 import { errorLines } from "./editorModel.js";
 
 // "Manage WhatsApp groups" (admin): the groups a checklist's summary can be
@@ -13,8 +14,13 @@ import { errorLines } from "./editorModel.js";
 // Opened from the builder list and from a checklist's Settings tab. Lists
 // every group with the checklists that use it; add one from the groups the
 // store's WhatsApp number is in; rename; turn off / on; delete when unused.
+// Choosing the groups for flyers is admin-only (the server refuses it for a
+// "Build checklists" user): the "Use for flyers" box is read-only for them,
+// and a flyer group can't be turned off or deleted.
 
-function GroupRow({ group, busy, onRun }) {
+const FLYER_GROUPS_ADMIN_NOTE = "Only admins choose flyer groups";
+
+function GroupRow({ group, busy, onRun, canChooseFlyers }) {
   const [renaming, setRenaming] = useState(false);
   const [label, setLabel] = useState(group.label);
   const usedBy = group.used_by || [];
@@ -72,6 +78,9 @@ function GroupRow({ group, busy, onRun }) {
     );
   }
   const flyersSkip = marketing && (!group.active || group.configured === false);
+  // A non-admin can't change who gets flyers: not the box, and not turning
+  // a flyer group off / on or deleting it.
+  const flyerLocked = !canChooseFlyers && group.marketing === true;
 
   return (
     <li className={`wag-row${group.active ? "" : " wag-row-off"}`}>
@@ -127,7 +136,8 @@ function GroupRow({ group, busy, onRun }) {
               <input
                 type="checkbox"
                 checked={marketing}
-                disabled={busy != null}
+                disabled={busy != null || !canChooseFlyers}
+                title={canChooseFlyers ? undefined : FLYER_GROUPS_ADMIN_NOTE}
                 onChange={(e) => toggleMarketing(e.target.checked)}
               />
               <span>{busy === `marketing-${group.key}` ? "Saving…" : "Use for flyers"}</span>
@@ -148,7 +158,8 @@ function GroupRow({ group, busy, onRun }) {
           <button
             type="button"
             className={`link-button${group.active ? " link-danger" : ""}`}
-            disabled={busy != null}
+            disabled={busy != null || flyerLocked}
+            title={flyerLocked ? `${FLYER_GROUPS_ADMIN_NOTE}. This group gets flyers.` : undefined}
             onClick={toggle}
           >
             {busy === `active-${group.key}` ? "Saving…" : group.active ? "Turn off" : "Turn on"}
@@ -157,8 +168,14 @@ function GroupRow({ group, busy, onRun }) {
             <button
               type="button"
               className="link-button link-danger"
-              disabled={busy != null || usedBy.length > 0}
-              title={usedBy.length ? "Choose another group for the checklists that use it first" : undefined}
+              disabled={busy != null || usedBy.length > 0 || flyerLocked}
+              title={
+                flyerLocked
+                  ? `${FLYER_GROUPS_ADMIN_NOTE}. This group gets flyers.`
+                  : usedBy.length
+                    ? "Choose another group for the checklists that use it first"
+                    : undefined
+              }
               onClick={remove}
             >
               {busy === `delete-${group.key}` ? "Deleting…" : "Delete"}
@@ -258,6 +275,8 @@ function AvailableList({ busy, onRun }) {
 }
 
 export default function WhatsAppGroupsPanel({ onClose, onChanged }) {
+  const { user } = useAuth();
+  const canChooseFlyers = Boolean(user?.is_admin);
   const [groups, setGroups] = useState(null);
   const [error, setError] = useState(null);
   const [unsupported, setUnsupported] = useState(false);
@@ -325,6 +344,9 @@ export default function WhatsAppGroupsPanel({ onClose, onChanged }) {
               those groups sees them. Tick your customer groups; leave staff groups off.
             </p>
           )}
+          {!canChooseFlyers && groups?.some((g) => typeof g.marketing === "boolean") && (
+            <p className="muted wag-sub wag-flyers-admin-note">{FLYER_GROUPS_ADMIN_NOTE}.</p>
+          )}
           {unsupported && <p className="muted">This server doesn't support managing WhatsApp groups yet.</p>}
           {error && <p className="error">{error}</p>}
           {actionError && (
@@ -336,7 +358,13 @@ export default function WhatsAppGroupsPanel({ onClose, onChanged }) {
           {groups && (
             <ul className="wag-list">
               {groups.map((g) => (
-                <GroupRow key={`${g.key}-${g.label}`} group={g} busy={busy} onRun={run} />
+                <GroupRow
+                  key={`${g.key}-${g.label}`}
+                  group={g}
+                  busy={busy}
+                  onRun={run}
+                  canChooseFlyers={canChooseFlyers}
+                />
               ))}
             </ul>
           )}

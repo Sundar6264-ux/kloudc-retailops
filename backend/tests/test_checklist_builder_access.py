@@ -246,3 +246,60 @@ def test_a_picture_item_must_be_an_upload_or_a_web_address(db):
         assert builder.put(f"{DEFS}/{ctype}", json=draft).status_code == 200
         r = builder.post(f"{DEFS}/{ctype}/publish", json={})
         assert r.status_code == 200, (good, r.text)
+
+
+GROUP_B = "120363022222222222@g.us"
+
+
+def test_builder_cant_choose_flyer_groups(db, admin_client):
+    """Which groups get marketing flyers stays admin-only: a builder may list
+    groups, add and rename them and use them for checklists, but ticking or
+    unticking "Use for flyers", or turning off / deleting a flyer group, gets
+    a plain 403 and changes nothing."""
+    builder = _builder(db, "builder_flyers")
+    only = "Only admins choose flyer groups."
+
+    # Listing shows the flag; adding a plain group works, adding one for flyers doesn't.
+    items = builder.get(GROUPS).json()["items"]
+    assert items and all("marketing" in g for g in items)
+    r = builder.post(GROUPS, json={"chat_id": GROUP_A, "label": "Deli crew", "marketing": True})
+    assert r.status_code == 403 and r.json()["detail"] == only
+    assert db.query(WhatsAppGroup).filter_by(chat_id=GROUP_A).count() == 0
+    r = builder.post(GROUPS, json={"chat_id": GROUP_A, "label": "Deli crew", "marketing": False})
+    assert r.status_code == 200, r.text
+    plain = r.json()["key"]
+
+    # Ticking "Use for flyers" is refused; sending the same value back is fine.
+    r = builder.patch(f"{GROUPS}/{plain}", json={"marketing": True})
+    assert r.status_code == 403 and r.json()["detail"] == only
+    assert builder.patch(f"{GROUPS}/{plain}", json={"label": "Deli team", "marketing": False}).status_code == 200
+    assert builder.patch(f"{GROUPS}/{plain}", json={"active": False}).status_code == 200
+
+    # A group an admin marked for flyers: no unticking, turning off or deleting.
+    r = admin_client.post(GROUPS, json={"chat_id": GROUP_B, "label": "Customers", "marketing": True})
+    assert r.status_code == 200, r.text
+    flyer = r.json()["key"]
+    for call in (
+        lambda: builder.patch(f"{GROUPS}/{flyer}", json={"marketing": False}),
+        lambda: builder.patch(f"{GROUPS}/{flyer}", json={"active": False}),
+        lambda: builder.delete(f"{GROUPS}/{flyer}"),
+    ):
+        r = call()
+        assert r.status_code == 403, r.text
+        assert r.json()["detail"].startswith(only)
+    row = db.query(WhatsAppGroup).filter_by(key=flyer).one()
+    db.refresh(row)
+    assert row.marketing is True and row.active is True
+
+    # Renaming it, or using it for a checklist, is still fine.
+    assert builder.patch(f"{GROUPS}/{flyer}", json={"label": "Customers VIP", "marketing": True}).status_code == 200
+    r = builder.patch(f"{DEFS}/{ST}", json={"settings": {"whatsapp_group": flyer}})
+    assert r.status_code == 200, r.text
+
+    # Bad values and unknown groups still get the usual answers.
+    assert builder.patch(f"{GROUPS}/{plain}", json={"marketing": "yes"}).status_code == 400
+    assert builder.patch(f"{GROUPS}/no_such_group", json={"marketing": True}).status_code == 404
+
+    # An admin can do all of it.
+    assert admin_client.patch(f"{GROUPS}/{plain}", json={"marketing": True}).status_code == 200
+    assert admin_client.patch(f"{GROUPS}/{flyer}", json={"marketing": False, "active": False}).status_code == 200

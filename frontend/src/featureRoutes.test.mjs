@@ -335,3 +335,14 @@ test("Help names no menu group that's gone", () => {
   assert.ok(!/Sales & Insights/.test(help), "the menu group is Sales now");
   assert.ok(!/Marketing →/.test(read("components/checklists/WhatsAppGroupsPanel.jsx")), "Flyers are under Team now");
 });
+
+test("WhatsApp groups: only admins choose flyer groups", () => {
+  // The server refuses a "Build checklists" user who changes "Use for flyers"
+  // (or turns off / deletes a flyer group); the panel says so up front.
+  const panel = read("components/checklists/WhatsAppGroupsPanel.jsx");
+  assert.ok(panel.includes('"Only admins choose flyer groups"'));
+  assert.ok(panel.includes("const canChooseFlyers = Boolean(user?.is_admin)"));
+  assert.ok(panel.includes("disabled={busy != null || !canChooseFlyers}"), "the box is read-only for a non-admin");
+  assert.ok(panel.includes("{!canChooseFlyers && groups?.some("), "the one-line note shows for a non-admin");
+  assert.ok((panel.match(/flyerLocked/g) || []).length >= 4, "Turn off and Delete are locked on a flyer group");
+});

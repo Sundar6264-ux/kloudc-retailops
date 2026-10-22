@@ -20,7 +20,7 @@
  "blocks": [
   {
    "type": "p",
-   "text": "Setup › **Checklist builder** works like a form builder. Create a checklist, duplicate one, turn it on or off, and set the order staff see them in. Admins can give **Build checklists** to anyone on the Users page, so they can do this too without being an admin."
+   "text": "Setup › **Checklist builder** works like a form builder. Create a checklist, duplicate one, turn it on or off, and set the order staff see them in. Admins can give **Build checklists** to anyone on the Users page, so they can do this too without being an admin. Only admins choose which WhatsApp groups get flyers (**Use for flyers**)."
   },
   {
    "type": "h",

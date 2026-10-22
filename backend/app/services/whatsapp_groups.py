@@ -1,7 +1,8 @@
 """WhatsApp groups a checklist's summary can be posted to
 (docs/CHECKLIST_BUILDER_APP_AND_GROUPS_CONTRACT.md, section 1; table
 whatsapp_groups, migration 0044; routes in routers/checklist_admin.py under
-/api/checklists/admin/whatsapp-groups, admins only).
+/api/checklists/admin/whatsapp-groups, admins and "Build checklists" users;
+choosing the groups for flyers stays admin-only, see flyer_change_blocked).
 
 A checklist's settings.whatsapp_group holds a group `key`. Sending resolves
 the key to a Whapi chat id here (resolve_chat_id):
@@ -231,6 +232,36 @@ def _marketing_flag(payload: dict) -> Optional[bool]:
     if not isinstance(payload["marketing"], bool):
         raise GroupError(400, "marketing must be true or false")
     return payload["marketing"]
+
+
+FLYER_GROUPS_ADMIN_ONLY = "Only admins choose flyer groups."
+
+
+def flyer_change_blocked(db: Session, user: User, payload: dict, key: Optional[str] = None,
+                         deleting: bool = False) -> Optional[str]:
+    """Which groups get marketing flyers is admin-only (Oct 22): a non-admin
+    with "Build checklists" may list, add, rename and use groups for
+    checklists, but not tick or untick "Use for flyers", nor turn off, turn on
+    or delete a group that gets flyers (each changes who receives them).
+    Returns the plain 403 message, or None when the change is allowed. Bad
+    values and unknown keys are left to the normal checks (400 / 404)."""
+    if user.is_admin:
+        return None
+    if key is None:
+        return FLYER_GROUPS_ADMIN_ONLY if payload.get("marketing") is True else None
+    ensure_seeded(db)
+    row = db.execute(select(WhatsAppGroup).where(WhatsAppGroup.key == key)).scalar_one_or_none()
+    if row is None:
+        return None
+    flag = payload.get("marketing")
+    if isinstance(flag, bool) and flag != bool(row.marketing):
+        return FLYER_GROUPS_ADMIN_ONLY
+    if not row.marketing:
+        return None
+    active = payload.get("active")
+    if deleting or (isinstance(active, bool) and active != bool(row.active)):
+        return f"{FLYER_GROUPS_ADMIN_ONLY} This group gets flyers, so ask an admin to turn it off or delete it."
+    return None
 
 
 def create_group(db: Session, user: User, payload: dict) -> dict:
