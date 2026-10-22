@@ -24,11 +24,12 @@ from sqlalchemy.orm import Session
 from app.services.csv_util import neutralize_formula
 from app.services.po_export import _format_qty, has_case_fields
 
-FORMATS = {
-    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "pdf": "application/pdf",
-    "csv": "text/csv; charset=utf-8",
-}
+# (format, media type) - a tuple: module-level state stays read-only (tenancy lint).
+FORMATS = (
+    ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    ("pdf", "application/pdf"),
+    ("csv", "text/csv; charset=utf-8"),
+)
 BAD_FORMAT = "Pick a file type: Excel (xlsx), PDF or CSV."
 NO_LINES = "This order has no items to download."
 
@@ -44,7 +45,7 @@ def normalize_format(value: Optional[str]) -> str:
     fmt = (value or "pdf").strip().lower().lstrip(".")
     if fmt in ("excel", "xls"):
         fmt = "xlsx"
-    if fmt not in FORMATS:
+    if fmt not in dict(FORMATS):
         raise PoDownloadError(BAD_FORMAT)
     return fmt
 
@@ -183,4 +184,4 @@ def render(db: Session, supplier: str, items: list, day: dt.date, fmt: str) -> t
         with_cases = has_case_fields(lines)
         rows = _rows(_grouped(db, supplier, lines), with_cases)
         content = _csv(rows, with_cases) if fmt == "csv" else _xlsx(supplier, day, rows, with_cases)
-    return content, FORMATS[fmt], filename(supplier, day, fmt)
+    return content, dict(FORMATS)[fmt], filename(supplier, day, fmt)
