@@ -136,6 +136,7 @@ class _SnapshotSession:
 
     def __init__(self, pg_bin: Optional[str], url: str, timeout: float = 60.0):
         self.timeout = timeout
+        self._buf = b""  # read straight from the pipe (see _query)
         self.proc = subprocess.Popen(
             [_bin(pg_bin, "psql"), "-X", "-A", "-t", "-q", "-v", "ON_ERROR_STOP=1", "-d", url],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1,
@@ -145,21 +146,39 @@ class _SnapshotSession:
         if not self.snapshot:
             raise BackupError("could not export a snapshot")
 
-    def _query(self, sql: str) -> List[str]:
+    def _readline(self) -> Optional[str]:
+        """One line of psql's output, or None when psql has stopped.
+
+        Reads the pipe's file descriptor into our own buffer: select() only
+        sees the pipe, so reading through the text wrapper (readline) could
+        pull the answer AND the end marker into the wrapper's buffer at once,
+        and the next select() then waited out the whole timeout for data
+        already read (seen on a busy machine: counts not recorded)."""
+        import os
         import select
 
+        fd = self.proc.stdout.fileno()
+        while b"\n" not in self._buf:
+            ready, _, _ = select.select([fd], [], [], self.timeout)
+            if not ready:
+                raise BackupError("psql did not answer in time (snapshot session)")
+            chunk = os.read(fd, 65536)
+            if not chunk:
+                return None
+            self._buf += chunk
+        line, self._buf = self._buf.split(b"\n", 1)
+        return line.decode("utf-8", "replace")
+
+    def _query(self, sql: str) -> List[str]:
         self.proc.stdin.write(sql + f"\nSELECT '{_END}';\n")
         self.proc.stdin.flush()
         lines: List[str] = []
         while True:
-            ready, _, _ = select.select([self.proc.stdout], [], [], self.timeout)
-            if not ready:
-                raise BackupError("psql did not answer in time (snapshot session)")
-            line = self.proc.stdout.readline()
-            if not line:
+            line = self._readline()
+            if line is None:
                 err = self.proc.stderr.read().strip()[:500]
                 raise BackupError(f"psql stopped (snapshot session): {err}")
-            line = line.rstrip("\n")
+            line = line.rstrip("\r")
             if line == _END:
                 return lines
             if line:

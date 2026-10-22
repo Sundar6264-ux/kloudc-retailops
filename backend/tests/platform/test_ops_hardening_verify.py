@@ -349,6 +349,39 @@ def test_a_corrupted_copy_fails_the_import_and_leaves_the_store_untouched(tmp_pa
 # --- backups: exact even while the store writes ------------------------------------------
 
 
+def test_snapshot_session_reads_an_answer_and_its_end_marker_sent_together():
+    # Final demo check (Oct 22): on a busy machine psql's answer and the end
+    # marker reached the pipe together; reading through the text wrapper
+    # pulled both into its buffer, select() then waited the whole timeout and
+    # the backup fell back to "counts not recorded". A stand-in for psql that
+    # always writes both lines in one write.
+    import subprocess
+    import time
+
+    sys.path.insert(0, str(BACKEND / "scripts" / "backup"))
+    import pg_backup
+
+    fake_psql = (
+        "import os, sys\n"
+        "for line in sys.stdin:\n"
+        f"    if {pg_backup._END!r} in line:\n"
+        f"        os.write(1, b'answer\\n{pg_backup._END}\\n')\n"
+    )
+    session = object.__new__(pg_backup._SnapshotSession)
+    session.timeout = 3.0
+    session._buf = b""
+    session.proc = subprocess.Popen([sys.executable, "-c", fake_psql], stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+    try:
+        started = time.monotonic()
+        assert session._query("SELECT 1;") == ["answer"]
+        assert session._query("SELECT 2;") == ["answer"]
+        assert time.monotonic() - started < 2.5, "no wait for data already read"
+    finally:
+        session.proc.kill()
+        session.proc.wait()
+
+
 def test_backup_counts_come_from_the_dump_s_snapshot_and_the_drill_is_exact(tmp_path, pdb, platform_env,
                                                                          monkeypatch):
     pg_bin = _pg_bin()
