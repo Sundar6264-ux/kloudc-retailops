@@ -105,6 +105,9 @@ class CartItemOut(BaseModel):
     # switch the line to cases.
     item_case_size: Optional[float] = None
     receiving_unit: Optional[str] = None
+    # Every case size the item lists, in file order (item_case_size is the
+    # first) - on GET /cart only; null when none.
+    item_case_sizes: Optional[list[float]] = None
     # True for a line the caller added in the last few minutes: they may
     # take it back out (Undo) even without removal rights.
     can_undo_add: Optional[bool] = None

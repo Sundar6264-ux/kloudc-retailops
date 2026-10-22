@@ -228,6 +228,9 @@ class InventorySnapshot(Base):
     case_size: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     receiving_unit: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     receiving_units_raw: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # Migration 0064: every distinct case size the item lists, in file order
+    # ("24;30;35;60"); case_size is the first. NULL when there is none.
+    case_sizes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
 
 class VendorReference(Base):

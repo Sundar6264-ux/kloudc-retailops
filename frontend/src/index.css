@@ -14115,6 +14115,13 @@ td.sp-qty-cell {
   white-space: nowrap;
 }
 
+/* "Other case sizes: 30, 35, 60" under the qty (an item listing several). */
+.sp-case-others {
+  display: block;
+  margin-top: 0.15rem;
+  white-space: normal;
+}
+
 .sp-qty-incart {
   flex-basis: 100%;
   text-align: right;

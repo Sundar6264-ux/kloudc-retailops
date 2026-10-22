@@ -7,7 +7,7 @@ rows carrying them, the suggested order in whole cases (the owner's
 example: need 5, case of 24 -> 1 case), the additive projection / cart / PO
 fields (`case_size`, `cases`, `units`, `qty_text`, `need_cases`,
 `item_case_size`, `can_undo_add`), the PDF and email text, and the 0063
-round trip on SQLite and PostgreSQL.
+and 0064 round trip on SQLite and PostgreSQL.
 
 The real file: set RETAIL_ITEMS_FILE=/path/to/retail-items.csv and
 test_real_file runs against it.
@@ -54,11 +54,26 @@ BACKEND = pathlib.Path(__file__).resolve().parents[1]
         ("Case;Each", "24;1", 24.0, "Case"),
         ("Each; Case", "1; 24", 24.0, "Case"),
         ("Each;Case", "1.0;24.0", 24.0, "Case"),
-        # Several sizes: the one marked as a case wins over a bigger non-case one.
+        # The real export's shapes: only a unit named like a case counts.
+        ("Case", "24", 24.0, "Case"),
+        ("Case;Case", "24;24", 24.0, "Case"),
+        ("Case;Pound", "12;1", 12.0, "Case"),
+        ("Case;Case;Pound", "6;12;1", 6.0, "Case"),
+        ("Case;Ounce", "10;16", 10.0, "Case"),
+        ("Case;Pack", "24;6", 24.0, "Case"),
+        # Several different case sizes: the FIRST above 1, in file order.
+        ("Case;Case;Case;Case", "24;30;35;60", 24.0, "Case"),
+        ("Case;Case", "30;24", 30.0, "Case"),
+        # A case quantity of 1 or less never counts (0.5 is half a case).
+        ("Case;Case", "0.5;20", 20.0, "Case"),
+        ("Case", "0.5", None, "Case"),
+        # Pound / Ounce / Each / Pack (or any other unit) alone: no case size.
+        ("Pound", "1", None, "Pound"),
+        ("Ounce", "16", None, "Ounce"),
+        ("Pack", "6", None, "Pack"),
+        ("Each;Pack", "1;6", None, "Each"),
+        ("Each;Box;Tray", "1;6;30", None, "Each"),
         ("Each;Case;Pallet", "1;12;480", 12.0, "Case"),
-        # No case named: the largest non-Each unit.
-        ("Each;Box;Tray", "1;6;30", 30.0, "Tray"),
-        ("Each;Pack", "1;6", 6.0, "Pack"),
         # Only Each (= 1): no case.
         ("Each", "1", None, "Each"),
         ("Each", "", None, "Each"),
@@ -75,7 +90,7 @@ BACKEND = pathlib.Path(__file__).resolve().parents[1]
         ("Case of 24", "", 24.0, "Case"),
         ("Case (24)", None, 24.0, "Case"),
         ("CS/12", "", 12.0, "CS"),
-        ("24 ct", "", 24.0, "24 ct"),
+        ("24 ct", "", None, "24 ct"),  # not named like a case
         ("Case = 24 Each", "", 24.0, "Case"),
         ("Case 12 x 500g", "", 12.0, "Case"),
         # One quantity for "Each;Case": the case's.
@@ -96,6 +111,17 @@ def test_case_info_formats(units, qtys, size, name):
     info = RU.case_info(units, qtys)
     assert info.case_size == size
     assert info.unit_name == name
+
+
+def test_case_sizes_in_file_order():
+    assert RU.case_info("Case;Case;Case;Case", "24;30;35;60").case_sizes == (24.0, 30.0, 35.0, 60.0)
+    assert RU.case_info("Case;Case;Case", "30;24;30").case_sizes == (30.0, 24.0)
+    assert RU.case_info("Case;Case", "0.5;20").case_sizes == (20.0,)
+    assert RU.case_info("Pound", "1").case_sizes == ()
+    assert RU.case_sizes_text((24.0, 30.0, 35.5)) == "24;30;35.5"
+    assert RU.case_sizes_text(()) is None
+    assert RU.case_sizes_list("24;30;35;60") == [24.0, 30.0, 35.0, 60.0]
+    assert RU.case_sizes_list(None) is None and RU.case_sizes_list("") is None
 
 
 def test_case_info_keeps_the_raw_cells():
@@ -133,6 +159,7 @@ CSV = (
     "noodles,Noodles 300g,Babco,5,3.99,Each;Case,1;24\n"
     "rice,Rice 10lb,Babco,2,19.99,Each,1\n"
     "dal,Toor Dal,Babco,9,4.99,,\n"
+    "cilantro,Cilantro Bunch,Babco,3,0.99,Case;Case;Case;Case,24;30;35;60\n"
 )
 
 
@@ -141,12 +168,15 @@ def test_upload_stores_case_size(db):
     assert "receiving units" in result["columns_used"]
     assert "receiving unit quantities" in result["columns_used"]
     assert "receiving units" not in result["columns_ignored"]
-    assert result["rows_with_case_size"] == 1
+    assert result["rows_with_case_size"] == 2
     rows = {r.item_id: r for r in db.query(InventorySnapshot).all()}
     assert rows["noodles"].case_size == 24.0 and rows["noodles"].receiving_unit == "Case"
     assert rows["noodles"].receiving_units_raw == "Each;Case | 1;24"
     assert rows["rice"].case_size is None and rows["rice"].receiving_unit == "Each"
     assert rows["dal"].case_size is None and rows["dal"].receiving_unit is None
+    assert rows["noodles"].case_sizes == "24"
+    assert rows["cilantro"].case_size == 24.0 and rows["cilantro"].case_sizes == "24;30;35;60"
+    assert rows["rice"].case_sizes is None
 
 
 def test_upload_without_the_columns_leaves_them_null(db):
@@ -166,7 +196,7 @@ def test_reupload_updates_case_size(db):
 def test_api_rows_carry_case_size_from_the_latest_csv():
     from app.services import inventory_api as ia
 
-    assert {"case_size", "receiving_unit", "receiving_units_raw"} <= set(ia.CARRIED_FIELDS)
+    assert {"case_size", "receiving_unit", "receiving_units_raw", "case_sizes"} <= set(ia.CARRIED_FIELDS)
 
 
 def _real_files():
@@ -177,6 +207,9 @@ def _real_files():
 
 
 def test_real_file(db):
+    """The real export (RETAIL_ITEMS_FILE), when present: the owner's
+    examples come out as agreed, and the count of items with a case size is
+    printed (pytest -s)."""
     files = _real_files()
     if not files:
         pytest.skip("no real retail-items file (set RETAIL_ITEMS_FILE)")
@@ -185,9 +218,27 @@ def test_real_file(db):
         result = parse_and_store(db, os.path.basename(path), f.read(), TODAY)
     assert result["rows_loaded"] > 100
     assert "receiving units" in result["columns_used"]
-    assert result["rows_with_case_size"] is not None and result["rows_with_case_size"] > 0
-    sizes = [r.case_size for r in db.query(InventorySnapshot).filter(InventorySnapshot.case_size.isnot(None))]
-    assert all(1 < s <= RU.MAX_CASE_SIZE for s in sizes)
+    assert "receiving unit quantities" in result["columns_used"]
+    rows = db.query(InventorySnapshot).all()
+    sized = [r for r in rows if r.case_size is not None]
+    assert result["rows_with_case_size"] == len(sized) > 0
+    assert all(1 < r.case_size <= RU.MAX_CASE_SIZE for r in sized)
+    print(f"\nreal file: {len(rows)} items, {len(sized)} with a case size, "
+          f"{sum(1 for r in sized if r.case_sizes and ';' in r.case_sizes)} with other case sizes too")
+
+    def one(name):
+        found = [r for r in rows if r.name == name]
+        assert found, name
+        # An item listed twice (one row with blank cells): the row with the cells.
+        return next((r for r in found if r.receiving_units_raw), found[0])
+
+    assert one("Maggi Masala Noodles 280g").case_size == 24.0
+    cilantro = one("Cilantro Bunch")
+    assert cilantro.case_size == 24.0 and RU.case_sizes_list(cilantro.case_sizes) == [24.0, 30.0, 35.0, 60.0]
+    assert one("Tomato Regular in LBs").case_size == 4.0
+    assert one("Okra Indian in LBs").case_size == 12.0
+    assert one("Onion Red 2Lb").case_size == 20.0
+    assert one("Whole Chicken Clean & Cut").case_size is None
 
 
 # --------------------------------------------------------------------------
@@ -227,10 +278,11 @@ def test_known_case_sizes_order_cart_then_receiving_units_then_last_order(db):
     assert "one" not in got
 
 
-def _snap(db, item_id, name, qty, case_size=None, supplier=VENDOR, unit="Case"):
+def _snap(db, item_id, name, qty, case_size=None, supplier=VENDOR, unit="Case", sizes=None):
     db.add(InventorySnapshot(snapshot_date=TODAY, item_id=item_id, name=name, inventory_quantity=qty, price=3.99,
                              cost=2.0, supplier=supplier, category="Noodles", source_filename="f.csv",
-                             case_size=case_size, receiving_unit=unit if case_size else "Each"))
+                             case_size=case_size, receiving_unit=unit if case_size else "Each",
+                             case_sizes=sizes))
 
 
 def _sale(db, day, item_id, qty, guid):
@@ -242,7 +294,7 @@ def _sale(db, day, item_id, qty, guid):
 @pytest.fixture
 def noodles(db):
     # 28 sold in 28 days (legacy 1/day): 21-day need = 21 - 5 on hand = 16 units.
-    _snap(db, "noodles", "Noodles 300g", 5, case_size=24.0)
+    _snap(db, "noodles", "Noodles 300g", 5, case_size=24.0, sizes="24;30")
     _snap(db, "rice", "Rice 10lb", 5)
     for n in range(28):
         day = TODAY - dt.timedelta(days=n + 1)
@@ -262,6 +314,7 @@ def test_projection_orders_case_items_in_cases(db, admin_client, noodles):
     items = _projection(admin_client)
     m = items["noodles"]
     assert m["case_size"] == 24.0 and m["receiving_unit"] == "Case"
+    assert m["case_sizes"] == [24.0, 30.0]
     assert m["projections"]["21"]["need_to_order"] == 16  # units, unchanged
     assert m["projections"]["21"]["need_cases"] == 1
     s = m["suggested_order"]
@@ -304,6 +357,7 @@ def test_cart_line_case_fields(db, buyer, noodles):
     lines = {i["name"]: i for s in buyer.get(CART).json()["suppliers"] for i in s["items"]}
     assert lines["Noodles 300g"]["item_case_size"] == 24.0 and lines["Noodles 300g"]["receiving_unit"] == "Case"
     assert lines["Rice 10lb"]["item_case_size"] is None
+    assert lines["Noodles 300g"]["item_case_sizes"] == [24.0, 30.0] and lines["Rice 10lb"]["item_case_sizes"] is None
     # Old fields unchanged.
     assert lines["Noodles 300g"]["qty"] == 2 and lines["Noodles 300g"]["case_of"] == 24
 
@@ -446,10 +500,10 @@ def test_pdf_shows_the_case_columns(db, cart):
 # Migration 0063 round trip (SQLite chain, and PostgreSQL from the baseline)
 # --------------------------------------------------------------------------
 
-NEW_COLS = {"case_size", "receiving_unit", "receiving_units_raw"}
+NEW_COLS = {"case_size", "receiving_unit", "receiving_units_raw", "case_sizes"}
 
 
-def test_0063_up_down_up_sqlite(tmp_path):
+def test_0063_0064_up_down_up_sqlite(tmp_path):
     db_file = tmp_path / "m.db"
     env = dict(os.environ, DATABASE_URL=f"sqlite:///{db_file}")
     alembic = pathlib.Path(sys.executable).parent / "alembic"
@@ -464,7 +518,7 @@ def test_0063_up_down_up_sqlite(tmp_path):
         finally:
             con.close()
 
-    run("upgrade", "0063")
+    run("upgrade", "0064")
     assert NEW_COLS <= cols()
     con = sqlite3.connect(db_file)
     con.execute("INSERT INTO inventory_snapshots (snapshot_date, item_id, name, case_size, receiving_unit, uploaded_at)"
@@ -476,7 +530,7 @@ def test_0063_up_down_up_sqlite(tmp_path):
     con = sqlite3.connect(db_file)
     assert con.execute("SELECT name FROM inventory_snapshots").fetchall() == [("Noodles",)]
     con.close()
-    run("upgrade", "0063")
+    run("upgrade", "0064")
     assert NEW_COLS <= cols()
 
 
@@ -499,7 +553,7 @@ def scratch_pg_db():
 
 
 @pytest.mark.skipif(engine.dialect.name != "postgresql", reason="PostgreSQL only (RETAILOPS_TEST_DB=postgres)")
-def test_0063_up_down_up_postgres(scratch_pg_db):
+def test_0063_0064_up_down_up_postgres(scratch_pg_db):
     from sqlalchemy import create_engine, inspect, pool, text
 
     from app.migrate import current_store_revision, downgrade_store_db, upgrade_store_db
@@ -507,7 +561,7 @@ def test_0063_up_down_up_postgres(scratch_pg_db):
     def cols(eng):
         return {c["name"] for c in inspect(eng).get_columns("inventory_snapshots")}
 
-    assert upgrade_store_db(scratch_pg_db, "0063") == "0063"
+    assert upgrade_store_db(scratch_pg_db, "0064") == "0064"
     eng = create_engine(scratch_pg_db, poolclass=pool.NullPool)
     try:
         assert NEW_COLS <= cols(eng)
@@ -519,8 +573,8 @@ def test_0063_up_down_up_postgres(scratch_pg_db):
         assert not (NEW_COLS & cols(eng))
         with eng.connect() as conn:
             assert conn.execute(text("SELECT name FROM inventory_snapshots")).scalars().all() == ["Noodles"]
-        assert upgrade_store_db(scratch_pg_db, "0063") == "0063"
-        assert current_store_revision(scratch_pg_db) == "0063"
+        assert upgrade_store_db(scratch_pg_db, "0064") == "0064"
+        assert current_store_revision(scratch_pg_db) == "0064"
         assert NEW_COLS <= cols(eng)
     finally:
         eng.dispose()

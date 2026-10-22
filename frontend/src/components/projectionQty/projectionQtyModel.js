@@ -152,6 +152,17 @@ export function caseLabel(qty, caseSize) {
   return `1 case = ${fmt(size)} units${total}`;
 }
 
+// The item lists more than one case size (server `case_sizes`, file order;
+// the first is its case size): "Other case sizes: 30, 35, 60" - every one
+// except the size in use. Null when there are no others (or an older server).
+export function otherCaseSizes(item, caseSize) {
+  const sizes = Array.isArray(item?.case_sizes) ? item.case_sizes.map(Number).filter((n) => n > 1) : [];
+  const inUse = bigCase(caseSize);
+  const others = sizes.filter((n, i) => n !== inUse && sizes.indexOf(n) === i);
+  if (others.length === 0 || sizes.length < 2) return null;
+  return `Other case sizes: ${others.map(fmt).join(", ")}`;
+}
+
 // "2 cases (48 units)" / "5" - the same words the PO uses.
 export function qtyWords(qty, caseSize) {
   const size = bigCase(caseSize);

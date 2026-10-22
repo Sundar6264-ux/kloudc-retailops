@@ -18,9 +18,23 @@ read gives "no case size" (the item stays in units), never an error:
     one name that isn't Each;
   - blanks, "Each" alone (= 1, no case), 0 / negative / junk numbers.
 
-The case size is the units per case: the quantity of the unit named like a
-case (case / cs / carton / ctn), else the largest quantity of a unit that
-isn't "Each"; only a size above 1 counts (a "case of 1" says nothing).
+The rule (checked against a real export: of 5,535 items, 2,279 have the
+cells filled - mostly "Case" + one number, some "Case;Case", "Case;Pound",
+"Case;Case;Case", "Pound", "Ounce", "Each", "Pack"; numbers may be decimals):
+  - only units named like a case count (case / cs / carton / ctn; a number
+    with no unit name is taken as a case); Pound, Ounce, Each, Pack and any
+    other unit never make a case size;
+  - only a case quantity above 1 counts (a "case of 1" or 0.5 says nothing);
+  - the case size is the FIRST case quantity above 1, in file order (the
+    POS's default receiving unit): "Case;Pound" 12;1 -> 12, "Case;Case"
+    0.5;20 -> 20, "Case;Case;Case;Case" 24;30;35;60 -> 24.
+  - The case size belongs to the PRODUCT and applies to every vendor of it
+    (owner: "even if they come from different suppliers the case size is
+    the same"). When the item lists other different case sizes, every
+    distinct one is kept in file order (`case_sizes`, e.g. 24, 30, 35, 60)
+    so the screens can say "Other case sizes: 30, 35, 60".
+  - A case size staff set on the vendor's cart line still wins
+    (services/order_suggestion.known_case_sizes).
 
 Pure - no database; tested directly (tests/test_case_sizes.py).
 
@@ -64,6 +78,9 @@ class CaseInfo(NamedTuple):
     # Both cells as found, "units | quantities" (blank side left empty) -
     # stored so a format nobody has seen yet can be read back later.
     raw: Optional[str]
+    # Every distinct case quantity above 1, in file order: (24,) for one
+    # size, (24, 30, 35, 60) when there are several (case_size = the first).
+    case_sizes: Tuple[float, ...] = ()
 
 
 def _clean(text) -> str:
@@ -163,8 +180,12 @@ def split_units(units_raw, qtys_raw) -> List[ReceivingUnit]:
     return [ReceivingUnit(u.name, 1.0) if u.qty is None and is_each(u.name) else u for u in out]
 
 
+def is_case_name(name: Optional[str]) -> bool:
+    return bool(name) and bool(_CASE_RE.search(name))
+
+
 def case_info(units_raw, qtys_raw) -> CaseInfo:
-    """CaseInfo for one item's two cells."""
+    """CaseInfo for one item's two cells (the rule is in the module notes)."""
     units_text, qtys_text = _clean(units_raw), _clean(qtys_raw)
     raw = f"{units_text} | {qtys_text}".strip(" |") if (units_text or qtys_text) else None
     if raw is not None and len(raw) > 500:
@@ -173,19 +194,37 @@ def case_info(units_raw, qtys_raw) -> CaseInfo:
     if not units:
         return CaseInfo(None, None, raw)
 
-    def size(u: ReceivingUnit) -> float:
-        return u.qty if u.qty is not None else 0.0
+    cases = [
+        u for u in units
+        if (u.name is None or is_case_name(u.name)) and u.qty is not None and 1 < u.qty <= MAX_CASE_SIZE
+    ]
+    sizes: Tuple[float, ...] = tuple(dict.fromkeys(round(u.qty, 3) for u in cases))
+    if cases:
+        first = cases[0]
+        return CaseInfo(sizes[0], _name_only(first.name) if first.name else "Case", raw, sizes)
+    first_named = next((u.name for u in units if u.name), None)
+    return CaseInfo(None, _name_only(first_named) if first_named else None, raw)
 
-    marked = [u for u in units if u.name and _CASE_RE.search(u.name) and size(u) > 1]
-    if marked:
-        best = max(marked, key=size)
-    else:
-        not_each = [u for u in units if not is_each(u.name) and size(u) > 1]
-        best = max(not_each, key=size) if not_each else None
-    if best is None:
-        first_named = next((u.name for u in units if u.name), None)
-        return CaseInfo(None, _name_only(first_named) if first_named else None, raw)
-    return CaseInfo(best.qty, _name_only(best.name) if best.name else "Case", raw)
+
+def case_sizes_text(sizes) -> Optional[str]:
+    """(24.0, 30.0) -> "24;30" for storage (file order); None when there
+    are none."""
+    return ";".join(fmt_num(v) for v in sizes) if sizes else None
+
+
+def case_sizes_list(text) -> Optional[List[float]]:
+    """The stored "24;30;35;60" -> [24.0, 30.0, 35.0, 60.0]; None when empty."""
+    if not text:
+        return None
+    out = []
+    for part in str(text).split(";"):
+        try:
+            v = float(part)
+        except ValueError:
+            continue
+        if math.isfinite(v) and 1 < v <= MAX_CASE_SIZE:
+            out.append(v)
+    return out or None
 
 
 def case_size_value(value) -> Optional[float]:

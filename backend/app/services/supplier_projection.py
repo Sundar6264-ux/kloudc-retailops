@@ -34,7 +34,7 @@ from app.services.demand_forecast import DEFAULT_CONFIG, build_models, exception
 from app.services.forecast import forecast_daily_demand
 from app.services.inventory_api import overlay_live_stock
 from app.services.item_vendors import vendors_of
-from app.services.receiving_units import case_size_value, cases_for_units
+from app.services.receiving_units import case_size_value, case_sizes_list, cases_for_units
 from app.services.reorder import latest_inventory_by_item
 from app.services.similar_products import aligned_codes, other_vendor_refs, split_aligned
 from app.services.vendor_schedule import decode_weekdays, get_vendor_schedule_by_name
@@ -435,6 +435,10 @@ def _project_rows(
             # unit's name ("Case"). The order qty is in cases when this is set.
             "case_size": case_size_value(getattr(snap, "case_size", None)),
             "receiving_unit": getattr(snap, "receiving_unit", None),
+            # Every case size the item lists, in file order ([24, 30, 35, 60]);
+            # case_size is the first. Null when none. The screens show the
+            # others as "Other case sizes: 30, 35, 60".
+            "case_sizes": case_sizes_list(getattr(snap, "case_sizes", None)),
         }
 
         model = models.get(item_id) if models else None

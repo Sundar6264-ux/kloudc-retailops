@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from app.dbcompat import dialect_insert
 from app.models import InventorySnapshot
 from app.services.item_vendors import refresh_after_csv_upload
-from app.services.receiving_units import case_info
+from app.services.receiving_units import case_info, case_sizes_text
 
 # The Toast Retail export's column map and file reading moved to the Toast
 # adapter (multi-store M1, batch MT2): app/pos/adapters/toast/csv_import.py.
@@ -120,6 +120,7 @@ def parse_and_store(
             values["case_size"] = info.case_size
             values["receiving_unit"] = info.unit_name
             values["receiving_units_raw"] = info.raw
+            values["case_sizes"] = case_sizes_text(info.case_sizes)
             if info.case_size is not None:
                 rows_with_case_size += 1
 

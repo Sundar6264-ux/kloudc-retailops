@@ -31,7 +31,7 @@ from app.services.po_cart import (
 )
 from app.services.po_section_rules import cart_line_sections, load_section_rules
 from app.services.po_send import build_po_pdf, fill_case_from_cart
-from app.services.receiving_units import case_size_value, po_line_case_fields
+from app.services.receiving_units import case_size_value, case_sizes_list, po_line_case_fields
 from app.services.purchase_order_log import (
     STATUSES,
     list_recent_placed_orders,
@@ -475,6 +475,7 @@ def _cart_item_out(
         qty_text=case["qty_text"],
         item_case_size=case_size_value(getattr(snap, "case_size", None)) if snap is not None else None,
         receiving_unit=getattr(snap, "receiving_unit", None) if snap is not None else None,
+        item_case_sizes=case_sizes_list(getattr(snap, "case_sizes", None)) if snap is not None else None,
         can_undo_add=can_undo_add(row, user) if user is not None else None,
     )
 

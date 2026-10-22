@@ -104,6 +104,8 @@ CARRIED_FIELDS = (
     "case_size",
     "receiving_unit",
     "receiving_units_raw",
+    # Migration 0064: every case size the item lists.
+    "case_sizes",
 )
 
 # ---------------------------------------------------------------------------

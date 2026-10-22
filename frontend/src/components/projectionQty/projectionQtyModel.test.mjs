@@ -104,7 +104,7 @@ test("contextKey changes with lines, qty and Case of only", () => {
 });
 
 // --- Cases and the one-tap Add ---------------------------------------------
-import { caseLabel, caseSizeOf, qtyWords, quickAddLine, stepQty, switchToCases } from "./projectionQtyModel.js";
+import { caseLabel, caseSizeOf, otherCaseSizes, qtyWords, quickAddLine, stepQty, switchToCases } from "./projectionQtyModel.js";
 
 test("case size: cart line decides, else suggestion, else the item's", () => {
   const maggi = { item_id: "m", case_size: 24, suggested_order: { qty: 1, case_of: 24 } };
@@ -154,4 +154,14 @@ test("switch a units line to cases", () => {
   assert.deepEqual(switchToCases({ qty: 48, case_of: 1, item_case_size: 24 }), { case_of: 24, qty: 2 });
   assert.equal(switchToCases({ qty: 2, case_of: 24, item_case_size: 24 }), null);
   assert.equal(switchToCases({ qty: 2, case_of: 1, item_case_size: null }), null);
+});
+
+test("other case sizes: every listed size except the one in use", () => {
+  const item = { case_size: 24, case_sizes: [24, 30, 35, 60] };
+  assert.equal(otherCaseSizes(item, 24), "Other case sizes: 30, 35, 60");
+  // Staff set 30 on the cart line: 24 becomes one of the others.
+  assert.equal(otherCaseSizes(item, 30), "Other case sizes: 24, 35, 60");
+  assert.equal(otherCaseSizes({ case_size: 24, case_sizes: [24] }, 24), null);
+  assert.equal(otherCaseSizes({ case_size: 24 }, 24), null); // older server
+  assert.equal(otherCaseSizes({ case_sizes: null }, null), null);
 });

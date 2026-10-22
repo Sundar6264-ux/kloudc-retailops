@@ -16,6 +16,7 @@ import {
   addMessage,
   buildAddItems,
   caseLabel,
+  otherCaseSizes,
   caseSizeOf,
   parseQty,
   qtyText,
@@ -931,6 +932,7 @@ function SupplierProjectionRow({
   const caseSize = caseSizeOf(item, inCart ? cartLine : null);
   const typed = parseQty(qtyValue);
   const caseText = caseLabel(typed.ok ? typed.value : null, caseSize);
+  const otherSizes = otherCaseSizes(item, caseSize);
   const qtyBad = (isSelected || inCart) && !parseQty(qtyValue).ok;
   const qtyLabel = `Order qty for ${item.name || item.item_id}`;
   const known = p.need_to_order !== null;
@@ -1094,6 +1096,7 @@ function SupplierProjectionRow({
               ) : null}
             </span>
           )}
+          {otherSizes && <span className="sp-qty-unit sp-case-others">{otherSizes}</span>}
         </td>
         <td>{item.category || "-"}</td>
         <td className="num">

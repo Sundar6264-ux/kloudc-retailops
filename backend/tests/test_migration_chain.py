@@ -66,4 +66,6 @@ def test_case_size_chain_order():
     # Case quantities from receiving units: 0063 follows the store identity stamp.
     scripts = _scripts()
     assert scripts.get_revision("0063").down_revision == "0062"
-    assert scripts.get_heads() == ["0063"]
+    # 0064: every case size an item lists (case_sizes).
+    assert scripts.get_revision("0064").down_revision == "0063"
+    assert scripts.get_heads() == ["0064"]
