@@ -13,3 +13,18 @@ test("a POS that isn't connected says so; other failures stay 'Couldn't load'", 
   assert.equal(tileErrorText(undefined), "Couldn't load");
   assert.equal(tileErrorText(""), "Couldn't load");
 });
+
+test("Open checks: never checked is not 'all closed'", async () => {
+  const { openChecksTile } = await import("./statTileModel.js");
+  assert.deepEqual(openChecksTile({ count: 0, orders: [], last_refreshed_at: null }, "Toast"), {
+    value: "-",
+    sub: "Not checked yet",
+    tone: "neutral",
+  });
+  assert.equal(openChecksTile({ count: 0, orders: [], last_refreshed_at: "2026-10-22T12:00:00Z" }, "Toast").sub, "all closed");
+  assert.equal(openChecksTile({ count: 0, orders: [] }, "Toast").sub, "all closed"); // an older server
+  const open = openChecksTile({ count: 3, last_refreshed_at: null }, "Toast");
+  assert.equal(open.sub, "not yet closed in Toast");
+  assert.equal(open.tone, "warn");
+  assert.equal(openChecksTile(null, "Toast").value, null);
+});

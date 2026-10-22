@@ -17,7 +17,7 @@ import { INVOICE_STATUS_TERMS, TermInfo } from "../glossary.jsx";
 import { currentPosName } from "../store/gating.js";
 import { useStoreAllows } from "../store/StoreContext.jsx";
 import { closingTileGroups } from "./closingChecklists.js";
-import { tileErrorText } from "./statTileModel.js";
+import { openChecksTile, tileErrorText } from "./statTileModel.js";
 import Icon from "../ui/icons.jsx";
 import { routeForPath } from "../featureRoutes.js";
 
@@ -230,16 +230,16 @@ export function StatTiles() {
   }
 
   if (canOpen) {
-    const count = open.data ? open.data.count ?? (open.data.orders || []).length : null;
+    const oc = openChecksTile(open.data, currentPosName());
     tiles.push(
       <StatTile
         key="open"
         to="/open-orders"
         label="Open checks"
         state={open}
-        value={count != null ? count.toLocaleString() : null}
-        sub={open.data ? (count ? `not yet closed in ${currentPosName()}` : "all closed") : null}
-        tone={count ? "warn" : "good"}
+        value={oc.value}
+        sub={oc.sub}
+        tone={oc.tone}
       />
     );
   }
