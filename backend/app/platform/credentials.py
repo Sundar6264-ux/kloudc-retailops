@@ -13,8 +13,8 @@ inputs); ``clear`` names secret fields to remove.
 import datetime as dt
 import ipaddress
 import json
-import re
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urlsplit
@@ -194,6 +194,14 @@ TOAST_MAIN_KEYS_MISSING = (
     "Fill in the main Toast keys first (Client ID, Client secret and Restaurant ID). "
     "The Analytics keys are an extra."
 )
+# Toast's Restaurant ID is a GUID (8-4-4-4-12 letters and digits). Another
+# value (the restaurant's name, a location number, a half-pasted ID) saves
+# fine but every Toast call then fails, so the save warns in plain words.
+TOAST_GUID_WARNING = (
+    "That Restaurant ID doesn't look like Toast's. It looks like "
+    "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d: copy it from Toast Web, Integrations › Toast API access."
+)
+_GUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 SAME_KEYS_WARNING = (
     "These look like the same keys as the main ones. Toast gives Analytics its own Client ID and secret."
 )
@@ -411,7 +419,8 @@ def _same(a: Any, b: Any) -> bool:
 
 def credential_warnings(kind: str, public: Mapping[str, Any], secrets: Mapping[str, Any]) -> List[str]:
     """Plain warnings that don't stop a save (contract 13.5 "warnings"):
-    for Toast, Analytics keys that repeat the main ones or are half a pair.
+    for Toast, a Restaurant ID that isn't a GUID, and Analytics keys that
+    repeat the main ones or are half a pair.
     Compares secrets only to each other; never returns a value."""
     if kind != "toast":
         return []
@@ -420,6 +429,9 @@ def credential_warnings(kind: str, public: Mapping[str, Any], secrets: Mapping[s
     a_id = str(public.get("analytics_client_id") or "").strip()
     a_secret = str(secrets.get("analytics_client_secret") or "").strip()
     out: List[str] = []
+    guid = str(public.get("restaurant_guid") or "").strip()
+    if guid and not _GUID_RE.fullmatch(guid):
+        out.append(TOAST_GUID_WARNING)
     if _same(a_id, public.get("client_id")) or (a_secret and a_secret == str(secrets.get("client_secret") or "").strip()):
         out.append(SAME_KEYS_WARNING)
     if a_id and not a_secret:

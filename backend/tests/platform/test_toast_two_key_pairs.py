@@ -14,7 +14,7 @@ from tests.platform.conftest import needs_b, provision, store_login
 
 MAIN_SECRET = "toast-main-secret-AAAA1111"
 ANALYTICS_SECRET = "toast-analytics-secret-BBBB2222"
-GUID = "guid-1"
+GUID = "1a2b3c4d-0000-4a8b-9c0d-1e2f3a4b5c6d"
 
 
 def _never_leaks(text: str) -> None:
@@ -55,6 +55,16 @@ def test_warnings_same_keys_and_half_pairs():
         "toast", {"client_id": "abc"}, {"client_secret": "s1", "analytics_client_secret": "s2"})[0]
     assert creds.credential_warnings("toast", {"client_id": "abc"}, {"client_secret": "s1"}) == []
     assert creds.credential_warnings("smtp", {}, {}) == []
+
+
+def test_a_restaurant_id_that_isnt_a_guid_warns_but_saves():
+    # Final demo check (Oct 22): "not-a-guid" saved silently and every Toast
+    # call would then fail. A plain warning; the save itself still goes on.
+    for bad in ("not-a-guid", "Harbor Foods", "1a2b3c4d-5e6f-7a8b-9c0d", "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d"):
+        assert creds.credential_warnings("toast", {"client_id": "c", "restaurant_guid": bad}, {"client_secret": "s"}) == [
+            creds.TOAST_GUID_WARNING], bad
+    for good in (GUID, " 1A2B3C4D-5E6F-7A8B-9C0D-1E2F3A4B5C6D ", ""):
+        assert creds.credential_warnings("toast", {"client_id": "c", "restaurant_guid": good}, {"client_secret": "s"}) == []
 
 
 # --- Test connection: each pair on its own line -------------------------------
