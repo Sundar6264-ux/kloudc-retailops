@@ -852,6 +852,9 @@ function VendorPanel({
             onDownload={(format) => (format === "pdf" ? onDownload() : downloadPo({ kind: "cart", supplier }, format, supplier))}
             onError={onError}
             testId="po-vendor-download"
+            // Placed against the window: on a phone near the bottom of the
+            // screen it opens upward so PDF and CSV stay visible.
+            fixed
           />
         </div>
       </div>

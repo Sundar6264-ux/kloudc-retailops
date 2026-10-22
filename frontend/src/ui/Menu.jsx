@@ -4,10 +4,14 @@
 // items (MenuItem / MenuLink / MenuLabel / MenuDivider).
 // `fixed`: the list is placed against the window (position: fixed) instead of
 // the button's box, so a menu inside a scrolling table isn't cut off; it
-// opens upward when there's no room below and closes on scroll.
-import { useEffect, useId, useRef, useState } from "react";
+// opens upward when there's no room below (measured once the list is
+// drawn, ui/menuPlacement.js) and closes on scroll.
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "./icons.jsx";
+import { fixedMenuPlace } from "./menuPlacement.js";
+
+const viewport = () => ({ width: window.innerWidth, height: window.innerHeight });
 
 export default function Menu({
   button,
@@ -58,18 +62,19 @@ export default function Menu({
     };
   }, [open, fixed]);
 
+  // Once the list is drawn, place it again with its real height: a longer
+  // list than the first guess flips upward too.
+  useLayoutEffect(() => {
+    if (!open || !fixed || !btn.current || !listRef.current) return;
+    const h = listRef.current.scrollHeight;
+    if (!h) return;
+    const next = fixedMenuPlace(btn.current.getBoundingClientRect(), viewport(), align, h);
+    setPlace((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+  }, [open, fixed, align]);
+
   function toggle() {
     if (!open && fixed && btn.current) {
-      const r = btn.current.getBoundingClientRect();
-      const below = window.innerHeight - r.bottom;
-      const style = { position: "fixed" };
-      if (below < 180 && r.top > below) {
-        style.top = "auto";
-        style.bottom = window.innerHeight - r.top + 6;
-      } else style.top = r.bottom + 6;
-      if (align === "start") style.left = Math.max(8, r.left);
-      else style.right = Math.max(8, window.innerWidth - r.right);
-      setPlace(style);
+      setPlace(fixedMenuPlace(btn.current.getBoundingClientRect(), viewport(), align));
     }
     setOpen((v) => !v);
   }
