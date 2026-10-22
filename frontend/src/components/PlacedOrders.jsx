@@ -7,7 +7,7 @@ import { PLACED_STATUS_TERMS, Term, TermInfo } from "../glossary.jsx";
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
 import { cartLinkFor } from "./cartAdd/cartVendorPanels.js";
-import { isOutsideOrder, outsideDetail, outsideLabel } from "./placedOrderSource.js";
+import { isOutsideOrder, lineQtyText, outsideDetail, outsideLabel } from "./placedOrderSource.js";
 import PoDownloadMenu from "./poDownload/PoDownloadMenu.jsx";
 
 const PAGE_SIZE = 50;
@@ -300,7 +300,8 @@ export default function PlacedOrders() {
                       </tr>
                       {open && (
                         <tr className="sp-weekly-row">
-                          <td colSpan={6}>
+                          {/* Full width, no "Placed at" label on a phone. */}
+                          <td colSpan={6} data-label="">
                             <div className="placed-orders-detail">
                               {outsideInfo ? (
                                 <div className="placed-outside-detail">
@@ -323,7 +324,7 @@ export default function PlacedOrders() {
                                       <tr key={`${line.name}-${i}`}>
                                         <td className="cell-wrap">{line.name}</td>
                                         <td>{line.supplier_item_id || "-"}</td>
-                                        <td className="num">{formatQty(line.qty)}</td>
+                                        <td className="num">{lineQtyText(line, formatQty)}</td>
                                       </tr>
                                     ))}
                                   </tbody>

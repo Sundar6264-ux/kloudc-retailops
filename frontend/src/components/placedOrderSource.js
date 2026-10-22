@@ -25,3 +25,13 @@ export function outsideDetail(order) {
     note: (order.note || "").trim() || null,
   };
 }
+
+// A placed order's line quantity in words: the server's qty_text ("30 cases
+// (360 units)") when the line was ordered in cases, else the number as sent
+// (an older server, or a line in units). It used to be the bare number, so
+// 30 cases of 12 read as "30".
+export function lineQtyText(line, formatQty = (n) => String(n)) {
+  const text = typeof line?.qty_text === "string" ? line.qty_text.trim() : "";
+  if (text && line?.case_size) return text;
+  return formatQty(line?.qty);
+}

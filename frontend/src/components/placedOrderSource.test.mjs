@@ -28,3 +28,10 @@ test("detail names who, the delivery and the note", () => {
   assert.equal(plain.note, null);
   assert.equal(outsideDetail(order({ source: "app" })), null);
 });
+
+test("a placed line ordered in cases shows cases and units; units stay a number", async () => {
+  const { lineQtyText } = await import("./placedOrderSource.js");
+  assert.equal(lineQtyText({ qty: 30, case_size: 12, qty_text: "30 cases (360 units)" }), "30 cases (360 units)");
+  assert.equal(lineQtyText({ qty: 5, case_size: null, qty_text: "5" }, (n) => `${n}.0`), "5.0");
+  assert.equal(lineQtyText({ qty: 2 }, (n) => `#${n}`), "#2"); // an older server: no qty_text
+});
