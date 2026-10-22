@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isOutsideOrder, outsideDetail, outsideLabel } from "./placedOrderSource.js";
+import { isOutsideOrder, orderQtyText, outsideDetail, outsideLabel } from "./placedOrderSource.js";
 
 const order = (extra = {}) => ({ id: 3, supplier: "Chetak", status: "placed", item_count: 0, items: [], ...extra });
 
@@ -34,4 +34,19 @@ test("a placed line ordered in cases shows cases and units; units stay a number"
   assert.equal(lineQtyText({ qty: 30, case_size: 12, qty_text: "30 cases (360 units)" }), "30 cases (360 units)");
   assert.equal(lineQtyText({ qty: 5, case_size: null, qty_text: "5" }, (n) => `${n}.0`), "5.0");
   assert.equal(lineQtyText({ qty: 2 }, (n) => `#${n}`), "#2"); // an older server: no qty_text
+});
+
+test("Total qty keeps cases and units apart, like the cart header", () => {
+  const mixed = order({ total_qty: 29, items: [
+    { name: "Noodles", qty: 6, case_size: 24 },
+    { name: "Rice", qty: 5, case_of: 12 },
+    { name: "Ghee", qty: 10, case_size: null },
+    { name: "Salt", qty: 8 },
+  ] });
+  assert.equal(orderQtyText(mixed), "11 cases + 18 units");
+  assert.equal(orderQtyText(order({ items: [{ qty: 1, case_size: 6 }] })), "1 case");
+  assert.equal(orderQtyText(order({ items: [{ qty: 3, case_of: 1 }, { qty: 1 }] })), "4 units");
+  assert.equal(orderQtyText(order({ items: [{ qty: 1 }] })), "1 unit");
+  // No lines sent (an older server): the server's number as before.
+  assert.equal(orderQtyText(order({ total_qty: 7, items: [] })), "7");
 });

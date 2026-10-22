@@ -7,7 +7,7 @@ import { PLACED_STATUS_TERMS, Term, TermInfo } from "../glossary.jsx";
 import SortableTh from "./SortableTh.jsx";
 import { useTableControls } from "../useTableControls.js";
 import { cartLinkFor } from "./cartAdd/cartVendorPanels.js";
-import { isOutsideOrder, lineQtyText, outsideDetail, outsideLabel } from "./placedOrderSource.js";
+import { isOutsideOrder, lineQtyText, orderQtyText, outsideDetail, outsideLabel } from "./placedOrderSource.js";
 import PoDownloadMenu from "./poDownload/PoDownloadMenu.jsx";
 
 const PAGE_SIZE = 50;
@@ -295,7 +295,7 @@ export default function PlacedOrders() {
                           )}
                         </td>
                         <td className="num">{outside ? "-" : o.item_count}</td>
-                        <td className="num">{outside ? "-" : formatQty(o.total_qty)}</td>
+                        <td className="num">{outside ? "-" : orderQtyText(o, formatQty)}</td>
                         <td>{o.placed_by_name || "-"}</td>
                       </tr>
                       {open && (

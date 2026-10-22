@@ -35,3 +35,31 @@ export function lineQtyText(line, formatQty = (n) => String(n)) {
   if (text && line?.case_size) return text;
   return formatQty(line?.qty);
 }
+
+// A placed order's "Total qty" with cases and units kept apart, the cart
+// header's words: "11 cases + 18 units", "11 cases" or "18 units". A line is
+// in cases when it has a case size above 1 (case_size, or the cart's case_of);
+// every other line is in units. It used to add the raw quantities, so
+// 11 cases and 18 units read "29". An order sent without lines (an older
+// server) keeps the server's total_qty number.
+export function orderQtyText(order, formatQty = (n) => String(n)) {
+  const items = Array.isArray(order?.items) ? order.items.filter((l) => l && typeof l === "object") : [];
+  if (!items.length) return formatQty(order?.total_qty);
+  let cases = 0;
+  let units = 0;
+  let caseLines = 0;
+  for (const line of items) {
+    const qty = Number(line.qty) || 0;
+    const size = Number(line.case_size) || Number(line.case_of) || 0;
+    if (size > 1) {
+      cases += qty;
+      caseLines += 1;
+    } else {
+      units += qty;
+    }
+  }
+  const word = (n, w) => `${formatQty(n)} ${n === 1 ? w : `${w}s`}`;
+  if (caseLines && caseLines < items.length) return `${word(cases, "case")} + ${word(units, "unit")}`;
+  if (caseLines) return word(cases, "case");
+  return word(units, "unit");
+}
