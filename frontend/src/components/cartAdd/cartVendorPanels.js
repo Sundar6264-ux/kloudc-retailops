@@ -78,8 +78,14 @@ export function pruneOpenVendors(open, cartVendors) {
 // What a vendor's collapsed header shows. Qty is cases (the PDF's "Qty to
 // order (in Cases)"), Case of the units in one case. A qty being retyped
 // ("" in the box) counts as 0, like the estimate always has.
+// `cases` counts case lines only (Case of above 1); a line in units ("Each")
+// adds to `looseUnits`, never to cases (Oct 22: "29 cases" when only 11
+// were cases). `units` is everything in units.
 export function vendorSummary(items) {
   let cases = 0;
+  let looseUnits = 0;
+  let caseLines = 0;
+  let unitLines = 0;
   let units = 0;
   let estimate = 0;
   let missingCost = 0;
@@ -88,14 +94,20 @@ export function vendorSummary(items) {
   for (const i of items || []) {
     const qty = Number(i.qty) || 0;
     const caseOf = i.case_of == null || i.case_of === "" ? 1 : Number(i.case_of) || 0;
-    cases += qty;
+    if (caseOf > 1) {
+      cases += qty;
+      caseLines += 1;
+    } else {
+      looseUnits += qty;
+      unitLines += 1;
+    }
     units += qty * caseOf;
     if (qty > 0) orderable += 1;
     if (i.unit_cost != null) estimate += i.unit_cost * qty * caseOf;
     else missingCost += 1;
     if (i.removal_requested) removalRequests += 1;
   }
-  return { lines: (items || []).length, cases, units, estimate, missingCost, removalRequests, orderable };
+  return { lines: (items || []).length, cases, looseUnits, caseLines, unitLines, units, estimate, missingCost, removalRequests, orderable };
 }
 
 export function formatMoney(n) {
@@ -103,15 +115,28 @@ export function formatMoney(n) {
   return (Number.isFinite(v) ? v : 0).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-// ["14 items", "37 cases", "120 units"] - units only when some line's case
-// holds more than one unit (otherwise it would repeat the cases figure).
+const unitWord = (n) => `${formatQty(n)} ${n === 1 ? "unit" : "units"}`;
+const caseWord = (n) => `${formatQty(n)} ${n === 1 ? "case" : "cases"}`;
+
+// Cases are counted on case lines only (same words as the app):
+//   all case lines: ["3 items", "11 cases", "258 units"]
+//   mixed:          ["5 items", "11 cases + 18 units", "258 units total"]
+//   all units:      ["2 items", "18 units"]
 export function summaryParts(s) {
-  const parts = [plural(s.lines, "item"), `${formatQty(s.cases)} ${s.cases === 1 ? "case" : "cases"}`];
-  if (Math.abs(s.units - s.cases) > 1e-9) parts.push(`${formatQty(s.units)} ${s.units === 1 ? "unit" : "units"}`);
+  const parts = [plural(s.lines, "item")];
+  const caseLines = s.caseLines ?? 0;
+  const unitLines = s.unitLines ?? (s.lines - caseLines);
+  if (caseLines > 0 && unitLines > 0) {
+    parts.push(`${caseWord(s.cases)} + ${unitWord(s.looseUnits ?? 0)}`, `${unitWord(s.units)} total`);
+  } else if (caseLines > 0) {
+    parts.push(caseWord(s.cases), unitWord(s.units));
+  } else if (s.lines > 0) {
+    parts.push(unitWord(s.units));
+  }
   return parts;
 }
 
-// "14 items · 37 cases · 120 units"
+// "5 items · 11 cases + 18 units · 258 units total"
 export function summaryLine(s) {
   return summaryParts(s).join(" · ");
 }

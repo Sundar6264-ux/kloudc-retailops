@@ -81,14 +81,29 @@ export function isInCart(keys, itemId, name) {
   return (!!itemId && keys.ids.has(itemId)) || keys.names.has(norm(name));
 }
 
+// A case size worth using: above 1, else null (a case of 1 = units).
+export function bigCase(v) {
+  const n = Number(v);
+  return v != null && v !== "" && Number.isFinite(n) && n > 1 ? n : null;
+}
+
 // item_id -> what the form shows from one vendor's Supplier Projection
-// response (GET /api/ordering/supplier-projection).
+// response (GET /api/ordering/supplier-projection). `suggested` is the
+// server's suggested order (`suggested_order.qty`, the same number Supplier
+// Projection / New order suggests over the shared order window) - in CASES
+// when `caseOf` is set; null on an older server.
 export function projectionIndex(projection, horizon = SUGGEST_HORIZON_DAYS) {
   const index = new Map();
   for (const item of projection?.items || []) {
     const p = item.projections?.[String(horizon)];
+    const s = item.suggested_order && typeof item.suggested_order === "object" ? item.suggested_order : null;
+    const suggested = s && s.qty != null && Number.isFinite(Number(s.qty)) ? Number(s.qty) : null;
     index.set(item.item_id, {
       need: p && p.need_to_order != null ? Number(p.need_to_order) : null,
+      suggested,
+      // Units per case: the suggestion's pack size, else (an older server
+      // with no suggestion) the item's own case size.
+      caseOf: suggested != null ? bigCase(s.case_of) : bigCase(item.case_size),
       onHand: item.on_hand_qty ?? null,
       weekly: item.avg_weekly_demand ?? null,
       sku: item.supplier_item_id || null,
@@ -97,11 +112,37 @@ export function projectionIndex(projection, horizon = SUGGEST_HORIZON_DAYS) {
   return index;
 }
 
-// The suggested order for the order window, as the app works it out: the projection's
-// need rounded up; 0 = enough stock; null = no projection for the item.
+// The suggested order for the order window (Oct 22: the server's
+// suggested_order, in cases when the item has a case size - it used to be
+// the need in UNITS rounded up). An older server: the need, turned into
+// cases when the case size is known. 0 = enough stock; null = no projection.
 export function suggestion(proj) {
-  if (!proj || proj.need == null || !Number.isFinite(proj.need)) return null;
-  return proj.need > 0 ? Math.ceil(proj.need) : 0;
+  if (!proj) return null;
+  if (proj.suggested != null && Number.isFinite(proj.suggested)) return proj.suggested;
+  if (proj.need == null || !Number.isFinite(proj.need)) return null;
+  if (!(proj.need > 0)) return 0;
+  const size = bigCase(proj.caseOf);
+  return size ? Math.ceil(proj.need / size - 1e-9) : Math.ceil(proj.need);
+}
+
+// Units per case for a row from this projection (null = units).
+export function caseOfFor(proj) {
+  return bigCase(proj?.caseOf);
+}
+
+// "1 case = 24 units · 72 units" beside a qty in cases; null for units.
+export function caseUnitsLabel(qty, caseOf) {
+  const size = bigCase(caseOf);
+  if (!size) return null;
+  const q = Number(qty);
+  const total = Number.isFinite(q) && q >= 0 ? ` · ${formatQty(q * size)} units` : "";
+  return `1 case = ${formatQty(size)} units${total}`;
+}
+
+// "3 cases" / "1 case" / "5" - a suggestion in words.
+export function suggestionWords(qty, caseOf) {
+  if (!bigCase(caseOf)) return formatQty(qty);
+  return `${formatQty(qty)} ${Number(qty) === 1 ? "case" : "cases"}`;
 }
 
 // The quantity a newly ticked item starts at: the suggestion, else 1.
@@ -163,7 +204,8 @@ export function tickRow(rows, row) {
   if (i < 0) return [...rows, row];
   const typed = rows[i];
   const next = [...rows];
-  next[i] = { ...row, ...(typed.qtyAuto ? {} : { qty: typed.qty, qtyAuto: false }), replaced: typed.name };
+  // A qty typed for the hand-typed row was in units: it stays units.
+  next[i] = { ...row, ...(typed.qtyAuto ? {} : { qty: typed.qty, qtyAuto: false, case_of: null }), replaced: typed.name };
   return next;
 }
 
@@ -205,14 +247,21 @@ export function splitPostable(rows, keys) {
   return { post, skipped };
 }
 
-// The POST /api/ordering/cart/items body items for the rows to send.
+// The POST /api/ordering/cart/items body items for the rows to send. A row
+// in cases carries its Case of (units per case), so the cart line, the PO
+// and the PDF all say cases.
 export function cartPayload(rows) {
-  return rows.map((r) => ({
-    item_id: r.item_id || null,
-    name: r.name.trim(),
-    supplier_item_id: r.supplier_item_id || null,
-    qty: Number(r.qty),
-  }));
+  return rows.map((r) => {
+    const line = {
+      item_id: r.item_id || null,
+      name: r.name.trim(),
+      supplier_item_id: r.supplier_item_id || null,
+      qty: Number(r.qty),
+    };
+    const size = bigCase(r.case_of);
+    if (size) line.case_of = size;
+    return line;
+  });
 }
 
 export function plural(n, word) {

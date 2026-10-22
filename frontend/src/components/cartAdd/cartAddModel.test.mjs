@@ -5,6 +5,10 @@ import test from "node:test";
 import {
   MAX_QTY,
   addOutcome,
+  bigCase,
+  caseOfFor,
+  caseUnitsLabel,
+  suggestionWords,
   canStepQty,
   canonicalVendor,
   cartKeysFor,
@@ -112,7 +116,7 @@ const PROJECTION = {
 
 test("projectionIndex + suggestion + defaultQty follow the app's add sheet", () => {
   const idx = projectionIndex(PROJECTION);
-  assert.deepEqual(idx.get("rice"), { need: 5.2, onHand: 24, weekly: 9.5, sku: "BR10" });
+  assert.deepEqual(idx.get("rice"), { need: 5.2, suggested: null, caseOf: null, onHand: 24, weekly: 9.5, sku: "BR10" });
   assert.equal(suggestion(idx.get("rice")), 6); // rounded up
   assert.equal(defaultQty(idx.get("rice")), 6);
   assert.equal(suggestion(idx.get("atta")), 0); // enough stock
@@ -122,6 +126,57 @@ test("projectionIndex + suggestion + defaultQty follow the app's add sheet", () 
   assert.equal(suggestion(undefined), null);
   assert.equal(defaultQty(undefined), 1);
   assert.equal(projectionIndex(null).size, 0);
+});
+
+test("Oct 22: the add form starts at the server's suggested order - CASES when the item has a case size", () => {
+  const idx = projectionIndex(
+    {
+      items: [
+        // Need 66 units, 24 to a case: Supplier Projection suggests 3 cases.
+        {
+          item_id: "tuna",
+          case_size: 24,
+          projections: { 30: { need_to_order: 66 } },
+          suggested_order: { qty: 3, units: 66, case_of: 24, horizon_days: 30 },
+        },
+        // A units item: the server's number, not the need rounded up.
+        { item_id: "loose", projections: { 30: { need_to_order: 8.4 } }, suggested_order: { qty: 9, case_of: null } },
+        // Enough stock in cases: starts at 1 case.
+        { item_id: "full", projections: { 30: { need_to_order: 0 } }, suggested_order: { qty: 0, case_of: 12 } },
+        // An older server (no suggestion) that knows the case size: the need in cases.
+        { item_id: "old", case_size: 24, projections: { 30: { need_to_order: 50 } } },
+      ],
+    },
+    30
+  );
+  assert.equal(suggestion(idx.get("tuna")), 3);
+  assert.equal(defaultQty(idx.get("tuna")), 3);
+  assert.equal(caseOfFor(idx.get("tuna")), 24);
+  assert.equal(caseUnitsLabel(3, 24), "1 case = 24 units · 72 units");
+  assert.equal(suggestionWords(3, 24), "3 cases");
+  assert.equal(suggestionWords(1, 24), "1 case");
+  assert.equal(defaultQty(idx.get("loose")), 9);
+  assert.equal(caseOfFor(idx.get("loose")), null);
+  assert.equal(caseUnitsLabel(9, null), null);
+  assert.equal(suggestionWords(9, null), "9");
+  assert.equal(suggestion(idx.get("full")), 0);
+  assert.equal(defaultQty(idx.get("full")), 1);
+  assert.equal(caseOfFor(idx.get("full")), 12);
+  assert.equal(defaultQty(idx.get("old")), 3);
+  assert.equal(caseOfFor(idx.get("old")), 24);
+  assert.equal(bigCase(1), null);
+  assert.equal(bigCase("24"), 24);
+  // A row in cases sends its Case of; a units row doesn't.
+  assert.deepEqual(
+    cartPayload([
+      { item_id: "tuna", name: "Tuna", supplier_item_id: null, qty: "3", case_of: 24 },
+      { item_id: "loose", name: "Loose", supplier_item_id: null, qty: "9", case_of: null },
+    ]),
+    [
+      { item_id: "tuna", name: "Tuna", supplier_item_id: null, qty: 3, case_of: 24 },
+      { item_id: "loose", name: "Loose", supplier_item_id: null, qty: 9 },
+    ]
+  );
 });
 
 test("inStockFor prefers the projection, then in_stock_qty, then the shelf count", () => {
@@ -323,19 +378,57 @@ test("vendorSummary / summaryLine / estimateNote: the collapsed header's figures
     { qty: 1, case_of: 1, unit_cost: null }, // hand-added, no cost
   ];
   const s = vendorSummary(items);
-  assert.deepEqual(s, { lines: 5, cases: 6, units: 28, estimate: 42, missingCost: 1, removalRequests: 1, orderable: 3 });
-  assert.equal(summaryLine(s), "5 items · 6 cases · 28 units");
-  assert.deepEqual(summaryParts(s), ["5 items", "6 cases", "28 units"]);
+  // Cases only on case lines (Oct 22): the 3 "Each" lines add units.
+  assert.deepEqual(s, {
+    lines: 5,
+    cases: 2,
+    looseUnits: 4,
+    caseLines: 2,
+    unitLines: 3,
+    units: 28,
+    estimate: 42,
+    missingCost: 1,
+    removalRequests: 1,
+    orderable: 3,
+  });
+  assert.equal(summaryLine(s), "5 items · 2 cases + 4 units · 28 units total");
+  assert.deepEqual(summaryParts(s), ["5 items", "2 cases + 4 units", "28 units total"]);
   assert.deepEqual(estimateNote(s), { amount: "$42.00", missing: "1 item without a cost" });
-  // All single-unit cases: no units figure.
+  // A line in units ("Each") is never counted as a case.
   const one = vendorSummary([{ qty: 1, case_of: 1, unit_cost: 1234.5 }]);
-  assert.equal(summaryLine(one), "1 item · 1 case");
+  assert.equal(summaryLine(one), "1 item · 1 unit");
   assert.deepEqual(estimateNote(one), { amount: "$1,234.50", missing: null });
-  // Decimal cases.
-  assert.equal(summaryLine(vendorSummary([{ qty: 1.5, case_of: 1, unit_cost: 1 }])), "1 item · 1.5 cases");
+  assert.equal(summaryLine(vendorSummary([{ qty: 1.5, case_of: 1, unit_cost: 1 }])), "1 item · 1.5 units");
+  // Case lines only: the cases and the units they hold.
+  assert.equal(
+    summaryLine(vendorSummary([{ qty: 2, case_of: 12, unit_cost: 1 }, { qty: 1, case_of: 6, unit_cost: 1 }])),
+    "2 items · 3 cases · 30 units"
+  );
+  // The iPhone check's cart: 11 cases on 3 lines + 18 units on 2 lines
+  // (was "5 items · 29 cases · 198 units").
+  const mixed = vendorSummary([
+    { qty: 5, case_of: 24, unit_cost: 1 },
+    { qty: 4, case_of: 12, unit_cost: 1 },
+    { qty: 2, case_of: 6, unit_cost: 1 },
+    { qty: 10, case_of: 1, unit_cost: 1 },
+    { qty: 8, case_of: 1, unit_cost: 1 },
+  ]);
+  assert.equal(summaryLine(mixed), "5 items · 11 cases + 18 units · 198 units total");
   // Nothing with a cost.
   assert.deepEqual(estimateNote(vendorSummary([{ qty: 2, case_of: 1, unit_cost: null }])), { amount: null, missing: "No cost on file" });
-  assert.deepEqual(vendorSummary([]), { lines: 0, cases: 0, units: 0, estimate: 0, missingCost: 0, removalRequests: 0, orderable: 0 });
+  assert.deepEqual(vendorSummary([]), {
+    lines: 0,
+    cases: 0,
+    looseUnits: 0,
+    caseLines: 0,
+    unitLines: 0,
+    units: 0,
+    estimate: 0,
+    missingCost: 0,
+    removalRequests: 0,
+    orderable: 0,
+  });
+  assert.equal(summaryLine(vendorSummary([])), "0 items");
   assert.equal(formatMoney(NaN), "$0.00");
 });
 

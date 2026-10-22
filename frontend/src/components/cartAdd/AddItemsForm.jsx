@@ -7,6 +7,8 @@ import {
   addOutcome,
   canStepQty,
   canonicalVendor,
+  caseOfFor,
+  caseUnitsLabel,
   cartKeysFor,
   cartPayload,
   defaultQty,
@@ -23,6 +25,7 @@ import {
   splitVendors,
   stepQty,
   suggestion,
+  suggestionWords,
   tickRow,
   vendorOptions,
 } from "./cartAddModel.js";
@@ -213,10 +216,12 @@ export default function AddItemsForm({ cartSuppliers = [], onRefresh, onAdded, o
       let changed = false;
       const next = prev.map((r) => {
         if (!r.qtyAuto || !r.item_id || !projIndex.has(r.item_id)) return r;
-        const qty = String(defaultQty(projIndex.get(r.item_id)));
-        if (qty === r.qty) return r;
+        const proj = projIndex.get(r.item_id);
+        const qty = String(defaultQty(proj));
+        const caseOf = caseOfFor(proj);
+        if (qty === r.qty && caseOf === (r.case_of ?? null)) return r;
         changed = true;
-        return { ...r, qty };
+        return { ...r, qty, case_of: caseOf };
       });
       return changed ? next : prev;
     });
@@ -379,7 +384,10 @@ export default function AddItemsForm({ cartSuppliers = [], onRefresh, onAdded, o
       supplier_item_id: proj?.sku || item.supplier_item_id || null,
       vendors: item.supplier || "",
       result: item,
+      // The suggested order - in cases when the item has a case size (the
+      // same number New order suggests), with its Case of.
       qty: String(defaultQty(proj)),
+      case_of: caseOfFor(proj),
       qtyAuto: true,
       manual: false,
     };
@@ -779,7 +787,8 @@ export default function AddItemsForm({ cartSuppliers = [], onRefresh, onAdded, o
           </li>
           <li>
             Each qty starts at the suggested order for {windowWords(currentWindow().horizonDays)} (
-            {windowWords(currentWindow().lookbackDays)} of sales minus what's in stock - the same window as New order), or 1. A qty you type or step is kept.
+            {windowWords(currentWindow().lookbackDays)} of sales minus what's in stock - the same number New order suggests), or 1. An item that comes in cases is ordered in
+            cases ("1 case = 24 units"). A qty you type or step is kept.
           </li>
           <li>Greyed items are already in the vendor's cart - change their qty in the cart below.</li>
           <li>
@@ -1214,7 +1223,7 @@ function ToAddRow({ row, supplier, proj, projLoading, projReady, inCart, saving,
           currentWindow().lookbackDays
         )} of sales, minus what's in stock - the same window as New order`}
       >
-        Suggested {s} for {windowWords(currentWindow().horizonDays)}
+        Suggested {suggestionWords(s, row.case_of)} for {windowWords(currentWindow().horizonDays)}
       </span>
     );
   else if (s === 0) basis = <span className="po-add-suggest is-enough">Enough stock for {windowWords(currentWindow().horizonDays)}</span>;
@@ -1224,6 +1233,9 @@ function ToAddRow({ row, supplier, proj, projLoading, projReady, inCart, saving,
   // qty is a plain 1 rather than leave an unexplained number.
   else if (projReady && proj) basis = <span>No stock count on file, so no suggestion - qty starts at 1</span>;
   else if (projReady) basis = <span>No sales projection for it, so no suggestion - qty starts at 1</span>;
+
+  // "1 case = 24 units · 72 units" so a qty in cases is never read as units.
+  const caseLine = !inCart && !row.manual ? caseUnitsLabel(row.qty, row.case_of) : null;
 
   const meta = [
     row.supplier_item_id && `SKU ${row.supplier_item_id}`,
@@ -1242,7 +1254,15 @@ function ToAddRow({ row, supplier, proj, projLoading, projReady, inCart, saving,
       <div className="po-add-row-stock po-col-num">
         <StockPill qty={stock} />
       </div>
-      <div className="po-add-row-meta">{basis}</div>
+      <div className="po-add-row-meta">
+        {basis}
+        {caseLine && (
+          <span className="po-add-row-case" data-testid="po-add-row-case">
+            {basis ? " · " : ""}
+            {caseLine}
+          </span>
+        )}
+      </div>
       <div className="po-add-row-qty po-col-qty">
         <span className="po-stepper">
           <button
