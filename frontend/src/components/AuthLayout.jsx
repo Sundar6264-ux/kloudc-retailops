@@ -48,10 +48,7 @@ export function AuthFooter() {
         </a>
       </nav>
       <p>
-        © {COPYRIGHT_YEAR}{" "}
-        <a href={KLOUDC_LINKS.home} target="_blank" rel="noopener noreferrer">
-          {KLOUDC.company}
-        </a>
+        © {COPYRIGHT_YEAR} {KLOUDC.company}
       </p>
     </footer>
   );
