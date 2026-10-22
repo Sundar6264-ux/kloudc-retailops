@@ -17,6 +17,7 @@ import { INVOICE_STATUS_TERMS, TermInfo } from "../glossary.jsx";
 import { currentPosName } from "../store/gating.js";
 import { useStoreAllows } from "../store/StoreContext.jsx";
 import { closingTileGroups } from "./closingChecklists.js";
+import { tileErrorText } from "./statTileModel.js";
 import Icon from "../ui/icons.jsx";
 import { routeForPath } from "../featureRoutes.js";
 
@@ -49,7 +50,7 @@ function useLoad(enabled, loader) {
     let cancelled = false;
     loader()
       .then((data) => !cancelled && setState({ loading: false, data, error: false }))
-      .catch(() => !cancelled && setState({ loading: false, data: null, error: true }));
+      .catch((e) => !cancelled && setState({ loading: false, data: null, error: true, message: e?.message || "" }));
     return () => {
       cancelled = true;
     };
@@ -90,7 +91,7 @@ function StatTile({ to, label, state, value, sub, tone, small = false, maskable 
     subShown = " ";
   } else if (state.error) {
     shown = "-";
-    subShown = "Couldn't load";
+    subShown = tileErrorText(state.message);
   } else if (maskable && hidden) {
     shown = "••••••";
   }

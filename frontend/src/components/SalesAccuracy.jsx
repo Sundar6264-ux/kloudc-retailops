@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getSalesAccuracy, runSalesAccuracy } from "../api";
 import { formatRestaurantTime } from "../format.js";
 import InfoBlock from "./InfoBlock.jsx";
+import { missingKeysLine } from "./salesAccuracyModel.js";
 import { SALES_ACCURACY_TERMS, Term } from "../glossary.jsx";
 import { currentPosName } from "../store/gating.js";
 
@@ -150,8 +151,7 @@ export default function SalesAccuracy() {
       {message && <p className="muted">{message}</p>}
       {data && !data.configured && (
         <p className="muted">
-          {data.warning || `${currentPosName()} Analytics keys are missing.`} Add them in Store setup &gt;
-          Integrations so late edits are caught. Until then the app re-checks the last 7 days once a day.
+          {missingKeysLine(data.warning, currentPosName())}
           {data.last_recheck?.detail ? ` Last re-check: ${data.last_recheck.detail}` : ""}
         </p>
       )}
