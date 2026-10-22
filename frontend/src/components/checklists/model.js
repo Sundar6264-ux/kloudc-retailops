@@ -490,8 +490,11 @@ export function issueTagForValue(options, value) {
 // non-admin with "Build checklists" can type this address, and admins open
 // the pictures (the server refuses to publish anything else too).
 export function isSafeImageUrl(url) {
-  const u = String(url || "").trim();
+  // A browser drops tabs and line breaks inside an address and reads "/\\" as
+  // "//", so "/<tab>/host" and "/\\host" would load another site: check it the
+  // way the browser will read it.
+  const u = String(url || "").replace(/[\t\n\r]/g, "").trim();
   if (!u) return false;
-  if (u.startsWith("/") && !u.startsWith("//")) return true;
+  if (u.startsWith("/")) return !/^\/[/\\]/.test(u);
   return /^(https?:\/\/|blob:|data:image\/)/i.test(u);
 }

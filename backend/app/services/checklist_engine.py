@@ -140,7 +140,7 @@ _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 # A picture item's address: an uploaded picture (/api/...) or a web address.
 # Never javascript:, data: and the like - since Oct 22 a non-admin with
 # "Build checklists" can set it, and admins open these pictures.
-_IMAGE_URL_RE = re.compile(r"^(https?://\S+|/(?!/)\S*)$", re.IGNORECASE)
+_IMAGE_URL_RE = re.compile(r"^(https?://\S+|/(?![/\\])\S*)$", re.IGNORECASE)
 _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
