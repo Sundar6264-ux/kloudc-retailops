@@ -498,3 +498,27 @@ export function isSafeImageUrl(url) {
   if (u.startsWith("/")) return !/^\/[/\\]/.test(u);
   return /^(https?:\/\/|blob:|data:image\/)/i.test(u);
 }
+
+// Deleting a checklist (owner, Oct 22: "but only admins can delete"). Only an
+// admin (never the demo login) gets Delete, and only for a checklist the
+// server marks can_delete (never filled in, not one of the originals; an
+// older server never sends it, so no Delete there). Everyone else turns it
+// off; `hint` says why an admin sees no Delete.
+export function checklistDeleteAction(definition, user) {
+  if (!user?.is_admin || user?.demo) return { canDelete: false, hint: null };
+  if (definition?.can_delete === true) return { canDelete: true, hint: null };
+  if (definition?.can_delete !== false) return { canDelete: false, hint: null };
+  if (definition?.builtin === true) {
+    return { canDelete: false, hint: "One of the store's original checklists - turn it off instead of deleting it." };
+  }
+  const n = Number(definition?.submission_count) || 0;
+  const times = n === 1 ? "1 time" : `${n} times`;
+  return {
+    canDelete: false,
+    hint: n > 0 ? `Filled in ${times}, so it can't be deleted - turn it off instead.` : "Already filled in, so it can't be deleted - turn it off instead.",
+  };
+}
+
+export function checklistDeleteConfirmText(definition) {
+  return `Delete "${definition?.title || "this checklist"}"? It has never been filled in. This can't be undone.`;
+}

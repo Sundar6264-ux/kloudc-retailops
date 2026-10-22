@@ -1469,6 +1469,16 @@ TERMS = [
     _t("checklist_issues", "Issues", "other", "At least one checklist item was flagged as a problem.", None, "danger"),
     # ---- Checklist builder (services/checklist_admin.py, checklist_engine.py) ----
     _t(
+        "checklist_delete",
+        "Delete a checklist",
+        "other",
+        "Only admins can delete a checklist, and only one nobody has ever filled in (made by mistake). A checklist "
+        "that has been filled in, or one of the store's original ones, can only be turned off.",
+        None,
+        None,
+        ["delete checklist", "remove checklist"],
+    ),
+    _t(
         "checklist_closing",
         "Closing checklist",
         "other",

@@ -1379,6 +1379,12 @@ export async function updateChecklistDefinition(checklistType, body) {
   return patchJSON(`${CHECKLIST_ADMIN}/${encodeURIComponent(checklistType)}`, body);
 }
 
+// Admins only, and only a checklist never filled in (409 otherwise).
+export async function deleteChecklistDefinition(checklistType) {
+  const res = await request(`${CHECKLIST_ADMIN}/${encodeURIComponent(checklistType)}`, { method: "DELETE" });
+  return res.json();
+}
+
 export async function getChecklistDefinitionVersion(checklistType, version) {
   const res = await request(`${CHECKLIST_ADMIN}/${encodeURIComponent(checklistType)}/versions/${version}`);
   return res.json();

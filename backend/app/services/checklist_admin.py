@@ -19,6 +19,7 @@ see a published change on their next fetch.
 import copy
 import datetime as dt
 import json
+import logging
 import re
 from typing import Dict, List, Optional
 
@@ -35,6 +36,8 @@ from app.services import whatsapp_groups
 from app.team import media as media_svc
 from app.team.models import TeamMedia
 from app.timeutil import utcnow
+
+logger = logging.getLogger(__name__)
 
 MAX_TITLE = 120
 MAX_SHORT_NAME = 40
@@ -389,7 +392,16 @@ def list_definitions(db: Session) -> List[dict]:
             .order_by(*group_order(ChecklistSubmission.checklist_type))
         ).all()
     )
-    return [_summary(db, r, counts, version_counts.get(r.id, 0), last.get(r.checklist_type)) for r in rows]
+    deletable = deletable_types(db)
+    builtin = builtin_types()
+    out = []
+    for r in rows:
+        summary = _summary(db, r, counts, version_counts.get(r.id, 0), last.get(r.checklist_type))
+        # Delete (admins only) is offered only for these; the rest can be turned off.
+        summary["can_delete"] = r.checklist_type in deletable
+        summary["builtin"] = r.checklist_type in builtin
+        out.append(summary)
+    return out
 
 
 def _versions(db: Session, row: ChecklistDefinition, counts: Dict[tuple, int]) -> List[dict]:
@@ -427,6 +439,8 @@ def definition_detail(db: Session, checklist_type: str) -> dict:
         )
     ).scalar_one()
     summary = _summary(db, row, counts, len(versions), last)
+    summary["builtin"] = row.checklist_type in builtin_types()
+    summary["can_delete"] = not summary["builtin"] and _all_submission_count(db, row.checklist_type) == 0
     schema = None
     current_items = None
     if row.current_version is not None:
@@ -774,3 +788,151 @@ def editor_meta(db: Session) -> dict:
         "scale_max": engine.SCALE_MAX,
         "items_min_app_build": engine.ITEMS_MIN_APP_BUILD,
     }
+
+
+# --- Delete (owner, Oct 22: "i created one checklist by mistake and am not
+# able to delete that" / "but only admins can delete") ----------------------------------
+
+def builtin_types() -> frozenset:
+    """This store's original checklists (its store pack's seeds, the same
+    ones ensure_seeded and store-init insert). Never deletable."""
+    return frozenset(seed["checklist_type"] for seed in checklist_schemas.store_seed_definitions())
+
+
+BUILTIN_DELETE_MESSAGE = "This is one of the store's original checklists, so it can't be deleted - turn it off instead."
+
+
+def _all_submission_count(db: Session, checklist_type: str) -> int:
+    """Every submission ever, of any kind - demo and public-link ones too
+    (unlike the counts the list shows), since each one points at this
+    checklist."""
+    return db.execute(
+        select(func.count(ChecklistSubmission.id)).where(ChecklistSubmission.checklist_type == checklist_type)
+    ).scalar_one()
+
+
+def used_message(count: int) -> str:
+    times = "1 time" if count == 1 else f"{count} times"
+    return f"This checklist has been filled in {times}, so it can't be deleted - turn it off instead."
+
+
+def deletable_types(db: Session) -> set:
+    """The checklist types a delete would accept (not built in, never filled in)."""
+    used = set(db.execute(select(ChecklistSubmission.checklist_type).distinct()).scalars())
+    builtin = builtin_types()
+    return {t for t in db.execute(select(ChecklistDefinition.checklist_type)).scalars() if t not in used and t not in builtin}
+
+
+def _media_in_other_checklists(db: Session, definition_id: int, token: str) -> Optional[int]:
+    """Another checklist whose draft or versions still show this picture
+    (a duplicate reuses the original's upload) - it keeps it."""
+    for other in db.execute(select(ChecklistDefinition).where(ChecklistDefinition.id != definition_id)).scalars():
+        if token in (other.draft_json or ""):
+            return other.id
+        hit = db.execute(
+            select(ChecklistDefinitionVersion.id).where(
+                ChecklistDefinitionVersion.definition_id == other.id,
+                ChecklistDefinitionVersion.schema_json.contains(token),
+            ).limit(1)
+        ).first()
+        if hit is not None:
+            return other.id
+    return None
+
+
+def delete_definition(db: Session, user: User, checklist_type: str) -> dict:
+    """Deletes a checklist nobody has ever filled in, and everything that
+    points at it: its versions and draft (same row), its public link (the
+    token goes with it, so the old URL stops working), its WhatsApp group
+    choice (part of its settings), automatic "Submit the ... checklist"
+    tasks made for it, and the pictures only it used (left for the nightly
+    prune). A built-in checklist (this store's pack's originals), or one with
+    any submission, is refused - turning it off is the way to hide those.
+    Admins only (the router). Logged, and written to the platform audit log."""
+    from app.models import ChecklistPublicLink
+    from app.team.media import PUBLIC_PENDING_OWNER_TYPE
+    from app.team.tasks_models import Task, TaskEvent, TaskItem
+    from app.team.tasks_service import record_task_change
+
+    row = _get(db, checklist_type)
+    if row.checklist_type in builtin_types():
+        raise AdminError(400, BUILTIN_DELETE_MESSAGE)
+    count = _all_submission_count(db, row.checklist_type)
+    if count:
+        raise AdminError(409, used_message(count))
+
+    title = row.title
+    link = db.execute(
+        select(ChecklistPublicLink).where(ChecklistPublicLink.checklist_type == row.checklist_type)
+    ).scalar_one_or_none()
+    if link is not None:
+        db.query(TeamMedia).filter(
+            TeamMedia.owner_type == PUBLIC_PENDING_OWNER_TYPE, TeamMedia.owner_id == link.id
+        ).update({TeamMedia.owner_id: None}, synchronize_session=False)
+        db.delete(link)
+
+    tasks = db.execute(
+        select(Task).where(
+            Task.source_type == "checklist",
+            (Task.source_id == row.checklist_type) | Task.source_id.like(f"{row.checklist_type}:%"),
+        )
+    ).scalars().all()
+    # LIKE treats "_" as a wildcard: keep only this checklist's own tasks.
+    tasks = [t for t in tasks if (t.source_id or "").split(":")[0] == row.checklist_type]
+    for task in tasks:
+        record_task_change(db, task, "deleted")
+        db.query(TeamMedia).filter(TeamMedia.owner_type == "task", TeamMedia.owner_id == task.id).update(
+            {TeamMedia.owner_type: None, TeamMedia.owner_id: None}, synchronize_session=False
+        )
+        db.query(TaskEvent).filter(TaskEvent.task_id == task.id).delete(synchronize_session=False)
+        db.query(TaskItem).filter(TaskItem.task_id == task.id).delete(synchronize_session=False)
+        db.delete(task)
+
+    for media in db.execute(
+        select(TeamMedia).where(TeamMedia.owner_type == MEDIA_OWNER_TYPE, TeamMedia.owner_id == row.id)
+    ).scalars().all():
+        keeper = _media_in_other_checklists(db, row.id, media.token)
+        if keeper is not None:
+            media.owner_id = keeper
+        else:
+            media.owner_type = None
+            media.owner_id = None
+
+    version_count = (
+        db.query(ChecklistDefinitionVersion)
+        .filter(ChecklistDefinitionVersion.definition_id == row.id)
+        .delete(synchronize_session=False)
+    )
+    db.delete(row)
+    db.commit()
+    checklist_schemas.clear_cache()
+    logger.warning(
+        "Checklist deleted by %s: %s (%r) - %d version(s), public link %s, %d task(s)",
+        user.username,
+        checklist_type,
+        title,
+        version_count,
+        "removed" if link is not None else "none",
+        len(tasks),
+    )
+    # The platform audit log keeps store users' irreversible actions (it never
+    # fails the delete itself).
+    from app.platform.audit import audit
+    from app.tenancy import current_store_code
+
+    code = current_store_code()
+    audit(
+        "checklist.deleted",
+        actor_type="store_user",
+        actor_id=user.id,
+        actor_name=f"store:{code}:{user.username}" if code else user.username,
+        store_code=code,
+        target=checklist_type,
+        details={
+            "title": title,
+            "versions": version_count,
+            "public_link_removed": link is not None,
+            "tasks_removed": len(tasks),
+        },
+    )
+    return {"deleted": True, "checklist_type": checklist_type, "title": title}

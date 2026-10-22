@@ -346,3 +346,37 @@ test("WhatsApp groups: only admins choose flyer groups", () => {
   assert.ok(panel.includes("{!canChooseFlyers && groups?.some("), "the one-line note shows for a non-admin");
   assert.ok((panel.match(/flyerLocked/g) || []).length >= 4, "Turn off and Delete are locked on a flyer group");
 });
+
+test("Delete a checklist: admins only, only one never filled in", async () => {
+  const { checklistDeleteAction, checklistDeleteConfirmText } = await import("./components/checklists/model.js");
+  const fresh = { title: "Oops", can_delete: true, builtin: false, submission_count: 0 };
+  const used = { title: "Deli", can_delete: false, builtin: false, submission_count: 12 };
+  const once = { ...used, submission_count: 1 };
+  const original = { title: "Closing", can_delete: false, builtin: true, submission_count: 300 };
+  const admin = { is_admin: true };
+  const builder = { is_admin: false, allowed_features: ["checklist_builder"] };
+  const demoAdmin = { is_admin: true, demo: true };
+
+  assert.deepEqual(checklistDeleteAction(fresh, admin), { canDelete: true, hint: null });
+  // The Delete button is hidden for everyone who isn't an admin.
+  for (const who of [builder, demoAdmin, { is_admin: false }, null]) {
+    assert.deepEqual(checklistDeleteAction(fresh, who), { canDelete: false, hint: null });
+    assert.deepEqual(checklistDeleteAction(used, who), { canDelete: false, hint: null });
+  }
+  // A used one: Turn off, with why there's no Delete.
+  assert.equal(checklistDeleteAction(used, admin).canDelete, false);
+  assert.equal(checklistDeleteAction(used, admin).hint, "Filled in 12 times, so it can't be deleted - turn it off instead.");
+  assert.equal(checklistDeleteAction(once, admin).hint, "Filled in 1 time, so it can't be deleted - turn it off instead.");
+  assert.equal(checklistDeleteAction(original, admin).canDelete, false);
+  // An older server never says can_delete: no Delete at all.
+  assert.deepEqual(checklistDeleteAction({ title: "X", submission_count: 0 }, admin), { canDelete: false, hint: null });
+
+  assert.equal(checklistDeleteConfirmText(fresh), 'Delete "Oops"? It has never been filled in. This can\'t be undone.');
+
+  const list = read("components/checklists/ChecklistAdminList.jsx");
+  assert.ok(list.includes("const del = checklistDeleteAction(d, user);"), "the list asks who may delete");
+  assert.ok(list.includes("{del.canDelete && ("), "Delete only when allowed");
+  assert.ok(list.includes("window.confirm(checklistDeleteConfirmText(d))"), "and it asks first");
+  assert.ok(list.includes('{d.active === false ? "Turn on" : "Turn off"}'), "Turn off stays for everyone");
+  assert.ok(read("api.js").includes("export async function deleteChecklistDefinition("));
+});

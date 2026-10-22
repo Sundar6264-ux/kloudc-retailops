@@ -1,7 +1,8 @@
 """Checklist builder API (docs/CHECKLIST_BUILDER_CONTRACT.md). Admins - and
 anyone an admin gave "Build checklists" (feature `checklist_builder`, Oct 22)
 - create and edit checklists on the website and the app; logic in
-services/checklist_admin.py. Every route needs require_checklist_builder.
+services/checklist_admin.py. Every route needs require_checklist_builder;
+deleting a checklist also needs an admin (require_checklist_admin).
 """
 
 from typing import List, Optional
@@ -30,6 +31,18 @@ def require_checklist_builder(user: User = Depends(get_current_user)) -> User:
         return user
     if is_demo_user(user) or not user_has_feature(user, CHECKLIST_BUILDER):
         raise HTTPException(status_code=403, detail="Admin privileges required")
+    return user
+
+
+ADMIN_ONLY_DELETE = "Only admins can delete a checklist. You can turn it off instead."
+
+
+def require_checklist_admin(user: User = Depends(require_checklist_builder)) -> User:
+    """Deleting a checklist (owner, Oct 22: "but only admins can delete").
+    Someone given "Build checklists" can still turn one off. Never the App
+    Review demo login, even as an admin."""
+    if not user.is_admin or is_demo_user(user):
+        raise HTTPException(status_code=403, detail=ADMIN_ONLY_DELETE)
     return user
 
 
@@ -127,6 +140,14 @@ def patch_definition(
     db: Session = Depends(get_db),
 ):
     return _run(svc.patch, db, user, checklist_type, _body(payload))
+
+
+@router.delete("/definitions/{checklist_type}")
+def delete_definition(checklist_type: str, user: User = Depends(require_checklist_admin), db: Session = Depends(get_db)):
+    """Admins only. Only a checklist never filled in (409 otherwise, with how
+    many times); a built-in one is 400. Removes its versions, draft, public
+    link, WhatsApp group choice and automatic tasks."""
+    return _run(svc.delete_definition, db, user, checklist_type)
 
 
 @router.get("/definitions/{checklist_type}/versions/{version}")

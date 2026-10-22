@@ -30,6 +30,8 @@ DEFS = f"{ADMIN}/definitions"
 GROUPS = f"{ADMIN}/whatsapp-groups"
 ST = "store_closing"
 GROUP_A = "120363011111111111@g.us"
+# Owner, Oct 22: "but only admins can delete" (tests/test_checklist_delete.py).
+ADMIN_ONLY = {("DELETE", f"{DEFS}/{{checklist_type}}")}
 
 
 def _builder(db, name="builder1", extra=()):
@@ -74,7 +76,7 @@ def test_builder_can_use_every_builder_route(db):
     builder = _builder(db)
     wrong = []
     for method, path in _routes():
-        if not path.startswith(ADMIN):
+        if not path.startswith(ADMIN) or (method, path) in ADMIN_ONLY:
             continue
         status = _call(builder, method, path).status_code
         if status in (401, 403):

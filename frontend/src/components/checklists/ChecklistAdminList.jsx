@@ -2,18 +2,21 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   createChecklistDefinition,
+  deleteChecklistDefinition,
   duplicateChecklistDefinition,
   listChecklistDefinitions,
   reorderChecklistDefinitions,
   updateChecklistDefinition,
 } from "../../api";
 import { formatRestaurantTime } from "../../format.js";
+import { useAuth } from "../../AuthContext.jsx";
 import { definitionsFromList, errorLines } from "./editorModel.js";
+import { checklistDeleteAction, checklistDeleteConfirmText } from "./model.js";
 import WhatsAppGroupsPanel from "./WhatsAppGroupsPanel.jsx";
 
 // Admin list of every checklist (active and inactive): open the editor,
-// create, duplicate, activate/deactivate and reorder (the order staff see
-// the tiles in).
+// create, duplicate, turn on/off and reorder (the order staff see the tiles
+// in). Admins can also delete one nobody has ever filled in.
 
 function NewChecklistDialog({ onClose, onCreated }) {
   const [title, setTitle] = useState("");
@@ -71,6 +74,7 @@ function NewChecklistDialog({ onClose, onCreated }) {
 
 export default function ChecklistAdminList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState(null);
@@ -156,6 +160,7 @@ export default function ChecklistAdminList() {
                 {rows.map((d, idx) => {
                   const version = d.current_version ?? null;
                   const settings = d.settings || {};
+                  const del = checklistDeleteAction(d, user);
                   return (
                     <tr key={d.checklist_type} className={d.active === false ? "clb-row-inactive" : undefined}>
                       <td className="clb-order-cell">
@@ -226,6 +231,7 @@ export default function ChecklistAdminList() {
                           type="button"
                           className={`link-button${d.active === false ? "" : " link-danger"}`}
                           disabled={busy != null}
+                          title={del.hint || undefined}
                           onClick={() => {
                             if (
                               d.active !== false &&
@@ -237,8 +243,22 @@ export default function ChecklistAdminList() {
                             );
                           }}
                         >
-                          {d.active === false ? "Activate" : "Deactivate"}
+                          {d.active === false ? "Turn on" : "Turn off"}
                         </button>
+                        {del.canDelete && (
+                          <button
+                            type="button"
+                            className="link-button link-danger"
+                            disabled={busy != null}
+                            onClick={() => {
+                              if (!window.confirm(checklistDeleteConfirmText(d))) return;
+                              run(`del-${d.checklist_type}`, () => deleteChecklistDefinition(d.checklist_type));
+                            }}
+                          >
+                            {busy === `del-${d.checklist_type}` ? "Deleting…" : "Delete"}
+                          </button>
+                        )}
+                        {del.hint && !d.builtin && <div className="muted clb-slug clb-delete-hint">{del.hint}</div>}
                       </td>
                     </tr>
                   );
