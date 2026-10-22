@@ -10,7 +10,9 @@ which is also why the demo login may download.
 Every format has the same columns as the PDF sent to vendors - S.No,
 Supplier Code, Item Name, Qty - in the same order (grouped into the same
 picking sections, so S.No matches the PDF). When a line has the optional
-case fields (`cases` / `case_size`), "Cases" and "Units per case" are added.
+case fields (`cases` / `case_size`), "Cases" and "Units per case" are added,
+then "Ordered in" ("cases" / "units") so each line's Qty reads the same as
+on the PDF ("2 cases" / "3 units").
 """
 
 import csv
@@ -22,7 +24,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.services.csv_util import neutralize_formula
-from app.services.po_export import _format_qty, has_case_fields
+from app.services.po_export import _format_qty, has_case_fields, line_in_cases
 
 # (format, media type) - a tuple: module-level state stays read-only (tenancy lint).
 FORMATS = (
@@ -60,7 +62,7 @@ def filename(supplier: str, day: dt.date, fmt: str) -> str:
 
 def _columns(with_cases: bool) -> list:
     cols = ["S.No", "Supplier Code", "Item Name", "Qty"]
-    return cols + ["Cases", "Units per case"] if with_cases else cols
+    return cols + ["Cases", "Units per case", "Ordered in"] if with_cases else cols
 
 
 def _number(value):
@@ -89,7 +91,7 @@ def _rows(groups: list, with_cases: bool) -> list:
             idx += 1
             cells = [idx, line.get("supplier_item_id") or "", line.get("name") or "", line.get("qty")]
             if with_cases:
-                cells += [line.get("cases"), line.get("case_size")]
+                cells += [line.get("cases"), line.get("case_size"), "cases" if line_in_cases(line) else "units"]
             out.append((section, cells))
     return out
 
@@ -102,7 +104,7 @@ def _csv(rows: list, with_cases: bool) -> bytes:
         # Item names and codes are typed text: a cell that a spreadsheet would
         # run as a formula gets a leading apostrophe (csv_util).
         writer.writerow(
-            [cells[0], neutralize_formula(str(cells[1])), neutralize_formula(str(cells[2])), *(_format_qty(c) for c in cells[3:])]
+            [cells[0], neutralize_formula(str(cells[1])), neutralize_formula(str(cells[2])), *(_format_qty(c) for c in cells[3:6]), *cells[6:]]
         )
     # BOM so Excel opens the file as UTF-8 (item names with accents).
     return ("﻿" + buf.getvalue()).encode("utf-8")
@@ -156,9 +158,9 @@ def _xlsx(supplier: str, day: dt.date, rows: list, with_cases: bool) -> bytes:
             ws.cell(row=r, column=1).fill = section_fill
             ws.cell(row=r, column=1).alignment = Alignment(horizontal="center")
         current = section
-        ws.append([cells[0], cells[1], cells[2], *(_number(c) for c in cells[3:])])
+        ws.append([cells[0], cells[1], cells[2], *(_number(c) for c in cells[3:6]), *cells[6:]])
         _as_text(ws, ws.max_row)
-    widths = [7, 18, 48, 10, 10, 15]
+    widths = [7, 18, 48, 10, 10, 15, 12]
     for i, width in enumerate(widths[: len(cols)]):
         ws.column_dimensions[chr(ord("A") + i)].width = width
     ws.freeze_panes = ws.cell(row=header_row + 1, column=1)

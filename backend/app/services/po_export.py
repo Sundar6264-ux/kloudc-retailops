@@ -21,6 +21,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import HRFlowable, Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from app.services.receiving_units import case_size_value
 from app.timeutil import restaurant_today
 
 # The letterhead icon: DOCUMENT_LOGO_FILE (a local image) when set, else the
@@ -74,6 +75,26 @@ def has_case_fields(items: list) -> bool:
         isinstance(i, dict) and (i.get("case_size") not in (None, "") or i.get("cases") not in (None, ""))
         for i in items
     )
+
+
+def line_in_cases(item: dict) -> bool:
+    """A PO line ordered by the case: it has a real case size (above 1) or a
+    cases figure. Every other line is in units. The email (po_send.compose),
+    the PDF's Qty and the downloads' "Ordered in" column all use this."""
+    if not isinstance(item, dict):
+        return False
+    return case_size_value(item.get("case_size")) is not None or item.get("cases") not in (None, "")
+
+
+def qty_with_word(item: dict) -> str:
+    """A line's Qty with what it counts: "2 cases" / "1 case" / "3 units"."""
+    qty = item.get("qty") if isinstance(item, dict) else None
+    try:
+        one = float(qty) == 1
+    except (TypeError, ValueError):
+        one = False
+    word = ("case" if one else "cases") if line_in_cases(item) else ("unit" if one else "units")
+    return f"{_format_qty(qty)} {word}"
 
 
 def export_simple_po_pdf(
@@ -208,7 +229,9 @@ def export_simple_po_pdf(
                 body_cell(idx, True),
                 body_cell(item.get("supplier_item_id") or "", False),
                 body_cell(item.get("name"), False),
-                body_cell(_format_qty(item.get("qty")), True),
+                # With case lines on the PO, each Qty says what it counts
+                # ("2 cases" / "3 units") so a mixed order can't be misread.
+                body_cell(qty_with_word(item) if with_cases else _format_qty(item.get("qty")), True),
             ]
             if with_cases:
                 row += [body_cell(_format_qty(item.get("cases")), True), body_cell(_format_qty(item.get("case_size")), True)]

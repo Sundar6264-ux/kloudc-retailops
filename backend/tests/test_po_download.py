@@ -153,14 +153,18 @@ def test_case_columns_only_when_lines_have_them(db, buyer):
     ]
     row = _order(db, lines=lines, supplier="Acme")
     table = _table(_xlsx_rows(buyer.get(f"/api/ordering/orders/{row.id}/export?format=xlsx").content))
-    assert list(table[0]) == ["S.No", "Supplier Code", "Item Name", "Qty", "Cases", "Units per case"]
+    assert list(table[0]) == ["S.No", "Supplier Code", "Item Name", "Qty", "Cases", "Units per case", "Ordered in"]
     by_name = {t[2]: list(t) for t in table[1:]}
-    assert by_name["Basmati Rice 10 lb"][3:] == [4, 2, 2]
-    assert by_name["Ghee"][4:] in ([None, None], ["", ""])
+    assert by_name["Basmati Rice 10 lb"][3:] == [4, 2, 2, "cases"]
+    assert by_name["Ghee"][4:6] in ([None, None], ["", ""])
+    assert by_name["Ghee"][6] == "units"
     rows = list(csv.reader(io.StringIO(buyer.get(f"/api/ordering/orders/{row.id}/export?format=csv").content.decode("utf-8-sig"))))
-    assert rows[0][-2:] == ["Cases", "Units per case"]
+    assert rows[0][-3:] == ["Cases", "Units per case", "Ordered in"]
+    assert {r[2]: r[-1] for r in rows[1:]} == {"Basmati Rice 10 lb": "cases", "Ghee": "units"}
     text = _pdf_text(buyer.get(f"/api/ordering/orders/{row.id}/export?format=pdf").content)
     assert "Cases" in text and "Units per case" in text
+    # The PDF's Qty says the same per line: cases vs units.
+    assert "4 cases" in text and "1 unit" in text
     # case_of (the cart's own field) alone doesn't add the columns.
     plain = _order(db, lines=[{"name": "Ghee", "supplier_item_id": "G1", "qty": 1, "case_of": 12}], supplier="Acme")
     table = _table(_xlsx_rows(buyer.get(f"/api/ordering/orders/{plain.id}/export?format=xlsx").content))

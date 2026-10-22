@@ -426,11 +426,36 @@ def test_po_lines_carry_cases(db, cart):
 
 def test_email_says_cases_and_units(db, cart):
     _rows, items = cart_lines(db, VENDOR)
+    # Mixed: 2 cases of noodles + 5 units of rice - never "7 cases".
     _subject, body = compose(VENDOR, items)
-    assert "Quantities are in cases. Lines with a case size also show the units, e.g. 2 cases (48 units)." in body
-    # No case line: the email reads exactly as before.
-    _s, plain = compose(VENDOR, [i for i in items if i["case_size"] is None])
-    assert "Quantities are in cases.\n\n" in plain and "units" not in plain
+    assert "2 items, 2 cases and 5 units in total." in body
+    assert "Some lines are in cases and some in units - each line says which, e.g. 2 cases (48 units) or 5 units." in body
+    assert "Quantities are in cases" not in body and "7 cases" not in body
+    # Case lines only.
+    _s, cases_only = compose(VENDOR, [i for i in items if i["case_size"] is not None])
+    assert "1 item, 2 cases in total. Quantities are in cases, e.g. 2 cases (48 units).\n\n" in cases_only
+    # Unit lines only (Case of 1 / no case size).
+    _s, units_only = compose(VENDOR, [i for i in items if i["case_size"] is None])
+    assert "1 item, 5 units in total. Quantities are in units.\n\n" in units_only
+    assert "case" not in units_only.split("Please reply")[0].lower()
+
+
+def test_qty_totals_keep_cases_and_units_apart():
+    from app.services.po_send import qty_totals, whatsapp_caption
+
+    mixed = [
+        {"qty": 6, "case_of": 24}, {"qty": 5, "case_size": 12}, {"qty": 10, "case_of": 1}, {"qty": 8},
+        {"qty": 1, "case_of": None},
+    ]
+    t = qty_totals(mixed)
+    assert (t["cases"], t["units"], t["case_lines"], t["unit_lines"]) == (11, 19, 2, 3)
+    assert t["text"] == "11 cases and 19 units"
+    assert qty_totals([{"qty": 1, "case_of": 6}])["text"] == "1 case"
+    assert qty_totals([{"qty": 1}])["text"] == "1 unit"
+    assert qty_totals([])["text"] == "0 units"
+    assert "5 items, 11 cases and 19 units. Please confirm." in whatsapp_caption(VENDOR, mixed)
+    assert ", 1 case. Please confirm." in whatsapp_caption(VENDOR, [{"qty": 1, "case_of": 6}])
+    assert ", 3 units. Please confirm." in whatsapp_caption(VENDOR, [{"qty": 3, "case_of": 1}])
 
 
 def test_fill_case_from_cart_for_old_clients(db, cart):
@@ -494,6 +519,14 @@ def test_pdf_shows_the_case_columns(db, cart):
     _rows, items = cart_lines(db, VENDOR)
     text = "".join(p.extract_text() for p in PdfReader(io.BytesIO(build_po_pdf(db, VENDOR, items))).pages)
     assert "Cases" in text and "Units per case" in text
+    # Each line's Qty says what it counts, like the email.
+    assert "2 cases" in text and "5 units" in text
+    # Units only: plain numbers, as before (the email says "Quantities are in units").
+    plain = "".join(
+        p.extract_text()
+        for p in PdfReader(io.BytesIO(build_po_pdf(db, VENDOR, [i for i in items if i["case_size"] is None]))).pages
+    )
+    assert "Units per case" not in plain and "5 units" not in plain
 
 
 # --------------------------------------------------------------------------

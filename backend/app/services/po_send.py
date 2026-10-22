@@ -426,19 +426,80 @@ def pdf_filename(supplier: str, day: Optional[dt.date] = None) -> str:
     return f"purchase-order-{safe}-{(day or restaurant_today()).isoformat()}.pdf"
 
 
+def _is_case_line(item: dict) -> bool:
+    """A line ordered by the case (a real case size, above 1). Anything else
+    - Case of 1, no case size - is ordered in units, like the cart header."""
+    return (
+        case_size_value(item.get("case_size")) is not None or case_size_value(item.get("case_of")) is not None
+    )
+
+
+def _word(n: float, word: str) -> str:
+    return f"{_fmt_qty(n)} {word if n == 1 else word + 's'}"
+
+
+def qty_totals(items: list) -> dict:
+    """The PO's totals with cases and units kept apart: `cases` sums the case
+    lines, `units` the lines in units (never added to cases), and `text`
+    says it ("11 cases and 18 units", "11 cases", "18 units")."""
+    cases = units = 0.0
+    case_lines = unit_lines = 0
+    for i in items:
+        try:
+            q = float(i.get("qty") or 0)
+        except (TypeError, ValueError):
+            q = 0.0
+        if _is_case_line(i):
+            cases += q
+            case_lines += 1
+        else:
+            units += q
+            unit_lines += 1
+    if case_lines and unit_lines:
+        text = f"{_word(cases, 'case')} and {_word(units, 'unit')}"
+    elif case_lines:
+        text = _word(cases, "case")
+    else:
+        text = _word(units, "unit")
+    return {
+        "cases": round(cases, 3),
+        "units": round(units, 3),
+        "case_lines": case_lines,
+        "unit_lines": unit_lines,
+        "text": text,
+    }
+
+
+def _qty_sentence(items: list) -> str:
+    """What the quantities mean, true for the order at hand: all cases, all
+    units, or a mix (then each line on the PDF says which it is)."""
+    totals = qty_totals(items)
+    case_example = next(
+        (po_line_case_fields(i.get("qty"), i.get("case_size") or i.get("case_of"))["qty_text"] for i in items if _is_case_line(i)),
+        None,
+    )
+    unit_example = next((_word(float(i.get("qty") or 0), "unit") for i in items if not _is_case_line(i)), None)
+    if totals["case_lines"] and totals["unit_lines"]:
+        return (
+            "Some lines are in cases and some in units - each line says which, "
+            f"e.g. {case_example} or {unit_example}."
+        )
+    if totals["case_lines"]:
+        return f"Quantities are in cases, e.g. {case_example}."
+    return "Quantities are in units."
+
+
 def compose(supplier: str, items: list, day: Optional[dt.date] = None) -> Tuple[str, str]:
     """(subject, body template). The template has NOTE_MARKER as its own
     paragraph; render_body puts the sender's note there (or drops it)."""
     day = day or restaurant_today()
-    cases = sum(float(i.get("qty") or 0) for i in items)
     store_name = sv.store_display_name()
     subject = f"Purchase Order - {store_name} - {_clean_line(supplier, 200)} - {day:%b} {day.day}, {day.year}"
     signature = "\n".join(line for line in (store_name, sv.store_address(), sv.store_phone()) if line)
     body = (
         f"Hello {_clean_line(supplier, 200)} team,\n\n"
         f"Please find attached {store_name}'s purchase order: {_plural(len(items), 'item')}, "
-        f"{_fmt_qty(cases)} {'case' if cases == 1 else 'cases'} in total. Quantities are in cases."
-        f"{_case_units_note(items)}\n\n"
+        f"{qty_totals(items)['text']} in total. {_qty_sentence(items)}\n\n"
         f"{NOTE_MARKER}\n\n"
         "Please reply to this email to confirm the order, and let us know if anything is unavailable.\n\n"
         "Thank you,\n"
@@ -446,22 +507,6 @@ def compose(supplier: str, items: list, day: Optional[dt.date] = None) -> Tuple[
         f"--\nSent with {sv.product_credit()}"
     )
     return subject, body
-
-
-def _case_units_note(items: list) -> str:
-    """When some lines have a known case size, say how many units that is,
-    so cases and units are never mixed up: " Lines with a case size also
-    show the units, e.g. 2 cases (48 units)." Empty when no line has one
-    (the email reads exactly as before)."""
-    example = next(
-        (
-            po_line_case_fields(i.get("qty"), i.get("case_of"))["qty_text"]
-            for i in items
-            if case_size_value(i.get("case_of")) is not None
-        ),
-        None,
-    )
-    return f" Lines with a case size also show the units, e.g. {example}." if example else ""
 
 
 def render_body(template: str, note: Optional[str]) -> str:
@@ -473,10 +518,9 @@ def render_body(template: str, note: Optional[str]) -> str:
 
 
 def whatsapp_caption(supplier: str, items: list) -> str:
-    cases = sum(float(i.get("qty") or 0) for i in items)
     phone = sv.store_phone()
     return (
-        f"Purchase order from {sv.store_display_name()} - {_plural(len(items), 'item')}, {_fmt_qty(cases)} cases. "
+        f"Purchase order from {sv.store_display_name()} - {_plural(len(items), 'item')}, {qty_totals(items)['text']}. "
         f"Please confirm." + (f" {phone}" if phone else "")
     )
 
@@ -718,6 +762,7 @@ def preview(db: Session, supplier: str, user: User) -> dict:
     ]
     last = list_sends(db, supplier, limit=5)
     uncertain = unresolved_uncertain(db, supplier)
+    totals = qty_totals(items)
     return {
         "supplier": supplier,
         "items": [
@@ -732,6 +777,10 @@ def preview(db: Session, supplier: str, user: User) -> dict:
         ],
         "item_count": len(items),
         "total_qty": round(sum(float(i["qty"]) for i in items), 3),
+        # Additive: cases and units kept apart ("11 cases and 18 units").
+        "total_cases": totals["cases"],
+        "total_units": totals["units"],
+        "total_qty_text": totals["text"],
         "zero_qty_lines": len(rows) - len(items),
         "contacts": [contact_out(c) for c in contacts],
         "recipients": recipients,

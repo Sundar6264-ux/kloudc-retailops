@@ -238,7 +238,10 @@ def test_preview_shows_recipients_subject_body_and_pdf(db, buyer, gmail):
     assert [i["name"] for i in p["items"]] == ["Toor Dal 4lb", "Rice 20lb"]
     assert p["subject"].startswith("Purchase Order - KloudC RetailOps - Raja Foods - ")  # STORE_NAME unset: the product
     assert "Hello Raja Foods team," in p["body_template"]
-    assert "2 items, 7 cases in total" in p["body_template"]
+    # Case of 1 = units: never called cases (Oct 22).
+    assert "2 items, 7 units in total. Quantities are in units." in p["body_template"]
+    assert "cases" not in p["body_template"]
+    assert p["total_cases"] == 0 and p["total_units"] == 7 and p["total_qty_text"] == "7 units"
     assert p["note_marker"] in p["body_template"]
     assert p["pdf_filename"].startswith("purchase-order-raja-foods-") and p["pdf_filename"].endswith(".pdf")
     assert p["email_configured"] is True and p["from_address"] == "orders@mainstore.test"
@@ -265,7 +268,9 @@ def test_render_body_note_rules():
     assert svc.NOTE_MARKER not in without and "\n\n\n" not in without
     withnote = svc.render_body(template, "Please deliver Tuesday.\r\nThanks")
     assert "Please deliver Tuesday.\nThanks" in withnote
-    assert "1 item, 1 case in total" in template
+    assert "1 item, 1 unit in total" in template  # no case size: units
+    _, cased = svc.compose("Raja Foods", [{"qty": 1, "case_of": 12}])
+    assert "1 item, 1 case in total" in cased
 
 
 # --- Send ------------------------------------------------------------------------
