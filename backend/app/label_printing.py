@@ -211,13 +211,14 @@ def _session_rate(
     authorization: Optional[str] = Header(default=None),
 ) -> None:
     """Runs before the session check: 120 a minute per token (key: its
-    sha256) and 3000 a minute per store."""
+    sha256). The 3000-a-minute store limit is counted in the route, after the
+    token proved to be a real session: counted here, made-up ``CODE.<junk>``
+    tokens from anyone could use it up and stop every label site sign-in
+    check for that store (security check, 2026-10-22)."""
     token = _request_token(session_token, authorization)
     if not token:
         return
     _rate("labels_session_token", _sha(token), per_minute=SESSION_PER_TOKEN_PER_MINUTE)
-    prefix = token.split(".", 1)[0][:24].upper() if "." in token else "-"
-    _rate("labels_session_store", prefix, per_minute=SESSION_PER_STORE_PER_MINUTE)
 
 
 @router.get("/api/labels/session", dependencies=[Depends(_session_rate)])
@@ -227,6 +228,7 @@ def labels_session(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _rate("labels_session_store", _store_code() or "-", per_minute=SESSION_PER_STORE_PER_MINUTE)
     if not sv.has_store_feature("labels"):
         raise PlatformError(403, "label_printing_off", MSG_OFF, headers=NO_STORE)
     row = lookup_session(db, _request_token(session_token, authorization))
@@ -280,8 +282,13 @@ def labels_handoff_redeem(
     x_store: Optional[str] = Header(default=None, alias="X-Store"),
 ):
     """The label site (no session) turns a code into the 2.2 answer. Single
-    use, 60 seconds, only for the store named in X-Store."""
-    _rate("labels_handoff_redeem", "all", per_minute=REDEEM_PER_MINUTE)
+    use, 60 seconds, only for the store named in X-Store.
+
+    The limit is per caller address (throttle.client_ip): one shared bucket
+    let anyone on the internet use it up with junk codes and stop every
+    store's website hand-off (security check, 2026-10-22). Codes are 32
+    random bytes, so guessing is not the risk."""
+    _rate("labels_handoff_redeem", throttle.client_ip(request), per_minute=REDEEM_PER_MINUTE)
     if not _multi():
         raise PlatformError(409, "platform_mode_required", MSG_SHARED_ONLY)
     secret = (body or {}).get("code") if isinstance(body, dict) else None

@@ -336,3 +336,48 @@ def test_p0005_down_up_and_partial_unique_index(platform_db_url, pdb):
         with admin.connect() as c:
             c.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
         admin.dispose()
+
+
+# --- security check (2026-10-22): made-up tokens and codes can't lock a store out ---------------
+
+
+def test_made_up_tokens_do_not_use_up_the_store_limit(alpha, master_client, client, monkeypatch):
+    """Anyone can send GET /api/labels/session with made-up `ALPHA.<junk>`
+    tokens. Those must not count against the store's per-minute limit, or a
+    stranger could stop every label site sign-in check for the store."""
+    import app.label_printing as lp
+
+    _, staff = alpha
+    _turn_on(master_client)
+    monkeypatch.setattr(lp, "SESSION_PER_STORE_PER_MINUTE", 5)
+    for i in range(10):
+        r = client.get("/api/labels/session", headers={**_as(f"ALPHA.made{i:03d}" + "x" * 40), "X-Store": "ALPHA"})
+        assert r.status_code == 401
+    r = client.get("/api/labels/session", headers={**_as(staff.token), "X-Store": "ALPHA"})
+    assert r.status_code == 200, r.text
+    # Real sessions still count: the store limit holds.
+    codes = [client.get("/api/labels/session", headers={**_as(staff.token), "X-Store": "ALPHA"}).status_code
+             for _ in range(5)]
+    assert codes[-1] == 429 and codes.count(200) == 4
+
+
+def test_made_up_codes_from_one_address_do_not_block_redeem(alpha, master_client, client, monkeypatch):
+    """The redeem limit is per caller address: junk codes sent from the
+    internet (through the tunnel, CF-Connecting-IP) don't stop the label site
+    (calling from this machine) from redeeming a real code."""
+    import app.label_printing as lp
+
+    _, staff = alpha
+    _turn_on(master_client)
+    monkeypatch.setattr(lp, "REDEEM_PER_MINUTE", 5)
+    monkeypatch.setenv("FORWARDED_ALLOW_IPS", "*")  # the test client stands in for cloudflared
+    anon = client.__class__(client.app)
+    for i in range(10):
+        anon.post("/api/labels/handoff/redeem", json={"code": f"junk{i:03d}" + "y" * 40},
+                  headers={"X-Store": "ALPHA", "CF-Connecting-IP": "203.0.113.9"})
+    r = anon.post("/api/labels/handoff/redeem", json={"code": "junk" + "z" * 40},
+                  headers={"X-Store": "ALPHA", "CF-Connecting-IP": "203.0.113.9"})
+    assert r.status_code == 429
+    code = staff.post("/api/labels/handoff").json()["url"].split("code=", 1)[1]
+    r = anon.post("/api/labels/handoff/redeem", json={"code": code}, headers={"X-Store": "ALPHA"})
+    assert r.status_code == 200, r.text

@@ -201,7 +201,7 @@ confused. The site takes it from:
 | 403 | `label_printing_off` | `has_store_feature("labels")` is false. |
 | 403 | `store_suspended` / `store_not_ready` | Existing behaviour. |
 | 409 | `store_mismatch` / `store_moved` | Existing middleware. |
-| 429 | `rate_limited` | More than 120 requests a minute for one token (key: sha256 of the token), or more than 3000 a minute for one store. Uses `throttle.check_rate`. |
+| 429 | `rate_limited` | More than 120 requests a minute for one token (key: sha256 of the token, counted before the session check), or more than 3000 a minute for one store (counted only after the token proved to be a real session, so made-up tokens can't use it up). Uses `throttle.check_rate`. |
 
 - It never returns the token, the token hash or any setting other than these.
   It is never logged with the token.
@@ -383,12 +383,13 @@ It is not part of v1.
      and `X-Store`, with the same timeouts and allow-list as 2.3;
    - KloudC marks the code used: single use, refused once expired or for
      another store. KloudC answers with the 2.2 body, or 410 `code_used` /
-     404 `code_unknown`. Redeem rate limit: 300 a minute overall. A code has
+     404 `code_unknown`. Redeem rate limit: 300 a minute per caller address (`throttle.client_ip`). A code has
      256 bits, so guessing one is not practical;
    - on success the labels site sets the cookie `kc_labels`:
      - signed with Flask `itsdangerous` (`STL_SECRET_KEY`, salt `kloudc-labels-v1`);
-     - holds `{store, user_id, username, demo, can_print, iat}`;
-     - `Max-Age=7200`, `HttpOnly`, `Secure`, `SameSite=Lax`, host-only, `Path=/`;
+     - holds `{store, user_id, username, demo, can_print, iat, exp}`; `exp` is
+       the sooner of 2 hours and the KloudC session's end;
+     - `Max-Age` up to 7200 (follows `exp`), `HttpOnly`, `Secure`, `SameSite=Lax`, host-only, `Path=/`;
    - then sends `303` to `/` with `Referrer-Policy: no-referrer` and
      `Cache-Control: no-store`. A failure goes to `STL_KLOUDC_LOGIN_URL`.
 3. The gate accepts a valid `kc_labels` cookie as a KloudC identity, after the
@@ -816,3 +817,55 @@ Shipped on `main` as specified, with these notes:
   printing"; the scan / print-label pages and the troubleshooting entry say
   how to ask for it. The app's bundled copy was synced (only these entries).
 - **Not done here:** the Playwright pass (contract 7.12).
+
+### As built - security check, 2026-10-22
+
+An adversarial pass over the sign-in path between the app, the KloudC server
+and the labels site. Tried: forged and expired tokens, a token from a store
+with the feature off, a token from store A on store B's labels site, odd
+token shapes, an API base off the allow-list, sign-out timing and caching,
+tokens in logs, and the rate limits. Also ran the real labels-site code
+against a local copy of the real KloudC server (single store, SQLite, a test
+port): real token reads; demo login reads but can't print or save; forged,
+other-store and signed-out tokens get 401 (signed out: once the 60 s cache
+ends); feature off gets 403 `label_printing_off`; the old-style cookie from
+installed app builds and the store's own dashboard cookie both still work; no
+raw token in the labels site's logs.
+
+Fixed (each with tests):
+- **S:** `GET /api/labels/session` counted the 3000-a-minute store limit
+  before the session check, keyed by the token's prefix. Anyone could send
+  made-up `CODE.<junk>` tokens and stop every label site check for that store.
+  The store limit is now counted after `get_current_user` passes.
+- **S:** `POST /api/labels/handoff/redeem` had one shared 300-a-minute limit
+  for everyone, so junk codes from the internet could stop every store's
+  website hand-off. It is now per caller address.
+- **L (branch `kloudc-auth`):** one caller address (`CF-Connecting-IP`, read
+  only when the request comes from the machine itself, i.e. the tunnel) may
+  use at most half of the labels site's 120 checks a minute.
+- **L:** `kc_labels` never outlives the KloudC session it came from (`exp` in
+  the cookie, `Max-Age` follows it).
+
+Checked, no change needed: a token for another store is refused before any
+call (labels site) and with 409 `store_mismatch` (KloudC); the API base comes
+only from settings and the allow-list, never from a request, so a client
+can't point the labels site at another address; token shapes are checked
+before any call (no header injection); the cache key is sha256 of the token;
+a 401 or 403 from KloudC ends a cached yes at once after the 60 s cache, and
+the 5-minute grace only covers KloudC being unreachable; the app sends the
+token only to the labels host.
+
+Still open (accepted or for later):
+- Many addresses sending made-up tokens together can still use up the labels
+  site's 120 checks a minute; staff not checked in the last 5 minutes then
+  see "Too many sign-in checks" until it stops. The store's own dashboard
+  cookie is never affected.
+- During such a flood, a token signed out in the last 5 minutes keeps
+  working until 5 minutes after its last good check (the same bound as the
+  KloudC-unreachable grace).
+- `kc_labels` is `SameSite=Lax`, so other `*.kloudc.com` hosts count as the
+  same site. The labels site's write routes only read JSON bodies, but
+  `POST /api/refresh` takes an empty body; only KloudC-run hosts live under
+  that domain.
+- The website cookie can still outlive a sign-out or "turned off" by up to 2
+  hours (known limit above).
