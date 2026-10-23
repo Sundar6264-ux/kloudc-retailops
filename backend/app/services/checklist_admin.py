@@ -903,7 +903,18 @@ def delete_definition(db: Session, user: User, checklist_type: str) -> dict:
         .filter(ChecklistDefinitionVersion.definition_id == row.id)
         .delete(synchronize_session=False)
     )
+    ctype = row.checklist_type
     db.delete(row)
+    db.flush()
+    # A submission that arrived while this ran (its form was open, or its
+    # public link was used, a moment ago) wins: count again now that this
+    # delete holds the write - SQLite's database lock, or the definition
+    # row's lock in PostgreSQL, which create_submission waits on
+    # (checklist_submission._definition_still_there). Nothing is removed.
+    late = _all_submission_count(db, ctype)
+    if late:
+        db.rollback()
+        raise AdminError(409, used_message(late))
     db.commit()
     checklist_schemas.clear_cache()
     logger.warning(

@@ -21,12 +21,13 @@ import logging
 import time
 from typing import Dict, List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.demo import hide_demo_clause, is_demo_username
-from app.models import ChecklistSubmission, User
+from app.models import ChecklistDefinition, ChecklistSubmission, User
 from app.services import checklist_engine as engine
 from app.services import whatsapp_groups
 from app.services.checklist_schemas import (
@@ -202,6 +203,26 @@ def _fits_older_version(checklist_type: str, below: int, answers: dict) -> bool:
     return False
 
 
+def _definition_still_there(db: Session, checklist_type: str) -> bool:
+    """Checked after the new row is flushed, so it can't race a delete
+    (checklist_admin.delete_definition, which counts submissions again
+    before it commits): in SQLite this session now holds the write lock; in
+    PostgreSQL FOR SHARE waits for a delete in progress and then finds no
+    row, or holds the delete off until this submission is committed.
+    True when the table is empty (the built-ins served without rows)."""
+    try:
+        found = db.execute(
+            select(ChecklistDefinition.id)
+            .where(ChecklistDefinition.checklist_type == checklist_type)
+            .with_for_update(read=True)
+        ).first()
+        if found is not None:
+            return True
+        return not db.execute(select(func.count(ChecklistDefinition.id))).scalar_one()
+    except (OperationalError, ProgrammingError):
+        return True  # not migrated: the built-ins (see checklist_schemas.live_version)
+
+
 def create_submission(
     db: Session,
     user: Optional[User],
@@ -267,6 +288,10 @@ def create_submission(
     )
     db.add(entry)
     db.flush()
+    if not _definition_still_there(db, checklist_type):
+        # An admin deleted the checklist while this was being filled in.
+        db.rollback()
+        raise ValueError(f"Unknown checklist_type: {checklist_type!r}")
     for row in media:
         row.owner_type = MEDIA_OWNER_TYPE
         row.owner_id = entry.id

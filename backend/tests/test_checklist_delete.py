@@ -243,3 +243,66 @@ def test_the_delete_goes_to_the_platform_audit_log(db, admin_client, monkeypatch
     assert action == "checklist.deleted" and kw["actor_type"] == "store_user" and kw["target"] == ctype
     assert kw["details"] == {"title": "Audit me", "versions": 1, "public_link_removed": False, "tasks_removed": 0}
 
+
+
+# --- The race: a submission arriving while the delete runs -----------------------------
+
+
+def test_a_submission_that_arrives_during_the_delete_wins(db, admin_client, monkeypatch):
+    """Counted 0, then someone submitted before the delete committed: the
+    delete counts again under its lock and refuses (409), removing nothing."""
+    from app.db import SessionLocal
+
+    ctype = _published(admin_client)
+    real = svc._all_submission_count
+    calls = []
+
+    def racing(session, checklist_type):
+        n = real(session, checklist_type)
+        calls.append(n)
+        if len(calls) == 1:
+            other = SessionLocal()
+            try:
+                _submission(other, checklist_type)
+            finally:
+                other.close()
+        return n
+
+    monkeypatch.setattr(svc, "_all_submission_count", racing)
+    r = admin_client.delete(f"{DEFS}/{ctype}")
+    assert r.status_code == 409, r.text
+    assert r.json()["detail"] == "This checklist has been filled in 1 time, so it can't be deleted - turn it off instead."
+    assert calls == [0, 1]
+    definition = _row(db, ctype)
+    assert definition is not None
+    assert db.query(ChecklistDefinitionVersion).filter_by(definition_id=definition.id).count() == 1
+    assert db.query(ChecklistSubmission).filter_by(checklist_type=ctype).count() == 1
+
+
+def test_a_submission_racing_a_finished_delete_is_refused_not_orphaned(db, admin_client, admin, monkeypatch):
+    """The form was checked against the checklist, then an admin deleted it
+    before the submission was saved: nothing is stored pointing at it."""
+    from app.db import SessionLocal
+    from app.models import User
+    from app.services import checklist_submission as sub_svc
+
+    ctype = _published(admin_client)
+    real = sub_svc._check_media
+    deleted = []
+
+    def racing(session, *args, **kwargs):
+        if not deleted:
+            other = SessionLocal()
+            try:
+                deleted.append(svc.delete_definition(other, other.get(User, admin.id), ctype))
+            finally:
+                other.close()
+        return real(session, *args, **kwargs)
+
+    monkeypatch.setattr(sub_svc, "_check_media", racing)
+    r = admin_client.post(f"/api/checklists/{ctype}/submit", json={"answers": {"i1": "Yes"}})
+    assert deleted and deleted[0]["deleted"] is True
+    assert r.status_code == 404, r.text
+    db.expire_all()
+    assert db.query(ChecklistSubmission).filter_by(checklist_type=ctype).count() == 0
+    assert _row(db, ctype) is None
