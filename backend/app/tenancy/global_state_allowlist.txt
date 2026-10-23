@@ -245,3 +245,6 @@ app/platform/totp.py:_used_lock  # guards _used_steps
 app/platform/totp.py:_used_steps  # last two-step code step used per (master, purpose): masters are platform-level, not per store
 app/plain_errors.py:BARE_PHRASES  # constant table (never changed at run time)
 app/plain_errors.py:FIELD_LABELS  # constant table (never changed at run time)
+app/label_printing.py:NO_STORE  # constant table (response headers)
+app/platform/feature_requests.py:FEATURES  # constant table (feature key -> label)
+app/platform/urls.py:DEFAULT_MESSAGES  # constant table (plain error sentences)

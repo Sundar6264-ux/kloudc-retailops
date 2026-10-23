@@ -222,4 +222,6 @@ def test_csv_store_item_vendors_say_your_pos(db, monkeypatch):
 
 def test_branding_body_keeps_the_m2_keys_first(anon_client):
     keys = list(json.loads(anon_client.get("/api/app/branding").content))
-    assert keys[-2:] == ["pos_provider", "pos_word"]
+    # Additive keys after the M2 ones, in order: the POS facts (G9), then
+    # label printing (docs/LABEL_PRINTING_FEATURE.md 1.3).
+    assert keys[-3:] == ["pos_provider", "pos_word", "label_printing"]

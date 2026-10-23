@@ -78,6 +78,11 @@ PUBLIC = {
     # app - it only repeats an allowlisted result and opens the app's URL
     # scheme; no session, no store data (tests/test_preprod_gaps_api.py).
     ("GET", "/api/settings/integrations/clover/app-return"),
+    # Label printing hand-off (docs/LABEL_PRINTING_FEATURE.md 3.4): the label
+    # site turns a 60-second, single-use, store-bound code (256 bits) into
+    # who opened it; no session, no other store data
+    # (tests/platform/test_label_printing_platform.py).
+    ("POST", "/api/labels/handoff/redeem"),
 }
 # Any logged-in user, no feature grant (small lookups, own account/devices,
 # team hub basics - see the notes in each router).
@@ -109,6 +114,12 @@ LOGIN_ONLY = {
     ("POST", "/api/auth/delete-account"),
     ("GET", "/api/team/rules"),
     ("POST", "/api/team/rules/accept"),
+    # Label printing (docs/LABEL_PRINTING_FEATURE.md): the store's own card,
+    # the label site's "who is this?" check and the website hand-off - any
+    # signed-in user of a store with the feature (tests/test_label_printing.py).
+    ("GET", "/api/label-printing"),
+    ("GET", "/api/labels/session"),
+    ("POST", "/api/labels/handoff"),
 }
 
 
